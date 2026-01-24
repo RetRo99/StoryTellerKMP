@@ -28,17 +28,12 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
-import me.tatarka.inject.annotations.Inject
+import org.koin.core.annotation.Single
 import retro99.games.api.NetworkClient
 import retro99.games.api.QueryParamsScope
-import software.amazon.lastmile.kotlin.inject.anvil.AppScope
-import software.amazon.lastmile.kotlin.inject.anvil.ContributesBinding
-import software.amazon.lastmile.kotlin.inject.anvil.SingleIn
 import kotlin.reflect.KClass
 
-@Inject
-@SingleIn(AppScope::class)
-@ContributesBinding(AppScope::class)
+@Single(binds = [NetworkClient::class])
 class KtorNetworkClient(
     private val httpClient: HttpClient,
 ) : NetworkClient {
