@@ -33,5 +33,7 @@ plugins {
 }
 
 include(":composeApp")
+include(":base")
+include(":translations")
 include(":lib:network:api")
 include(":lib:network:implementation")
