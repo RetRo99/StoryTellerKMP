@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.ksp)
@@ -17,20 +16,12 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.lib.analytics.api)
-            implementation(projects.base)
-            implementation(projects.lib.network.api)
-
-            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.bundles.kotlinInject)
-            implementation(libs.bundles.ktorClientBundle)
-        }
-
-        androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
-        }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
+            implementation(libs.datetime)
+            implementation(libs.coroutines)
+            api(libs.kotlin.result)
+            api(libs.kotlin.result.coroutines)
+            implementation(projects.translations)
         }
     }
 }
@@ -41,8 +32,14 @@ dependencies {
     add("kspIosSimulatorArm64", libs.kotlinInject.anvil.compiler)
 }
 
-
 android {
-    namespace = "com.retro99.network.implementation"
+    buildFeatures {
+        buildConfig = true
+    }
+
+    namespace = "com.retro99.base"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    defaultConfig {
+        minSdk = libs.versions.minSdk.get().toInt()
+    }
 }
