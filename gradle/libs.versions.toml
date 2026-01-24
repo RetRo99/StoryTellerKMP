@@ -1,9 +1,5 @@
 [versions]
-agp = "8.10.1"
-android-compileSdk = "36"
-android-minSdk = "29"
-android-targetSdk = "36"
-# Aliases for backward compatibility
+agp = "9.0.0"
 compileSdk = "36"
 minSdk = "29"
 targetSdk = "36"
@@ -14,20 +10,20 @@ androidx-espresso = "3.7.0"
 androidx-lifecycle = "2.9.6"
 androidx-testExt = "1.3.0"
 composeHotReload = "1.0.0"
-composeMultiplatform = "1.8.1"
+composeMultiplatform = "1.10.0"
 junit = "4.13.2"
-kotlin = "2.1.21"
+kotlin = "2.3.0"
 kotlinx-coroutines = "1.10.2"
 material3 = "1.10.0-alpha05"
 jdk = "17"
 # Additional versions from user reference
-kotlinResult = "2.0.1"
-ktor = "3.1.3"
-datetime = "0.6.2"
+kotlinResult = "2.1.0"
+ktor = "3.4.0"
+datetime = "0.7.1"
 kotlininject = "0.8.0"
 kotlin-inject-anvil = "0.1.6"
-serialization = "1.8.1"
-ksp = "2.1.21-2.0.1"
+serialization = "1.10.0"
+ksp = "2.3.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
