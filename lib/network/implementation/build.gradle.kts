@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"
@@ -18,11 +19,19 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
-            implementation(libs.datetime)
+            implementation(libs.bundles.ktorClientBundle)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.serialization)
             implementation(libs.coroutines)
-            api(libs.kotlin.result)
-            api(libs.kotlin.result.coroutines)
-            implementation(projects.translations)
+            implementation(projects.base)
+            implementation(projects.lib.network.api)
+        }
+
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
     }
 }
@@ -36,13 +45,10 @@ dependencies {
 }
 
 android {
-    buildFeatures {
-        buildConfig = true
-    }
-
-    namespace = "com.retro99.base"
+    namespace = "com.retro99.network.implementation"
     compileSdk = libs.versions.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
     }
 }
+

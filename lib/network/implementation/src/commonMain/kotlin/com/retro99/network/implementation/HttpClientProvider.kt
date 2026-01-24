@@ -11,14 +11,11 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import me.tatarka.inject.annotations.Inject
+import org.koin.core.annotation.Single
 import retro99.games.api.tokens.BearerTokenProvider
 import retro99.games.api.tokens.BearerTokenRefresher
-import software.amazon.lastmile.kotlin.inject.anvil.AppScope
-import software.amazon.lastmile.kotlin.inject.anvil.SingleIn
 
-@Inject
-@SingleIn(AppScope::class)
+@Single
 class HttpClientProvider(
     private val httpFactory: HttpClientEngineFactory<*>,
     private val analytics: Analytics,
