@@ -12,7 +12,6 @@ class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigati
     override val initialState = RootNavigationState()
 
     init {
-        setState(initialState)
         checkAuthState()
     }
 

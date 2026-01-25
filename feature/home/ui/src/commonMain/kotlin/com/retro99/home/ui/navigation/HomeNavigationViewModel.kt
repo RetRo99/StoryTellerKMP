@@ -8,10 +8,6 @@ class HomeNavigationViewModel : BaseViewModel<HomeNavigationState, HomeNavigatio
 
     override val initialState = HomeNavigationState()
 
-    init {
-        setState(initialState)
-    }
-
     override fun onIntent(intent: HomeNavigationIntent) {
         when (intent) {
             HomeNavigationIntent.OnLogout -> {
