@@ -1,21 +1,22 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.fromTarget(libs.versions.jdk.get()))
-        }
+    jvmToolchain(libs.versions.jdk.get().toInt())
+
+    androidLibrary {
+        namespace = "org.retro99.storyteller"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -25,9 +26,9 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     jvm()
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -50,37 +51,6 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
         }
     }
-}
-
-android {
-    namespace = "org.retro99.storyteller"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-
-    defaultConfig {
-        applicationId = "org.retro99.storyteller"
-        minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(libs.versions.jdk.get().toInt())
-        targetCompatibility = JavaVersion.toVersion(libs.versions.jdk.get().toInt())
-    }
-}
-
-dependencies {
-    debugImplementation(libs.compose.uiTooling)
 }
 
 compose.desktop {
