@@ -1,22 +1,13 @@
 package org.retro99.storyteller.navigation
 
 import androidx.lifecycle.viewModelScope
-import com.retro99.base.ui.BaseIntent
 import com.retro99.base.ui.BaseViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.Single
 
-data class RootNavigationState(
-    val backStack: List<RootDestination> = listOf(RootDestination.Splash)
-)
-
-sealed interface RootNavigationIntent : BaseIntent {
-    data object OnLoginSuccess : RootNavigationIntent
-    data object OnLogout : RootNavigationIntent
-}
-
-@Single
+@KoinViewModel
 class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
 
     override val initialState = RootNavigationState()
