@@ -25,11 +25,7 @@ fun RootNavigation(
             modifier = modifier,
             entryProvider = entryProvider {
                 entry<RootDestination.Splash> {
-                    SplashScreen(
-                        onSplashComplete = { isLoggedIn ->
-                            intentDispatcher(RootNavigationIntent.OnSplashComplete(isLoggedIn))
-                        }
-                    )
+                    SplashScreen()
                 }
 
                 entry<RootDestination.Login> {

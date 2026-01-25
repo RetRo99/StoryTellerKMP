@@ -1,7 +1,10 @@
 package org.retro99.storyteller.navigation
 
+import androidx.lifecycle.viewModelScope
 import com.retro99.base.ui.BaseIntent
 import com.retro99.base.ui.BaseViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 
 data class RootNavigationState(
@@ -9,32 +12,34 @@ data class RootNavigationState(
 )
 
 sealed interface RootNavigationIntent : BaseIntent {
-    data class OnSplashComplete(val isLoggedIn: Boolean) : RootNavigationIntent
     data object OnLoginSuccess : RootNavigationIntent
     data object OnLogout : RootNavigationIntent
 }
 
 @Single
-class RootNavigationViewModel : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
+class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
 
     override val initialState = RootNavigationState()
 
     init {
         setState(initialState)
+        checkAuthState()
     }
 
     override fun onIntent(intent: RootNavigationIntent) {
         when (intent) {
-            is RootNavigationIntent.OnSplashComplete -> handleSplashComplete(intent.isLoggedIn)
             RootNavigationIntent.OnLoginSuccess -> handleLoginSuccess()
             RootNavigationIntent.OnLogout -> handleLogout()
         }
     }
 
-    private fun handleSplashComplete(isLoggedIn: Boolean) {
-        updateState { state ->
-            val newDestination = if (isLoggedIn) RootDestination.Home else RootDestination.Login
-            state.copy(backStack = listOf(newDestination))
+    private fun checkAuthState() {
+        viewModelScope.launch {
+            // TODO check if logged in
+            delay(4000)
+            updateState { state ->
+                state.copy(backStack = listOf(RootDestination.Home))
+            }
         }
     }
 
