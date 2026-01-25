@@ -17,6 +17,12 @@ expect fun KoinApplication.setupAnalytics()
  *
  * This is an expect function because the generated StoryTellerKoinApp.startKoin()
  * extension is platform-specific (KSP generates code per platform).
+ *
+ * @param additionalModules Additional modules to include
+ * @param platformConfiguration Lambda for platform-specific configuration (e.g., androidContext, androidLogger)
  */
-expect fun initKoin(additionalModules: List<Module> = emptyList()): KoinApplication
+expect fun initKoin(
+    additionalModules: List<Module> = emptyList(),
+    platformConfiguration: KoinApplication.() -> Unit = {}
+): KoinApplication
 

@@ -9,8 +9,12 @@ actual fun KoinApplication.setupAnalytics() {
     analytics()
 }
 
-actual fun initKoin(additionalModules: List<Module>): KoinApplication {
+actual fun initKoin(
+    additionalModules: List<Module>,
+    platformConfiguration: KoinApplication.() -> Unit
+): KoinApplication {
     return StoryTellerKoinApp().startKoin {
+        platformConfiguration()
         modules(additionalModules)
         setupAnalytics()
     }
