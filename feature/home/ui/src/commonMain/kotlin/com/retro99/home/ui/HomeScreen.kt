@@ -1,4 +1,4 @@
-package org.retro99.storyteller.home
+package com.retro99.home.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,17 +30,17 @@ fun HomeScreen(
             text = "🎉 Welcome Home!",
             style = MaterialTheme.typography.headlineLarge,
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
             text = "You are now logged in.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        
+
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         Button(onClick = onLogout) {
             Text("Logout")
         }

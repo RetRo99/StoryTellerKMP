@@ -6,8 +6,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.retro99.home.ui.navigation.HomeNavigation
 import com.retro99.login.ui.navigation.LoginNavigation
-import org.retro99.storyteller.home.HomeScreen
 import org.retro99.storyteller.splash.SplashScreen
 
 @Composable
@@ -48,8 +48,7 @@ fun RootNavigation(
             }
             
             entry<RootDestination.Home> {
-                // TODO: Replace with HomeNavigation when home feature is implemented
-                HomeScreen(
+                HomeNavigation(
                     onLogout = {
                         backStack.clear()
                         backStack.add(RootDestination.Login)
