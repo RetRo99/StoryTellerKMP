@@ -5,6 +5,10 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+kotlin {
+    jvmToolchain(libs.versions.jdk.get().toInt())
+}
+
 android {
     namespace = "org.retro99.storyteller"
     compileSdk = libs.versions.compileSdk.get().toInt()
