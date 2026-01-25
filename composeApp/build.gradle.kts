@@ -45,9 +45,11 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.navigation3.ui)
             implementation(libs.navigation3.runtime)
             implementation(projects.base)
+            implementation(projects.baseUi)
             implementation(projects.feature.login.ui)
             implementation(projects.feature.home.ui)
         }
