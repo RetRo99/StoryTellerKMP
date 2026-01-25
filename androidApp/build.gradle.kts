@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "org.retro99.storyteller"
+    namespace = "org.retro99.storyteller.android"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
