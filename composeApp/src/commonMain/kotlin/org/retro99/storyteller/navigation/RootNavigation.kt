@@ -1,61 +1,54 @@
 package org.retro99.storyteller.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.retro99.base.ui.BaseScreen
 import com.retro99.home.ui.navigation.HomeNavigation
 import com.retro99.login.ui.navigation.LoginNavigation
+import org.koin.compose.viewmodel.koinViewModel
 import org.retro99.storyteller.splash.SplashScreen
 
 @Composable
 fun RootNavigation(
     modifier: Modifier = Modifier,
+    viewModel: RootNavigationViewModel = koinViewModel(),
 ) {
-    // Root back stack - starts with Splash
-    val backStack = remember { mutableStateListOf<RootDestination>(RootDestination.Splash) }
-    
-    NavDisplay(
-        backStack = backStack,
-        onBack = { 
-            // Don't allow back navigation from root destinations
-            // This prevents going back to Splash or Login after logging in
-        },
-        modifier = modifier,
-        entryProvider = entryProvider {
-            entry<RootDestination.Splash> {
-                SplashScreen(
-                    onSplashComplete = { isLoggedIn ->
-                        backStack.clear()
-                        if (isLoggedIn) {
-                            backStack.add(RootDestination.Home)
-                        } else {
-                            backStack.add(RootDestination.Login)
+    BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
+        NavDisplay(
+            backStack = state.backStack,
+            onBack = {
+                // Don't allow back navigation from root destinations
+                // This prevents going back to Splash or Login after logging in
+            },
+            modifier = modifier,
+            entryProvider = entryProvider {
+                entry<RootDestination.Splash> {
+                    SplashScreen(
+                        onSplashComplete = { isLoggedIn ->
+                            intentDispatcher(RootNavigationIntent.OnSplashComplete(isLoggedIn))
                         }
-                    }
-                )
+                    )
+                }
+
+                entry<RootDestination.Login> {
+                    LoginNavigation(
+                        onLoginSuccess = {
+                            intentDispatcher(RootNavigationIntent.OnLoginSuccess)
+                        }
+                    )
+                }
+
+                entry<RootDestination.Home> {
+                    HomeNavigation(
+                        onLogout = {
+                            intentDispatcher(RootNavigationIntent.OnLogout)
+                        }
+                    )
+                }
             }
-            
-            entry<RootDestination.Login> {
-                LoginNavigation(
-                    onLoginSuccess = {
-                        backStack.clear()
-                        backStack.add(RootDestination.Home)
-                    }
-                )
-            }
-            
-            entry<RootDestination.Home> {
-                HomeNavigation(
-                    onLogout = {
-                        backStack.clear()
-                        backStack.add(RootDestination.Login)
-                    }
-                )
-            }
-        }
-    )
+        )
+    }
 }
 
