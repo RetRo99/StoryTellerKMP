@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"
@@ -21,6 +22,8 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.koin.core)
@@ -31,6 +34,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.navigation3.ui)
             implementation(projects.base)
             implementation(projects.translations)
             implementation(projects.feature.login.domain)
