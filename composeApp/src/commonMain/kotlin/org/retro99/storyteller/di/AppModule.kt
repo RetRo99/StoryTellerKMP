@@ -5,13 +5,14 @@ import com.retro99.home.data.di.HomeDataModule
 import com.retro99.home.ui.di.HomeUiModule
 import com.retro99.login.data.di.LoginDataModule
 import com.retro99.login.ui.di.LoginUiModule
+import com.retro99.network.implementation.di.NetworkingModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 
 @Module(
     includes = [
         BuildConfigModule::class,
-        // NetworkingModule excluded - has pre-existing compilation errors (missing Analytics dependency)
+        NetworkingModule::class,
         LoginDataModule::class,
         LoginUiModule::class,
         HomeDataModule::class,

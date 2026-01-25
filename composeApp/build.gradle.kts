@@ -58,7 +58,7 @@ kotlin {
             implementation(projects.base)
             implementation(projects.baseUi)
             implementation(projects.lib.network.api)
-            // projects.lib.network.implementation excluded - has pre-existing compilation errors
+            implementation(projects.lib.network.implementation)
             implementation(projects.feature.login.ui)
             implementation(projects.feature.login.data)
             implementation(projects.feature.home.ui)
