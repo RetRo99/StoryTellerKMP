@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.ksp)
 }
 
@@ -9,7 +9,12 @@ version = "1.0"
 kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
-    androidTarget()
+    androidLibrary {
+        namespace = "com.retro99.base"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+    }
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -33,16 +38,4 @@ dependencies {
     add("kspIosX64", libs.koin.ksp.compiler)
     add("kspIosArm64", libs.koin.ksp.compiler)
     add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
-}
-
-android {
-    buildFeatures {
-        buildConfig = true
-    }
-
-    namespace = "com.retro99.base"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
-    }
 }
