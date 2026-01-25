@@ -5,6 +5,8 @@ import io.kotzilla.sdk.analytics.koin.analytics
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import org.koin.ksp.generated.module
+import org.retro99.storyteller.di.AppModule
 import org.retro99.storyteller.di.platformModules
 
 class StoryTellerApplication : Application() {
@@ -14,7 +16,7 @@ class StoryTellerApplication : Application() {
         startKoin {
             androidLogger()
             androidContext(this@StoryTellerApplication)
-            modules(platformModules())
+            modules(platformModules() + AppModule().module)
             analytics()
         }
     }
