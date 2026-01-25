@@ -15,6 +15,7 @@ kotlin {
         namespace = "org.retro99.storyteller"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
+        androidResources.enable = true
     }
 
     listOf(
@@ -44,7 +45,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.navigation3.ui)
+            implementation(libs.navigation3.runtime)
             implementation(projects.base)
+            implementation(projects.feature.login.ui)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -66,6 +70,11 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+compose.resources {
+    publicResClass = false
+    generateResClass = always
 }
 
 dependencies {
