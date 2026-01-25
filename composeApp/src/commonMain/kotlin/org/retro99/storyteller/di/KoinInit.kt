@@ -4,12 +4,6 @@ import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 
 /**
- * Platform-specific Kotzilla analytics setup.
- * Android and iOS call analytics().
- */
-expect fun KoinApplication.setupAnalytics()
-
-/**
  * Initialize Koin with all application modules.
  *
  * Uses KSP-generated startKoin extension from @KoinApplication annotation
