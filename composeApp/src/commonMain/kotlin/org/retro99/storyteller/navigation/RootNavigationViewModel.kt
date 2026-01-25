@@ -28,7 +28,7 @@ class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigati
             // TODO check if logged in
             delay(4000)
             updateState { state ->
-                state.copy(backStack = listOf(RootDestination.Home))
+                state.copy(backStack = listOf(RootDestination.Login))
             }
         }
     }

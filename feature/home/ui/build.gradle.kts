@@ -26,6 +26,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.coroutines)
             implementation(compose.runtime)
             implementation(compose.foundation)
