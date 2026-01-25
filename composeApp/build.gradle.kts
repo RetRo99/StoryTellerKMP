@@ -12,7 +12,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.fromTarget(libs.versions.jdk.get()))
         }
     }
     
@@ -74,8 +74,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.jdk.get().toInt())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.jdk.get().toInt())
     }
 }
 
