@@ -11,9 +11,10 @@ import org.koin.ksp.generated.module
 actual fun platformModules(): List<Module> = listOf(
     module {
         single<BuildConfig> { BuildConfigAndroid(get()) }
-    },
-    AppModule().module
+    }
 )
+
+actual fun appModules(): List<Module> = listOf(AppModule().module)
 
 actual fun KoinApplication.setupAnalytics() {
     analytics()

@@ -30,8 +30,6 @@ kotlin {
         }
     }
 
-    jvm()
-
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
@@ -67,10 +65,6 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
-        }
     }
 }
 
@@ -103,5 +97,4 @@ dependencies {
     add("kspAndroid", libs.koin.ksp.compiler)
     add("kspIosArm64", libs.koin.ksp.compiler)
     add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
-    add("kspJvm", libs.koin.ksp.compiler)
 }
