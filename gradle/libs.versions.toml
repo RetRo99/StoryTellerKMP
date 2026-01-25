@@ -1,5 +1,6 @@
 [versions]
 agp = "9.0.0"
+kotzilla = "1.4.2"
 compileSdk = "36"
 minSdk = "29"
 targetSdk = "36"
@@ -87,6 +88,9 @@ navigation3-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmo
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
+# Kotzilla
+kotzilla-sdk-compose = { group = "io.kotzilla", name = "kotzilla-sdk-compose", version.ref = "kotzilla" }
+
 [bundles]
 ktorClientBundle = [
     "ktor-client-core",
@@ -103,3 +107,4 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotzilla = { id = "io.kotzilla.kotzilla-plugin", version.ref = "kotzilla" }
