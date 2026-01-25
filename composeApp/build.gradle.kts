@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotzilla)
 }
 
 kotlin {
@@ -33,6 +34,10 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.kotzilla.sdk.compose)
+        }
+        iosMain.dependencies {
+            implementation(libs.kotzilla.sdk.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -79,6 +84,12 @@ compose.desktop {
 compose.resources {
     publicResClass = false
     generateResClass = always
+}
+
+kotzilla {
+    versionName = "1.0.0"
+    keyGeneration = io.kotzilla.gradle.ext.KotzillaKeyGeneration.COMPOSE
+    composeInstrumentation = true
 }
 
 dependencies {

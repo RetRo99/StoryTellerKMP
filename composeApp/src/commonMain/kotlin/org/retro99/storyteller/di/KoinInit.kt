@@ -11,6 +11,12 @@ import org.koin.core.module.Module
 expect fun platformModules(): List<Module>
 
 /**
+ * Platform-specific Kotzilla analytics setup.
+ * Android and iOS call analytics(), JVM does nothing.
+ */
+expect fun KoinApplication.setupAnalytics()
+
+/**
  * Initialize Koin with all application modules.
  */
 fun initKoin(additionalModules: List<Module> = emptyList()): KoinApplication {
@@ -18,6 +24,7 @@ fun initKoin(additionalModules: List<Module> = emptyList()): KoinApplication {
         modules(
             platformModules() + additionalModules
         )
+        setupAnalytics()
     }
 }
 

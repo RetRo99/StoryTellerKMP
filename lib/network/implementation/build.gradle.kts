@@ -20,6 +20,8 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.koin.core)
@@ -38,6 +40,9 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
     }
 }
 
@@ -47,5 +52,6 @@ dependencies {
     add("kspIosX64", libs.koin.ksp.compiler)
     add("kspIosArm64", libs.koin.ksp.compiler)
     add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
+    add("kspJvm", libs.koin.ksp.compiler)
 }
 
