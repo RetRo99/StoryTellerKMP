@@ -35,6 +35,7 @@ plugins {
 include(":androidApp")
 include(":composeApp")
 include(":base")
+include(":base-ui")
 include(":translations")
 include(":lib:network:api")
 include(":lib:network:implementation")
