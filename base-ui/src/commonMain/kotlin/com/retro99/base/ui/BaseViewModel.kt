@@ -10,8 +10,14 @@ abstract class BaseViewModel<State, Intent : BaseIntent> : ViewModel() {
 
     protected abstract val initialState: State
 
-    private val _state = MutableStateFlow<BaseViewState<State>>(BaseViewState.Loading)
-    val viewState: StateFlow<BaseViewState<State>> = _state.asStateFlow()
+    private val _state by lazy {
+        MutableStateFlow<BaseViewState<State>>(
+            BaseViewState.Success(
+                initialState
+            )
+        )
+    }
+    val viewState: StateFlow<BaseViewState<State>> by lazy { _state.asStateFlow() }
 
     abstract fun onIntent(intent: Intent)
 
