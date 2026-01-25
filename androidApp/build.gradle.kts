@@ -23,6 +23,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -35,6 +36,7 @@ dependencies {
     implementation(projects.composeApp)
     implementation(libs.compose.uiToolingPreview)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.koin.android)
     debugImplementation(libs.compose.uiTooling)
 }
 
