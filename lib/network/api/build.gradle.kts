@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
 }
 
 version = "1.0"
@@ -8,7 +8,12 @@ version = "1.0"
 kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
-    androidTarget()
+    androidLibrary {
+        namespace = "com.retro99.network.api"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+    }
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -26,9 +31,4 @@ kotlin {
 
         }
     }
-}
-
-android {
-    namespace = "com.retro99.network.api"
-    compileSdk = libs.versions.compileSdk.get().toInt()
 }
