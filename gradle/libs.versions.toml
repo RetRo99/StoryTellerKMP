@@ -24,7 +24,7 @@ koin = "4.1.1"
 koin-annotations = "2.2.0"
 serialization = "1.10.0"
 ksp = "2.3.2"
-navigation3 = "1.1.0-alpha02"
+navigation3 = "1.1.0-alpha01"
 navigation3-viewmodel = "2.10.0"
 
 
