@@ -50,6 +50,7 @@ kotlin {
             implementation(libs.navigation3.runtime)
             implementation(projects.base)
             implementation(projects.baseUi)
+            implementation(projects.lib.network.api)
             implementation(projects.feature.login.ui)
             implementation(projects.feature.home.ui)
         }
