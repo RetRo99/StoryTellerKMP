@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.retro99.base.buildconfig.BuildConfig
 import org.jetbrains.compose.resources.painterResource
@@ -67,6 +68,7 @@ fun App() {
 }
 
 @Composable
+@Preview
 private fun DebugBadge(isDebug: Boolean) {
     val backgroundColor = if (isDebug) Color(0xFFFF9800) else Color(0xFF4CAF50)
     val text = if (isDebug) "DEBUG" else "RELEASE"
