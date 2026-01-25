@@ -26,6 +26,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.coroutines)
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -34,6 +35,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.navigation3.ui)
             implementation(projects.base)
+            implementation(projects.baseUi)
             implementation(projects.translations)
             implementation(projects.feature.login.domain)
         }
