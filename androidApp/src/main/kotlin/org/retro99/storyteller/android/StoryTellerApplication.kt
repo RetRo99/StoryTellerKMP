@@ -1,4 +1,4 @@
-package org.retro99.storyteller
+package org.retro99.storyteller.android
 
 import android.app.Application
 import org.koin.android.ext.koin.androidContext
