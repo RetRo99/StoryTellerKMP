@@ -5,10 +5,6 @@ import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.ksp.generated.*
 
-actual fun KoinApplication.setupAnalytics() {
-    analytics()
-}
-
 actual fun initKoin(
     additionalModules: List<Module>,
     platformConfiguration: KoinApplication.() -> Unit
@@ -16,6 +12,6 @@ actual fun initKoin(
     return StoryTellerKoinApp().startKoin {
         platformConfiguration()
         modules(additionalModules)
-        setupAnalytics()
+        analytics()
     }
 }
