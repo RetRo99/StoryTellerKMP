@@ -5,7 +5,6 @@ import com.retro99.base.ui.BaseViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
-import org.koin.core.annotation.Single
 
 @KoinViewModel
 class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
