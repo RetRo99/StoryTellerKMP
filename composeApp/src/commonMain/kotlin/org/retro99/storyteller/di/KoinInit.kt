@@ -5,8 +5,8 @@ import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 
 /**
- * Platform-specific Koin modules.
- * Android provides Context, iOS/JVM provide empty list.
+ * Platform-specific Koin modules including the generated AppModule.
+ * Each platform provides the AppModule().module along with platform-specific bindings.
  */
 expect fun platformModules(): List<Module>
 

@@ -5,11 +5,13 @@ import com.retro99.base.buildconfig.BuildConfigJvm
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import org.koin.ksp.generated.module
 
 actual fun platformModules(): List<Module> = listOf(
     module {
         single<BuildConfig> { BuildConfigJvm() }
-    }
+    },
+    AppModule().module
 )
 
 /**
