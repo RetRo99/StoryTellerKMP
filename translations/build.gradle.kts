@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
 }
@@ -10,7 +10,12 @@ version = "1.0"
 kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
-    androidTarget()
+    androidLibrary {
+        namespace = "com.retro99.translations"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+    }
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -21,17 +26,10 @@ kotlin {
             implementation(compose.runtime)
         }
     }
-
 }
+
 compose.resources {
     publicResClass = true
     generateResClass = always
     packageOfResClass = "resources.translations"
-}
-android {
-    namespace = "com.retro99.translations"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
-    }
 }
