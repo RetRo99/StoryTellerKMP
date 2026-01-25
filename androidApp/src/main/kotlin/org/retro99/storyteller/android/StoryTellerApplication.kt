@@ -4,19 +4,16 @@ import android.app.Application
 import io.kotzilla.sdk.analytics.koin.analytics
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.startKoin
-import org.koin.ksp.generated.module
-import org.retro99.storyteller.di.AppModule
-import org.retro99.storyteller.di.platformModules
+import org.koin.ksp.generated.startKoin
+import org.retro99.storyteller.di.StoryTellerKoinApp
 
 class StoryTellerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        startKoin {
+        StoryTellerKoinApp().startKoin {
             androidLogger()
             androidContext(this@StoryTellerApplication)
-            modules(platformModules() + AppModule().module)
             analytics()
         }
     }

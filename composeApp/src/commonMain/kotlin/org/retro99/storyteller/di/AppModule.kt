@@ -7,6 +7,7 @@ import com.retro99.login.data.di.LoginDataModule
 import com.retro99.login.ui.di.LoginUiModule
 import com.retro99.network.implementation.di.NetworkingModule
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 
 @Module(
@@ -19,6 +20,7 @@ import org.koin.core.annotation.Module
         HomeUiModule::class,
     ]
 )
+@Configuration
 @ComponentScan("org.retro99.storyteller")
 class AppModule
 
