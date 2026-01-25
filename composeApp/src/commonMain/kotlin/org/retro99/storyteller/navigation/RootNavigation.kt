@@ -2,7 +2,9 @@ package org.retro99.storyteller.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.retro99.base.ui.BaseScreen
 import com.retro99.home.ui.navigation.HomeNavigation
@@ -23,6 +25,10 @@ fun RootNavigation(
                 // This prevents going back to Splash or Login after logging in
             },
             modifier = modifier,
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
             entryProvider = entryProvider {
                 entry<RootDestination.Splash> {
                     SplashScreen()
