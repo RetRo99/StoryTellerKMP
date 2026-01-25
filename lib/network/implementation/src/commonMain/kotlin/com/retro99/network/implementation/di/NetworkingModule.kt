@@ -6,10 +6,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
 @Module
+@Configuration
 @ComponentScan("com.retro99.network.implementation")
 class NetworkingModule {
 
