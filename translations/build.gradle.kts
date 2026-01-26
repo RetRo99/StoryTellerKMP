@@ -14,6 +14,10 @@ kotlin {
         namespace = "com.retro99.translations"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
+
+        androidResources {
+            enable = true
+        }
     }
 
     iosX64()
