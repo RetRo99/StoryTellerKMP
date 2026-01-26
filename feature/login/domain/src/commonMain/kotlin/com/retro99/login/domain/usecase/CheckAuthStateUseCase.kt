@@ -1,15 +1,15 @@
 package com.retro99.login.domain.usecase
 
-import com.retro99.login.domain.LoginRepository
+import com.retro99.auth.api.AuthRepository
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
 @Factory
 class CheckAuthStateUseCase(
-    @Provided private val loginRepository: LoginRepository,
+    @Provided private val authRepository: AuthRepository,
 ) {
     suspend operator fun invoke(): Boolean {
-        return loginRepository.isLoggedIn()
+        return authRepository.isLoggedIn()
     }
 }
 

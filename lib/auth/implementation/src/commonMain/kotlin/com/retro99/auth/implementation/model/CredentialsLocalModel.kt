@@ -1,6 +1,6 @@
-package com.retro99.login.data.model
+package com.retro99.auth.implementation.model
 
-import com.retro99.login.domain.model.LoginCredentialsDomainModel
+import com.retro99.auth.api.model.CredentialsDomainModel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -14,15 +14,15 @@ internal data class CredentialsLocalModel(
     val token: String,
 )
 
-internal fun CredentialsLocalModel.toDomain(): LoginCredentialsDomainModel {
-    return LoginCredentialsDomainModel(
+internal fun CredentialsLocalModel.toDomain(): CredentialsDomainModel {
+    return CredentialsDomainModel(
         serverUrl = serverUrl,
         username = username,
         token = token,
     )
 }
 
-internal fun LoginCredentialsDomainModel.toLocal(): CredentialsLocalModel {
+internal fun CredentialsDomainModel.toLocal(): CredentialsLocalModel {
     return CredentialsLocalModel(
         serverUrl = serverUrl,
         username = username,
