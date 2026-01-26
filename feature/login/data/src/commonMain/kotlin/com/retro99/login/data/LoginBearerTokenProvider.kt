@@ -3,7 +3,7 @@ package com.retro99.login.data
 import com.retro99.login.data.source.CredentialsLocalSource
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
-import retro99.games.api.tokens.BearerTokenProvider
+import retro99.network.api.tokens.BearerTokenProvider
 
 @Single(binds = [BearerTokenProvider::class])
 class LoginBearerTokenProvider(

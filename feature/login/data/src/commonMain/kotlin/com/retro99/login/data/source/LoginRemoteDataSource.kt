@@ -5,8 +5,8 @@ import com.retro99.login.data.model.LoginRequestApiModel
 import com.retro99.login.data.model.TokenResponseApiModel
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
-import retro99.games.api.NetworkClient
-import retro99.games.api.postForm
+import retro99.network.api.NetworkClient
+import retro99.network.api.postForm
 
 @Factory
 internal class LoginRemoteDataSource(
