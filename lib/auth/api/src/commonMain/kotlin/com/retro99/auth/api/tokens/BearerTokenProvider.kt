@@ -1,4 +1,4 @@
-package retro99.network.api.tokens
+package com.retro99.auth.api.tokens
 
 interface BearerTokenProvider {
     suspend fun getBearerToken(): String?

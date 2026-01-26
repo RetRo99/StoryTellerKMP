@@ -1,10 +1,10 @@
-package com.retro99.login.data
+package com.retro99.auth.implementation
 
+import com.retro99.auth.api.tokens.BearerTokenRefresher
 import org.koin.core.annotation.Single
-import retro99.network.api.tokens.BearerTokenRefresher
 
 @Single(binds = [BearerTokenRefresher::class])
-class LoginBearerTokenRefresher : BearerTokenRefresher {
+class AuthBearerTokenRefresher : BearerTokenRefresher {
 
     override suspend fun refreshBearerToken(): String? {
         return null

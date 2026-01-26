@@ -1,6 +1,6 @@
-package com.retro99.login.domain.model
+package com.retro99.auth.api.model
 
-data class LoginCredentialsDomainModel(
+data class CredentialsDomainModel(
     val serverUrl: String,
     val username: String,
     val token: String,

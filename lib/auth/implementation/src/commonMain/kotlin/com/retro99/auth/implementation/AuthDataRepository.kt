@@ -1,26 +1,27 @@
-package com.retro99.login.data.source
+package com.retro99.auth.implementation
 
-import com.retro99.login.data.model.CredentialsLocalModel
-import com.retro99.login.data.model.toDomain
-import com.retro99.login.data.model.toLocal
-import com.retro99.login.domain.model.LoginCredentialsDomainModel
+import com.retro99.auth.api.AuthRepository
+import com.retro99.auth.api.model.CredentialsDomainModel
+import com.retro99.auth.implementation.model.CredentialsLocalModel
+import com.retro99.auth.implementation.model.toDomain
+import com.retro99.auth.implementation.model.toLocal
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
-import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
+import org.koin.core.annotation.Single
 
-@Factory
-internal class CredentialsPreferencesDataSource(
+@Single(binds = [AuthRepository::class])
+internal class AuthDataRepository(
     @Provided private val preferences: Preferences,
-) : CredentialsLocalSource {
+) : AuthRepository {
 
-    override suspend fun saveCredentials(credentials: LoginCredentialsDomainModel) {
+    override suspend fun saveCredentials(credentials: CredentialsDomainModel) {
         preferences.putObject(PreferencesKey.Credentials, credentials.toLocal())
     }
 
-    override suspend fun getCredentials(): LoginCredentialsDomainModel? {
+    override suspend fun getCredentials(): CredentialsDomainModel? {
         return preferences.getObject<CredentialsLocalModel>(PreferencesKey.Credentials)?.toDomain()
     }
 

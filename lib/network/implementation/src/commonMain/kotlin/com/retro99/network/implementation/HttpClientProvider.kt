@@ -9,10 +9,10 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import com.retro99.auth.api.tokens.BearerTokenProvider
+import com.retro99.auth.api.tokens.BearerTokenRefresher
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
-import retro99.network.api.tokens.BearerTokenProvider
-import retro99.network.api.tokens.BearerTokenRefresher
 
 @Single
 class HttpClientProvider(
