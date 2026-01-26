@@ -10,13 +10,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -72,11 +81,23 @@ private fun LoginScreenContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        var passwordVisible by remember { mutableStateOf(false) }
+
         OutlinedSecureTextField(
             state = passwordState,
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
-            textObfuscationMode = TextObfuscationMode.Hidden,
+            textObfuscationMode = if (passwordVisible) {
+                TextObfuscationMode.Visible
+            } else {
+                TextObfuscationMode.Hidden
+            },
+            trailingIcon = {
+                PasswordVisibilityToggle(
+                    isVisible = passwordVisible,
+                    onToggle = { passwordVisible = !passwordVisible },
+                )
+            },
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -95,5 +116,26 @@ private fun LoginScreenContent(
         TextButton(onClick = { intentDispatcher(LoginIntent.OnBackClicked) }) {
             Text("Back")
         }
+    }
+}
+
+@Composable
+private fun PasswordVisibilityToggle(
+    isVisible: Boolean,
+    onToggle: () -> Unit,
+) {
+    IconButton(onClick = onToggle) {
+        Icon(
+            imageVector = if (isVisible) {
+                Icons.Filled.VisibilityOff
+            } else {
+                Icons.Filled.Visibility
+            },
+            contentDescription = if (isVisible) {
+                "Hide password"
+            } else {
+                "Show password"
+            },
+        )
     }
 }
