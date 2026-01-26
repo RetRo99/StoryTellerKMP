@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,6 +18,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun WelcomeScreen(
+    isDebug: Boolean,
     onSignInClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -34,27 +34,38 @@ fun WelcomeScreen(
             style = MaterialTheme.typography.headlineLarge,
             textAlign = TextAlign.Center,
         )
-        
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = if (isDebug) "DEBUG" else "RELEASE",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isDebug) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
             text = "Your personal story companion",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        
+
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         Button(
             onClick = onSignInClick,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Sign In")
         }
-        
-        Spacer(modifier = Modifier.height(12.dp))
 
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 

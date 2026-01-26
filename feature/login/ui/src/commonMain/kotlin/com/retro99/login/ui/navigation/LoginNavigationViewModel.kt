@@ -2,11 +2,15 @@ package com.retro99.login.ui.navigation
 
 import com.retro99.base.ui.BaseViewModel
 import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.Named
+import org.koin.core.annotation.Provided
 
 @KoinViewModel
-class LoginNavigationViewModel : BaseViewModel<LoginNavigationState, LoginNavigationIntent>() {
+class LoginNavigationViewModel(
+    @Provided @Named("isDebug") private val isDebug: Boolean,
+) : BaseViewModel<LoginNavigationState, LoginNavigationIntent>() {
 
-    override val initialState = LoginNavigationState()
+    override val initialState = LoginNavigationState(isDebug = isDebug)
 
     override fun onIntent(intent: LoginNavigationIntent) {
         when (intent) {
