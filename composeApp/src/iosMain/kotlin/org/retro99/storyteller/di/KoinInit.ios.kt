@@ -1,6 +1,7 @@
 package org.retro99.storyteller.di
 
 import com.retro99.base.buildconfig.di.platformBuildConfigModule
+import com.retro99.preferences.implementation.di.platformPreferencesModule
 import io.kotzilla.sdk.analytics.koin.analytics
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
@@ -12,7 +13,7 @@ actual fun initKoin(
 ): KoinApplication {
     return StoryTellerKoinApp().startKoin {
         platformConfiguration()
-        modules(additionalModules + platformBuildConfigModule)
+        modules(additionalModules + platformBuildConfigModule + platformPreferencesModule)
         analytics()
     }
 }
