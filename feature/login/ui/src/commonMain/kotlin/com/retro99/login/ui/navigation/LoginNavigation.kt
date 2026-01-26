@@ -7,7 +7,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.retro99.base.ui.BaseScreen
-import com.retro99.login.ui.signin.SignInScreen
+import com.retro99.login.ui.login.LoginScreen
 import com.retro99.login.ui.welcome.WelcomeScreen
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -33,13 +33,13 @@ fun LoginNavigation(
                     WelcomeScreen(
                         isDebug = state.isDebug,
                         onSignInClick = {
-                            intentDispatcher(LoginNavigationIntent.NavigateTo(LoginDestination.SignIn))
+                            intentDispatcher(LoginNavigationIntent.NavigateTo(LoginDestination.Login))
                         },
                     )
                 }
 
-                entry<LoginDestination.SignIn> {
-                    SignInScreen(
+                entry<LoginDestination.Login> {
+                    LoginScreen(
                         onSignInSuccess = onLoginSuccess,
                         onBackClick = {
                             intentDispatcher(LoginNavigationIntent.OnBackClicked)
