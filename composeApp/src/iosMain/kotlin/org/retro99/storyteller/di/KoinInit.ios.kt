@@ -1,17 +1,18 @@
 package org.retro99.storyteller.di
 
+import com.retro99.base.buildconfig.di.platformBuildConfigModule
 import io.kotzilla.sdk.analytics.koin.analytics
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
-import org.koin.ksp.generated.*
+import org.koin.ksp.generated.startKoin
 
 actual fun initKoin(
     additionalModules: List<Module>,
-    platformConfiguration: KoinApplication.() -> Unit
+    platformConfiguration: KoinApplication.() -> Unit,
 ): KoinApplication {
     return StoryTellerKoinApp().startKoin {
         platformConfiguration()
-        modules(additionalModules)
+        modules(additionalModules + platformBuildConfigModule)
         analytics()
     }
 }
