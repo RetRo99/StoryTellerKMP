@@ -8,6 +8,6 @@ sealed interface LoginDestination {
     data object Welcome : LoginDestination
 
     @Serializable
-    data object SignIn : LoginDestination
+    data object Login : LoginDestination
 
 }
