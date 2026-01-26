@@ -31,7 +31,6 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,11 +57,12 @@ fun LoginScreen(
     BaseScreen(
         modifier = modifier.imePadding(),
         viewModel = viewModel,
-    ) { _, intentDispatcher ->
+    ) { viewState, intentDispatcher ->
         LoginScreenContent(
             urlState = viewModel.urlState,
             usernameState = viewModel.usernameState,
             passwordState = viewModel.passwordState,
+            isSignInEnabled = viewState.isSignInEnabled,
             intentDispatcher = intentDispatcher,
             modifier = modifier,
         )
@@ -75,18 +75,11 @@ private fun LoginScreenContent(
     urlState: TextFieldState,
     usernameState: TextFieldState,
     passwordState: TextFieldState,
+    isSignInEnabled: Boolean,
     intentDispatcher: IntentDispatcher<LoginIntent>,
     modifier: Modifier = Modifier,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
-
-    val isSignInEnabled by remember {
-        derivedStateOf {
-            urlState.text.isNotBlank() &&
-                    usernameState.text.isNotBlank() &&
-                    passwordState.text.isNotBlank()
-        }
-    }
 
     Column(
         modifier = modifier

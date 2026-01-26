@@ -17,7 +17,7 @@ abstract class BaseViewModel<State, Intent : BaseIntent> : ViewModel() {
             )
         )
     }
-    val viewState: StateFlow<BaseViewState<State>> by lazy { _state.asStateFlow() }
+    open val viewState: StateFlow<BaseViewState<State>> by lazy { _state.asStateFlow() }
 
     abstract fun onIntent(intent: Intent)
 
