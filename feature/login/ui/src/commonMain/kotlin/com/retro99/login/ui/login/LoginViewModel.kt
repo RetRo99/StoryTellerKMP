@@ -11,7 +11,8 @@ class LoginViewModel(
     @InjectedParam private val onBackClick: () -> Unit,
 ) : BaseViewModel<LoginViewState, LoginIntent>() {
 
-    val emailState = TextFieldState()
+    val urlState = TextFieldState(initialText = "https://")
+    val usernameState = TextFieldState()
     val passwordState = TextFieldState()
 
     override val initialState = LoginViewState()
