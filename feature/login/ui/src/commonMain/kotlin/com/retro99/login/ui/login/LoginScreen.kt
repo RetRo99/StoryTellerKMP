@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -41,7 +42,10 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = koinViewModel { parametersOf(onSignInSuccess, onBackClick) },
 ) {
-    BaseScreen(viewModel = viewModel) { _, intentDispatcher ->
+    BaseScreen(
+        modifier = modifier.imePadding(),
+        viewModel = viewModel,
+    ) { _, intentDispatcher ->
         LoginScreenContent(
             emailState = viewModel.emailState,
             passwordState = viewModel.passwordState,
