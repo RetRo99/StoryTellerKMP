@@ -77,6 +77,7 @@ fun LoginScreen(
             usernameState = viewModel.usernameState,
             passwordState = viewModel.passwordState,
             isSignInEnabled = viewState.isSignInEnabled,
+            loginError = viewState.loginError,
             intentDispatcher = intentDispatcher,
             modifier = modifier,
         )
@@ -90,6 +91,7 @@ private fun LoginScreenContent(
     usernameState: TextFieldState,
     passwordState: TextFieldState,
     isSignInEnabled: Boolean,
+    loginError: String?,
     intentDispatcher: IntentDispatcher<LoginIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -163,7 +165,20 @@ private fun LoginScreenContent(
             },
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (loginError != null) {
+            Text(
+                text = loginError,
+                maxLines = 2,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         Button(
             onClick = { intentDispatcher(LoginIntent.OnSignInClicked) },
