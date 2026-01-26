@@ -28,6 +28,7 @@ kotlin {
             implementation(libs.serialization)
             implementation(projects.base)
             implementation(projects.lib.network.api)
+            implementation(projects.lib.preferences.api)
             implementation(projects.feature.login.domain)
         }
     }

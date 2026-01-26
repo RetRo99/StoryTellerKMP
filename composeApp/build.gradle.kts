@@ -60,6 +60,7 @@ kotlin {
             implementation(projects.lib.preferences.api)
             implementation(projects.lib.preferences.implementation)
             implementation(projects.feature.login.ui)
+            implementation(projects.feature.login.domain)
             implementation(projects.feature.login.data)
             implementation(projects.feature.home.ui)
             implementation(projects.feature.home.data)
