@@ -9,16 +9,17 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
-import retro99.games.api.tokens.BearerTokenProvider
-import retro99.games.api.tokens.BearerTokenRefresher
+import retro99.network.api.tokens.BearerTokenProvider
+import retro99.network.api.tokens.BearerTokenRefresher
 
 @Single
 class HttpClientProvider(
-    private val httpFactory: HttpClientEngineFactory<*>,
-    private val json: Json,
-    private val tokenProvider: BearerTokenProvider,
-    private val tokenRefresher: BearerTokenRefresher,
+    @Provided private val httpFactory: HttpClientEngineFactory<*>,
+    @Provided private val json: Json,
+    @Provided private val tokenProvider: BearerTokenProvider,
+    @Provided private val tokenRefresher: BearerTokenRefresher,
 ) {
     fun provide(): HttpClient {
         return HttpClient(httpFactory) {

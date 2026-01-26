@@ -3,12 +3,14 @@ package org.retro99.storyteller.navigation
 import androidx.lifecycle.viewModelScope
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.login.domain.usecase.CheckAuthStateUseCase
+import com.retro99.login.domain.usecase.LogoutUseCase
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
 class RootNavigationViewModel(
     private val checkAuthStateUseCase: CheckAuthStateUseCase,
+    private val logoutUseCase: LogoutUseCase,
 ) : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
 
     override val initialState = RootNavigationState()
@@ -45,8 +47,11 @@ class RootNavigationViewModel(
     }
 
     private fun handleLogout() {
-        updateState { state ->
-            state.copy(backStack = listOf(RootDestination.Login))
+        viewModelScope.launch {
+            logoutUseCase()
+            updateState { state ->
+                state.copy(backStack = listOf(RootDestination.Login))
+            }
         }
     }
 }

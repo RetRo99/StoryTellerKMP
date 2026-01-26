@@ -9,10 +9,12 @@ import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.Parameters
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -29,13 +31,16 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 import org.koin.core.annotation.Single
-import retro99.games.api.NetworkClient
-import retro99.games.api.QueryParamsScope
+import retro99.network.api.BaseUrlProvider
+import retro99.network.api.NetworkClient
+import retro99.network.api.QueryParamsScope
+import org.koin.core.annotation.Provided
 import kotlin.reflect.KClass
 
 @Single(binds = [NetworkClient::class])
 class KtorNetworkClient(
-    private val httpClient: HttpClient,
+    @Provided private val httpClient: HttpClient,
+    @Provided private val baseUrlProvider: BaseUrlProvider,
 ) : NetworkClient {
 
     override suspend fun <T : Any> getWithClass(
@@ -80,12 +85,35 @@ class KtorNetworkClient(
         }
     }
 
+    override suspend fun <T : Any> postFormWithClass(
+        path: String,
+        type: KClass<T>,
+        formData: Map<String, String>,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit
+    ): AppResult<T> = performRequest(type) {
+        val url = buildUrl(path, queryBuilder)
+        httpClient.submitForm(
+            url = url,
+            formParameters = Parameters.build {
+                formData.forEach { (key, value) ->
+                    append(key, value)
+                }
+            }
+        ) {
+            headers(headers)
+        }
+    }
+
     @PublishedApi
     internal fun buildUrl(path: String, queryBuilder: QueryParamsScope.() -> Unit): String {
         val queryParamsScope = QueryParamsScope()
         queryBuilder(queryParamsScope)
 
-        val urlBuilder = URLBuilder(BASE_URL).apply {
+        val baseUrl = baseUrlProvider.getBaseUrl()
+            ?: error("Server URL not configured. Please login first.")
+
+        val urlBuilder = URLBuilder(baseUrl).apply {
             path(path)
             queryParamsScope.params.forEach { (key, value) ->
                 when (value) {
@@ -223,9 +251,5 @@ class KtorNetworkClient(
 
     override fun close() {
         httpClient.close()
-    }
-
-    companion object {
-        private const val BASE_URL = "https://dolphin-app-zeoxd.ondigitalocean.app"
     }
 }
