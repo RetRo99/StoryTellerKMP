@@ -43,9 +43,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.translations.StringRes
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.login_back_button
+import resources.translations.login_hide_password
+import resources.translations.login_password_label
+import resources.translations.login_show_password
+import resources.translations.login_sign_in_button
+import resources.translations.login_title
+import resources.translations.login_url_info
+import resources.translations.login_url_label
+import resources.translations.login_url_tooltip_description
+import resources.translations.login_url_tooltip_dismiss
+import resources.translations.login_url_tooltip_title
+import resources.translations.login_username_label
 
 @Composable
 fun LoginScreen(
@@ -89,7 +103,7 @@ private fun LoginScreenContent(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Sign In",
+            text = stringResource(StringRes.login_title),
             style = MaterialTheme.typography.headlineMedium,
         )
 
@@ -97,7 +111,7 @@ private fun LoginScreenContent(
 
         OutlinedTextField(
             state = urlState,
-            label = { Text("StoryTeller URL") },
+            label = { Text(stringResource(StringRes.login_url_label)) },
             modifier = Modifier.fillMaxWidth(),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(
@@ -111,7 +125,7 @@ private fun LoginScreenContent(
 
         OutlinedTextField(
             state = usernameState,
-            label = { Text("Username") },
+            label = { Text(stringResource(StringRes.login_username_label)) },
             modifier = Modifier.fillMaxWidth(),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(
@@ -124,7 +138,7 @@ private fun LoginScreenContent(
 
         OutlinedSecureTextField(
             state = passwordState,
-            label = { Text("Password") },
+            label = { Text(stringResource(StringRes.login_password_label)) },
             modifier = Modifier.fillMaxWidth(),
             textObfuscationMode = if (passwordVisible) {
                 TextObfuscationMode.Visible
@@ -156,13 +170,13 @@ private fun LoginScreenContent(
             modifier = Modifier.fillMaxWidth(),
             enabled = isSignInEnabled,
         ) {
-            Text("Sign In")
+            Text(stringResource(StringRes.login_sign_in_button))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = { intentDispatcher(LoginIntent.OnBackClicked) }) {
-            Text("Back")
+            Text(stringResource(StringRes.login_back_button))
         }
     }
 }
@@ -180,9 +194,9 @@ private fun PasswordVisibilityToggle(
                 Icons.Filled.Visibility
             },
             contentDescription = if (isVisible) {
-                "Hide password"
+                stringResource(StringRes.login_hide_password)
             } else {
-                "Show password"
+                stringResource(StringRes.login_show_password)
             },
         )
     }
@@ -199,21 +213,14 @@ private fun UrlInfoTooltip() {
         ),
         tooltip = {
             RichTooltip(
-                title = { Text("StoryTeller URL") },
+                title = { Text(stringResource(StringRes.login_url_tooltip_title)) },
                 action = {
                     TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
-                        Text("Got it")
+                        Text(stringResource(StringRes.login_url_tooltip_dismiss))
                     }
                 },
             ) {
-                Text(
-                    "Enter the full URL for your Storyteller server instance, " +
-                            "including the scheme (http:// or https://).\n\n" +
-                            "This may look like a local IP address and port, such as:\n" +
-                            "http://192.168.1.12:8001\n\n" +
-                            "Or a domain name, such as:\n" +
-                            "https://yourdomain.com"
-                )
+                Text(stringResource(StringRes.login_url_tooltip_description))
             }
         },
         state = tooltipState,
@@ -221,7 +228,7 @@ private fun UrlInfoTooltip() {
         IconButton(onClick = { scope.launch { tooltipState.show() } }) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                contentDescription = "URL info",
+                contentDescription = stringResource(StringRes.login_url_info),
             )
         }
     }
