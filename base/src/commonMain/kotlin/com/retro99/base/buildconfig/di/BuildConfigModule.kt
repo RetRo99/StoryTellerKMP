@@ -5,6 +5,7 @@ import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 @Module
@@ -14,5 +15,5 @@ class BuildConfigModule {
 
     @Single
     @Named("isDebug")
-    fun provideIsDebug(buildConfig: BuildConfig): Boolean = buildConfig.isDebug
+    fun provideIsDebug(@Provided buildConfig: BuildConfig): Boolean = buildConfig.isDebug
 }
