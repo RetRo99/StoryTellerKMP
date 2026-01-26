@@ -1,4 +1,4 @@
-package retro99.games.api
+package retro99.network.api
 
 import com.retro99.base.result.AppResult
 import io.ktor.http.HeadersBuilder
@@ -28,6 +28,14 @@ interface NetworkClient {
         headers: HeadersBuilder.() -> Unit = {}
     ): AppResult<T>
 
+    suspend fun <T : Any> postFormWithClass(
+        path: String,
+        type: KClass<T>,
+        formData: Map<String, String>,
+        queryBuilder: QueryParamsScope.() -> Unit = {},
+        headers: HeadersBuilder.() -> Unit = {}
+    ): AppResult<T>
+
     fun close()
 }
 
@@ -51,3 +59,10 @@ suspend inline fun <reified T : Any> NetworkClient.delete(
     noinline queryBuilder: QueryParamsScope.() -> Unit = {},
     noinline headers: HeadersBuilder.() -> Unit = {}
 ): AppResult<T> = deleteWithClass(path, T::class, body, queryBuilder, headers)
+
+suspend inline fun <reified T : Any> NetworkClient.postForm(
+    path: String,
+    formData: Map<String, String>,
+    noinline queryBuilder: QueryParamsScope.() -> Unit = {},
+    noinline headers: HeadersBuilder.() -> Unit = {}
+): AppResult<T> = postFormWithClass(path, T::class, formData, queryBuilder, headers)

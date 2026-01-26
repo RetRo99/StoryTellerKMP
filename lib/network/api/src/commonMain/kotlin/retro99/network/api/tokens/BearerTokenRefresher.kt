@@ -1,4 +1,4 @@
-package retro99.games.api.tokens
+package retro99.network.api.tokens
 
 interface BearerTokenRefresher {
     suspend fun refreshBearerToken(): String?

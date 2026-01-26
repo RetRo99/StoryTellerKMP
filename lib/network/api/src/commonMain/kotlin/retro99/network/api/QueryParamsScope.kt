@@ -1,4 +1,4 @@
-package retro99.games.api
+package retro99.network.api
 
 class QueryParamsScope {
     val params = mutableMapOf<String, Any?>()
