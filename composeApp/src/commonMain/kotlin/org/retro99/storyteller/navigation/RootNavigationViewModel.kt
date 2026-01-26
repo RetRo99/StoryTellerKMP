@@ -2,12 +2,14 @@ package org.retro99.storyteller.navigation
 
 import androidx.lifecycle.viewModelScope
 import com.retro99.base.ui.BaseViewModel
-import kotlinx.coroutines.delay
+import com.retro99.login.domain.usecase.CheckAuthStateUseCase
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
-class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
+class RootNavigationViewModel(
+    private val checkAuthStateUseCase: CheckAuthStateUseCase,
+) : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
 
     override val initialState = RootNavigationState()
 
@@ -24,10 +26,14 @@ class RootNavigationViewModel  : BaseViewModel<RootNavigationState, RootNavigati
 
     private fun checkAuthState() {
         viewModelScope.launch {
-            // TODO check if logged in
-            delay(4000)
+            val isLoggedIn = checkAuthStateUseCase()
+            val destination = if (isLoggedIn) {
+                RootDestination.Home
+            } else {
+                RootDestination.Login
+            }
             updateState { state ->
-                state.copy(backStack = listOf(RootDestination.Login))
+                state.copy(backStack = listOf(destination))
             }
         }
     }

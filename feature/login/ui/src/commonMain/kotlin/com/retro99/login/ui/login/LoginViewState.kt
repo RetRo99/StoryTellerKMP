@@ -6,4 +6,5 @@ data class LoginViewState(
     val urlError: String? = null,
     val usernameError: String? = null,
     val passwordError: String? = null,
+    val loginError: String? = null,
 )

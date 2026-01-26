@@ -3,14 +3,19 @@ package com.retro99.login.ui.login
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewModelScope
+import com.github.michaelbull.result.fold
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.login.domain.usecase.LoginUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class LoginViewModel(
+    @Provided private val loginUseCase: LoginUseCase,
     @InjectedParam private val onSignInSuccess: () -> Unit,
     @InjectedParam private val onBackClick: () -> Unit,
 ) : BaseViewModel<LoginViewState, LoginIntent>() {
@@ -61,9 +66,28 @@ class LoginViewModel(
     }
 
     private fun handleSignInClicked() {
-        // TODO: Implement actual sign in logic
-        updateState { it.copy(isLoading = true) }
-        onSignInSuccess()
+        updateState { it.copy(isLoading = true, isSignInEnabled = false, loginError = null) }
+
+        viewModelScope.launch {
+            val url = urlState.text.toString()
+            val username = usernameState.text.toString()
+            val password = passwordState.text.toString()
+
+            loginUseCase(url, username, password).fold(
+                success = {
+                    onSignInSuccess()
+                },
+                failure = { error ->
+                    updateState { state ->
+                        state.copy(
+                            isLoading = false,
+                            isSignInEnabled = true,
+                            loginError = error.message,
+                        )
+                    }
+                },
+            )
+        }
     }
 
     // Validation functions - return null if valid, error message string if invalid
