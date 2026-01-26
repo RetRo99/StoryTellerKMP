@@ -22,13 +22,14 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun <State, Intent : BaseIntent> BaseScreen(
     viewModel: BaseViewModel<State, Intent>,
+    modifier: Modifier = Modifier,
     loadingContent: @Composable () -> Unit = { LoadingScreen() },
     errorContent: @Composable (AppError) -> Unit = { ErrorScreen(it) },
     content: @Composable (State, IntentDispatcher<Intent>) -> Unit
 ) {
     val state by viewModel.viewState.collectAsState()
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (val s = state) {
             is BaseViewState.Loading -> loadingContent()
             is BaseViewState.Error -> errorContent(s.error)
