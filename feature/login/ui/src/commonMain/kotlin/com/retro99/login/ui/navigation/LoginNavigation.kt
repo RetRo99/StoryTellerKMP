@@ -31,6 +31,7 @@ fun LoginNavigation(
             entryProvider = entryProvider {
                 entry<LoginDestination.Welcome> {
                     WelcomeScreen(
+                        isDebug = state.isDebug,
                         onSignInClick = {
                             intentDispatcher(LoginNavigationIntent.NavigateTo(LoginDestination.SignIn))
                         },
