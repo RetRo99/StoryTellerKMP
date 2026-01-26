@@ -4,6 +4,7 @@ import com.retro99.base.buildconfig.di.BuildConfigModule
 import com.retro99.home.data.di.HomeDataModule
 import com.retro99.home.ui.di.HomeUiModule
 import com.retro99.login.data.di.LoginDataModule
+import com.retro99.login.domain.di.LoginDomainModule
 import com.retro99.login.ui.di.LoginUiModule
 import com.retro99.network.implementation.di.NetworkingModule
 import com.retro99.preferences.implementation.di.PreferencesModule
@@ -17,6 +18,7 @@ import org.koin.core.annotation.Module
         NetworkingModule::class,
         PreferencesModule::class,
         LoginUiModule::class,
+        LoginDomainModule::class,
         LoginDataModule::class,
         HomeUiModule::class,
         HomeDataModule::class,
