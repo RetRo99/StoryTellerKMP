@@ -57,6 +57,8 @@ kotlin {
             implementation(projects.baseUi)
             implementation(projects.lib.network.api)
             implementation(projects.lib.network.implementation)
+            implementation(projects.lib.preferences.api)
+            implementation(projects.lib.preferences.implementation)
             implementation(projects.feature.login.ui)
             implementation(projects.feature.login.data)
             implementation(projects.feature.home.ui)

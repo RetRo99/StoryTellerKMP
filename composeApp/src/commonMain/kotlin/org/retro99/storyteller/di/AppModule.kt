@@ -6,6 +6,7 @@ import com.retro99.home.ui.di.HomeUiModule
 import com.retro99.login.data.di.LoginDataModule
 import com.retro99.login.ui.di.LoginUiModule
 import com.retro99.network.implementation.di.NetworkingModule
+import com.retro99.preferences.implementation.di.PreferencesModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
@@ -14,6 +15,7 @@ import org.koin.core.annotation.Module
     includes = [
         BuildConfigModule::class,
         NetworkingModule::class,
+        PreferencesModule::class,
         LoginUiModule::class,
         LoginDataModule::class,
         HomeUiModule::class,
