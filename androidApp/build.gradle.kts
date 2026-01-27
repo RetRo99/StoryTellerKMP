@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.crashlytics)
+    alias(libs.plugins.googleServices)
 }
 
 android {
@@ -33,6 +35,7 @@ android {
 }
 
 dependencies {
+    implementation(platform(libs.firebase.bom))
     implementation(projects.composeApp)
     implementation(projects.base)
     implementation(libs.compose.uiToolingPreview)

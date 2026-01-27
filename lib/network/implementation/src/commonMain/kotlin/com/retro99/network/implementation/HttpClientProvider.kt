@@ -1,9 +1,11 @@
 package com.retro99.network.implementation
 
+import com.retro99.analytics.api.Analytics
 import com.retro99.auth.domain.tokens.BearerTokenProvider
 import com.retro99.auth.domain.tokens.BearerTokenRefresher
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -20,6 +22,7 @@ class HttpClientProvider(
     @Provided private val json: Json,
     @Provided private val tokenProvider: BearerTokenProvider,
     @Provided private val tokenRefresher: BearerTokenRefresher,
+    @Provided private val analytics: Analytics,
 ) {
     fun provide(): HttpClient {
         return HttpClient(httpFactory) {
@@ -36,6 +39,11 @@ class HttpClientProvider(
                         val token = tokenRefresher.refreshBearerToken()
                         token?.let { BearerTokens(it, "") }
                     }
+                }
+            }
+            HttpResponseValidator {
+                handleResponseExceptionWithRequest { cause, request ->
+                    analytics.logException(cause, cause.message)
                 }
             }
         }

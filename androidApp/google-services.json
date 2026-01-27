@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "24864637091",
+    "project_id": "storytellerkmp",
+    "storage_bucket": "storytellerkmp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:24864637091:android:c88634e211330820ac7f16",
+        "android_client_info": {
+          "package_name": "org.retro99.storyteller"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6krXFgvB6IB8hsHMFtzfIknqBu96B_Go"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

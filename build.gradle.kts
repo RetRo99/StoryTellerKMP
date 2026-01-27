@@ -9,4 +9,6 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.koinCompilerPlugin) apply false
     alias(libs.plugins.kotzilla) apply false
+    alias(libs.plugins.crashlytics) apply false
+    alias(libs.plugins.googleServices) apply false
 }

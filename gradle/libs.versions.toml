@@ -28,6 +28,11 @@ navigation3 = "1.1.0-alpha01"
 navigation3-lifecycle = "2.10.0-alpha07"
 coil = "3.3.0"
 multiplatformSettings = "1.3.0"
+firebase-gitlive-sdk = "2.4.0"
+firebase-bom = "34.8.0"
+gradlePlugins-crashlytics = "3.0.6"
+gradlePlugins-google-services = "4.4.4"
+kermit = "2.0.8"
 
 
 [libraries]
@@ -95,6 +100,14 @@ multiplatformSettings = { module = "com.russhwolf:multiplatform-settings", versi
 # Android Security
 androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0-alpha06" }
 
+gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
+gitlive-firebase-kotlin-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-gitlive-sdk" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
+firebase-crashlytics-android = { module = "com.google.firebase:firebase-crashlytics", version = "19.3.0" }
+firebase-analytics-android = { module = "com.google.firebase:firebase-analytics", version = "22.1.2" }
+firebase-common = { module = "com.google.firebase:firebase-common", version = "21.0.0" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+
 [bundles]
 ktorClientBundle = [
     "ktor-client-core",
@@ -112,3 +125,5 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 koinCompilerPlugin = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-compiler-plugin" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotzilla = { id = "io.kotzilla.kotzilla-plugin", version.ref = "kotzilla" }
+crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }

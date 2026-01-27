@@ -16,7 +16,6 @@ kotlin {
         minSdk = libs.versions.minSdk.get().toInt()
     }
 
-    iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -32,6 +31,7 @@ kotlin {
             implementation(projects.lib.network.api)
             implementation(projects.lib.preferences.api)
             implementation(projects.feature.auth.domain)
+            implementation(projects.lib.analytics.api)
         }
 
         androidMain.dependencies {

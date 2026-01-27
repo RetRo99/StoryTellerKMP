@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
-    alias(libs.plugins.koinCompilerPlugin)
 }
 
 version = "1.0"
@@ -10,7 +9,7 @@ kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
     androidLibrary {
-        namespace = "com.retro99.feature.login.domain"
+        namespace = "com.retro99.analytics.api"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
     }
@@ -20,13 +19,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.koin.core)
-            api(libs.koin.annotations)
-            implementation(libs.coroutines)
-            implementation(projects.base)
-            implementation(projects.lib.network.api)
-            implementation(projects.feature.auth.domain)
         }
     }
 }
-
