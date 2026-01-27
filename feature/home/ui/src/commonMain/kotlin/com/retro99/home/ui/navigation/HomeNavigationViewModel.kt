@@ -1,7 +1,7 @@
 package com.retro99.home.ui.navigation
 
 import com.retro99.base.ui.BaseViewModel
-import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class HomeNavigationViewModel : BaseViewModel<HomeNavigationState, HomeNavigationIntent>() {

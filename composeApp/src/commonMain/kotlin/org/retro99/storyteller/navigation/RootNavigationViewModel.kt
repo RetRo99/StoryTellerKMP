@@ -5,7 +5,7 @@ import com.retro99.auth.domain.usecase.CheckAuthStateUseCase
 import com.retro99.auth.domain.usecase.LogoutUseCase
 import com.retro99.base.ui.BaseViewModel
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class RootNavigationViewModel(
