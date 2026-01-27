@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>API_KEY</key>
+        <string>AIzaSyCi4HmxbD6nPrlbyfY4_Hwrn_S9SxYexl8</string>
+        <key>GCM_SENDER_ID</key>
+        <string>24864637091</string>
+        <key>PLIST_VERSION</key>
+        <string>1</string>
+        <key>BUNDLE_ID</key>
+        <string>org.retro99.storyteller.StoryTellerKMP</string>
+        <key>PROJECT_ID</key>
+        <string>storytellerkmp</string>
+        <key>STORAGE_BUCKET</key>
+        <string>storytellerkmp.firebasestorage.app</string>
+        <key>IS_ADS_ENABLED</key>
+        <false></false>
+        <key>IS_ANALYTICS_ENABLED</key>
+        <false></false>
+        <key>IS_APPINVITE_ENABLED</key>
+        <true></true>
+        <key>IS_GCM_ENABLED</key>
+        <true></true>
+        <key>IS_SIGNIN_ENABLED</key>
+        <true></true>
+        <key>GOOGLE_APP_ID</key>
+        <string>1:24864637091:ios:032effd1b4e7d240ac7f16</string>
+    </dict>
+</plist>
