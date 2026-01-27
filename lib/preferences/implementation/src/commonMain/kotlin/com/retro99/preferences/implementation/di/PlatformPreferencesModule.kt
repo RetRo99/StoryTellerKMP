@@ -1,12 +1,16 @@
 package com.retro99.preferences.implementation.di
 
-import org.koin.core.module.Module
+import org.koin.core.annotation.Module
 
 /**
  * Platform-specific Koin module that provides the Settings.Factory implementation.
  *
- * This uses traditional Koin DSL instead of annotations because KSP doesn't
- * process platform-specific source sets (androidMain, iosMain) for annotations.
+ * Uses expect/actual pattern with @Module annotation so KSP can process
+ * platform-specific implementations and include them in the module graph.
+ *
+ * Each platform implementation defines its own provider function since
+ * Android requires Context while iOS doesn't need any dependencies.
  */
-expect val platformPreferencesModule: Module
+@Module
+expect class PlatformPreferencesModule()
 
