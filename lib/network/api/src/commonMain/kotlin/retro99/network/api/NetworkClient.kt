@@ -2,35 +2,36 @@ package retro99.network.api
 
 import com.retro99.base.result.AppResult
 import io.ktor.http.HeadersBuilder
-import kotlin.reflect.KClass
+import io.ktor.util.reflect.TypeInfo
+import io.ktor.util.reflect.typeInfo
 
 interface NetworkClient {
-    suspend fun <T : Any> getWithClass(
+    suspend fun <T> getWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         queryBuilder: QueryParamsScope.() -> Unit = {},
         headers: HeadersBuilder.() -> Unit = {}
     ): AppResult<T>
 
-    suspend fun <T : Any> postWithClass(
+    suspend fun <T> postWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         body: Any? = null,
         queryBuilder: QueryParamsScope.() -> Unit = {},
         headers: HeadersBuilder.() -> Unit = {}
     ): AppResult<T>
 
-    suspend fun <T : Any> deleteWithClass(
+    suspend fun <T> deleteWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         body: Any? = null,
         queryBuilder: QueryParamsScope.() -> Unit = {},
         headers: HeadersBuilder.() -> Unit = {}
     ): AppResult<T>
 
-    suspend fun <T : Any> postFormWithClass(
+    suspend fun <T> postFormWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         formData: Map<String, String>,
         queryBuilder: QueryParamsScope.() -> Unit = {},
         headers: HeadersBuilder.() -> Unit = {}
@@ -39,30 +40,30 @@ interface NetworkClient {
     fun close()
 }
 
-// Extension functions for reified type support
-suspend inline fun <reified T : Any> NetworkClient.get(
+// Extension functions for reified type support - uses TypeInfo to preserve generic type information
+suspend inline fun <reified T> NetworkClient.get(
     path: String,
     noinline queryBuilder: QueryParamsScope.() -> Unit = {},
     noinline headers: HeadersBuilder.() -> Unit = {}
-): AppResult<T> = getWithClass(path, T::class, queryBuilder, headers)
+): AppResult<T> = getWithTypeInfo(path, typeInfo<T>(), queryBuilder, headers)
 
-suspend inline fun <reified T : Any> NetworkClient.post(
-    path: String,
-    body: Any? = null,
-    noinline queryBuilder: QueryParamsScope.() -> Unit = {},
-    noinline headers: HeadersBuilder.() -> Unit = {}
-): AppResult<T> = postWithClass(path, T::class, body, queryBuilder, headers)
-
-suspend inline fun <reified T : Any> NetworkClient.delete(
+suspend inline fun <reified T> NetworkClient.post(
     path: String,
     body: Any? = null,
     noinline queryBuilder: QueryParamsScope.() -> Unit = {},
     noinline headers: HeadersBuilder.() -> Unit = {}
-): AppResult<T> = deleteWithClass(path, T::class, body, queryBuilder, headers)
+): AppResult<T> = postWithTypeInfo(path, typeInfo<T>(), body, queryBuilder, headers)
 
-suspend inline fun <reified T : Any> NetworkClient.postForm(
+suspend inline fun <reified T> NetworkClient.delete(
+    path: String,
+    body: Any? = null,
+    noinline queryBuilder: QueryParamsScope.() -> Unit = {},
+    noinline headers: HeadersBuilder.() -> Unit = {}
+): AppResult<T> = deleteWithTypeInfo(path, typeInfo<T>(), body, queryBuilder, headers)
+
+suspend inline fun <reified T> NetworkClient.postForm(
     path: String,
     formData: Map<String, String>,
     noinline queryBuilder: QueryParamsScope.() -> Unit = {},
     noinline headers: HeadersBuilder.() -> Unit = {}
-): AppResult<T> = postFormWithClass(path, T::class, formData, queryBuilder, headers)
+): AppResult<T> = postFormWithTypeInfo(path, typeInfo<T>(), formData, queryBuilder, headers)
