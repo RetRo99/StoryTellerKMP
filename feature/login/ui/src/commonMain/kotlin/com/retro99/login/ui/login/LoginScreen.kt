@@ -240,7 +240,17 @@ private fun UrlInfoTooltip() {
         },
         state = tooltipState,
     ) {
-        IconButton(onClick = { scope.launch { tooltipState.show() } }) {
+        IconButton(
+            onClick = {
+                scope.launch {
+                    if (tooltipState.isVisible) {
+                        tooltipState.dismiss()
+                    } else {
+                        tooltipState.show()
+                    }
+                }
+            }
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                 contentDescription = stringResource(StringRes.login_url_info),
