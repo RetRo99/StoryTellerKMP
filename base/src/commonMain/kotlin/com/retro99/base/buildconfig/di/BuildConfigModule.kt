@@ -5,15 +5,18 @@ import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
-import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
-@Module
+@Module(
+    includes = [
+        PlatformBuildConfigModule::class,
+    ],
+)
 @Configuration
 @ComponentScan("com.retro99.base.buildconfig")
 class BuildConfigModule {
 
     @Single
     @Named("isDebug")
-    fun provideIsDebug(@Provided buildConfig: BuildConfig): Boolean = buildConfig.isDebug
+    fun provideIsDebug(buildConfig: BuildConfig): Boolean = buildConfig.isDebug
 }
