@@ -3,8 +3,8 @@ package com.retro99.login.data
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.onFailure
-import com.retro99.auth.api.AuthRepository
-import com.retro99.auth.api.model.CredentialsDomainModel
+import com.retro99.auth.domain.AuthRepository
+import com.retro99.auth.domain.model.CredentialsDomainModel
 import com.retro99.base.result.CompletableResult
 import com.retro99.login.data.model.LoginRequestApiModel
 import com.retro99.login.data.source.LoginRemoteSource

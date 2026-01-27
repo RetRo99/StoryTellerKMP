@@ -1,5 +1,7 @@
 package com.retro99.network.implementation
 
+import com.retro99.auth.domain.tokens.BearerTokenProvider
+import com.retro99.auth.domain.tokens.BearerTokenRefresher
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.auth.Auth
@@ -9,8 +11,6 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import com.retro99.auth.api.tokens.BearerTokenProvider
-import com.retro99.auth.api.tokens.BearerTokenRefresher
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 

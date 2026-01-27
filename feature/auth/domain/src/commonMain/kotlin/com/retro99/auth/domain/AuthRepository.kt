@@ -1,0 +1,15 @@
+package com.retro99.auth.domain
+
+import com.retro99.auth.domain.model.CredentialsDomainModel
+
+interface AuthRepository {
+
+    suspend fun saveCredentials(credentials: CredentialsDomainModel)
+
+    suspend fun getCredentials(): CredentialsDomainModel?
+
+    suspend fun isLoggedIn(): Boolean
+
+    suspend fun clearCredentials()
+}
+

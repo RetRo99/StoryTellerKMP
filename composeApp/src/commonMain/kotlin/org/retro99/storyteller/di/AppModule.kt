@@ -1,6 +1,7 @@
 package org.retro99.storyteller.di
 
-import com.retro99.auth.implementation.di.AuthModule
+import com.retro99.auth.data.di.AuthDataModule
+import com.retro99.auth.domain.di.AuthDomainModule
 import com.retro99.base.buildconfig.di.BuildConfigModule
 import com.retro99.home.data.di.HomeDataModule
 import com.retro99.home.ui.di.HomeUiModule
@@ -18,7 +19,8 @@ import org.koin.core.annotation.Module
         BuildConfigModule::class,
         NetworkingModule::class,
         PreferencesModule::class,
-        AuthModule::class,
+        AuthDomainModule::class,
+        AuthDataModule::class,
         LoginUiModule::class,
         LoginDomainModule::class,
         LoginDataModule::class,
