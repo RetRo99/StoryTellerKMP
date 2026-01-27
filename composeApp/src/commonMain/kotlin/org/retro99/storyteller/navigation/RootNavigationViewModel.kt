@@ -1,9 +1,9 @@
 package org.retro99.storyteller.navigation
 
 import androidx.lifecycle.viewModelScope
+import com.retro99.auth.domain.usecase.CheckAuthStateUseCase
+import com.retro99.auth.domain.usecase.LogoutUseCase
 import com.retro99.base.ui.BaseViewModel
-import com.retro99.login.domain.usecase.CheckAuthStateUseCase
-import com.retro99.login.domain.usecase.LogoutUseCase
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 

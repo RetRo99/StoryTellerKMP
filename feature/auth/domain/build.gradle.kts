@@ -10,7 +10,7 @@ kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
     androidLibrary {
-        namespace = "com.retro99.feature.login.domain"
+        namespace = "com.retro99.feature.auth.domain"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
     }
@@ -26,7 +26,6 @@ kotlin {
             implementation(libs.coroutines)
             implementation(projects.base)
             implementation(projects.lib.network.api)
-            implementation(projects.feature.auth.domain)
         }
     }
 }
