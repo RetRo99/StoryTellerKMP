@@ -34,6 +34,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.kotzilla.sdk.compose)
+            implementation(libs.firebase.crashlytics.android)
+            implementation(libs.firebase.analytics.android)
+            implementation(libs.firebase.common)
         }
         iosMain.dependencies {
             implementation(libs.kotzilla.sdk.compose)
@@ -59,6 +62,8 @@ kotlin {
             implementation(projects.lib.network.implementation)
             implementation(projects.lib.preferences.api)
             implementation(projects.lib.preferences.implementation)
+            implementation(projects.lib.analytics.api)
+            implementation(projects.lib.analytics.implementation)
             implementation(projects.feature.auth.domain)
             implementation(projects.feature.auth.data)
             implementation(projects.feature.login.ui)

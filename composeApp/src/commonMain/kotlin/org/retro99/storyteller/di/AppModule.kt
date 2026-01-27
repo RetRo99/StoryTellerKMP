@@ -1,5 +1,6 @@
 package org.retro99.storyteller.di
 
+import com.retro99.analytics.implementation.di.AnalyticsModule
 import com.retro99.auth.data.di.AuthDataModule
 import com.retro99.auth.domain.di.AuthDomainModule
 import com.retro99.base.buildconfig.di.BuildConfigModule
@@ -16,6 +17,7 @@ import org.koin.core.annotation.Module
 
 @Module(
     includes = [
+        AnalyticsModule::class,
         BuildConfigModule::class,
         NetworkingModule::class,
         PreferencesModule::class,
