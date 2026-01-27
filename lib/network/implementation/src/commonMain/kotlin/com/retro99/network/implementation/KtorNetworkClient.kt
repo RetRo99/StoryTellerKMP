@@ -14,11 +14,11 @@ import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.http.Parameters
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
+import io.ktor.http.Parameters
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -30,12 +30,11 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 import retro99.network.api.BaseUrlProvider
 import retro99.network.api.NetworkClient
 import retro99.network.api.QueryParamsScope
-import org.koin.core.annotation.Provided
-import kotlin.reflect.KClass
 
 @Single(binds = [NetworkClient::class])
 class KtorNetworkClient(
@@ -43,25 +42,25 @@ class KtorNetworkClient(
     @Provided private val baseUrlProvider: BaseUrlProvider,
 ) : NetworkClient {
 
-    override suspend fun <T : Any> getWithClass(
+    override suspend fun <T> getWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequest(type) {
+    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
         val url = buildUrl(path, queryBuilder)
         httpClient.get(url) {
             headers(headers)
         }
     }
 
-    override suspend fun <T : Any> postWithClass(
+    override suspend fun <T> postWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         body: Any?,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequest(type) {
+    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
         val url = buildUrl(path, queryBuilder)
         httpClient.post(url) {
             headers(headers)
@@ -70,13 +69,13 @@ class KtorNetworkClient(
         }
     }
 
-    override suspend fun <T : Any> deleteWithClass(
+    override suspend fun <T> deleteWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         body: Any?,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequest(type) {
+    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
         val url = buildUrl(path, queryBuilder)
         httpClient.delete(url) {
             headers(headers)
@@ -85,13 +84,13 @@ class KtorNetworkClient(
         }
     }
 
-    override suspend fun <T : Any> postFormWithClass(
+    override suspend fun <T> postFormWithTypeInfo(
         path: String,
-        type: KClass<T>,
+        typeInfo: TypeInfo,
         formData: Map<String, String>,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequest(type) {
+    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
         val url = buildUrl(path, queryBuilder)
         httpClient.submitForm(
             url = url,
@@ -129,36 +128,36 @@ class KtorNetworkClient(
         return urlBuilder.buildString()
     }
 
-    private suspend fun <T : Any> performRequest(
-        type: KClass<T>,
+    private suspend fun <T> performRequestWithTypeInfo(
+        typeInfo: TypeInfo,
         block: suspend () -> HttpResponse
     ): AppResult<T> = withContext(Dispatchers.IO) {
         try {
             val response = block()
-            handleResponse(response, type)
+            handleResponseWithTypeInfo(response, typeInfo)
         } catch (e: Exception) {
             ensureActive()
             handleException(e)
         }
     }
 
-    private suspend fun <T : Any> handleResponse(
+    private suspend fun <T> handleResponseWithTypeInfo(
         response: HttpResponse,
-        type: KClass<T>
+        typeInfo: TypeInfo
     ): AppResult<T> {
         return if (response.status.isSuccess()) {
-            parseSuccessResponse(response, type)
+            parseSuccessResponseWithTypeInfo(response, typeInfo)
         } else {
             handleHttpError(response)
         }
     }
 
-    private suspend fun <T : Any> parseSuccessResponse(
+    private suspend fun <T> parseSuccessResponseWithTypeInfo(
         response: HttpResponse,
-        type: KClass<T>
+        typeInfo: TypeInfo
     ): AppResult<T> {
         return try {
-            Ok(response.body(TypeInfo(type)))
+            Ok(response.body(typeInfo))
         } catch (e: Exception) {
             Err(
                 AppError.ApiError(
@@ -171,9 +170,7 @@ class KtorNetworkClient(
 
     private suspend fun handleHttpError(response: HttpResponse): AppResult<Nothing> {
         val errorBody = response.bodyAsText()
-        val errorCode = response.status.value
-
-        return when (errorCode) {
+        return when (val errorCode = response.status.value) {
             in 400..499 -> handleClientError(errorCode, errorBody)
             in 500..599 -> Err(
                 AppError.ApiError(
