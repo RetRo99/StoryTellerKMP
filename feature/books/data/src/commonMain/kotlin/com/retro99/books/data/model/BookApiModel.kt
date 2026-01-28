@@ -82,7 +82,7 @@ data class BookApiModel(
     val readaloud: ReadaloudApiModel? = null,
 )
 
-fun BookApiModel.toDomain(): BookDomainModel {
+fun BookApiModel.toDomain(baseUrl: String?): BookDomainModel {
     return BookDomainModel(
         uuid = uuid,
         title = title,
@@ -95,6 +95,9 @@ fun BookApiModel.toDomain(): BookDomainModel {
         rating = rating,
         suffix = suffix,
         subtitle = subtitle,
+        coverUrl = baseUrl?.let { "$it/api/v2/books/$uuid/cover" },
+        ebookCoverUrl = baseUrl?.let { "$it/api/v2/books/$uuid/cover" },
+        audiobookCoverUrl = baseUrl?.let { "$it/api/v2/books/$uuid/cover?audio" },
         authors = authors.map { it.toDomain() },
         narrators = narrators.map { it.toDomain() },
         creators = creators.map { it.toDomain() },
@@ -108,4 +111,3 @@ fun BookApiModel.toDomain(): BookDomainModel {
         readaloud = readaloud?.toDomain(),
     )
 }
-
