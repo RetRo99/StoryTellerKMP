@@ -5,6 +5,7 @@ import com.retro99.books.data.model.BookApiModel
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 import retro99.network.api.NetworkClient
+import retro99.network.api.get
 
 @Factory
 internal class BooksRemoteDataSource(
