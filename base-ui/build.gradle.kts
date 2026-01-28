@@ -21,7 +21,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.lib.analytics.api)
             implementation(projects.base)
+            implementation(libs.koin.compose)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

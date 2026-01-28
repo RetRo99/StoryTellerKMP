@@ -8,7 +8,9 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.retro99.analytics.api.Analytics
 import org.jetbrains.compose.resources.DrawableResource
+import org.koin.compose.koinInject
 
 @Composable
 fun CoilImage(
@@ -20,6 +22,7 @@ fun CoilImage(
     contentDescription: String? = null,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
+    val analytics = koinInject<Analytics>()
 
     val imageRequest = ImageRequest.Builder(LocalPlatformContext.current)
         .data(data ?: placeholder)
@@ -37,6 +40,15 @@ fun CoilImage(
         model = imageRequest,
         contentDescription = contentDescription,
         contentScale = contentScale,
-        onState = onState,
+        onState = { state ->
+            onState?.invoke(state)
+            if (state is AsyncImagePainter.State.Error) {
+                val throwable = state.result.throwable
+                analytics.logException(
+                    throwable = throwable,
+                    message = "Image Load Failed for: $data"
+                )
+            }
+        },
     )
 }
