@@ -1,6 +1,7 @@
 package com.retro99.books.ui.list
 
 import androidx.lifecycle.viewModelScope
+import com.github.michaelbull.result.fold
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
 import kotlinx.coroutines.launch

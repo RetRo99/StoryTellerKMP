@@ -1,5 +1,6 @@
 package com.retro99.books.data
 
+import com.github.michaelbull.result.map
 import com.retro99.base.result.AppResult
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.source.BooksRemoteSource
