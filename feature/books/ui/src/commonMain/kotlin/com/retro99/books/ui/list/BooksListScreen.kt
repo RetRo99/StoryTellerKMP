@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,10 +23,13 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.domain.model.BookDomainModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -87,63 +92,78 @@ private fun BookItem(
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = book.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+
+            CoilImage(
+                data = book.coverUrl,
+                cacheKey = null,
+                modifier = Modifier
+                    .size(width = 60.dp, height = 90.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop,
+                contentDescription = book.title,
             )
 
-            if (book.authors.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = book.authors.joinToString(", ") { it.name },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            if (book.series.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                val seriesInfo = book.series.first()
-                val seriesText = if (seriesInfo.position != null) {
-                    "${seriesInfo.name} #${seriesInfo.position}"
-                } else {
-                    seriesInfo.name
-                }
-                Text(
-                    text = seriesText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier.weight(1f),
             ) {
-                book.status?.let { status ->
-                    StatusChip(status = status.name)
+                Text(
+                    text = book.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                if (book.authors.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = book.authors.joinToString(", ") { it.name },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
 
-                if (book.ebook != null) {
-                    MediaTypeChip(type = "📖 eBook")
+                if (book.series.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val seriesInfo = book.series.first()
+                    val seriesText = if (seriesInfo.position != null) {
+                        "${seriesInfo.name} #${seriesInfo.position}"
+                    } else {
+                        seriesInfo.name
+                    }
+                    Text(
+                        text = seriesText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
 
-                if (book.audiobook != null) {
-                    MediaTypeChip(type = "🎧 Audio")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    book.status?.let { status ->
+                        StatusChip(status = status.name)
+                    }
+
+                    if (book.ebook != null) {
+                        MediaTypeChip(type = "📖 eBook")
+                    }
+
+                    if (book.audiobook != null) {
+                        MediaTypeChip(type = "🎧 Audio")
+                    }
                 }
             }
         }
