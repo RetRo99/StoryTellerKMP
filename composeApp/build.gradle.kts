@@ -56,6 +56,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.navigation3.ui)
             implementation(libs.navigation3.viewmodel)
+            implementation(libs.coil.network.ktor)
             implementation(projects.base)
             implementation(projects.baseUi)
             implementation(projects.lib.network.api)
