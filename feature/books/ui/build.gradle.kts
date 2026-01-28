@@ -1,10 +1,9 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
+    alias(libs.plugins.koinCompilerPlugin)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.koinCompilerPlugin)
-    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"
@@ -13,11 +12,12 @@ kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
     androidLibrary {
-        namespace = "com.retro99.feature.home.ui"
+        namespace = "com.retro99.feature.books.ui"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
     }
 
+    iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -37,8 +37,7 @@ kotlin {
             implementation(projects.base)
             implementation(projects.baseUi)
             implementation(projects.translations)
-            implementation(projects.feature.home.domain)
-            implementation(projects.feature.books.ui)
+            implementation(projects.feature.books.domain)
         }
     }
 }
