@@ -101,7 +101,7 @@ private fun BookItem(
 
             CoilImage(
                 data = book.coverUrl,
-                cacheKey = null,
+                cacheKey = book.uuid,
                 modifier = Modifier
                     .size(width = 60.dp, height = 90.dp)
                     .clip(RoundedCornerShape(4.dp)),
