@@ -31,7 +31,12 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.translations.StringRes
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import resources.translations.books_media_audio
+import resources.translations.books_media_ebook
+import resources.translations.books_series_with_position
 
 @Composable
 fun BooksListScreen(
@@ -134,7 +139,11 @@ private fun BookItem(
                     Spacer(modifier = Modifier.height(4.dp))
                     val seriesInfo = book.series.first()
                     val seriesText = if (seriesInfo.position != null) {
-                        "${seriesInfo.name} #${seriesInfo.position}"
+                        stringResource(
+                            StringRes.books_series_with_position,
+                            seriesInfo.name,
+                            seriesInfo.position!!,
+                        )
                     } else {
                         seriesInfo.name
                     }
@@ -158,11 +167,11 @@ private fun BookItem(
                     }
 
                     if (book.ebook != null) {
-                        MediaTypeChip(type = "📖 eBook")
+                        MediaTypeChip(type = stringResource(StringRes.books_media_ebook))
                     }
 
                     if (book.audiobook != null) {
-                        MediaTypeChip(type = "🎧 Audio")
+                        MediaTypeChip(type = stringResource(StringRes.books_media_audio))
                     }
                 }
             }

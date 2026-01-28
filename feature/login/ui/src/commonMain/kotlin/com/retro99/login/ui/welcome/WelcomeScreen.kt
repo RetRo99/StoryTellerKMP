@@ -15,6 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.retro99.translations.StringRes
+import org.jetbrains.compose.resources.stringResource
+import resources.translations.welcome_build_debug
+import resources.translations.welcome_build_release
+import resources.translations.welcome_sign_in_button
+import resources.translations.welcome_subtitle
+import resources.translations.welcome_title
 
 @Composable
 fun WelcomeScreen(
@@ -30,7 +37,7 @@ fun WelcomeScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Welcome to StoryTeller",
+            text = stringResource(StringRes.welcome_title),
             style = MaterialTheme.typography.headlineLarge,
             textAlign = TextAlign.Center,
         )
@@ -38,7 +45,9 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = if (isDebug) "DEBUG" else "RELEASE",
+            text = stringResource(
+                if (isDebug) StringRes.welcome_build_debug else StringRes.welcome_build_release,
+            ),
             style = MaterialTheme.typography.labelMedium,
             color = if (isDebug) {
                 MaterialTheme.colorScheme.error
@@ -50,7 +59,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Your personal story companion",
+            text = stringResource(StringRes.welcome_subtitle),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -62,7 +71,7 @@ fun WelcomeScreen(
             onClick = onSignInClick,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Sign In")
+            Text(stringResource(StringRes.welcome_sign_in_button))
         }
 
         Spacer(modifier = Modifier.height(12.dp))

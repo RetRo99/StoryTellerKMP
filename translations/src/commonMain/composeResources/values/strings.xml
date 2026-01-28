@@ -21,4 +21,21 @@
     <string name="login_url_tooltip_dismiss">Got it</string>
     <string name="login_url_tooltip_description">Enter the full URL for your Storyteller server instance, including the scheme (http:// or https://).\n\nThis may look like a local IP address and port, such as:\nhttp://192.168.1.12:8001\n\nOr a domain name, such as:\nhttps://yourdomain.com</string>
     <string name="login_url_info">URL info</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_title">Welcome to StoryTeller</string>
+    <string name="welcome_subtitle">Your personal story companion</string>
+    <string name="welcome_sign_in_button">Sign In</string>
+    <string name="welcome_build_debug">DEBUG</string>
+    <string name="welcome_build_release">RELEASE</string>
+
+    <!-- Home Screen -->
+    <string name="home_welcome_title">🎉 Welcome Home!</string>
+    <string name="home_logged_in_message">You are now logged in.</string>
+    <string name="home_logout_button">Logout</string>
+
+    <!-- Books List Screen -->
+    <string name="books_series_with_position">%1$s #%2$s</string>
+    <string name="books_media_ebook">📖 eBook</string>
+    <string name="books_media_audio">🎧 Audio</string>
 </resources>

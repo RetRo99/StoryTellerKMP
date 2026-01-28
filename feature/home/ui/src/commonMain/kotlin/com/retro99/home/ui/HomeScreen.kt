@@ -13,6 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.retro99.translations.StringRes
+import org.jetbrains.compose.resources.stringResource
+import resources.translations.home_logged_in_message
+import resources.translations.home_logout_button
+import resources.translations.home_welcome_title
 
 @Composable
 fun HomeScreen(
@@ -27,14 +32,14 @@ fun HomeScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "🎉 Welcome Home!",
+            text = stringResource(StringRes.home_welcome_title),
             style = MaterialTheme.typography.headlineLarge,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "You are now logged in.",
+            text = stringResource(StringRes.home_logged_in_message),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -42,7 +47,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(onClick = onLogout) {
-            Text("Logout")
+            Text(stringResource(StringRes.home_logout_button))
         }
     }
 }
