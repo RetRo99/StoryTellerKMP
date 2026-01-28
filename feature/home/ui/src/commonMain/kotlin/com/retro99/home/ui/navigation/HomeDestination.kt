@@ -5,7 +5,10 @@ import kotlinx.serialization.Serializable
 sealed interface HomeDestination {
 
     @Serializable
-    data object Dashboard : HomeDestination
+    data object BooksList : HomeDestination
+
+    @Serializable
+    data class BookDetail(val bookUuid: String) : HomeDestination
 
 }
 

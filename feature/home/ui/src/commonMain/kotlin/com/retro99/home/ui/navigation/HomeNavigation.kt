@@ -7,12 +7,11 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.retro99.base.ui.BaseScreen
-import com.retro99.books.ui.navigation.BooksNavigation
+import com.retro99.books.ui.list.BooksListScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeNavigation(
-    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeNavigationViewModel = koinViewModel(),
 ) {
@@ -28,17 +27,15 @@ fun HomeNavigation(
                 rememberViewModelStoreNavEntryDecorator(),
             ),
             entryProvider = entryProvider {
-                entry<HomeDestination.Dashboard> {
-                    BooksNavigation()
+                entry<HomeDestination.BooksList> {
+                    BooksListScreen()
                 }
 
-                // Add more entries here as needed, e.g.:
-                // entry<HomeDestination.Profile> {
-                //     ProfileScreen(
-                //         onBackClick = { backStack.removeLastOrNull() },
-                //     )
-                // }
-            }
+                entry<HomeDestination.BookDetail> { destination ->
+                    // TODO: Add BookDetailScreen
+                    // BookDetailScreen(bookUuid = destination.bookUuid)
+                }
+            },
         )
     }
 }
