@@ -71,6 +71,9 @@ kotlin {
             implementation(projects.feature.login.data)
             implementation(projects.feature.home.ui)
             implementation(projects.feature.home.data)
+            implementation(projects.feature.books.ui)
+            implementation(projects.feature.books.domain)
+            implementation(projects.feature.books.data)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
