@@ -29,7 +29,7 @@ import com.retro99.books.domain.model.BookDomainModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun BooksScreen(
+fun BooksListScreen(
     modifier: Modifier = Modifier,
     viewModel: BooksViewModel = koinViewModel(),
 ) {
