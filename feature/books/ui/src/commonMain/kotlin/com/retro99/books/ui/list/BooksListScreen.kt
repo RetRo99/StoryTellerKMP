@@ -1,6 +1,5 @@
 package com.retro99.books.ui.list
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,10 +13,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Headphones
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -91,25 +95,23 @@ private fun BookItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-
             CoilImage(
                 data = book.coverUrl,
                 cacheKey = book.uuid,
                 modifier = Modifier
-                    .size(width = 60.dp, height = 90.dp)
-                    .clip(RoundedCornerShape(4.dp)),
+                    .size(width = 80.dp, height = 120.dp)
+                    .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 contentDescription = book.title,
             )
@@ -119,7 +121,7 @@ private fun BookItem(
             ) {
                 Text(
                     text = book.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -156,7 +158,7 @@ private fun BookItem(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -167,11 +169,17 @@ private fun BookItem(
                     }
 
                     if (book.ebook != null) {
-                        MediaTypeChip(type = stringResource(StringRes.books_media_ebook))
+                        MediaTypeIndicator(
+                            icon = Icons.Outlined.MenuBook,
+                            label = stringResource(StringRes.books_media_ebook),
+                        )
                     }
 
                     if (book.audiobook != null) {
-                        MediaTypeChip(type = stringResource(StringRes.books_media_audio))
+                        MediaTypeIndicator(
+                            icon = Icons.Outlined.Headphones,
+                            label = stringResource(StringRes.books_media_audio),
+                        )
                     }
                 }
             }
@@ -184,30 +192,43 @@ private fun StatusChip(
     status: String,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SuggestionChip(
+        onClick = { },
+        label = {
+            Text(
+                text = status,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        },
         modifier = modifier,
-        colors = CardDefaults.cardColors(
+        colors = SuggestionChipDefaults.suggestionChipColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
         ),
-    ) {
-        Text(
-            text = status,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun MediaTypeChip(
-    type: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = type,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier,
     )
 }
 
+@Composable
+private fun MediaTypeIndicator(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
