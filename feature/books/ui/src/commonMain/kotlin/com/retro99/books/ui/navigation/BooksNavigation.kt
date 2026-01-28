@@ -7,7 +7,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.retro99.base.ui.BaseScreen
-import com.retro99.books.ui.list.BooksScreen
+import com.retro99.books.ui.list.BooksListScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -28,7 +28,7 @@ fun BooksNavigation(
             ),
             entryProvider = entryProvider {
                 entry<BooksDestination.List> {
-                    BooksScreen()
+                    BooksListScreen()
                 }
 
                 entry<BooksDestination.Detail> { destination ->
