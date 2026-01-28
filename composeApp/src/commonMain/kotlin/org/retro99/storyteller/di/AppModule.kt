@@ -4,6 +4,9 @@ import com.retro99.analytics.implementation.di.AnalyticsModule
 import com.retro99.auth.data.di.AuthDataModule
 import com.retro99.auth.domain.di.AuthDomainModule
 import com.retro99.base.buildconfig.di.BuildConfigModule
+import com.retro99.books.data.di.BooksDataModule
+import com.retro99.books.domain.di.BooksDomainModule
+import com.retro99.books.ui.di.BooksUiModule
 import com.retro99.home.data.di.HomeDataModule
 import com.retro99.home.ui.di.HomeUiModule
 import com.retro99.login.data.di.LoginDataModule
@@ -28,6 +31,9 @@ import org.koin.core.annotation.Module
         LoginDataModule::class,
         HomeUiModule::class,
         HomeDataModule::class,
+        BooksDomainModule::class,
+        BooksDataModule::class,
+        BooksUiModule::class,
     ],
 )
 @Configuration
