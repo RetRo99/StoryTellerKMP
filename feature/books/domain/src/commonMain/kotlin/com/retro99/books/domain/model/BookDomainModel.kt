@@ -1,0 +1,27 @@
+package com.retro99.books.domain.model
+
+data class BookDomainModel(
+    val uuid: String,
+    val title: String,
+    val id: Long,
+    val language: String?,
+    val createdAt: String?,
+    val updatedAt: String?,
+    val publicationDate: String?,
+    val description: String?,
+    val rating: Float?,
+    val suffix: String?,
+    val subtitle: String?,
+    val authors: List<PersonDomainModel>,
+    val narrators: List<PersonDomainModel>,
+    val creators: List<PersonDomainModel>,
+    val series: List<SeriesDomainModel>,
+    val tags: List<TagDomainModel>,
+    val collections: List<CollectionDomainModel>,
+    val status: StatusDomainModel?,
+    val position: PositionDomainModel?,
+    val ebook: MediaFileDomainModel?,
+    val audiobook: MediaFileDomainModel?,
+    val readaloud: ReadaloudDomainModel?,
+)
+

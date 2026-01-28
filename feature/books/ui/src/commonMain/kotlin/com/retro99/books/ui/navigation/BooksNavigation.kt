@@ -1,4 +1,4 @@
-package com.retro99.home.ui.navigation
+package com.retro99.books.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -7,20 +7,19 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.retro99.base.ui.BaseScreen
-import com.retro99.books.ui.navigation.BooksNavigation
+import com.retro99.books.ui.list.BooksScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun HomeNavigation(
-    onLogout: () -> Unit,
+fun BooksNavigation(
     modifier: Modifier = Modifier,
-    viewModel: HomeNavigationViewModel = koinViewModel(),
+    viewModel: BooksNavigationViewModel = koinViewModel(),
 ) {
     BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
         NavDisplay(
             backStack = state.backStack,
             onBack = {
-                intentDispatcher(HomeNavigationIntent.OnBackClicked)
+                intentDispatcher(BooksNavigationIntent.OnBackClicked)
             },
             modifier = modifier,
             entryDecorators = listOf(
@@ -28,17 +27,15 @@ fun HomeNavigation(
                 rememberViewModelStoreNavEntryDecorator(),
             ),
             entryProvider = entryProvider {
-                entry<HomeDestination.Dashboard> {
-                    BooksNavigation()
+                entry<BooksDestination.List> {
+                    BooksScreen()
                 }
 
-                // Add more entries here as needed, e.g.:
-                // entry<HomeDestination.Profile> {
-                //     ProfileScreen(
-                //         onBackClick = { backStack.removeLastOrNull() },
-                //     )
-                // }
-            }
+                entry<BooksDestination.Detail> { destination ->
+                    // TODO: Add BookDetailScreen
+                    // BookDetailScreen(bookUuid = destination.bookUuid)
+                }
+            },
         )
     }
 }
