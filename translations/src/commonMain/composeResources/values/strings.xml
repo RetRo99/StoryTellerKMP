@@ -38,4 +38,5 @@
     <string name="books_series_with_position">%1$s #%2$s</string>
     <string name="books_media_ebook">eBook</string>
     <string name="books_media_audio">Audio</string>
+    <string name="books_media_readaloud">ReadALoud</string>
 </resources>

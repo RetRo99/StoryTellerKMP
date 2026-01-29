@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,6 +42,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
+import resources.translations.books_media_readaloud
 import resources.translations.books_series_with_position
 
 @Composable
@@ -181,6 +184,12 @@ private fun BookItem(
                             label = stringResource(StringRes.books_media_audio),
                         )
                     }
+                    if (book.readaloud != null) {
+                        MediaTypeIndicator(
+                            icon = Icons.Outlined.RecordVoiceOver,
+                            label = stringResource(StringRes.books_media_readaloud),
+                        )
+                    }
                 }
             }
         }
@@ -210,7 +219,7 @@ private fun StatusChip(
 
 @Composable
 private fun MediaTypeIndicator(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     modifier: Modifier = Modifier,
 ) {
@@ -224,11 +233,6 @@ private fun MediaTypeIndicator(
             contentDescription = label,
             modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
