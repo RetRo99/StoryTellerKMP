@@ -5,11 +5,13 @@ import com.github.michaelbull.result.fold
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class BooksViewModel(
+    @InjectedParam private val onNavigateToBookDetail: (bookUuid: String) -> Unit,
     @Provided private val getBooksUseCase: GetBooksUseCase,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>() {
 
@@ -22,7 +24,7 @@ class BooksViewModel(
     override fun onIntent(intent: BooksListIntent) {
         when (intent) {
             BooksListIntent.OnRefresh -> refreshBooks()
-            is BooksListIntent.OnBookClicked -> handleBookClicked(intent.bookUuid)
+            is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book.uuid)
         }
     }
 
