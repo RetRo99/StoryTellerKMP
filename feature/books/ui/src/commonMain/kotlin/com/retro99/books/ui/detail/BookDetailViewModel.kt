@@ -1,0 +1,62 @@
+package com.retro99.books.ui.detail
+
+import androidx.lifecycle.viewModelScope
+import com.github.michaelbull.result.fold
+import com.retro99.base.ui.BaseViewModel
+import com.retro99.books.domain.usecase.GetBookByUuidUseCase
+import kotlinx.coroutines.launch
+import org.koin.core.annotation.KoinViewModel
+import org.koin.core.annotation.Provided
+
+@KoinViewModel
+class BookDetailViewModel(
+    private val bookUuid: String,
+    @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
+) : BaseViewModel<BookDetailViewState, BookDetailIntent>() {
+
+    override val initialState = BookDetailViewState()
+
+    init {
+        loadBook(bookUuid)
+    }
+
+    override fun onIntent(intent: BookDetailIntent) {
+        when (intent) {
+            BookDetailIntent.OnBackClicked -> {
+                // Navigation is handled by the parent navigation component
+            }
+
+            BookDetailIntent.OnRetryClicked -> loadBook(bookUuid)
+            is BookDetailIntent.OnTagClicked -> {
+                // TODO: Navigate to tag filter
+            }
+
+            is BookDetailIntent.OnSeriesClicked -> {
+                // TODO: Navigate to series
+            }
+
+            BookDetailIntent.OnReadEbookClicked -> {
+                // TODO: Open ebook reader
+            }
+
+            BookDetailIntent.OnPlayAudiobookClicked -> {
+                // TODO: Open audiobook player
+            }
+        }
+    }
+
+    private fun loadBook(bookUuid: String) {
+        setLoading()
+        viewModelScope.launch {
+            getBookByUuidUseCase(bookUuid).fold(
+                success = { book ->
+                    setState(BookDetailViewState(book = book))
+                },
+                failure = { error ->
+                    setError(error)
+                },
+            )
+        }
+    }
+}
+

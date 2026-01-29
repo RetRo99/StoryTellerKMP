@@ -14,8 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Headphones
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +40,7 @@ import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
@@ -47,8 +48,9 @@ import resources.translations.books_series_with_position
 
 @Composable
 fun BooksListScreen(
+    onNavigateToBookDetail: (bookUuid: String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: BooksViewModel = koinViewModel(),
+    viewModel: BooksViewModel = koinViewModel { parametersOf(onNavigateToBookDetail) },
 ) {
     BaseScreen(
         modifier = modifier,
@@ -85,7 +87,9 @@ private fun BooksListScreenContent(
             ) { book ->
                 BookItem(
                     book = book,
-                    onClick = { intentDispatcher(BooksListIntent.OnBookClicked(book.uuid)) },
+                    onClick = {
+                        intentDispatcher(BooksListIntent.OnBookClicked(book))
+                    },
                 )
             }
         }
@@ -173,7 +177,7 @@ private fun BookItem(
 
                     if (book.ebook != null) {
                         MediaTypeIndicator(
-                            icon = Icons.Outlined.MenuBook,
+                            icon = Icons.AutoMirrored.Outlined.MenuBook,
                             label = stringResource(StringRes.books_media_ebook),
                         )
                     }
