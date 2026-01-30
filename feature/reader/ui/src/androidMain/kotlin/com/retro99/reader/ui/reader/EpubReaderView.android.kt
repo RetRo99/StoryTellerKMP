@@ -14,7 +14,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
-import com.retro99.reader.data.source.PublicationHolder
+import com.retro99.reader.ui.controller.AndroidEpubReaderController
+import com.retro99.reader.ui.controller.EpubReaderController
+import org.koin.compose.koinInject
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 
@@ -41,7 +43,10 @@ internal actual fun EpubReaderView(
         return
     }
 
-    val publication = remember(bookUuid) { PublicationHolder.get(bookUuid) }
+    val controller: EpubReaderController = koinInject()
+    val publication = remember(bookUuid) {
+        (controller as AndroidEpubReaderController).getPublication()
+    }
 
     if (publication == null) {
         Box(
