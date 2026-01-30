@@ -5,12 +5,14 @@ import com.github.michaelbull.result.fold
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class BookDetailViewModel(
-    private val bookUuid: String,
+    @InjectedParam private val bookUuid: String,
+    @InjectedParam private val onNavigateToReader: (bookUuid: String, ebookFilePath: String) -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>() {
 
@@ -36,7 +38,9 @@ class BookDetailViewModel(
             }
 
             BookDetailIntent.OnReadEbookClicked -> {
-                // TODO: Open ebook reader
+                currentViewState().book?.ebook?.let { ebook ->
+                    onNavigateToReader(bookUuid, ebook.filepath)
+                }
             }
 
             BookDetailIntent.OnPlayAudiobookClicked -> {
