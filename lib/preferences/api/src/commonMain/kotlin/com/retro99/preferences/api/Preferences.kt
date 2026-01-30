@@ -1,6 +1,5 @@
 package com.retro99.preferences.api
 
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 interface Preferences {
@@ -26,7 +25,9 @@ inline fun <reified T> Preferences.getObject(key: PreferencesKey): T? {
     }
 }
 
-enum class PreferencesKey {
-    ServerUrl,
-    Credentials,
+sealed class PreferencesKey(val name: String) {
+    data object ServerUrl : PreferencesKey("ServerUrl")
+    data object Credentials : PreferencesKey("Credentials")
+    data object ReaderSettings : PreferencesKey("ReaderSettings")
+    data class ReadingProgress(val bookUuid: String) : PreferencesKey("ReadingProgress_$bookUuid")
 }
