@@ -38,4 +38,8 @@ abstract class BaseViewModel<State, Intent : BaseIntent> : ViewModel() {
     protected fun setLoading() {
         _state.value = BaseViewState.Loading
     }
+
+    fun currentViewState(): State {
+        return (viewState.value as? BaseViewState.Success)?.data ?: initialState
+    }
 }

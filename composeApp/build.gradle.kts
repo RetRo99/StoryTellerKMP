@@ -37,6 +37,7 @@ kotlin {
             implementation(libs.firebase.crashlytics.android)
             implementation(libs.firebase.analytics.android)
             implementation(libs.firebase.common)
+            implementation(libs.datetime)
         }
         iosMain.dependencies {
             implementation(libs.kotzilla.sdk.compose)
@@ -75,6 +76,9 @@ kotlin {
             implementation(projects.feature.books.ui)
             implementation(projects.feature.books.domain)
             implementation(projects.feature.books.data)
+            implementation(projects.feature.reader.ui)
+            implementation(projects.feature.reader.domain)
+            implementation(projects.feature.reader.data)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
