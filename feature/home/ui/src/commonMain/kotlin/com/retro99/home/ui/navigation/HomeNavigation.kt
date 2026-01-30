@@ -9,6 +9,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.retro99.base.ui.BaseScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
+import com.retro99.reader.ui.reader.ReaderScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -41,7 +42,24 @@ fun HomeNavigation(
                 }
 
                 entry<HomeDestination.BookDetail> { destination ->
-                    BookDetailScreen(bookUuid = destination.bookUuid)
+                    BookDetailScreen(
+                        bookUuid = destination.bookUuid,
+                        onNavigateToReader = { bookUuid, ebookFilePath ->
+                            intentDispatcher(
+                                HomeNavigationIntent.NavigateTo(
+                                    HomeDestination.Reader(bookUuid, ebookFilePath),
+                                ),
+                            )
+                        },
+                    )
+                }
+
+                entry<HomeDestination.Reader> { destination ->
+                    ReaderScreen(
+                        bookUuid = destination.bookUuid,
+                        ebookFilePath = destination.ebookFilePath,
+                        onClose = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                    )
                 }
             },
         )
