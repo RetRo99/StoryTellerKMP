@@ -15,6 +15,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsBytes
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
@@ -101,6 +102,28 @@ class KtorNetworkClient(
             }
         ) {
             headers(headers)
+        }
+    }
+
+    override suspend fun downloadFile(
+        path: String,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit,
+    ): AppResult<ByteArray> = withContext(Dispatchers.IO) {
+        try {
+            val url = buildUrl(path, queryBuilder)
+            val response = httpClient.get(url) {
+                headers(headers)
+            }
+
+            if (response.status.isSuccess()) {
+                Ok(response.bodyAsBytes())
+            } else {
+                handleHttpError(response)
+            }
+        } catch (e: Exception) {
+            ensureActive()
+            handleException(e)
         }
     }
 

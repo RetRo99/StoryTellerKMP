@@ -37,6 +37,12 @@ interface NetworkClient {
         headers: HeadersBuilder.() -> Unit = {}
     ): AppResult<T>
 
+    suspend fun downloadFile(
+        path: String,
+        queryBuilder: QueryParamsScope.() -> Unit = {},
+        headers: HeadersBuilder.() -> Unit = {},
+    ): AppResult<ByteArray>
+
     fun close()
 }
 
