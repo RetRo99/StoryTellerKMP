@@ -10,5 +10,8 @@ sealed interface HomeDestination {
     @Serializable
     data class BookDetail(val bookUuid: String) : HomeDestination
 
+    @Serializable
+    data class Reader(val bookUuid: String, val ebookFilePath: String) : HomeDestination
+
 }
 
