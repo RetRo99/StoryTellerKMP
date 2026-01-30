@@ -31,10 +31,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.jdk.get().toInt())
         targetCompatibility = JavaVersion.toVersion(libs.versions.jdk.get().toInt())
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(platform(libs.firebase.bom))
     implementation(projects.composeApp)
     implementation(projects.base)
@@ -42,6 +44,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
     implementation(libs.kotzilla.sdk.compose)
+    implementation(libs.datetime)
     debugImplementation(libs.compose.uiTooling)
 }
 

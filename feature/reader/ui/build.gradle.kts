@@ -1,10 +1,9 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
+    alias(libs.plugins.koinCompilerPlugin)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.koinCompilerPlugin)
-    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"
@@ -13,7 +12,7 @@ kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
     androidLibrary {
-        namespace = "com.retro99.feature.home.ui"
+        namespace = "com.retro99.feature.reader.ui"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
     }
@@ -37,9 +36,18 @@ kotlin {
             implementation(projects.base)
             implementation(projects.baseUi)
             implementation(projects.translations)
-            implementation(projects.feature.home.domain)
-            implementation(projects.feature.books.ui)
-            implementation(projects.feature.reader.ui)
+            implementation(projects.feature.reader.domain)
+            implementation(projects.feature.books.domain)
+        }
+
+        androidMain.dependencies {
+            implementation(libs.readium.navigator)
+            implementation(libs.readium.navigatorMedia)
+            implementation(libs.readium.shared)
+            implementation(libs.readium.streamer)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.fragment)
+            implementation(projects.feature.reader.data)
         }
     }
 }
