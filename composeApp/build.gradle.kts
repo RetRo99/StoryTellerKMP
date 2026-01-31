@@ -27,6 +27,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            export(projects.feature.reader.ui)
         }
     }
 
@@ -41,6 +42,8 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.kotzilla.sdk.compose)
+            // Use api() to allow export in framework block
+            api(projects.feature.reader.ui)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

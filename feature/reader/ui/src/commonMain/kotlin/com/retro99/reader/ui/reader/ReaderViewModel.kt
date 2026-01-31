@@ -45,6 +45,8 @@ class ReaderViewModel(
             is ReaderIntent.ChangeSettings -> changeSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
+            ReaderIntent.GoToNextPage -> epubReaderController.goToNextPage()
+            ReaderIntent.GoToPreviousPage -> epubReaderController.goToPreviousPage()
         }
     }
 

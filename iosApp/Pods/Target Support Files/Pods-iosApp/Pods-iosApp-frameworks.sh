@@ -176,6 +176,8 @@ code_sign_if_enabled() {
 }
 
 if [[ "$CONFIGURATION" == "Debug" ]]; then
+  install_framework "${BUILT_PRODUCTS_DIR}/CryptoSwift/CryptoSwift.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/DifferenceKit/DifferenceKit.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/FirebaseCore/FirebaseCore.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/FirebaseCoreExtension/FirebaseCoreExtension.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/FirebaseCoreInternal/FirebaseCoreInternal.framework"
@@ -187,9 +189,20 @@ if [[ "$CONFIGURATION" == "Debug" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/GoogleUtilities/GoogleUtilities.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/PromisesObjC/FBLPromises.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/PromisesSwift/Promises.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumAdapterGCDWebServer/ReadiumAdapterGCDWebServer.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumFuzi/ReadiumFuzi.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumGCDWebServer/ReadiumGCDWebServer.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumInternal/ReadiumInternal.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumNavigator/ReadiumNavigator.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumShared/ReadiumShared.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumStreamer/ReadiumStreamer.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumZIPFoundation/ReadiumZIPFoundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/SwiftSoup/SwiftSoup.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
+  install_framework "${BUILT_PRODUCTS_DIR}/CryptoSwift/CryptoSwift.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/DifferenceKit/DifferenceKit.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/FirebaseCore/FirebaseCore.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/FirebaseCoreExtension/FirebaseCoreExtension.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/FirebaseCoreInternal/FirebaseCoreInternal.framework"
@@ -201,6 +214,15 @@ if [[ "$CONFIGURATION" == "Release" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/GoogleUtilities/GoogleUtilities.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/PromisesObjC/FBLPromises.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/PromisesSwift/Promises.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumAdapterGCDWebServer/ReadiumAdapterGCDWebServer.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumFuzi/ReadiumFuzi.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumGCDWebServer/ReadiumGCDWebServer.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumInternal/ReadiumInternal.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumNavigator/ReadiumNavigator.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumShared/ReadiumShared.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumStreamer/ReadiumStreamer.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/ReadiumZIPFoundation/ReadiumZIPFoundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/SwiftSoup/SwiftSoup.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework"
 fi
 if [ "${COCOAPODS_PARALLEL_CODE_SIGN}" == "true" ]; then

@@ -11,12 +11,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0BB11F11BB2916B260E7B048 /* Pods-iosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.release.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.release.xcconfig"; sourceTree = "<group>"; };
 		37516C8CEB1022DAFA93CECF /* StoryTellerKMP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StoryTellerKMP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		39F1123880BB567E81988175 /* Pods_iosApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iosApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DFA34FB17C7ADB90864A30C2 /* Pods-iosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.debug.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3ECDBEE14CB3468E762BBE64 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		3ECDBEE14CB3468E762BBE64 /* Exceptions for "iosApp" folder in "iosApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -29,7 +31,7 @@
 		635B3B750A6AC478E4AC3EAE /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				3ECDBEE14CB3468E762BBE64 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				3ECDBEE14CB3468E762BBE64 /* Exceptions for "iosApp" folder in "iosApp" target */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -66,8 +68,9 @@
 		3C6EE4B416952D107AA8DE4D /* Pods */ = {
 			isa = PBXGroup;
 			children = (
+				DFA34FB17C7ADB90864A30C2 /* Pods-iosApp.debug.xcconfig */,
+				0BB11F11BB2916B260E7B048 /* Pods-iosApp.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -234,6 +237,7 @@
 /* Begin XCBuildConfiguration section */
 		1D8A5B632CB5F87089720F8E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DFA34FB17C7ADB90864A30C2 /* Pods-iosApp.debug.xcconfig */;
 			buildSettings = {
 				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -262,6 +266,7 @@
 		};
 		4A77AC42BD3851B737A022D9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0BB11F11BB2916B260E7B048 /* Pods-iosApp.release.xcconfig */;
 			buildSettings = {
 				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

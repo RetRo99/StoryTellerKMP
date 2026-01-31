@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.asset.AssetRetriever
 import org.readium.r2.shared.util.http.DefaultHttpClient
@@ -36,6 +37,7 @@ class AndroidEpubReaderController(
     private val publicationOpener by lazy { PublicationOpener(publicationParser) }
 
     private var publication: Publication? = null
+    private var navigator: EpubNavigatorFragment? = null
 
     private val _isReady = MutableStateFlow(false)
     override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
@@ -91,5 +93,21 @@ class AndroidEpubReaderController(
      * @return The open Publication, or null if no publication is open
      */
     fun getPublication(): Publication? = publication
+
+    /**
+     * Sets the navigator fragment for page navigation.
+     * This is called by [EpubReaderView] after the fragment is created.
+     */
+    fun setNavigator(navigatorFragment: EpubNavigatorFragment) {
+        navigator = navigatorFragment
+    }
+
+    override fun goToNextPage() {
+        navigator?.goForward()
+    }
+
+    override fun goToPreviousPage() {
+        navigator?.goBackward()
+    }
 }
 

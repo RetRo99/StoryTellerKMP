@@ -39,5 +39,15 @@ interface EpubReaderController {
      * This should be called when the reader screen is disposed.
      */
     fun closePublication()
+
+    /**
+     * Navigates to the next page in the publication.
+     */
+    fun goToNextPage()
+
+    /**
+     * Navigates to the previous page in the publication.
+     */
+    fun goToPreviousPage()
 }
 

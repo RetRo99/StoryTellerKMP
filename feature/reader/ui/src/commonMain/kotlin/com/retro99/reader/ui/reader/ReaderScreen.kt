@@ -4,10 +4,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +61,7 @@ private fun ReaderScreenContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
             .background(MaterialTheme.colorScheme.background),
     ) {
         when {
@@ -65,6 +79,7 @@ private fun ReaderScreenContent(
             viewState.isPublicationReady -> {
                 ReaderContent(
                     bookUuid = bookUuid,
+                    intentDispatcher = intentDispatcher,
                 )
             }
         }
@@ -110,10 +125,52 @@ private fun ErrorContent(
 @Composable
 private fun ReaderContent(
     bookUuid: String,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
-    EpubReaderView(
-        bookUuid = bookUuid,
-        modifier = Modifier.fillMaxSize(),
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        EpubReaderView(
+            bookUuid = bookUuid,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        // Navigation buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            FilledIconButton(
+                onClick = { intentDispatcher(ReaderIntent.GoToPreviousPage) },
+                shape = CircleShape,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Previous Page",
+                )
+            }
+
+            FilledIconButton(
+                onClick = { intentDispatcher(ReaderIntent.GoToNextPage) },
+                shape = CircleShape,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Next Page",
+                )
+            }
+        }
+    }
 }
 
