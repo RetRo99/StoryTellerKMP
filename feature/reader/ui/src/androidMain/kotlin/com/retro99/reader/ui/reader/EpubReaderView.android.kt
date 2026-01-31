@@ -1,13 +1,10 @@
 package com.retro99.reader.ui.reader
 
 import android.view.View
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -32,30 +29,20 @@ internal actual fun EpubReaderView(
     modifier: Modifier,
 ) {
     val context = LocalContext.current
-    val activity = context as? FragmentActivity
-
-    if (activity == null) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Error: Activity is not a FragmentActivity")
-        }
+    val activity = context as? FragmentActivity ?: run {
+        ReaderErrorView(message = "Error: Activity is not a FragmentActivity", modifier = modifier)
         return
     }
 
     val controller: EpubReaderController = koinInject()
+    val androidController = controller as AndroidEpubReaderController
     val publication = remember(bookUuid) {
-        (controller as AndroidEpubReaderController).getPublication()
-    }
-
-    if (publication == null) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Error: Publication not found for book $bookUuid")
-        }
+        androidController.getPublication()
+    } ?: run {
+        ReaderErrorView(
+            message = "Error: Publication not found for book $bookUuid",
+            modifier = modifier
+        )
         return
     }
 
@@ -67,6 +54,8 @@ internal actual fun EpubReaderView(
 
     DisposableEffect(bookUuid) {
         onDispose {
+            // Clean up the navigator reference
+            androidController.clearNavigator()
             // Clean up the fragment when the composable is disposed
             val existingFragment = activity.supportFragmentManager
                 .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
