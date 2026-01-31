@@ -1,17 +1,21 @@
 package com.retro99.reader.data
 
 import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onFailure
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.reader.data.model.toDomain
+import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.data.source.ReaderRemoteSource
 import com.retro99.reader.domain.ReaderRepository
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -42,27 +46,29 @@ internal class ReaderDataRepository(
     override suspend fun getReadingProgress(
         bookUuid: String,
     ): AppResult<ReadingProgressDomainModel?> {
-        return localSource.getReadingProgress(bookUuid).onFailure { error ->
-            logError(error, "Failed to get reading progress: bookUuid=$bookUuid")
-        }
+        return localSource.getReadingProgress(bookUuid)
+            .map { it?.toDomain() }
+            .onFailure { error ->
+                logError(error, "Failed to get reading progress: bookUuid=$bookUuid")
+            }
     }
 
     override suspend fun saveReadingProgress(
         progress: ReadingProgressDomainModel,
     ): CompletableResult {
-        return localSource.saveReadingProgress(progress).onFailure { error ->
+        return localSource.saveReadingProgress(progress.toLocal()).onFailure { error ->
             logError(error, "Failed to save reading progress: bookUuid=${progress.bookUuid}")
         }
     }
 
     override fun getReaderSettings(): Flow<ReaderSettingsDomainModel> {
-        return localSource.getReaderSettings()
+        return localSource.getReaderSettings().map { it.toDomain() }
     }
 
     override suspend fun saveReaderSettings(
         settings: ReaderSettingsDomainModel,
     ): CompletableResult {
-        return localSource.saveReaderSettings(settings).onFailure { error ->
+        return localSource.saveReaderSettings(settings.toLocal()).onFailure { error ->
             logError(error, "Failed to save reader settings")
         }
     }

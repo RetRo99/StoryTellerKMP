@@ -1,13 +1,11 @@
 package com.retro99.reader.data.source
 
 import com.retro99.base.result.AppResult
-import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
-import retro99.network.api.NetworkClient
+import org.koin.core.annotation.Single
 
-@Factory
+@Single(binds = [ReaderRemoteSource::class])
 internal class ReaderRemoteDataSource(
-    @Provided private val networkClient: NetworkClient,
     @Provided private val fileDownloader: EbookFileDownloader,
 ) : ReaderRemoteSource {
 
