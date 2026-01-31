@@ -1,9 +1,7 @@
 package com.retro99.reader.ui.reader
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,13 +14,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,63 +56,13 @@ private fun ReaderScreenContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .background(MaterialTheme.colorScheme.background),
+            .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        when {
-            viewState.isLoading -> {
-                LoadingContent()
-            }
-
-            viewState.errorMessage != null -> {
-                ErrorContent(
-                    errorMessage = viewState.errorMessage,
-                    onRetry = { intentDispatcher(ReaderIntent.Close) },
-                )
-            }
-
-            viewState.isPublicationReady -> {
-                ReaderContent(
-                    bookUuid = bookUuid,
-                    intentDispatcher = intentDispatcher,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LoadingContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorContent(
-    errorMessage: String,
-    onRetry: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error,
-        )
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.padding(top = 16.dp),
-        ) {
-            Text("Go Back")
+        if (viewState.isPublicationReady) {
+            ReaderContent(
+                bookUuid = bookUuid,
+                intentDispatcher = intentDispatcher,
+            )
         }
     }
 }

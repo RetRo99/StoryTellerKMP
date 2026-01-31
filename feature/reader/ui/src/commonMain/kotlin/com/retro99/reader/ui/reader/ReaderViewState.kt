@@ -9,8 +9,6 @@ data class ReaderViewState(
     val isPublicationReady: Boolean = false,
     val settings: ReaderSettingsDomainModel = ReaderSettingsDomainModel(),
     val progress: ReadingProgressDomainModel? = null,
-    val isLoading: Boolean = true,
     val isSettingsVisible: Boolean = false,
-    val errorMessage: String? = null,
 )
 

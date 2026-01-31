@@ -2,6 +2,7 @@ package com.retro99.reader.ui.reader
 
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
+import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
@@ -59,22 +60,17 @@ class ReaderViewModel(
     }
 
     private fun loadBook(uuid: String = bookUuid, filePath: String = ebookFilePath) {
-        updateState { it.copy(isLoading = true, errorMessage = null, bookUuid = uuid) }
+        setLoading()
 
         viewModelScope.launch {
             prepareEbookUseCase(uuid, filePath)
                 .fold(
                     success = { localPath ->
-                        updateState { it.copy(localFilePath = localPath) }
+                        updateState { it.copy(bookUuid = uuid, localFilePath = localPath) }
                         openPublication(localPath, uuid)
                     },
-                    failure = {
-                        updateState {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = it.errorMessage ?: "Failed to prepare ebook",
-                            )
-                        }
+                    failure = { error ->
+                        setError(error)
                     },
                 )
         }
@@ -83,15 +79,11 @@ class ReaderViewModel(
     private suspend fun openPublication(localPath: String, uuid: String) {
         val success = epubReaderController.openPublication(localPath)
         if (success) {
-            updateState { it.copy(isPublicationReady = true, isLoading = false) }
+            updateState { it.copy(isPublicationReady = true) }
             loadReadingProgress(uuid)
         } else {
-            updateState {
-                it.copy(
-                    isLoading = false,
-                    errorMessage = epubReaderController.error.value ?: "Failed to open publication",
-                )
-            }
+            val errorMessage = epubReaderController.error.value ?: "Failed to open publication"
+            setError(AppError.UnknownError(Exception(errorMessage)))
         }
     }
 
