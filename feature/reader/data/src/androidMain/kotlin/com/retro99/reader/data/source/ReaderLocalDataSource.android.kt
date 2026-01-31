@@ -9,10 +9,6 @@ import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
 import com.retro99.reader.data.model.ReadingProgressLocalModel
-import com.retro99.reader.data.model.toDomain
-import com.retro99.reader.data.model.toLocal
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
-import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,31 +31,31 @@ class ReaderLocalDataSource(
 
     override suspend fun getReadingProgress(
         bookUuid: String,
-    ): AppResult<ReadingProgressDomainModel?> {
+    ): AppResult<ReadingProgressLocalModel?> {
         val localModel = preferences.getObject<ReadingProgressLocalModel>(
             PreferencesKey.ReadingProgress(bookUuid),
         )
-        return Ok(localModel?.toDomain())
+        return Ok(localModel)
     }
 
     override suspend fun saveReadingProgress(
-        progress: ReadingProgressDomainModel,
+        progress: ReadingProgressLocalModel,
     ): CompletableResult {
         preferences.putObject(
             PreferencesKey.ReadingProgress(progress.bookUuid),
-            progress.toLocal(),
+            progress,
         )
         return Ok(Unit)
     }
 
-    override fun getReaderSettings(): Flow<ReaderSettingsDomainModel> {
+    override fun getReaderSettings(): Flow<ReaderSettingsLocalModel> {
         return _readerSettings.asStateFlow()
     }
 
     override suspend fun saveReaderSettings(
-        settings: ReaderSettingsDomainModel,
+        settings: ReaderSettingsLocalModel,
     ): CompletableResult {
-        preferences.putObject(PreferencesKey.ReaderSettings, settings.toLocal())
+        preferences.putObject(PreferencesKey.ReaderSettings, settings)
         _readerSettings.value = settings
         return Ok(Unit)
     }
@@ -72,9 +68,8 @@ class ReaderLocalDataSource(
         return fileDownloader.getCachedEbookPath(bookUuid)
     }
 
-    private fun loadReaderSettings(): ReaderSettingsDomainModel {
+    private fun loadReaderSettings(): ReaderSettingsLocalModel {
         return preferences.getObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
-            ?.toDomain()
-            ?: ReaderSettingsDomainModel()
+            ?: ReaderSettingsLocalModel()
     }
 }
