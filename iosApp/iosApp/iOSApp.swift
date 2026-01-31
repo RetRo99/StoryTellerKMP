@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import ComposeApp
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
@@ -7,6 +8,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
+
+        // Register the EPUB reader bridge for iOS Readium integration
+        EpubReaderBridgeRegistry.shared.register(bridge: ReadiumEpubReaderBridge())
+
         return true
     }
 }

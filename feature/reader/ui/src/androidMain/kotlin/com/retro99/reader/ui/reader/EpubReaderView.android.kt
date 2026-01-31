@@ -14,6 +14,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
+import androidx.fragment.app.commitNow
 import com.retro99.reader.ui.controller.AndroidEpubReaderController
 import com.retro99.reader.ui.controller.EpubReaderController
 import org.koin.compose.koinInject
@@ -88,12 +89,17 @@ internal actual fun EpubReaderView(
             val fragmentManager = activity.supportFragmentManager
 
             // Only add fragment if it doesn't exist
-            if (fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG) == null) {
+            val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+                    as? EpubNavigatorFragment
+
+            if (existingFragment == null) {
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = null,
                 )
 
-                fragmentManager.commit {
+                // Use commitNow to make the transaction synchronous
+                // This ensures the fragment is immediately available after this call
+                fragmentManager.commitNow {
                     add(
                         containerView.id,
                         EpubNavigatorFragment::class.java,
@@ -101,6 +107,16 @@ internal actual fun EpubReaderView(
                         NAVIGATOR_FRAGMENT_TAG,
                     )
                 }
+
+                // Register the navigator with the controller for page navigation
+                val navigatorFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+                        as? EpubNavigatorFragment
+                navigatorFragment?.let {
+                    (controller as AndroidEpubReaderController).setNavigator(it)
+                }
+            } else {
+                // Fragment already exists, ensure it's registered with the controller
+                (controller as AndroidEpubReaderController).setNavigator(existingFragment)
             }
         },
     )

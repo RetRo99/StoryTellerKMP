@@ -1,4 +1,11 @@
 PODS:
+  - CryptoSwift (1.8.4)
+  - DifferenceKit (1.3.0):
+    - DifferenceKit/Core (= 1.3.0)
+    - DifferenceKit/UIKitExtension (= 1.3.0)
+  - DifferenceKit/Core (1.3.0)
+  - DifferenceKit/UIKitExtension (1.3.0):
+    - DifferenceKit/Core
   - FirebaseAnalytics (12.8.0):
     - FirebaseAnalytics/Default (= 12.8.0)
     - FirebaseCore (~> 12.8.0)
@@ -114,13 +121,54 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
+  - ReadiumAdapterGCDWebServer (3.0.0):
+    - ReadiumGCDWebServer (~> 4.0.0)
+    - ReadiumInternal (~> 3.0.0)
+    - ReadiumShared (~> 3.0.0)
+  - ReadiumFuzi (4.0.0)
+  - ReadiumGCDWebServer (4.0.1):
+    - ReadiumGCDWebServer/Core (= 4.0.1)
+  - ReadiumGCDWebServer/Core (4.0.1)
+  - ReadiumInternal (3.0.0)
+  - ReadiumNavigator (3.0.0):
+    - DifferenceKit (~> 1.0)
+    - ReadiumInternal (~> 3.0.0)
+    - ReadiumShared (~> 3.0.0)
+    - SwiftSoup (~> 2.7.0)
+  - ReadiumShared (3.0.0):
+    - ReadiumFuzi (~> 4.0.0)
+    - ReadiumInternal (~> 3.0.0)
+    - ReadiumZIPFoundation (~> 1.0.0)
+    - SwiftSoup (~> 2.7.0)
+  - ReadiumStreamer (3.0.0):
+    - CryptoSwift (~> 1.8.0)
+    - ReadiumFuzi (~> 4.0.0)
+    - ReadiumInternal (~> 3.0.0)
+    - ReadiumShared (~> 3.0.0)
+  - ReadiumZIPFoundation (1.0.0)
+  - SwiftSoup (2.7.6)
 
 DEPENDENCIES:
   - FirebaseAnalytics
   - FirebaseCrashlytics
+  - ReadiumAdapterGCDWebServer (~> 3.0.0)
+  - ReadiumNavigator (~> 3.0.0)
+  - ReadiumShared (~> 3.0.0)
+  - ReadiumStreamer (~> 3.0.0)
 
 SPEC REPOS:
+  https://github.com/readium/podspecs:
+    - ReadiumAdapterGCDWebServer
+    - ReadiumFuzi
+    - ReadiumGCDWebServer
+    - ReadiumInternal
+    - ReadiumNavigator
+    - ReadiumShared
+    - ReadiumStreamer
+    - ReadiumZIPFoundation
   trunk:
+    - CryptoSwift
+    - DifferenceKit
     - FirebaseAnalytics
     - FirebaseCore
     - FirebaseCoreExtension
@@ -136,8 +184,11 @@ SPEC REPOS:
     - nanopb
     - PromisesObjC
     - PromisesSwift
+    - SwiftSoup
 
 SPEC CHECKSUMS:
+  CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
+  DifferenceKit: ab185c4d7f9cef8af3fcf593e5b387fb81e999ca
   FirebaseAnalytics: f20bbad8cb7f65d8a5eaefeb424ae8800a31bdfc
   FirebaseCore: 0dbad74bda10b8fb9ca34ad8f375fb9dd3ebef7c
   FirebaseCoreExtension: 6605938d51f765d8b18bfcafd2085276a252bee2
@@ -153,7 +204,16 @@ SPEC CHECKSUMS:
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
+  ReadiumAdapterGCDWebServer: edbe6ecc9bce600edc05c80d01f4bb1f9ae88a34
+  ReadiumFuzi: fb19b82ff8f089b27c735c216c877666cd84d70f
+  ReadiumGCDWebServer: 9bf72ab96592d0fdd0f2c941c269e9fd12d79299
+  ReadiumInternal: 472a385feeb6114cde10fe00ab0ff03882909cd7
+  ReadiumNavigator: e23cee6a63d01442f7fb5dc599d42ce6182915e3
+  ReadiumShared: b1d23fce1f1f16c4041d43647187835b384e1550
+  ReadiumStreamer: 34beaac9d7561bc618c44805378dfc5f6630331c
+  ReadiumZIPFoundation: dec607ce38a5221cd4e3502ab41b776468ee47cb
+  SwiftSoup: 9ec2526c76ebc3fe5d3157c82b40b45a27eeb82d
 
-PODFILE CHECKSUM: a48d0ba81516c1f9788700a1a8650cfcc161cb2d
+PODFILE CHECKSUM: 910f541073413866cdfa7d9adf34a88087a02959
 
 COCOAPODS: 1.16.2

@@ -1,10 +1,19 @@
+source 'https://github.com/readium/podspecs'
+source 'https://cdn.cocoapods.org/'
+
 platform :ios, '15.0'
 
 target 'iosApp' do
   use_frameworks!
-  
+
   pod 'FirebaseAnalytics'
   pod 'FirebaseCrashlytics'
+
+  # Readium EPUB reader
+  pod 'ReadiumShared', '~> 3.0.0'
+  pod 'ReadiumStreamer', '~> 3.0.0'
+  pod 'ReadiumNavigator', '~> 3.0.0'
+  pod 'ReadiumAdapterGCDWebServer', '~> 3.0.0'
 end
 
 post_install do |installer|
