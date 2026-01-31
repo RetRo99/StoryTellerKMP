@@ -16,7 +16,7 @@ import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 /**
- * iOS implementation of [ReaderLocalSource].
+ * Implementation of [ReaderLocalSource].
  * Handles reading progress, settings, and file caching.
  *
  * Note: Publication opening/closing is handled by [EpubReaderController] in the UI layer.
