@@ -27,9 +27,10 @@ interface EpubReaderBridge {
 
     /**
      * Creates a UIViewController for displaying the EPUB content.
+     * @param initialFontSize The initial font size scale to apply (1.0 = 100%)
      * @return A UIViewController that renders the EPUB, or null if no publication is open
      */
-    fun createReaderViewController(): UIViewController?
+    fun createReaderViewController(initialFontSize: Double): UIViewController?
 
     /**
      * Navigates to the next page/resource in the publication.
@@ -40,6 +41,12 @@ interface EpubReaderBridge {
      * Navigates to the previous page/resource in the publication.
      */
     fun goToPreviousPage()
+
+    /**
+     * Sets the font size scale for the publication.
+     * @param scale The font size scale factor (1.0 = 100%, 2.0 = 200%, etc.)
+     */
+    fun setFontSize(scale: Double)
 }
 
 /**

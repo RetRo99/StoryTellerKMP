@@ -1,9 +1,11 @@
 package com.retro99.reader.ui.reader
 
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.fold
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
@@ -19,6 +21,7 @@ import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 import kotlin.time.Clock
 
+val logger = Logger.withTag("čič")
 @KoinViewModel
 class ReaderViewModel(
     @InjectedParam private val bookUuid: String,
@@ -41,9 +44,8 @@ class ReaderViewModel(
 
     override fun onIntent(intent: ReaderIntent) {
         when (intent) {
-            is ReaderIntent.LoadBook -> loadBook(intent.bookUuid, intent.filePath)
             is ReaderIntent.UpdateProgress -> updateProgress(intent.locator, intent.progression)
-            is ReaderIntent.ChangeSettings -> changeSettings(intent.settings)
+            is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
             ReaderIntent.GoToNextPage -> epubReaderController.goToNextPage()
@@ -54,14 +56,14 @@ class ReaderViewModel(
     private fun observeSettings() {
         getReaderSettingsUseCase()
             .onEach { settings ->
+                logger.d { "Settings changed: $settings" }
                 updateState { it.copy(settings = settings) }
+                epubReaderController.setSettings(settings)
             }
             .launchIn(viewModelScope)
     }
 
     private fun loadBook(uuid: String = bookUuid, filePath: String = ebookFilePath) {
-        setLoading()
-
         viewModelScope.launch {
             prepareEbookUseCase(uuid, filePath)
                 .fold(
@@ -79,6 +81,7 @@ class ReaderViewModel(
     private suspend fun openPublication(localPath: String, uuid: String) {
         val success = epubReaderController.openPublication(localPath)
         if (success) {
+            logger.d { "Ready" }
             updateState { it.copy(isPublicationReady = true) }
             loadReadingProgress(uuid)
         } else {
@@ -116,7 +119,7 @@ class ReaderViewModel(
         }
     }
 
-    private fun changeSettings(settings: com.retro99.reader.domain.model.ReaderSettingsDomainModel) {
+    private fun updateSettings(settings: ReaderSettingsDomainModel) {
         viewModelScope.launch {
             saveReaderSettingsUseCase(settings)
         }

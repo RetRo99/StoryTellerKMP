@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import WebKit
 import ComposeApp
 import ReadiumShared
 import ReadiumStreamer
@@ -74,7 +75,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         publication = nil
     }
 
-    func createReaderViewController() -> UIViewController? {
+    func createReaderViewController(initialFontSize: Double) -> UIViewController? {
         guard let publication = self.publication else {
             return nil
         }
@@ -83,10 +84,16 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             // Get the screen bounds to constrain the navigator
             let screenBounds = UIScreen.main.bounds
 
+            // Create initial preferences with typeScale for font scaling
+            let initialPreferences = EPUBPreferences(typeScale: initialFontSize)
+            print("Creating EPUB navigator with initial typeScale: \(initialFontSize)")
+
             let navigator = try EPUBNavigatorViewController(
                 publication: publication,
                 initialLocation: nil,
-                config: EPUBNavigatorViewController.Configuration(),
+                config: EPUBNavigatorViewController.Configuration(
+                    preferences: initialPreferences
+                ),
                 httpServer: httpServer
             )
             self.navigatorViewController = navigator
@@ -119,5 +126,12 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             _ = await navigatorViewController?.goBackward()
         }
     }
-}
 
+    func setFontSize(scale: Double) {
+        Task { @MainActor in
+            print("Setting font typeScale to: \(scale)")
+            let preferences = EPUBPreferences(typeScale: scale)
+            navigatorViewController?.submitPreferences(preferences)
+        }
+    }
+}

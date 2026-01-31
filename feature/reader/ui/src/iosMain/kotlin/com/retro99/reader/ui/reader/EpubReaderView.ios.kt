@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.controller.EpubReaderController
 import com.retro99.reader.ui.controller.IosEpubReaderController
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -19,13 +20,14 @@ import org.koin.compose.koinInject
 @Composable
 internal actual fun EpubReaderView(
     bookUuid: String,
+    initialSettings: ReaderSettingsDomainModel,
     modifier: Modifier,
 ) {
     val controller: EpubReaderController = koinInject()
     val iosController = controller as IosEpubReaderController
 
     val readerViewController = remember(bookUuid) {
-        iosController.createReaderViewController()
+        iosController.createReaderViewController(initialSettings.fontSize)
     } ?: run {
         ReaderErrorView(message = "EPUB publication not ready", modifier = modifier)
         return

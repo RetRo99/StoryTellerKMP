@@ -4,7 +4,7 @@ package com.retro99.reader.domain.model
  * Represents reader settings/preferences.
  */
 data class ReaderSettingsDomainModel(
-    val fontSize: Float = 1.0f,
+    val fontSize: Double = 1.0,
     val fontFamily: String = "default",
     val theme: ReaderTheme = ReaderTheme.SYSTEM,
     val lineHeight: Float = 1.5f,

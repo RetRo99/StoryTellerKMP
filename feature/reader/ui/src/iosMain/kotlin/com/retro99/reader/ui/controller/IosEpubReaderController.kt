@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.controller
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import platform.UIKit.UIViewController
 import kotlin.coroutines.resume
@@ -54,12 +55,18 @@ class IosEpubReaderController : BaseEpubReaderController() {
         bridge?.goToPreviousPage()
     }
 
+    override fun setSettings(settings: ReaderSettingsDomainModel) {
+        TODO("Not yet implemented")
+    }
+
     /**
      * Creates the reader view controller from the bridge.
      * This is iOS-specific and used by [EpubReaderView].
      *
+     * @param initialFontSize The initial font size scale to apply (1.0 = 100%)
      * @return The UIViewController for the reader, or null if not available
      */
-    fun createReaderViewController(): UIViewController? = bridge?.createReaderViewController()
+    fun createReaderViewController(initialSettings: ReaderSettingsDomainModel): UIViewController? =
+        bridge?.createReaderViewController(initialSettings)
 }
 

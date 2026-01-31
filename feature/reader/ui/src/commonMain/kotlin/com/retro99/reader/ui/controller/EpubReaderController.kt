@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.controller
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -49,5 +50,10 @@ interface EpubReaderController {
      * Navigates to the previous page in the publication.
      */
     fun goToPreviousPage()
+
+    /**
+     * Sets the font settings for publication.
+     */
+    fun setSettings(settings: ReaderSettingsDomainModel)
 }
 
