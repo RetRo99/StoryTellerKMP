@@ -1,9 +1,7 @@
 package com.retro99.reader.ui.controller
 
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import platform.UIKit.UIViewController
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -12,36 +10,31 @@ import kotlin.coroutines.suspendCoroutine
  *
  * Uses the [EpubReaderBridgeRegistry] to delegate to the Swift Readium implementation.
  */
-class IosEpubReaderController : EpubReaderController {
+class IosEpubReaderController : BaseEpubReaderController() {
 
-    private var currentFilePath: String? = null
-
-    private val _isReady = MutableStateFlow(false)
-    override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    override val error: StateFlow<String?> = _error.asStateFlow()
+    /**
+     * Gets the bridge instance, if registered.
+     */
+    val bridge get() = EpubReaderBridgeRegistry.getBridge()
 
     override suspend fun openPublication(filePath: String): Boolean {
-        val bridge = EpubReaderBridgeRegistry.getBridge()
-        if (bridge == null) {
-            _error.value = "EPUB reader bridge not registered"
+        val currentBridge = bridge
+        if (currentBridge == null) {
+            setError("EPUB reader bridge not registered")
             return false
         }
 
-        _error.value = null
-        currentFilePath = filePath
+        resetState()
 
         return suspendCoroutine { continuation ->
-            bridge.openPublication(
+            currentBridge.openPublication(
                 filePath = filePath,
                 onSuccess = {
-                    _isReady.value = true
+                    setReady()
                     continuation.resume(true)
                 },
                 onError = { errorMessage ->
-                    _error.value = errorMessage
-                    _isReady.value = false
+                    setError(errorMessage)
                     continuation.resume(false)
                 },
             )
@@ -49,26 +42,24 @@ class IosEpubReaderController : EpubReaderController {
     }
 
     override fun closePublication() {
-        EpubReaderBridgeRegistry.getBridge()?.closePublication()
-        currentFilePath = null
-        _isReady.value = false
-        _error.value = null
+        bridge?.closePublication()
+        resetState()
     }
 
     override fun goToNextPage() {
-        EpubReaderBridgeRegistry.getBridge()?.goToNextPage()
+        bridge?.goToNextPage()
     }
 
     override fun goToPreviousPage() {
-        EpubReaderBridgeRegistry.getBridge()?.goToPreviousPage()
+        bridge?.goToPreviousPage()
     }
 
     /**
-     * Gets the file path of the currently open publication.
-     * This can be used by iOS-specific reader implementations.
+     * Creates the reader view controller from the bridge.
+     * This is iOS-specific and used by [EpubReaderView].
      *
-     * @return The file path, or null if no publication is open
+     * @return The UIViewController for the reader, or null if not available
      */
-    fun getCurrentFilePath(): String? = currentFilePath
+    fun createReaderViewController(): UIViewController? = bridge?.createReaderViewController()
 }
 

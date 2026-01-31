@@ -2,9 +2,6 @@ package com.retro99.reader.ui.controller
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.shared.publication.Publication
@@ -27,7 +24,7 @@ import java.io.File
  */
 class AndroidEpubReaderController(
     private val context: Context,
-) : EpubReaderController {
+) : BaseEpubReaderController() {
 
     private val httpClient by lazy { DefaultHttpClient() }
     private val assetRetriever by lazy { AssetRetriever(context.contentResolver, httpClient) }
@@ -39,27 +36,20 @@ class AndroidEpubReaderController(
     private var publication: Publication? = null
     private var navigator: EpubNavigatorFragment? = null
 
-    private val _isReady = MutableStateFlow(false)
-    override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    override val error: StateFlow<String?> = _error.asStateFlow()
-
     override suspend fun openPublication(filePath: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            _error.value = null
-            _isReady.value = false
+            resetState()
 
             val file = File(filePath)
             if (!file.exists()) {
-                _error.value = "Ebook file not found: $filePath"
+                setError("Ebook file not found: $filePath")
                 return@withContext false
             }
 
             val url = file.toUrl()
             val asset = assetRetriever.retrieve(url).getOrNull()
             if (asset == null) {
-                _error.value = "Failed to retrieve ebook asset"
+                setError("Failed to retrieve ebook asset")
                 return@withContext false
             }
 
@@ -67,23 +57,23 @@ class AndroidEpubReaderController(
                 .getOrNull()
 
             if (openedPublication == null) {
-                _error.value = "Failed to open ebook"
+                setError("Failed to open ebook")
                 return@withContext false
             }
 
             publication = openedPublication
-            _isReady.value = true
+            setReady()
             true
         } catch (e: Exception) {
-            _error.value = "Error opening ebook: ${e.message}"
+            setError("Error opening ebook: ${e.message}")
             false
         }
     }
 
     override fun closePublication() {
         publication = null
-        _isReady.value = false
-        _error.value = null
+        navigator = null
+        resetState()
     }
 
     /**
@@ -100,6 +90,14 @@ class AndroidEpubReaderController(
      */
     fun setNavigator(navigatorFragment: EpubNavigatorFragment) {
         navigator = navigatorFragment
+    }
+
+    /**
+     * Clears the navigator reference.
+     * This should be called when the reader view is disposed.
+     */
+    fun clearNavigator() {
+        navigator = null
     }
 
     override fun goToNextPage() {
