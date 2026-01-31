@@ -26,6 +26,7 @@ kotlin {
             implementation(libs.coroutines)
             api(libs.kotlin.result)
             api(libs.kotlin.result.coroutines)
+            api(libs.kermit)
             implementation(projects.translations)
         }
     }

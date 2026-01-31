@@ -1,9 +1,11 @@
 package com.retro99.reader.ui.controller
 
 import android.content.Context
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
+import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.asset.AssetRetriever
 import org.readium.r2.shared.util.http.DefaultHttpClient
@@ -106,6 +108,20 @@ class AndroidEpubReaderController(
 
     override fun goToPreviousPage() {
         navigator?.goBackward()
+    }
+
+    override fun setSettings(settings: ReaderSettingsDomainModel) {
+        navigator?.submitPreferences(settings.toEpubPreferences())
+    }
+
+    /**
+     * Converts reader settings to Readium EpubPreferences.
+     * This is used both for initial preferences and dynamic updates.
+     */
+    fun ReaderSettingsDomainModel.toEpubPreferences(): EpubPreferences {
+        return EpubPreferences(
+            fontSize = fontSize,
+        )
     }
 }
 

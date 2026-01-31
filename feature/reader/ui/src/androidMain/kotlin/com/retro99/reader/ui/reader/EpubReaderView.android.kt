@@ -12,6 +12,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.controller.AndroidEpubReaderController
 import com.retro99.reader.ui.controller.EpubReaderController
 import org.koin.compose.koinInject
@@ -26,6 +27,7 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 @Composable
 internal actual fun EpubReaderView(
     bookUuid: String,
+    initialSettings: ReaderSettingsDomainModel,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -80,10 +82,12 @@ internal actual fun EpubReaderView(
             // Only add fragment if it doesn't exist
             val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                     as? EpubNavigatorFragment
-
             if (existingFragment == null) {
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = null,
+                    initialPreferences = with(androidController) {
+                        initialSettings.toEpubPreferences()
+                    },
                 )
 
                 // Use commitNow to make the transaction synchronous
@@ -101,11 +105,11 @@ internal actual fun EpubReaderView(
                 val navigatorFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                         as? EpubNavigatorFragment
                 navigatorFragment?.let {
-                    (controller as AndroidEpubReaderController).setNavigator(it)
+                    controller.setNavigator(it)
                 }
             } else {
                 // Fragment already exists, ensure it's registered with the controller
-                (controller as AndroidEpubReaderController).setNavigator(existingFragment)
+                controller.setNavigator(existingFragment)
             }
         },
     )

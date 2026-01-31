@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ReaderSettingsLocalModel(
     @SerialName("font_size")
-    val fontSize: Float = 1.0f,
+    val fontSize: Double = 1.0,
     @SerialName("font_family")
     val fontFamily: String = "default",
     @SerialName("theme")
