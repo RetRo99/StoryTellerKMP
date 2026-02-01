@@ -15,7 +15,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.navigator.toEpubPreferences
@@ -33,7 +32,6 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
-    settings: ReaderSettingsDomainModel,
     commands: Flow<ReaderCommand>,
     onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier,

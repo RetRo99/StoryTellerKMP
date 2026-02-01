@@ -23,6 +23,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.ui.publication.EpubPublication
+import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -52,7 +53,7 @@ private fun ReaderScreenContent(
     bookUuid: String,
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
+    commands: Flow<ReaderCommand>,
 ) {
     Box(
         modifier = Modifier
@@ -76,7 +77,7 @@ private fun ReaderContent(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
+    commands: Flow<ReaderCommand>,
 ) {
     // Get initial settings from the publication
     val settings = publication.initialSettings
@@ -133,7 +134,6 @@ private fun ReaderContent(
         EpubReaderView(
             bookUuid = bookUuid,
             publication = publication,
-            settings = settings,
             commands = commands,
             onProgressChanged = { locator, progression ->
                 intentDispatcher(ReaderIntent.UpdateProgress(locator, progression))

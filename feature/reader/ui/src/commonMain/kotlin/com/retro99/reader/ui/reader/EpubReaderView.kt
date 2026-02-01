@@ -3,7 +3,6 @@ package com.retro99.reader.ui.reader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 internal expect fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
-    settings: ReaderSettingsDomainModel,
     commands: Flow<ReaderCommand>,
     onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier = Modifier,

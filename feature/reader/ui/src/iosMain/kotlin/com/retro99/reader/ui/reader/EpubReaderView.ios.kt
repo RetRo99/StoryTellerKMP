@@ -7,7 +7,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -24,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
-    settings: ReaderSettingsDomainModel,
     commands: Flow<ReaderCommand>,
     onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier,
