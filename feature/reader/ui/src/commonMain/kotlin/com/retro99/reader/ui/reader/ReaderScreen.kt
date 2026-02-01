@@ -41,6 +41,8 @@ fun ReaderScreen(
             bookUuid = bookUuid,
             viewState = viewState,
             intentDispatcher = intentDispatcher,
+            commands = viewModel.commands,
+            publicationService = viewModel.publicationService,
         )
     }
 }
@@ -50,6 +52,8 @@ private fun ReaderScreenContent(
     bookUuid: String,
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
+    publicationService: com.retro99.reader.ui.service.EpubPublicationService,
 ) {
     Box(
         modifier = Modifier
@@ -61,6 +65,8 @@ private fun ReaderScreenContent(
                 localFilePath = viewState.localFilePath,
                 settings = viewState.settings,
                 intentDispatcher = intentDispatcher,
+                commands = commands,
+                publicationService = publicationService,
             )
         }
     }
@@ -72,6 +78,8 @@ private fun ReaderContent(
     localFilePath: String,
     settings: ReaderSettingsDomainModel,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
+    publicationService: com.retro99.reader.ui.service.EpubPublicationService,
 ) {
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
@@ -127,6 +135,8 @@ private fun ReaderContent(
             bookUuid = bookUuid,
             localFilePath = localFilePath,
             settings = settings,
+            commands = commands,
+            publicationService = publicationService,
             onProgressChanged = { locator, progression ->
                 intentDispatcher(ReaderIntent.UpdateProgress(locator, progression))
             },

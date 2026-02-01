@@ -10,6 +10,10 @@ import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.service.EpubPublicationService
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -28,7 +32,11 @@ class ReaderViewModel(
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
+    @Provided val publicationService: EpubPublicationService,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(ReaderViewState()) {
+
+    private val _commands = MutableSharedFlow<ReaderCommand>()
+    val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
 
     init {
         observeSettings()

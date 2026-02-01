@@ -1,11 +1,11 @@
-package com.retro99.reader.ui.controller
+package com.retro99.reader.ui.service
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Base implementation of [EpubReaderController] that provides shared state management.
+ * Base implementation of [EpubPublicationService] that provides shared state management.
  *
  * This abstract class handles the common state management logic for both Android and iOS
  * implementations, including:
@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Platform-specific implementations should extend this class and implement the
  * publication lifecycle methods.
  */
-abstract class BaseEpubReaderController : EpubReaderController {
+abstract class BaseEpubPublicationService : EpubPublicationService {
 
     protected val _isReady = MutableStateFlow(false)
     override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
