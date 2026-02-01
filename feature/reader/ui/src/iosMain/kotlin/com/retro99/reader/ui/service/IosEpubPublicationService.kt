@@ -1,10 +1,7 @@
 package com.retro99.reader.ui.service
 
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
-import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.publication.EpubPublication
-import platform.UIKit.UIViewController
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -48,15 +45,5 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
         bridge?.closePublication()
         resetState()
     }
-
-    /**
-     * Creates the reader view controller from the bridge.
-     * This is iOS-specific and used by the View to create the navigator.
-     *
-     * @param initialSettings The initial reader settings to apply
-     * @return The UIViewController for the reader, or null if not available
-     */
-    fun createReaderViewController(initialSettings: ReaderSettingsDomainModel): UIViewController? =
-        bridge?.createReaderViewController(settings = EpubReaderSettings.from(initialSettings))
 }
 
