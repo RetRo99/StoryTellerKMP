@@ -14,6 +14,7 @@ data class EpubReaderSettings(
     val lineHeight: Float,
     val marginHorizontal: Int,
     val marginVertical: Int,
+    val scrollMode: Boolean,
 ) {
     companion object {
         fun from(settings: ReaderSettingsDomainModel): EpubReaderSettings {
@@ -23,6 +24,7 @@ data class EpubReaderSettings(
                 lineHeight = settings.lineHeight,
                 marginHorizontal = settings.marginHorizontal,
                 marginVertical = settings.marginVertical,
+                scrollMode = settings.scrollMode,
             )
         }
     }

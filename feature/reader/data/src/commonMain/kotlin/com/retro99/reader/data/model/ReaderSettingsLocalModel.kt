@@ -19,6 +19,8 @@ data class ReaderSettingsLocalModel(
     val marginHorizontal: Int = 16,
     @SerialName("margin_vertical")
     val marginVertical: Int = 16,
+    @SerialName("scroll_mode")
+    val scrollMode: Boolean = true,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -33,6 +35,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         lineHeight = lineHeight,
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
+        scrollMode = scrollMode,
     )
 }
 
@@ -44,6 +47,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         lineHeight = lineHeight,
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
+        scrollMode = scrollMode,
     )
 }
 

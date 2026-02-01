@@ -45,6 +45,7 @@ class AndroidEpubNavigatorController(
     private fun ReaderSettingsDomainModel.toEpubPreferences(): EpubPreferences {
         return EpubPreferences(
             fontSize = fontSize,
+            scroll = scrollMode,
             // Add more preferences here as needed:
             // fontFamily = fontFamily,
             // lineHeight = lineHeight,
@@ -60,6 +61,7 @@ class AndroidEpubNavigatorController(
 fun ReaderSettingsDomainModel.toEpubPreferences(): EpubPreferences {
     return EpubPreferences(
         fontSize = fontSize,
+        scroll = scrollMode,
         // Add more preferences here as needed:
         // fontFamily = fontFamily,
         // lineHeight = lineHeight,
