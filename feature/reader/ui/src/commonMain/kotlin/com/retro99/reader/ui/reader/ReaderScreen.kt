@@ -21,7 +21,6 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.publication.EpubPublication
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -62,7 +61,6 @@ private fun ReaderScreenContent(
             ReaderContent(
                 bookUuid = bookUuid,
                 publication = viewState.publication,
-                settings = viewState.settings,
                 intentDispatcher = intentDispatcher,
                 commands = commands,
             )
@@ -74,10 +72,11 @@ private fun ReaderScreenContent(
 private fun ReaderContent(
     bookUuid: String,
     publication: EpubPublication,
-    settings: ReaderSettingsDomainModel,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
 ) {
+    // Get initial settings from the publication
+    val settings = publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
 

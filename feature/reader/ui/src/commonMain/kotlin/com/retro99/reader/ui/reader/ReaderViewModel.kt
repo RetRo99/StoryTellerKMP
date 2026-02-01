@@ -15,6 +15,7 @@ import com.retro99.reader.ui.service.EpubPublicationService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -40,8 +41,8 @@ class ReaderViewModel(
     val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
 
     init {
-        observeSettings()
         loadBook()
+        observeSettingsChanges()
     }
 
     override fun onIntent(intent: ReaderIntent) {
@@ -53,10 +54,10 @@ class ReaderViewModel(
         }
     }
 
-    private fun observeSettings() {
+    private fun observeSettingsChanges() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                updateState { it.copy(settings = settings) }
+                _commands.emit(ReaderCommand.ApplySettings(settings))
             }
             .launchIn(viewModelScope)
     }
@@ -76,7 +77,10 @@ class ReaderViewModel(
     }
 
     private suspend fun openPublication(uuid: String, localPath: String) {
-        val publication = publicationService.openPublication(localPath)
+        // Get initial settings synchronously before opening publication
+        val initialSettings = getReaderSettingsUseCase().first()
+
+        val publication = publicationService.openPublication(localPath, initialSettings)
         if (publication != null) {
             updateState {
                 it.copy(

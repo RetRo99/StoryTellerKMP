@@ -30,13 +30,12 @@ internal actual fun EpubReaderView(
     modifier: Modifier,
 ) {
     val readerViewController = remember(publication) {
-        publication.bridge.createReaderViewController(settings = EpubReaderSettings.from(settings))
+        publication.bridge.createReaderViewController(settings = EpubReaderSettings.from(publication.initialSettings))
     }
 
     // Use common command handling logic
     HandleNavigatorCommands(
         navigator = publication,
-        settings = settings,
         commands = commands,
     )
 

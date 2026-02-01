@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.StateFlow
 
@@ -26,9 +27,13 @@ interface EpubPublicationService {
      * Opens an EPUB publication from the given file path.
      *
      * @param filePath The local file path to the EPUB file
+     * @param initialSettings The initial reader settings to apply when opening the publication
      * @return The opened [EpubPublication], or null if opening failed
      */
-    suspend fun openPublication(filePath: String): EpubPublication?
+    suspend fun openPublication(
+        filePath: String,
+        initialSettings: ReaderSettingsDomainModel,
+    ): EpubPublication?
 
     /**
      * Closes the currently open publication and releases resources.

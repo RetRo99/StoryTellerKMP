@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlin.coroutines.resume
@@ -17,7 +18,12 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
      */
     val bridge get() = EpubReaderBridgeRegistry.getBridge()
 
-    override suspend fun openPublication(filePath: String): EpubPublication? {
+    private var initialSettings: ReaderSettingsDomainModel? = null
+
+    override suspend fun openPublication(
+        filePath: String,
+        initialSettings: ReaderSettingsDomainModel,
+    ): EpubPublication? {
         val currentBridge = bridge
         if (currentBridge == null) {
             setError("EPUB reader bridge not registered")
@@ -25,13 +31,14 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
         }
 
         resetState()
+        this.initialSettings = initialSettings
 
         return suspendCoroutine { continuation ->
             currentBridge.openPublication(
                 filePath = filePath,
                 onSuccess = {
                     setReady()
-                    continuation.resume(EpubPublication(currentBridge))
+                    continuation.resume(EpubPublication(currentBridge, initialSettings))
                 },
                 onError = { errorMessage ->
                     setError(errorMessage)
@@ -43,7 +50,16 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
 
     override fun closePublication() {
         bridge?.closePublication()
+        initialSettings = null
         resetState()
     }
+
+    /**
+     * Gets the initial settings that were used to open the publication.
+     * This is iOS-specific and used by the View to create the reader with initial preferences.
+     *
+     * @return The initial settings, or null if no publication is open
+     */
+    fun getInitialSettings(): ReaderSettingsDomainModel? = initialSettings
 }
 
