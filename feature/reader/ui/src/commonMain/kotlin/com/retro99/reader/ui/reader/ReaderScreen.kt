@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.publication.EpubPublication
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -42,7 +43,6 @@ fun ReaderScreen(
             viewState = viewState,
             intentDispatcher = intentDispatcher,
             commands = viewModel.commands,
-            publicationService = viewModel.publicationService,
         )
     }
 }
@@ -53,20 +53,18 @@ private fun ReaderScreenContent(
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
-    publicationService: com.retro99.reader.ui.service.EpubPublicationService,
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize(),
     ) {
-        if (viewState.localFilePath?.isNotEmpty() == true) {
+        if (viewState.publication != null) {
             ReaderContent(
                 bookUuid = bookUuid,
-                localFilePath = viewState.localFilePath,
+                publication = viewState.publication,
                 settings = viewState.settings,
                 intentDispatcher = intentDispatcher,
                 commands = commands,
-                publicationService = publicationService,
             )
         }
     }
@@ -75,11 +73,10 @@ private fun ReaderScreenContent(
 @Composable
 private fun ReaderContent(
     bookUuid: String,
-    localFilePath: String,
+    publication: EpubPublication,
     settings: ReaderSettingsDomainModel,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     commands: kotlinx.coroutines.flow.Flow<ReaderCommand>,
-    publicationService: com.retro99.reader.ui.service.EpubPublicationService,
 ) {
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
@@ -133,10 +130,9 @@ private fun ReaderContent(
     ) {
         EpubReaderView(
             bookUuid = bookUuid,
-            localFilePath = localFilePath,
+            publication = publication,
             settings = settings,
             commands = commands,
-            publicationService = publicationService,
             onProgressChanged = { locator, progression ->
                 intentDispatcher(ReaderIntent.UpdateProgress(locator, progression))
             },

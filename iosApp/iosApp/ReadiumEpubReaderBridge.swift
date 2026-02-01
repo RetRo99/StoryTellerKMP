@@ -127,6 +127,26 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
     }
 
+    func goToChapter(href: String) {
+        Task { @MainActor in
+            guard let publication = self.publication else {
+                print("Cannot navigate to chapter: no publication loaded")
+                return
+            }
+
+            // Find the link with the matching href
+            let link = publication.readingOrder.first {
+                $0.href == href
+            }
+
+            if let link = link {
+                _ = await navigatorViewController?.go(to: link)
+            } else {
+                print("Chapter with href '\(href)' not found in reading order")
+            }
+        }
+    }
+
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
             print("Setting font typeScale to: \(settings.fontSize)")

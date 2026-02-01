@@ -20,12 +20,10 @@ import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.navigator.toEpubPreferences
-import com.retro99.reader.ui.service.AndroidEpubPublicationService
-import com.retro99.reader.ui.service.EpubPublicationService
+import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
-import org.readium.r2.shared.publication.Publication
 
 private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 
@@ -35,10 +33,9 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 @Composable
 internal actual fun EpubReaderView(
     bookUuid: String,
-    localFilePath: String,
+    publication: EpubPublication,
     settings: ReaderSettingsDomainModel,
     commands: Flow<ReaderCommand>,
-    publicationService: EpubPublicationService,
     onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier,
 ) {
@@ -48,24 +45,9 @@ internal actual fun EpubReaderView(
         return
     }
 
-    val androidService = publicationService as AndroidEpubPublicationService
+    val readiumPublication = publication.publication
 
-    var publication by remember { mutableStateOf<Publication?>(null) }
-    var isPublicationReady by remember { mutableStateOf(false) }
     var navigatorController by remember { mutableStateOf<EpubNavigatorController?>(null) }
-
-    // Open publication when localFilePath is available
-    LaunchedEffect(localFilePath) {
-        if (localFilePath.isNotEmpty()) {
-            val success = androidService.openPublication(localFilePath)
-            if (success) {
-                publication = androidService.getPublication()
-                if (publication != null) {
-                    isPublicationReady = true
-                }
-            }
-        }
-    }
 
     // Collect commands and execute on navigator controller
     LaunchedEffect(navigatorController) {
@@ -86,15 +68,8 @@ internal actual fun EpubReaderView(
         navigatorController?.setSettings(settings)
     }
 
-    // Show loading or error state if publication is not ready
-    val currentPublication = publication
-    if (currentPublication == null) {
-        // Publication not yet loaded - the LaunchedEffect will handle it
-        return
-    }
-
-    val navigatorFactory = remember(currentPublication) {
-        EpubNavigatorFactory(currentPublication)
+    val navigatorFactory = remember(readiumPublication) {
+        EpubNavigatorFactory(readiumPublication)
     }
 
     val containerId = remember { View.generateViewId() }
@@ -104,7 +79,7 @@ internal actual fun EpubReaderView(
             // Clean up the navigator controller
             navigatorController = null
             // Clean up the publication
-            androidService.closePublication()
+            publication.close()
             // Clean up the fragment when the composable is disposed
             val existingFragment = activity.supportFragmentManager
                 .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
