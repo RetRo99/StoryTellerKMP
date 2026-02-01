@@ -27,7 +27,7 @@ internal actual fun EpubReaderView(
     val iosController = controller as IosEpubReaderController
 
     val readerViewController = remember(bookUuid) {
-        iosController.createReaderViewController(initialSettings.fontSize)
+        iosController.createReaderViewController(initialSettings)
     } ?: run {
         ReaderErrorView(message = "EPUB publication not ready", modifier = modifier)
         return

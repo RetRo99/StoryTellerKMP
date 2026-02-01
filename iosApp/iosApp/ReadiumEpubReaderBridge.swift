@@ -75,7 +75,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         publication = nil
     }
 
-    func createReaderViewController(initialFontSize: Double) -> UIViewController? {
+    func createReaderViewController(settings: EpubReaderSettings) -> UIViewController? {
         guard let publication = self.publication else {
             return nil
         }
@@ -84,9 +84,9 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             // Get the screen bounds to constrain the navigator
             let screenBounds = UIScreen.main.bounds
 
-            // Create initial preferences with typeScale for font scaling
-            let initialPreferences = EPUBPreferences(typeScale: initialFontSize)
-            print("Creating EPUB navigator with initial typeScale: \(initialFontSize)")
+            // Create initial preferences from settings
+            let initialPreferences = settings.toEpubPreferences()
+            print("Creating EPUB navigator with initial typeScale: \(settings.fontSize)")
 
             let navigator = try EPUBNavigatorViewController(
                 publication: publication,
@@ -127,11 +127,28 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
     }
 
-    func setFontSize(scale: Double) {
+    func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
-            print("Setting font typeScale to: \(scale)")
-            let preferences = EPUBPreferences(typeScale: scale)
+            print("Setting font typeScale to: \(settings.fontSize)")
+            let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
         }
+    }
+}
+
+// MARK: - EpubReaderSettings Extension
+
+extension EpubReaderSettings {
+    /// Converts reader settings to Readium EPUBPreferences.
+    /// This is used both for initial preferences and dynamic updates.
+    /// Add new preference mappings here as needed.
+    func toEpubPreferences() -> EPUBPreferences {
+        return EPUBPreferences(
+            typeScale: fontSize
+            // Add more preferences here as needed:
+            // fontFamily: fontFamily,
+            // lineHeight: lineHeight,
+            // etc.
+        )
     }
 }
