@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.dp
-import co.touchlab.kermit.Logger
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
@@ -58,7 +57,6 @@ private fun ReaderScreenContent(
             .fillMaxSize(),
     ) {
         if (viewState.isPublicationReady) {
-            val logger = Logger.withTag("čič")
             SideEffect {
                 logger.d { "showing ui settings: ${viewState.settings}" }
             }
@@ -79,35 +77,48 @@ private fun ReaderContent(
 ) {
     // 1. Sync local state with the real source of truth
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
-
-    // 2. Used to display an overlay while zooming (optional but good UX)
     var isZooming by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
-                // Custom detector to handle "End of Gesture"
+            .pointerInput(settings.fontSize) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
+                    var zoomAccumulator = 1f
+                    var gestureActive = false
 
                     do {
                         val event = awaitPointerEvent()
                         if (event.changes.size >= 2) {
                             val zoomChange = event.calculateZoom()
-                            if (zoomChange != 1f) {
-                                isZooming = true
-                                tempScale = (tempScale * zoomChange).coerceIn(0.5, 3.0)
-                                event.changes.forEach { if (it.positionChanged()) it.consume() }
+
+                            if (!gestureActive) {
+                                zoomAccumulator *= zoomChange
+                                val isZoomingOut = zoomAccumulator < 0.50f
+                                val isZoomingIn = zoomAccumulator > 1.90f
+
+                                if (isZoomingIn || isZoomingOut) {
+                                    gestureActive = true
+                                    isZooming = true
+                                    tempScale = (tempScale * zoomAccumulator).coerceIn(0.5, 3.0)
+                                }
+                            } else {
+                                if (zoomChange != 1f) {
+                                    tempScale = (tempScale * zoomChange).coerceIn(0.5, 3.0)
+                                }
+                                event.changes.forEach {
+                                    if (it.positionChanged()) it.consume()
+                                }
                             }
                         }
                     } while (event.changes.any { it.pressed })
+
+                    // 4. Gesture Ended: Save to DB
                     if (isZooming) {
                         intentDispatcher(
                             ReaderIntent.UpdateSettings(
-                                settings.copy(
-                                    fontSize = tempScale,
-                                )
+                                settings.copy(fontSize = tempScale)
                             )
                         )
                         isZooming = false
