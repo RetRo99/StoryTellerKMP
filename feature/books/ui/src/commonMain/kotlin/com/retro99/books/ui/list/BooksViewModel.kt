@@ -13,9 +13,7 @@ import org.koin.core.annotation.Provided
 class BooksViewModel(
     @InjectedParam private val onNavigateToBookDetail: (bookUuid: String) -> Unit,
     @Provided private val getBooksUseCase: GetBooksUseCase,
-) : BaseViewModel<BooksListViewState, BooksListIntent>() {
-
-    override val initialState = BooksListViewState()
+) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
     init {
         loadBooks()
@@ -29,29 +27,28 @@ class BooksViewModel(
     }
 
     private fun loadBooks() {
-        setLoading()
+        updateState { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             getBooksUseCase().fold(
                 success = { books ->
-                    setState(BooksListViewState(books = books))
+                    updateState { it.copy(books = books, isLoading = false, error = null) }
                 },
                 failure = { error ->
-                    setError(error)
+                    updateState { it.copy(isLoading = false, error = error) }
                 },
             )
         }
     }
 
     private fun refreshBooks() {
-        updateState { it.copy(isRefreshing = true) }
+        updateState { it.copy(isRefreshing = true, error = null) }
         viewModelScope.launch {
             getBooksUseCase().fold(
                 success = { books ->
                     updateState { it.copy(books = books, isRefreshing = false) }
                 },
                 failure = { error ->
-                    updateState { it.copy(isRefreshing = false) }
-                    setError(error)
+                    updateState { it.copy(isRefreshing = false, error = error) }
                 },
             )
         }

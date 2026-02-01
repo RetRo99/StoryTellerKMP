@@ -1,45 +1,23 @@
 package com.retro99.base.ui
 
 import androidx.lifecycle.ViewModel
-import com.retro99.base.result.AppError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
-abstract class BaseViewModel<State, Intent : BaseIntent> : ViewModel() {
+abstract class BaseViewModel<State, Intent : BaseIntent>(
+    initialState: State,
+) : ViewModel() {
 
-    protected abstract val initialState: State
-
-    private val _state by lazy {
-        MutableStateFlow<BaseViewState<State>>(
-            BaseViewState.Success(
-                initialState
-            )
-        )
-    }
-    open val viewState: StateFlow<BaseViewState<State>> by lazy { _state.asStateFlow() }
+    private val _state = MutableStateFlow(initialState)
+    val viewState: StateFlow<State> = _state.asStateFlow()
 
     abstract fun onIntent(intent: Intent)
 
-    protected fun setState(state: State) {
-        _state.value = BaseViewState.Success(state)
-    }
-
-    @Suppress("UNCHECKED_CAST")
     protected fun updateState(update: (State) -> State) {
-        val current = (_state.value as? BaseViewState.Success<State>)?.data ?: initialState
-        _state.value = BaseViewState.Success(update(current))
+        _state.update(update)
     }
 
-    protected fun setError(error: AppError) {
-        _state.value = BaseViewState.Error(error)
-    }
-
-    protected fun setLoading() {
-        _state.value = BaseViewState.Loading
-    }
-
-    fun currentViewState(): State {
-        return (viewState.value as? BaseViewState.Success)?.data ?: initialState
-    }
+    fun currentViewState(): State = viewState.value
 }

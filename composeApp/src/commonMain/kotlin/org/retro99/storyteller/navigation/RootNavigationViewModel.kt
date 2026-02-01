@@ -11,9 +11,7 @@ import org.koin.core.annotation.KoinViewModel
 class RootNavigationViewModel(
     private val checkAuthStateUseCase: CheckAuthStateUseCase,
     private val logoutUseCase: LogoutUseCase,
-) : BaseViewModel<RootNavigationState, RootNavigationIntent>() {
-
-    override val initialState = RootNavigationState()
+) : BaseViewModel<RootNavigationState, RootNavigationIntent>(RootNavigationState()) {
 
     init {
         checkAuthState()

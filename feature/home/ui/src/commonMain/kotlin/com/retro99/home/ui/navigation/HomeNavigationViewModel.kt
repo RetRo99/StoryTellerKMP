@@ -4,9 +4,9 @@ import com.retro99.base.ui.BaseViewModel
 import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
-class HomeNavigationViewModel : BaseViewModel<HomeNavigationState, HomeNavigationIntent>() {
-
-    override val initialState = HomeNavigationState()
+class HomeNavigationViewModel : BaseViewModel<HomeNavigationState, HomeNavigationIntent>(
+    HomeNavigationState(),
+) {
 
     override fun onIntent(intent: HomeNavigationIntent) {
         when (intent) {

@@ -18,13 +18,11 @@ class LoginViewModel(
     @Provided private val loginUseCase: LoginUseCase,
     @InjectedParam private val onSignInSuccess: () -> Unit,
     @InjectedParam private val onBackClick: () -> Unit,
-) : BaseViewModel<LoginViewState, LoginIntent>() {
+) : BaseViewModel<LoginViewState, LoginIntent>(LoginViewState()) {
 
     val urlState = TextFieldState(initialText = "https://")
     val usernameState = TextFieldState()
     val passwordState = TextFieldState()
-
-    override val initialState = LoginViewState()
 
     init {
         observeTextFieldChanges()
