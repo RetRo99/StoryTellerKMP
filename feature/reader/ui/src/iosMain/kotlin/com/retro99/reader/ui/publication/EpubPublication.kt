@@ -15,7 +15,7 @@ import com.retro99.reader.ui.navigator.EpubNavigatorController
  */
 actual class EpubPublication(
     internal val bridge: EpubReaderBridge,
-    actual override val initialSettings: ReaderSettingsDomainModel,
+    actual val initialSettings: ReaderSettingsDomainModel,
 ) : EpubNavigatorController {
 
     /**
