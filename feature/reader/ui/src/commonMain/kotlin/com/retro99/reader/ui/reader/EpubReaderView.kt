@@ -35,13 +35,11 @@ internal expect fun EpubReaderView(
  * This should be called by platform implementations when the navigator is ready.
  *
  * @param navigator The navigator controller to execute commands on
- * @param settings The current reader settings
  * @param commands Flow of commands from ViewModel
  */
 @Composable
 internal fun HandleNavigatorCommands(
     navigator: EpubNavigatorController?,
-    settings: ReaderSettingsDomainModel,
     commands: Flow<ReaderCommand>,
 ) {
     // Collect and execute navigation commands
@@ -56,11 +54,6 @@ internal fun HandleNavigatorCommands(
                 }
             }
         }
-    }
-
-    // Apply settings when they change and navigator is ready
-    LaunchedEffect(settings, navigator) {
-        navigator?.setSettings(settings)
     }
 }
 

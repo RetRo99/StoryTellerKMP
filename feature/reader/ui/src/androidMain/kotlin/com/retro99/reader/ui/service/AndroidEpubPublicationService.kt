@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.service
 
 import android.content.Context
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -34,11 +35,16 @@ class AndroidEpubPublicationService(
     private val publicationOpener by lazy { PublicationOpener(publicationParser) }
 
     private var publication: Publication? = null
+    private var initialSettings: ReaderSettingsDomainModel? = null
 
-    override suspend fun openPublication(filePath: String): EpubPublication? =
+    override suspend fun openPublication(
+        filePath: String,
+        initialSettings: ReaderSettingsDomainModel,
+    ): EpubPublication? =
         withContext(Dispatchers.IO) {
             try {
                 resetState()
+                this@AndroidEpubPublicationService.initialSettings = initialSettings
 
                 val file = File(filePath)
                 if (!file.exists()) {
@@ -63,7 +69,7 @@ class AndroidEpubPublicationService(
 
                 publication = openedPublication
                 setReady()
-                EpubPublication(openedPublication)
+                EpubPublication(openedPublication, initialSettings)
             } catch (e: Exception) {
                 setError("Error opening ebook: ${e.message}")
                 null
@@ -72,6 +78,7 @@ class AndroidEpubPublicationService(
 
     override fun closePublication() {
         publication = null
+        initialSettings = null
         resetState()
     }
 
@@ -82,5 +89,13 @@ class AndroidEpubPublicationService(
      * @return The open Publication, or null if no publication is open
      */
     fun getPublication(): Publication? = publication
+
+    /**
+     * Gets the initial settings that were used to open the publication.
+     * This is Android-specific and used by the View to create the navigator with initial preferences.
+     *
+     * @return The initial settings, or null if no publication is open
+     */
+    fun getInitialSettings(): ReaderSettingsDomainModel? = initialSettings
 }
 

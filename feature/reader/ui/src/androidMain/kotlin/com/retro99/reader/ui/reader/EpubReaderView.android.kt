@@ -51,7 +51,6 @@ internal actual fun EpubReaderView(
     // Use common command handling logic
     HandleNavigatorCommands(
         navigator = navigatorController,
-        settings = settings,
         commands = commands,
     )
 
@@ -94,7 +93,7 @@ internal actual fun EpubReaderView(
             if (existingFragment == null) {
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = null,
-                    initialPreferences = settings.toEpubPreferences(),
+                    initialPreferences = publication.initialSettings.toEpubPreferences(),
                 )
 
                 // Use commitNow to make the transaction synchronous

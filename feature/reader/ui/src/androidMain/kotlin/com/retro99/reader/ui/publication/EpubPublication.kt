@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.publication
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import org.readium.r2.shared.publication.Publication
 
 /**
@@ -8,6 +9,7 @@ import org.readium.r2.shared.publication.Publication
  */
 actual class EpubPublication(
     internal val publication: Publication,
+    actual override val initialSettings: ReaderSettingsDomainModel,
 ) {
     /**
      * Closes the publication and releases resources.
