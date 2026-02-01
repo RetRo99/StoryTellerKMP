@@ -1,5 +1,6 @@
 package org.retro99.storyteller.di
 
+import com.retro99.base.AppInitializer
 import io.kotzilla.sdk.analytics.koin.analytics
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
@@ -22,6 +23,8 @@ fun initKoin(
         platformConfiguration()
         modules(additionalModules)
         analytics()
+    }.also { koinApp ->
+        koinApp.koin.getAll<AppInitializer>().forEach { it.initialize() }
     }
 }
 
