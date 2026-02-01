@@ -164,7 +164,8 @@ extension EpubReaderSettings {
     /// Add new preference mappings here as needed.
     func toEpubPreferences() -> EPUBPreferences {
         return EPUBPreferences(
-            fontSize: fontSize
+            fontSize: fontSize,
+            scroll: scrollMode
             // Add more preferences here as needed:
             // fontFamily: fontFamily,
             // lineHeight: lineHeight,

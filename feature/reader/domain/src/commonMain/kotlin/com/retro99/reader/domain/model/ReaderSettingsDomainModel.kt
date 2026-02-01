@@ -10,6 +10,7 @@ data class ReaderSettingsDomainModel(
     val lineHeight: Float = 1.5f,
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
+    val scrollMode: Boolean = true,
 )
 
 enum class ReaderTheme {
