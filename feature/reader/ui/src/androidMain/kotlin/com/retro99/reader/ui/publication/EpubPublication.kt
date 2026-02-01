@@ -9,7 +9,7 @@ import org.readium.r2.shared.publication.Publication
  */
 actual class EpubPublication(
     internal val publication: Publication,
-    actual override val initialSettings: ReaderSettingsDomainModel,
+    actual val initialSettings: ReaderSettingsDomainModel,
 ) {
     /**
      * Closes the publication and releases resources.

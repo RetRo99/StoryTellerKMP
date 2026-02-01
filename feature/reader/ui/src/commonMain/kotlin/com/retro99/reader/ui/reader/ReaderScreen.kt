@@ -21,6 +21,7 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.ui.publication.EpubPublication
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -64,6 +65,8 @@ private fun ReaderScreenContent(
                 intentDispatcher = intentDispatcher,
                 commands = commands,
             )
+        } else {
+            LoadingScreen()
         }
     }
 }
