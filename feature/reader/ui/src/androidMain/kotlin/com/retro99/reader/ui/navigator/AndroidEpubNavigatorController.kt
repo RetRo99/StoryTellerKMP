@@ -4,6 +4,7 @@ import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.shared.publication.Link
+import org.readium.r2.shared.util.Url
 
 /**
  * Android implementation of [EpubNavigatorController] using Readium's EpubNavigatorFragment.
@@ -27,7 +28,8 @@ class AndroidEpubNavigatorController(
     }
 
     override fun goToChapter(href: String) {
-        val link = Link(href = href)
+        val url = Url(href) ?: return
+        val link = Link(href = url)
         navigator.go(link)
     }
 
