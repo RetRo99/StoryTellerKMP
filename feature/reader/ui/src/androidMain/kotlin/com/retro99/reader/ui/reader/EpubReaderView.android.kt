@@ -4,7 +4,6 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,24 +48,12 @@ internal actual fun EpubReaderView(
 
     var navigatorController by remember { mutableStateOf<EpubNavigatorController?>(null) }
 
-    // Collect commands and execute on navigator controller
-    LaunchedEffect(navigatorController) {
-        navigatorController?.let { controller ->
-            commands.collect { command ->
-                when (command) {
-                    is ReaderCommand.GoToNextPage -> controller.goToNextPage()
-                    is ReaderCommand.GoToPreviousPage -> controller.goToPreviousPage()
-                    is ReaderCommand.GoToChapter -> controller.goToChapter(command.href)
-                    is ReaderCommand.ApplySettings -> controller.setSettings(command.settings)
-                }
-            }
-        }
-    }
-
-    // Apply settings when they change and navigator is ready
-    LaunchedEffect(settings, navigatorController) {
-        navigatorController?.setSettings(settings)
-    }
+    // Use common command handling logic
+    HandleNavigatorCommands(
+        navigator = navigatorController,
+        settings = settings,
+        commands = commands,
+    )
 
     val navigatorFactory = remember(readiumPublication) {
         EpubNavigatorFactory(readiumPublication)

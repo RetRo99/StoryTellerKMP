@@ -1,8 +1,10 @@
 package com.retro99.reader.ui.reader
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 
@@ -27,4 +29,38 @@ internal expect fun EpubReaderView(
     onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier = Modifier,
 )
+
+/**
+ * Common composable that handles command execution for a navigator controller.
+ * This should be called by platform implementations when the navigator is ready.
+ *
+ * @param navigator The navigator controller to execute commands on
+ * @param settings The current reader settings
+ * @param commands Flow of commands from ViewModel
+ */
+@Composable
+internal fun HandleNavigatorCommands(
+    navigator: EpubNavigatorController?,
+    settings: ReaderSettingsDomainModel,
+    commands: Flow<ReaderCommand>,
+) {
+    // Collect and execute navigation commands
+    LaunchedEffect(navigator) {
+        navigator?.let { controller ->
+            commands.collect { command ->
+                when (command) {
+                    is ReaderCommand.GoToNextPage -> controller.goToNextPage()
+                    is ReaderCommand.GoToPreviousPage -> controller.goToPreviousPage()
+                    is ReaderCommand.GoToChapter -> controller.goToChapter(command.href)
+                    is ReaderCommand.ApplySettings -> controller.setSettings(command.settings)
+                }
+            }
+        }
+    }
+
+    // Apply settings when they change and navigator is ready
+    LaunchedEffect(settings, navigator) {
+        navigator?.setSettings(settings)
+    }
+}
 
