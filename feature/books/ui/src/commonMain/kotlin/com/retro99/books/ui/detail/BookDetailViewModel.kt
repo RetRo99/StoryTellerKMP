@@ -14,9 +14,7 @@ class BookDetailViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val onNavigateToReader: (bookUuid: String, ebookFilePath: String) -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
-) : BaseViewModel<BookDetailViewState, BookDetailIntent>() {
-
-    override val initialState = BookDetailViewState()
+) : BaseViewModel<BookDetailViewState, BookDetailIntent>(BookDetailViewState()) {
 
     init {
         loadBook(bookUuid)
@@ -50,14 +48,14 @@ class BookDetailViewModel(
     }
 
     private fun loadBook(bookUuid: String) {
-        setLoading()
+        updateState { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             getBookByUuidUseCase(bookUuid).fold(
                 success = { book ->
-                    setState(BookDetailViewState(book = book))
+                    updateState { it.copy(book = book, isLoading = false, error = null) }
                 },
                 failure = { error ->
-                    setError(error)
+                    updateState { it.copy(isLoading = false, error = error) }
                 },
             )
         }

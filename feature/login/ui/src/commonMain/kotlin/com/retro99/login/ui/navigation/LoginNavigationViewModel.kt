@@ -7,10 +7,10 @@ import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class LoginNavigationViewModel(
-    @Provided @Named("isDebug") private val isDebug: Boolean,
-) : BaseViewModel<LoginNavigationState, LoginNavigationIntent>() {
-
-    override val initialState = LoginNavigationState(isDebug = isDebug)
+    @Provided @Named("isDebug") isDebug: Boolean,
+) : BaseViewModel<LoginNavigationState, LoginNavigationIntent>(
+    LoginNavigationState(isDebug = isDebug),
+) {
 
     override fun onIntent(intent: LoginNavigationIntent) {
         when (intent) {

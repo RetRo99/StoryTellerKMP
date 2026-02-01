@@ -28,9 +28,7 @@ class ReaderViewModel(
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
-) : BaseViewModel<ReaderViewState, ReaderIntent>() {
-
-    override val initialState = ReaderViewState()
+) : BaseViewModel<ReaderViewState, ReaderIntent>(ReaderViewState()) {
 
     init {
         observeSettings()
@@ -59,10 +57,16 @@ class ReaderViewModel(
             prepareEbookUseCase(uuid, filePath)
                 .fold(
                     success = { localPath ->
-                        updateState { it.copy(bookUuid = uuid, localFilePath = localPath) }
+                        updateState {
+                            it.copy(
+                                bookUuid = uuid,
+                                localFilePath = localPath,
+                                error = null
+                            )
+                        }
                     },
                     failure = { error ->
-                        setError(error)
+                        updateState { it.copy(error = error) }
                     },
                 )
         }
