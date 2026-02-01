@@ -1,4 +1,4 @@
-package com.retro99.reader.ui.controller
+package com.retro99.reader.ui.service
 
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
@@ -8,11 +8,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * iOS implementation of [EpubReaderController].
+ * iOS implementation of [EpubPublicationService].
  *
  * Uses the [EpubReaderBridgeRegistry] to delegate to the Swift Readium implementation.
  */
-class IosEpubReaderController : BaseEpubReaderController() {
+class IosEpubPublicationService : BaseEpubPublicationService() {
 
     /**
      * Gets the bridge instance, if registered.
@@ -48,21 +48,9 @@ class IosEpubReaderController : BaseEpubReaderController() {
         resetState()
     }
 
-    override fun goToNextPage() {
-        bridge?.goToNextPage()
-    }
-
-    override fun goToPreviousPage() {
-        bridge?.goToPreviousPage()
-    }
-
-    override fun setSettings(settings: ReaderSettingsDomainModel) {
-        bridge?.setSettings(settings = EpubReaderSettings.from(settings))
-    }
-
     /**
      * Creates the reader view controller from the bridge.
-     * This is iOS-specific and used by [EpubReaderView].
+     * This is iOS-specific and used by the View to create the navigator.
      *
      * @param initialSettings The initial reader settings to apply
      * @return The UIViewController for the reader, or null if not available

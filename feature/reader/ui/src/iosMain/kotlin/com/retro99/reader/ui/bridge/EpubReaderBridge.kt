@@ -69,6 +69,12 @@ interface EpubReaderBridge {
     fun goToPreviousPage()
 
     /**
+     * Navigates to a specific chapter by its href.
+     * @param href The href of the chapter to navigate to
+     */
+    fun goToChapter(href: String)
+
+    /**
      * Applies reader settings to the publication.
      * @param settings The reader settings to apply
      */

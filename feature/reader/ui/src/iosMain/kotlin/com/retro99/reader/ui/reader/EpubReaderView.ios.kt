@@ -12,10 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
-import com.retro99.reader.ui.controller.EpubReaderController
-import com.retro99.reader.ui.controller.IosEpubReaderController
+import com.retro99.reader.ui.navigator.EpubNavigatorController
+import com.retro99.reader.ui.navigator.IosEpubNavigatorController
+import com.retro99.reader.ui.service.EpubPublicationService
+import com.retro99.reader.ui.service.IosEpubPublicationService
 import kotlinx.cinterop.ExperimentalForeignApi
-import org.koin.compose.koinInject
+import kotlinx.coroutines.flow.Flow
 import platform.UIKit.UIViewController
 
 /**
@@ -27,34 +29,52 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     localFilePath: String,
     settings: ReaderSettingsDomainModel,
+    commands: Flow<ReaderCommand>,
+    publicationService: EpubPublicationService,
     onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier,
 ) {
-    val controller: EpubReaderController = koinInject()
-    val iosController = controller as IosEpubReaderController
+    val iosService = publicationService as IosEpubPublicationService
 
     var readerViewController by remember { mutableStateOf<UIViewController?>(null) }
     var isPublicationReady by remember { mutableStateOf(false) }
+    var navigatorController by remember { mutableStateOf<EpubNavigatorController?>(null) }
 
     // Open publication when localFilePath is available
     LaunchedEffect(localFilePath) {
         if (localFilePath.isNotEmpty()) {
-            val success = iosController.openPublication(localFilePath)
+            val success = iosService.openPublication(localFilePath)
             if (success) {
-                val viewController = iosController.createReaderViewController(settings)
+                val viewController = iosService.createReaderViewController(settings)
                 if (viewController != null) {
                     readerViewController = viewController
                     isPublicationReady = true
+                    // Create navigator controller from the bridge
+                    iosService.bridge?.let { bridge ->
+                        navigatorController = IosEpubNavigatorController(bridge)
+                    }
                 }
             }
         }
     }
 
-    // Apply settings when they change and publication is ready
-    LaunchedEffect(settings, isPublicationReady) {
-        if (isPublicationReady) {
-            iosController.setSettings(settings)
+    // Collect commands and execute on navigator controller
+    LaunchedEffect(navigatorController) {
+        navigatorController?.let { controller ->
+            commands.collect { command ->
+                when (command) {
+                    is ReaderCommand.GoToNextPage -> controller.goToNextPage()
+                    is ReaderCommand.GoToPreviousPage -> controller.goToPreviousPage()
+                    is ReaderCommand.GoToChapter -> controller.goToChapter(command.href)
+                    is ReaderCommand.ApplySettings -> controller.setSettings(command.settings)
+                }
+            }
         }
+    }
+
+    // Apply settings when they change and navigator is ready
+    LaunchedEffect(settings, navigatorController) {
+        navigatorController?.setSettings(settings)
     }
 
     // Show loading state if view controller is not ready
@@ -67,7 +87,8 @@ internal actual fun EpubReaderView(
     DisposableEffect(bookUuid) {
         onDispose {
             // Cleanup when the composable is disposed
-            iosController.closePublication()
+            navigatorController = null
+            iosService.closePublication()
         }
     }
 
