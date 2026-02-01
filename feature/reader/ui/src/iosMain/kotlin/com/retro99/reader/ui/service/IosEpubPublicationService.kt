@@ -3,6 +3,7 @@ package com.retro99.reader.ui.service
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.bridge.EpubReaderSettings
+import com.retro99.reader.ui.publication.EpubPublication
 import platform.UIKit.UIViewController
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -19,11 +20,11 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
      */
     val bridge get() = EpubReaderBridgeRegistry.getBridge()
 
-    override suspend fun openPublication(filePath: String): Boolean {
+    override suspend fun openPublication(filePath: String): EpubPublication? {
         val currentBridge = bridge
         if (currentBridge == null) {
             setError("EPUB reader bridge not registered")
-            return false
+            return null
         }
 
         resetState()
@@ -33,11 +34,11 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
                 filePath = filePath,
                 onSuccess = {
                     setReady()
-                    continuation.resume(true)
+                    continuation.resume(EpubPublication(currentBridge))
                 },
                 onError = { errorMessage ->
                     setError(errorMessage)
-                    continuation.resume(false)
+                    continuation.resume(null)
                 },
             )
         }

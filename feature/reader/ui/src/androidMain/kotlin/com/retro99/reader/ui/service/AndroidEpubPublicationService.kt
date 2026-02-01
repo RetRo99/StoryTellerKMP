@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.service
 
 import android.content.Context
+import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.readium.r2.shared.publication.Publication
@@ -34,39 +35,40 @@ class AndroidEpubPublicationService(
 
     private var publication: Publication? = null
 
-    override suspend fun openPublication(filePath: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            resetState()
+    override suspend fun openPublication(filePath: String): EpubPublication? =
+        withContext(Dispatchers.IO) {
+            try {
+                resetState()
 
-            val file = File(filePath)
-            if (!file.exists()) {
-                setError("Ebook file not found: $filePath")
-                return@withContext false
+                val file = File(filePath)
+                if (!file.exists()) {
+                    setError("Ebook file not found: $filePath")
+                    return@withContext null
+                }
+
+                val url = file.toUrl()
+                val asset = assetRetriever.retrieve(url).getOrNull()
+                if (asset == null) {
+                    setError("Failed to retrieve ebook asset")
+                    return@withContext null
+                }
+
+                val openedPublication = publicationOpener.open(asset, allowUserInteraction = false)
+                    .getOrNull()
+
+                if (openedPublication == null) {
+                    setError("Failed to open ebook")
+                    return@withContext null
+                }
+
+                publication = openedPublication
+                setReady()
+                EpubPublication(openedPublication)
+            } catch (e: Exception) {
+                setError("Error opening ebook: ${e.message}")
+                null
             }
-
-            val url = file.toUrl()
-            val asset = assetRetriever.retrieve(url).getOrNull()
-            if (asset == null) {
-                setError("Failed to retrieve ebook asset")
-                return@withContext false
-            }
-
-            val openedPublication = publicationOpener.open(asset, allowUserInteraction = false)
-                .getOrNull()
-
-            if (openedPublication == null) {
-                setError("Failed to open ebook")
-                return@withContext false
-            }
-
-            publication = openedPublication
-            setReady()
-            true
-        } catch (e: Exception) {
-            setError("Error opening ebook: ${e.message}")
-            false
         }
-    }
 
     override fun closePublication() {
         publication = null

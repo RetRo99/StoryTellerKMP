@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -8,9 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
  * This service handles opening and closing EPUB files. It is designed to be
  * injected into the ViewModel layer, separating publication management from
  * navigation concerns.
- *
- * Platform implementations provide access to the underlying publication object
- * through platform-specific methods (e.g., `getPublication()` on Android).
  */
 interface EpubPublicationService {
 
@@ -28,9 +26,9 @@ interface EpubPublicationService {
      * Opens an EPUB publication from the given file path.
      *
      * @param filePath The local file path to the EPUB file
-     * @return true if the publication was opened successfully, false otherwise
+     * @return The opened [EpubPublication], or null if opening failed
      */
-    suspend fun openPublication(filePath: String): Boolean
+    suspend fun openPublication(filePath: String): EpubPublication?
 
     /**
      * Closes the currently open publication and releases resources.

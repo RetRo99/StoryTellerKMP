@@ -2,6 +2,7 @@ package com.retro99.reader.ui.reader
 
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
+import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReadingProgressDomainModel
@@ -32,7 +33,7 @@ class ReaderViewModel(
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
-    @Provided val publicationService: EpubPublicationService,
+    @Provided private val publicationService: EpubPublicationService,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(ReaderViewState()) {
 
     private val _commands = MutableSharedFlow<ReaderCommand>()
@@ -65,18 +66,28 @@ class ReaderViewModel(
             prepareEbookUseCase(uuid, filePath)
                 .fold(
                     success = { localPath ->
-                        updateState {
-                            it.copy(
-                                bookUuid = uuid,
-                                localFilePath = localPath,
-                                error = null
-                            )
-                        }
+                        openPublication(uuid, localPath)
                     },
                     failure = { error ->
                         updateState { it.copy(error = error) }
                     },
                 )
+        }
+    }
+
+    private suspend fun openPublication(uuid: String, localPath: String) {
+        val publication = publicationService.openPublication(localPath)
+        if (publication != null) {
+            updateState {
+                it.copy(
+                    bookUuid = uuid,
+                    publication = publication,
+                    error = null,
+                )
+            }
+            loadReadingProgress(uuid)
+        } else {
+            updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
         }
     }
 
