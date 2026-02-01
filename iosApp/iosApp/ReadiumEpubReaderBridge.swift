@@ -86,7 +86,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
             // Create initial preferences from settings
             let initialPreferences = settings.toEpubPreferences()
-            print("Creating EPUB navigator with initial typeScale: \(settings.fontSize)")
+            print("Creating EPUB navigator with initial fontSize: \(settings.fontSize)")
 
             let navigator = try EPUBNavigatorViewController(
                 publication: publication,
@@ -144,7 +144,7 @@ extension EpubReaderSettings {
     /// Add new preference mappings here as needed.
     func toEpubPreferences() -> EPUBPreferences {
         return EPUBPreferences(
-            typeScale: fontSize
+            fontSize: fontSize
             // Add more preferences here as needed:
             // fontFamily: fontFamily,
             // lineHeight: lineHeight,
