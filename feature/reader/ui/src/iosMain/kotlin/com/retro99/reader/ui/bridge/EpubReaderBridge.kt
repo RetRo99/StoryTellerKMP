@@ -1,6 +1,32 @@
 package com.retro99.reader.ui.bridge
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import platform.UIKit.UIViewController
+
+/**
+ * Reader settings data class for iOS bridge.
+ * This is a simple data holder that can be passed to Swift.
+ * Add new settings properties here as needed.
+ */
+data class EpubReaderSettings(
+    val fontSize: Double,
+    val fontFamily: String,
+    val lineHeight: Float,
+    val marginHorizontal: Int,
+    val marginVertical: Int,
+) {
+    companion object {
+        fun from(settings: ReaderSettingsDomainModel): EpubReaderSettings {
+            return EpubReaderSettings(
+                fontSize = settings.fontSize,
+                fontFamily = settings.fontFamily,
+                lineHeight = settings.lineHeight,
+                marginHorizontal = settings.marginHorizontal,
+                marginVertical = settings.marginVertical,
+            )
+        }
+    }
+}
 
 /**
  * Bridge interface for iOS EPUB reader functionality.
@@ -27,10 +53,10 @@ interface EpubReaderBridge {
 
     /**
      * Creates a UIViewController for displaying the EPUB content.
-     * @param initialFontSize The initial font size scale to apply (1.0 = 100%)
+     * @param settings The initial reader settings to apply
      * @return A UIViewController that renders the EPUB, or null if no publication is open
      */
-    fun createReaderViewController(initialFontSize: Double): UIViewController?
+    fun createReaderViewController(settings: EpubReaderSettings): UIViewController?
 
     /**
      * Navigates to the next page/resource in the publication.
@@ -43,10 +69,10 @@ interface EpubReaderBridge {
     fun goToPreviousPage()
 
     /**
-     * Sets the font size scale for the publication.
-     * @param scale The font size scale factor (1.0 = 100%, 2.0 = 200%, etc.)
+     * Applies reader settings to the publication.
+     * @param settings The reader settings to apply
      */
-    fun setFontSize(scale: Double)
+    fun setSettings(settings: EpubReaderSettings)
 }
 
 /**

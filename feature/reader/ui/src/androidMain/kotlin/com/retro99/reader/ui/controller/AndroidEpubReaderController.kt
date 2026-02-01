@@ -117,10 +117,15 @@ class AndroidEpubReaderController(
     /**
      * Converts reader settings to Readium EpubPreferences.
      * This is used both for initial preferences and dynamic updates.
+     * Add new preference mappings here as needed.
      */
     fun ReaderSettingsDomainModel.toEpubPreferences(): EpubPreferences {
         return EpubPreferences(
             fontSize = fontSize,
+            // Add more preferences here as needed:
+            // fontFamily = fontFamily,
+            // lineHeight = lineHeight,
+            // etc.
         )
     }
 }

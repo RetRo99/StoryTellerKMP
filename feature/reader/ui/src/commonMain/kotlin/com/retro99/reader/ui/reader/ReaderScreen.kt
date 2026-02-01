@@ -95,8 +95,8 @@ private fun ReaderContent(
 
                             if (!gestureActive) {
                                 zoomAccumulator *= zoomChange
-                                val isZoomingOut = zoomAccumulator < 0.50f
-                                val isZoomingIn = zoomAccumulator > 1.90f
+                                val isZoomingOut = zoomAccumulator < 0.80f
+                                val isZoomingIn = zoomAccumulator > 1.20f
 
                                 if (isZoomingIn || isZoomingOut) {
                                     gestureActive = true
