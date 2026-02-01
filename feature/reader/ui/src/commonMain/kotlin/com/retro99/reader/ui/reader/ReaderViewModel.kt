@@ -1,9 +1,7 @@
 package com.retro99.reader.ui.reader
 
 import androidx.lifecycle.viewModelScope
-import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.fold
-import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReadingProgressDomainModel
@@ -12,7 +10,6 @@ import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
-import com.retro99.reader.ui.controller.EpubReaderController
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -21,7 +18,6 @@ import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 import kotlin.time.Clock
 
-val logger = Logger.withTag("čič")
 @KoinViewModel
 class ReaderViewModel(
     @InjectedParam private val bookUuid: String,
@@ -32,7 +28,6 @@ class ReaderViewModel(
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
-    @Provided private val epubReaderController: EpubReaderController,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>() {
 
     override val initialState = ReaderViewState()
@@ -48,17 +43,13 @@ class ReaderViewModel(
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
-            ReaderIntent.GoToNextPage -> epubReaderController.goToNextPage()
-            ReaderIntent.GoToPreviousPage -> epubReaderController.goToPreviousPage()
         }
     }
 
     private fun observeSettings() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                logger.d { "Settings changed: $settings" }
                 updateState { it.copy(settings = settings) }
-                epubReaderController.setSettings(settings)
             }
             .launchIn(viewModelScope)
     }
@@ -69,24 +60,11 @@ class ReaderViewModel(
                 .fold(
                     success = { localPath ->
                         updateState { it.copy(bookUuid = uuid, localFilePath = localPath) }
-                        openPublication(localPath, uuid)
                     },
                     failure = { error ->
                         setError(error)
                     },
                 )
-        }
-    }
-
-    private suspend fun openPublication(localPath: String, uuid: String) {
-        val success = epubReaderController.openPublication(localPath)
-        if (success) {
-            logger.d { "Ready" }
-            updateState { it.copy(isPublicationReady = true) }
-            loadReadingProgress(uuid)
-        } else {
-            val errorMessage = epubReaderController.error.value ?: "Failed to open publication"
-            setError(AppError.UnknownError(Exception(errorMessage)))
         }
     }
 
@@ -130,10 +108,7 @@ class ReaderViewModel(
     }
 
     private fun close() {
-        viewModelScope.launch {
-            epubReaderController.closePublication()
-            onClose()
-        }
+        onClose()
     }
 }
 
