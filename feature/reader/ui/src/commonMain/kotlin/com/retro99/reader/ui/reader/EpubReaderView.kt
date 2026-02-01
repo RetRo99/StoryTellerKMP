@@ -10,13 +10,18 @@ import com.retro99.reader.domain.model.ReaderSettingsDomainModel
  * On iOS, this uses Readium Swift via bridge.
  *
  * @param bookUuid The unique identifier of the book
- * @param initialSettings The initial reader settings to apply when opening the publication
+ * @param localFilePath The local file path of the EPUB file
+ * @param settings The reader settings to apply (reactive - updates when changed)
+ * @param onReady Callback when the publication is successfully opened
+ * @param onProgressChanged Callback when the reading progress changes
  * @param modifier The modifier to apply to the view
  */
 @Composable
 internal expect fun EpubReaderView(
     bookUuid: String,
-    initialSettings: ReaderSettingsDomainModel,
+    localFilePath: String,
+    settings: ReaderSettingsDomainModel,
+    onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier = Modifier,
 )
 

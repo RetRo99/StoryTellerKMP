@@ -4,7 +4,11 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -18,6 +22,7 @@ import com.retro99.reader.ui.controller.EpubReaderController
 import org.koin.compose.koinInject
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
+import org.readium.r2.shared.publication.Publication
 
 private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 
@@ -27,7 +32,9 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 @Composable
 internal actual fun EpubReaderView(
     bookUuid: String,
-    initialSettings: ReaderSettingsDomainModel,
+    localFilePath: String,
+    settings: ReaderSettingsDomainModel,
+    onProgressChanged: (locator: String, progression: Float) -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -38,18 +45,39 @@ internal actual fun EpubReaderView(
 
     val controller: EpubReaderController = koinInject()
     val androidController = controller as AndroidEpubReaderController
-    val publication = remember(bookUuid) {
-        androidController.getPublication()
-    } ?: run {
-        ReaderErrorView(
-            message = "Error: Publication not found for book $bookUuid",
-            modifier = modifier
-        )
+
+    var publication by remember { mutableStateOf<Publication?>(null) }
+    var isPublicationReady by remember { mutableStateOf(false) }
+
+    // Open publication when localFilePath is available
+    LaunchedEffect(localFilePath) {
+        if (localFilePath.isNotEmpty()) {
+            val success = androidController.openPublication(localFilePath)
+            if (success) {
+                publication = androidController.getPublication()
+                if (publication != null) {
+                    isPublicationReady = true
+                }
+            }
+        }
+    }
+
+    // Apply settings when they change and publication is ready
+    LaunchedEffect(settings, isPublicationReady) {
+        if (isPublicationReady) {
+            androidController.setSettings(settings)
+        }
+    }
+
+    // Show loading or error state if publication is not ready
+    val currentPublication = publication
+    if (currentPublication == null) {
+        // Publication not yet loaded - the LaunchedEffect will handle it
         return
     }
 
-    val navigatorFactory = remember(publication) {
-        EpubNavigatorFactory(publication)
+    val navigatorFactory = remember(currentPublication) {
+        EpubNavigatorFactory(currentPublication)
     }
 
     val containerId = remember { View.generateViewId() }
@@ -58,6 +86,8 @@ internal actual fun EpubReaderView(
         onDispose {
             // Clean up the navigator reference
             androidController.clearNavigator()
+            // Clean up the publication
+            androidController.closePublication()
             // Clean up the fragment when the composable is disposed
             val existingFragment = activity.supportFragmentManager
                 .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
@@ -86,7 +116,7 @@ internal actual fun EpubReaderView(
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = null,
                     initialPreferences = with(androidController) {
-                        initialSettings.toEpubPreferences()
+                        settings.toEpubPreferences()
                     },
                 )
 
@@ -105,11 +135,11 @@ internal actual fun EpubReaderView(
                 val navigatorFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                         as? EpubNavigatorFragment
                 navigatorFragment?.let {
-                    controller.setNavigator(it)
+                    androidController.setNavigator(it)
                 }
             } else {
                 // Fragment already exists, ensure it's registered with the controller
-                controller.setNavigator(existingFragment)
+                androidController.setNavigator(existingFragment)
             }
         },
     )

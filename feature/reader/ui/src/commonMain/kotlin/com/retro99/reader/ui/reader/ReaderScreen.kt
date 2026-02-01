@@ -10,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,12 +55,10 @@ private fun ReaderScreenContent(
         modifier = Modifier
             .fillMaxSize(),
     ) {
-        if (viewState.isPublicationReady) {
-            SideEffect {
-                logger.d { "showing ui settings: ${viewState.settings}" }
-            }
+        if (viewState.localFilePath?.isNotEmpty() == true) {
             ReaderContent(
                 bookUuid = bookUuid,
+                localFilePath = viewState.localFilePath,
                 settings = viewState.settings,
                 intentDispatcher = intentDispatcher,
             )
@@ -72,10 +69,10 @@ private fun ReaderScreenContent(
 @Composable
 private fun ReaderContent(
     bookUuid: String,
+    localFilePath: String,
     settings: ReaderSettingsDomainModel,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
-    // 1. Sync local state with the real source of truth
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
 
@@ -128,7 +125,11 @@ private fun ReaderContent(
     ) {
         EpubReaderView(
             bookUuid = bookUuid,
-            initialSettings = settings,
+            localFilePath = localFilePath,
+            settings = settings,
+            onProgressChanged = { locator, progression ->
+                intentDispatcher(ReaderIntent.UpdateProgress(locator, progression))
+            },
             modifier = Modifier.fillMaxSize(),
         )
 

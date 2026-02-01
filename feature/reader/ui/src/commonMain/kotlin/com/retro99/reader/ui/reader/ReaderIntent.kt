@@ -16,9 +16,5 @@ sealed interface ReaderIntent : BaseIntent {
     data object ToggleSettings : ReaderIntent
 
     data object Close : ReaderIntent
-
-    data object GoToNextPage : ReaderIntent
-
-    data object GoToPreviousPage : ReaderIntent
 }
 
