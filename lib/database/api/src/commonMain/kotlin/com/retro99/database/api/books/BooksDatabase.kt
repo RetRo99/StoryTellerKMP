@@ -15,7 +15,5 @@ interface BooksDatabase {
     suspend fun deleteBook(uuid: String)
 
     suspend fun getBooksCount(): Int
-
-    suspend fun getBooksOlderThan(timestamp: Long): List<BookEntity>
 }
 

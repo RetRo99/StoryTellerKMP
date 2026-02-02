@@ -15,7 +15,5 @@ interface BooksLocalSource {
     suspend fun saveBook(book: BookEntity): CompletableResult
 
     suspend fun clearCache(): CompletableResult
-
-    suspend fun isCacheValid(): AppResult<Boolean>
 }
 

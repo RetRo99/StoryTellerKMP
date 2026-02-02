@@ -1,7 +1,6 @@
 package com.retro99.books.data
 
 import com.github.michaelbull.result.map
-import com.retro99.base.nowMillis
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppResult
 import com.retro99.books.data.model.BookApiModel
@@ -73,7 +72,6 @@ internal class BooksDataRepository(
             id = id,
             rating = rating,
             dataJson = json.encodeToString(this),
-            cachedAt = nowMillis(),
         )
     }
 
@@ -90,6 +88,5 @@ private data class BookEntityImpl(
     override val id: Long,
     override val rating: Float?,
     override val dataJson: String,
-    override val cachedAt: Long,
 ) : BookEntity
 

@@ -35,10 +35,6 @@ internal class BooksDatabaseImpl(
         return sqlDelightDao.getBooksCount().toInt()
     }
 
-    override suspend fun getBooksOlderThan(timestamp: Long): List<BookEntity> {
-        return sqlDelightDao.getBooksOlderThan(timestamp)
-    }
-
     private fun BookEntity.toSqlDelightEntity(): BookSqlDelightEntity {
         return BookSqlDelightEntity(
             uuid = uuid,
@@ -46,7 +42,6 @@ internal class BooksDatabaseImpl(
             id = id,
             rating = rating,
             dataJson = dataJson,
-            cachedAt = cachedAt,
         )
     }
 }

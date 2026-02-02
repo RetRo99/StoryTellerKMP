@@ -17,8 +17,5 @@ interface BookEntity {
 
     // Full book data as JSON blob
     val dataJson: String
-
-    // Timestamp for cache invalidation
-    val cachedAt: Long
 }
 
