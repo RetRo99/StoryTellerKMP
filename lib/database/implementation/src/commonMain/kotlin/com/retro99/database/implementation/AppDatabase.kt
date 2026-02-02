@@ -5,8 +5,10 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
+import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.implementation.dao.books.BookRoomEntity
-import com.retro99.database.implementation.dao.books.BooksDao
+import com.retro99.database.implementation.dao.books.BooksDatabaseImpl
+import com.retro99.database.implementation.dao.books.BooksRoomDao
 
 @Database(
     entities = [
@@ -19,7 +21,9 @@ import com.retro99.database.implementation.dao.books.BooksDao
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun booksDao(): BooksDao
+    protected abstract fun booksRoomDao(): BooksRoomDao
+
+    fun booksDao(): BooksDatabase = BooksDatabaseImpl(booksRoomDao())
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")

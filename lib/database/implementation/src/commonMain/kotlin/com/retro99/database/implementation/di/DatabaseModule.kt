@@ -1,6 +1,7 @@
 package com.retro99.database.implementation.di
 
 import androidx.room.RoomDatabase
+import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.implementation.AppDatabase
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
@@ -19,5 +20,10 @@ class DatabaseModule {
     @Single
     fun provideAppDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase {
         return builder.build()
+    }
+
+    @Single
+    fun provideBooksDao(database: AppDatabase): BooksDatabase {
+        return database.booksDao()
     }
 }

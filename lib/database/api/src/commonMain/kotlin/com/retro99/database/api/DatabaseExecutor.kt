@@ -1,4 +1,4 @@
-package com.retro99.database.implementation
+package com.retro99.database.api
 
 import com.retro99.base.result.AppResult
 

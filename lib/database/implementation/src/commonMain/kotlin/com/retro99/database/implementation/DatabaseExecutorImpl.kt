@@ -6,6 +6,7 @@ import com.github.michaelbull.result.Ok
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
+import com.retro99.database.api.DatabaseExecutor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.ensureActive
