@@ -32,6 +32,7 @@ data class SeriesUiModel(
 data class LocatorUiModel(
     val href: String,
     val type: String,
+    val title: String?,
     val progression: Double?,
     val position: Int?,
     val totalProgression: Double?,
