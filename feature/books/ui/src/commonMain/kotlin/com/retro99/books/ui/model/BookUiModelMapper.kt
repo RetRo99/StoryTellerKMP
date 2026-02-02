@@ -24,6 +24,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
         LocatorUiModel(
             href = href,
             type = type,
+            title = locator.title,
             progression = locator.locations?.progression,
             position = locator.locations?.position,
             totalProgression = locator.locations?.totalProgression,

@@ -97,7 +97,7 @@ internal actual fun EpubReaderView(
                         Locator(
                             href = url,
                             mediaType = MediaType(locator.type) ?: MediaType.XHTML,
-                            title = null,
+                            title = locator.title,
                             locations = Locator.Locations(
                                 progression = locator.progression,
                                 position = locator.position,
