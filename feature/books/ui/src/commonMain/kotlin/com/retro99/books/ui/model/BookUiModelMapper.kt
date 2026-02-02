@@ -18,16 +18,16 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
     hasAudiobook = audiobook != null,
     hasReadaloud = readaloud != null,
     ebookFilepath = ebook?.filepath,
-    locator = position?.locator?.let { locator ->
-        val href = locator.href ?: return@let null
-        val type = locator.type ?: return@let null
+    locator = position?.let { pos ->
+        val href = pos.locatorHref ?: return@let null
+        val type = pos.locatorType ?: return@let null
         LocatorUiModel(
             href = href,
             type = type,
-            title = locator.title,
-            progression = locator.locations?.progression,
-            position = locator.locations?.position,
-            totalProgression = locator.locations?.totalProgression,
+            title = pos.locatorTitle,
+            progression = pos.progression,
+            position = pos.position,
+            totalProgression = pos.totalProgression,
         )
     },
 )

@@ -1,7 +1,5 @@
 package com.retro99.books.data.model
 
-import com.retro99.books.domain.model.LocationsDomainModel
-import com.retro99.books.domain.model.LocatorDomainModel
 import com.retro99.books.domain.model.PositionDomainModel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -66,35 +64,28 @@ data class LocationsApiModel(
     val position: Int? = null,
 )
 
+/**
+ * Flattens the nested API model structure into a flat domain model.
+ */
 fun PositionApiModel.toDomain(): PositionDomainModel {
     return PositionDomainModel(
         uuid = uuid,
-        locator = locator?.toDomain(),
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
-    )
-}
-
-fun LocatorApiModel.toDomain(): LocatorDomainModel {
-    return LocatorDomainModel(
-        href = href,
-        type = type,
-        title = title,
-        target = target,
-        locations = locations?.toDomain(),
-    )
-}
-
-fun LocationsApiModel.toDomain(): LocationsDomainModel {
-    return LocationsDomainModel(
-        audioTimestampMs = audioTimestampMs,
-        chapterIndex = chapterIndex,
-        progression = progression,
-        totalChapters = totalChapters,
-        totalDurationMs = totalDurationMs,
-        totalProgression = totalProgression,
-        position = position,
+        // Locator fields
+        locatorHref = locator?.href,
+        locatorType = locator?.type,
+        locatorTitle = locator?.title,
+        locatorTarget = locator?.target,
+        // Location fields
+        audioTimestampMs = locator?.locations?.audioTimestampMs,
+        chapterIndex = locator?.locations?.chapterIndex,
+        progression = locator?.locations?.progression,
+        totalChapters = locator?.locations?.totalChapters,
+        totalDurationMs = locator?.locations?.totalDurationMs,
+        totalProgression = locator?.locations?.totalProgression,
+        position = locator?.locations?.position,
     )
 }
 
