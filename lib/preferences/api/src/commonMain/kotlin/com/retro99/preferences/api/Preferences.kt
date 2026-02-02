@@ -7,6 +7,8 @@ interface Preferences {
     fun putString(key: PreferencesKey, value: String)
     fun getBoolean(key: PreferencesKey, defaultValue: Boolean = false): Boolean
     fun putBoolean(key: PreferencesKey, value: Boolean)
+    fun getLong(key: PreferencesKey, defaultValue: Long = 0L): Long
+    fun putLong(key: PreferencesKey, value: Long)
     fun remove(key: PreferencesKey)
 }
 
@@ -29,5 +31,6 @@ sealed class PreferencesKey(val name: String) {
     data object ServerUrl : PreferencesKey("ServerUrl")
     data object Credentials : PreferencesKey("Credentials")
     data object ReaderSettings : PreferencesKey("ReaderSettings")
+    data object DatabaseSchemaVersion : PreferencesKey("DatabaseSchemaVersion")
     data class ReadingProgress(val bookUuid: String) : PreferencesKey("ReadingProgress_$bookUuid")
 }

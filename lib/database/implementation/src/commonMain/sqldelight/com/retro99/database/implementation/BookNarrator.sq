@@ -1,0 +1,35 @@
+-- ============================================
+-- BOOK NARRATORS JUNCTION TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS book_narrators (
+    book_uuid TEXT NOT NULL,
+    person_uuid TEXT NOT NULL,
+    PRIMARY KEY (book_uuid, person_uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_narrators_person ON book_narrators(person_uuid);
+
+-- Queries
+insertBookNarrator:
+INSERT OR IGNORE INTO book_narrators(book_uuid, person_uuid)
+VALUES (?, ?);
+
+getNarratorsByBookUuid:
+SELECT p.* FROM persons p
+JOIN book_narrators bn ON p.uuid = bn.person_uuid
+WHERE bn.book_uuid = ?
+ORDER BY p.name ASC;
+
+getBooksByNarratorUuid:
+SELECT b.* FROM books b
+JOIN book_narrators bn ON b.uuid = bn.book_uuid
+WHERE bn.person_uuid = ?
+ORDER BY b.title ASC;
+
+deleteBookNarrators:
+DELETE FROM book_narrators WHERE book_uuid = ?;
+
+deleteAllBookNarrators:
+DELETE FROM book_narrators;
+

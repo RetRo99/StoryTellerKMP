@@ -1,0 +1,36 @@
+-- ============================================
+-- BOOK SERIES JUNCTION TABLE (with position)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS book_series (
+    book_uuid TEXT NOT NULL,
+    series_uuid TEXT NOT NULL,
+    position INTEGER,
+    PRIMARY KEY (book_uuid, series_uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_series_series ON book_series(series_uuid);
+
+-- Queries
+insertBookSeries:
+INSERT OR IGNORE INTO book_series(book_uuid, series_uuid, position)
+VALUES (?, ?, ?);
+
+getSeriesByBookUuid:
+SELECT s.*, bs.position FROM series s
+JOIN book_series bs ON s.uuid = bs.series_uuid
+WHERE bs.book_uuid = ?
+ORDER BY s.name ASC;
+
+getBooksBySeriesUuid:
+SELECT b.*, bs.position FROM books b
+JOIN book_series bs ON b.uuid = bs.book_uuid
+WHERE bs.series_uuid = ?
+ORDER BY bs.position ASC;
+
+deleteBookSeries:
+DELETE FROM book_series WHERE book_uuid = ?;
+
+deleteAllBookSeries:
+DELETE FROM book_series;
+

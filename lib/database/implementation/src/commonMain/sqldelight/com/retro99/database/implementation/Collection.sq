@@ -1,0 +1,30 @@
+-- ============================================
+-- COLLECTIONS TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS collections (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_collections_name ON collections(name);
+
+-- Queries for collections
+upsertCollection:
+INSERT OR REPLACE INTO collections(uuid, name, created_at, updated_at)
+VALUES (?, ?, ?, ?);
+
+getCollectionByUuid:
+SELECT * FROM collections WHERE uuid = ?;
+
+getAllCollections:
+SELECT * FROM collections ORDER BY name ASC;
+
+deleteCollection:
+DELETE FROM collections WHERE uuid = ?;
+
+deleteAllCollections:
+DELETE FROM collections;
+

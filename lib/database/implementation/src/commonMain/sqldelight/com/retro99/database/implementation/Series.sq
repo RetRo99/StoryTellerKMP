@@ -1,0 +1,34 @@
+-- ============================================
+-- SERIES TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS series (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    featured INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_series_name ON series(name);
+
+-- Queries for series
+upsertSeries:
+INSERT OR REPLACE INTO series(uuid, name, featured, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?);
+
+getSeriesByUuid:
+SELECT * FROM series WHERE uuid = ?;
+
+getAllSeries:
+SELECT * FROM series ORDER BY name ASC;
+
+searchSeriesByName:
+SELECT * FROM series WHERE name LIKE ? ORDER BY name ASC;
+
+deleteSeries:
+DELETE FROM series WHERE uuid = ?;
+
+deleteAllSeries:
+DELETE FROM series;
+

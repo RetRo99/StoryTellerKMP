@@ -1,0 +1,35 @@
+-- ============================================
+-- BOOK TAGS JUNCTION TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS book_tags (
+    book_uuid TEXT NOT NULL,
+    tag_uuid TEXT NOT NULL,
+    PRIMARY KEY (book_uuid, tag_uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_tags_tag ON book_tags(tag_uuid);
+
+-- Queries
+insertBookTag:
+INSERT OR IGNORE INTO book_tags(book_uuid, tag_uuid)
+VALUES (?, ?);
+
+getTagsByBookUuid:
+SELECT t.* FROM tags t
+JOIN book_tags bt ON t.uuid = bt.tag_uuid
+WHERE bt.book_uuid = ?
+ORDER BY t.name ASC;
+
+getBooksByTagUuid:
+SELECT b.* FROM books b
+JOIN book_tags bt ON b.uuid = bt.book_uuid
+WHERE bt.tag_uuid = ?
+ORDER BY b.title ASC;
+
+deleteBookTags:
+DELETE FROM book_tags WHERE book_uuid = ?;
+
+deleteAllBookTags:
+DELETE FROM book_tags;
+

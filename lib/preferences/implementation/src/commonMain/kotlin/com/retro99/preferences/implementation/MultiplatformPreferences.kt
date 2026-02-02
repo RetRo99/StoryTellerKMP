@@ -3,8 +3,6 @@ package com.retro99.preferences.implementation
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.russhwolf.settings.Settings
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Single
 
 @Single(binds = [Preferences::class])
@@ -22,6 +20,12 @@ class MultiplatformPreferences(
 
     override fun putBoolean(key: PreferencesKey, value: Boolean) =
         settings.putBoolean(key.name, value)
+
+    override fun getLong(key: PreferencesKey, defaultValue: Long): Long =
+        settings.getLong(key.name, defaultValue)
+
+    override fun putLong(key: PreferencesKey, value: Long) =
+        settings.putLong(key.name, value)
 
     override fun remove(key: PreferencesKey) {
         settings.remove(key.name)
