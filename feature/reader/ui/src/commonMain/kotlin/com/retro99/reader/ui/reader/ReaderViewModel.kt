@@ -7,12 +7,14 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.reader.domain.model.InitialLocatorDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
-import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.model.ReadingProgressUiModel
+import com.retro99.reader.ui.model.toDomainModel
+import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.service.EpubPublicationService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -118,7 +120,7 @@ class ReaderViewModel(
             getReadingProgressUseCase(uuid)
                 .fold(
                     success = { progress ->
-                        updateState { it.copy(progress = progress) }
+                        updateState { it.copy(progress = progress?.toUiModel()) }
                     },
                     failure = { /* Ignore progress loading failure */ },
                 )
@@ -128,17 +130,17 @@ class ReaderViewModel(
     private fun updateProgress(locator: String, progression: Float) {
         val currentBookUuid = currentViewState().bookUuid ?: return
 
-        val progressModel = ReadingProgressDomainModel(
+        val progressUiModel = ReadingProgressUiModel(
             bookUuid = currentBookUuid,
             locator = locator,
             progression = progression,
             lastReadAt = Clock.System.now().toString(),
         )
 
-        updateState { it.copy(progress = progressModel) }
+        updateState { it.copy(progress = progressUiModel) }
 
         viewModelScope.launch {
-            saveReadingProgressUseCase(progressModel)
+            saveReadingProgressUseCase(progressUiModel.toDomainModel())
         }
     }
 
