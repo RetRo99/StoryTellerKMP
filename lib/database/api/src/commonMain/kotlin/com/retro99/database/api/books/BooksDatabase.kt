@@ -10,15 +10,9 @@ interface BooksDatabase {
 
     suspend fun upsertBook(book: BookEntity)
 
-    suspend fun upsertBookWithRelations(book: BookWithRelationsEntity)
-
     suspend fun getAllBooks(): List<BookEntity>
 
-    suspend fun getAllBooksWithRelations(): List<BookWithRelationsEntity>
-
     suspend fun getBookByUuid(uuid: String): BookEntity?
-
-    suspend fun getBookWithRelations(uuid: String): BookWithRelationsEntity?
 
     suspend fun deleteAllBooks()
 

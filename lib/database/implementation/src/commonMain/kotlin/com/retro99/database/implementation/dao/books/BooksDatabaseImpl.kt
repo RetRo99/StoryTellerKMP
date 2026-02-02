@@ -2,7 +2,6 @@ package com.retro99.database.implementation.dao.books
 
 import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BookSeriesEntity
-import com.retro99.database.api.books.BookWithRelationsEntity
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
@@ -21,27 +20,15 @@ internal class BooksDatabaseImpl(
     // ==================== BOOK OPERATIONS ====================
 
     override suspend fun upsertBook(book: BookEntity) {
-        sqlDelightDao.upsertBook(book.toSqlDelightEntity())
-    }
-
-    override suspend fun upsertBookWithRelations(book: BookWithRelationsEntity) {
         saveBookWithRelations(book)
     }
 
     override suspend fun getAllBooks(): List<BookEntity> {
-        return sqlDelightDao.getAllBooks()
-    }
-
-    override suspend fun getAllBooksWithRelations(): List<BookWithRelationsEntity> {
         val books = sqlDelightDao.getAllBooks()
         return books.map { book -> loadBookWithRelations(book) }
     }
 
     override suspend fun getBookByUuid(uuid: String): BookEntity? {
-        return sqlDelightDao.getBookByUuid(uuid)
-    }
-
-    override suspend fun getBookWithRelations(uuid: String): BookWithRelationsEntity? {
         val book = sqlDelightDao.getBookByUuid(uuid) ?: return null
         return loadBookWithRelations(book)
     }
@@ -218,23 +205,6 @@ internal class BooksDatabaseImpl(
 
     // ==================== ENTITY CONVERSIONS ====================
 
-    private fun BookEntity.toSqlDelightEntity(): BookSqlDelightEntity {
-        return BookSqlDelightEntity(
-            uuid = uuid,
-            id = id,
-            title = title,
-            subtitle = subtitle,
-            language = language,
-            publicationDate = publicationDate,
-            description = description,
-            rating = rating,
-            suffix = suffix,
-            statusUuid = statusUuid,
-            createdAt = createdAt,
-            updatedAt = updatedAt,
-        )
-    }
-
     private fun PersonEntity.toSqlDelightEntity(): PersonSqlDelightEntity {
         return PersonSqlDelightEntity(
             uuid = uuid,
@@ -329,7 +299,7 @@ internal class BooksDatabaseImpl(
 
     private suspend fun loadBookWithRelations(
         book: BookSqlDelightEntity,
-    ): BookWithRelationsEntity {
+    ): BookEntity {
         val authors = sqlDelightDao.getAuthorsByBookUuid(book.uuid)
         val narrators = sqlDelightDao.getNarratorsByBookUuid(book.uuid)
         val creators = sqlDelightDao.getCreatorsByBookUuid(book.uuid)
@@ -353,7 +323,7 @@ internal class BooksDatabaseImpl(
             }
         }
 
-        return BookWithRelationsEntityImpl(
+        return BookEntityImpl(
             uuid = book.uuid,
             id = book.id,
             title = book.title,
@@ -380,7 +350,7 @@ internal class BooksDatabaseImpl(
 
     // ==================== RELATION SAVING ====================
 
-    private suspend fun saveBookWithRelations(book: BookWithRelationsEntity) {
+    private suspend fun saveBookWithRelations(book: BookEntity) {
         // Save status first if present
         book.status?.let { status ->
             sqlDelightDao.upsertStatus(status.toSqlDelightEntity())
@@ -449,7 +419,7 @@ internal class BooksDatabaseImpl(
         }
     }
 
-    private fun BookWithRelationsEntity.toSqlDelightEntity(): BookSqlDelightEntity {
+    private fun BookEntity.toSqlDelightEntity(): BookSqlDelightEntity {
         return BookSqlDelightEntity(
             uuid = uuid,
             id = id,
@@ -479,7 +449,7 @@ internal class BooksDatabaseImpl(
 
 // ==================== ENTITY IMPLEMENTATIONS ====================
 
-private data class BookWithRelationsEntityImpl(
+private data class BookEntityImpl(
     override val uuid: String,
     override val id: Long,
     override val title: String,
@@ -501,7 +471,7 @@ private data class BookWithRelationsEntityImpl(
     override val ebook: MediaFileEntity?,
     override val audiobook: MediaFileEntity?,
     override val readaloud: ReadaloudEntity?,
-) : BookWithRelationsEntity
+) : BookEntity
 
 private data class SeriesWithPositionEntityImpl(
     override val uuid: String,

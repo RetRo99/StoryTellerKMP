@@ -1,6 +1,5 @@
 package com.retro99.database.implementation.dao.books
 
-import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BookSeriesEntity
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
@@ -15,19 +14,19 @@ import com.retro99.database.api.books.TagEntity
  * SQLDelight entity for books table.
  */
 data class BookSqlDelightEntity(
-    override val uuid: String,
-    override val id: Long,
-    override val title: String,
-    override val subtitle: String?,
-    override val language: String?,
-    override val publicationDate: String?,
-    override val description: String?,
-    override val rating: Float?,
-    override val suffix: String?,
-    override val statusUuid: String?,
-    override val createdAt: String?,
-    override val updatedAt: String?,
-) : BookEntity
+    val uuid: String,
+    val id: Long,
+    val title: String,
+    val subtitle: String?,
+    val language: String?,
+    val publicationDate: String?,
+    val description: String?,
+    val rating: Float?,
+    val suffix: String?,
+    val statusUuid: String?,
+    val createdAt: String?,
+    val updatedAt: String?,
+)
 
 /**
  * SQLDelight entity for persons table.
