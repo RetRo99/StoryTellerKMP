@@ -14,7 +14,7 @@ import org.koin.core.annotation.Single
 import kotlin.coroutines.cancellation.CancellationException
 
 @Single(binds = [DatabaseExecutor::class])
-class DaoExecutor(
+class DatabaseExecutorImpl(
     private val analytics: Analytics,
 ) : DatabaseExecutor {
 
