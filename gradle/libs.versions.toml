@@ -38,6 +38,7 @@ readium = "3.0.0"
 room = "2.8.4"
 ksp = "2.3.5"
 sqlite = "2.6.2"
+sqldelight = "2.0.2"
 
 
 [libraries]
@@ -128,6 +129,12 @@ room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 
+# SQLDelight
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+
 [bundles]
 ktorClientBundle = [
     "ktor-client-core",
@@ -148,3 +155,4 @@ kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 kotzilla = { id = "io.kotzilla.kotzilla-plugin", version.ref = "kotzilla" }
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "gradlePlugins-crashlytics" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "gradlePlugins-google-services" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
