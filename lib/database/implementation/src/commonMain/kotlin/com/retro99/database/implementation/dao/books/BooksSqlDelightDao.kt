@@ -23,7 +23,6 @@ internal class BooksSqlDelightDao(
                         id = book.id,
                         rating = book.rating?.toDouble(),
                         data_json = book.dataJson,
-                        cached_at = book.cachedAt,
                     )
                 }
             }
@@ -38,21 +37,19 @@ internal class BooksSqlDelightDao(
                 id = book.id,
                 rating = book.rating?.toDouble(),
                 data_json = book.dataJson,
-                cached_at = book.cachedAt,
             )
         }
     }
 
     suspend fun getAllBooks(): List<BookSqlDelightEntity> {
         return withContext(Dispatchers.IO) {
-            queries.getAllBooks { uuid, title, id, rating, data_json, cached_at ->
+            queries.getAllBooks { uuid, title, id, rating, data_json ->
                 BookSqlDelightEntity(
                     uuid = uuid,
                     title = title,
                     id = id,
                     rating = rating?.toFloat(),
                     dataJson = data_json,
-                    cachedAt = cached_at,
                 )
             }.executeAsList()
         }
@@ -60,14 +57,13 @@ internal class BooksSqlDelightDao(
 
     suspend fun getBookByUuid(uuid: String): BookSqlDelightEntity? {
         return withContext(Dispatchers.IO) {
-            queries.getBookByUuid(uuid) { uuid, title, id, rating, data_json, cached_at ->
+            queries.getBookByUuid(uuid) { uuid, title, id, rating, data_json ->
                 BookSqlDelightEntity(
                     uuid = uuid,
                     title = title,
                     id = id,
                     rating = rating?.toFloat(),
                     dataJson = data_json,
-                    cachedAt = cached_at,
                 )
             }.executeAsOneOrNull()
         }
@@ -88,21 +84,6 @@ internal class BooksSqlDelightDao(
     suspend fun getBooksCount(): Long {
         return withContext(Dispatchers.IO) {
             queries.getBooksCount().executeAsOne()
-        }
-    }
-
-    suspend fun getBooksOlderThan(timestamp: Long): List<BookSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
-            queries.getBooksOlderThan(timestamp) { uuid, title, id, rating, data_json, cached_at ->
-                BookSqlDelightEntity(
-                    uuid = uuid,
-                    title = title,
-                    id = id,
-                    rating = rating?.toFloat(),
-                    dataJson = data_json,
-                    cachedAt = cached_at,
-                )
-            }.executeAsList()
         }
     }
 }

@@ -4,14 +4,13 @@ CREATE TABLE IF NOT EXISTS books (
     title TEXT NOT NULL,
     id INTEGER NOT NULL,
     rating REAL,
-    data_json TEXT NOT NULL,
-    cached_at INTEGER NOT NULL
+    data_json TEXT NOT NULL
 );
 
 -- Queries for books
 upsertBook:
-INSERT OR REPLACE INTO books(uuid, title, id, rating, data_json, cached_at)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO books(uuid, title, id, rating, data_json)
+VALUES (?, ?, ?, ?, ?);
 
 getAllBooks:
 SELECT * FROM books ORDER BY title ASC;
@@ -27,7 +26,4 @@ DELETE FROM books WHERE uuid = ?;
 
 getBooksCount:
 SELECT COUNT(*) FROM books;
-
-getBooksOlderThan:
-SELECT * FROM books WHERE cached_at < ?;
 

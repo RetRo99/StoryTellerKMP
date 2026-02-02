@@ -1,6 +1,5 @@
 package com.retro99.books.data.source
 
-import com.retro99.base.nowMillis
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.database.api.DatabaseExecutor
@@ -8,8 +7,6 @@ import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BooksDatabase
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
-
-private const val CACHE_VALIDITY_DURATION_MS = 30 * 60 * 1000L // 30 minutes
 
 @Single(binds = [BooksLocalSource::class])
 internal class BooksRoomDataSource(
@@ -44,16 +41,6 @@ internal class BooksRoomDataSource(
     override suspend fun clearCache(): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             booksDatabase.deleteAllBooks()
-        }
-    }
-
-    override suspend fun isCacheValid(): AppResult<Boolean> {
-        return databaseExecutor.executeDatabaseOperation {
-            val count = booksDatabase.getBooksCount()
-            if (count == 0) return@executeDatabaseOperation false
-
-            val oldBooks = booksDatabase.getBooksOlderThan(nowMillis() - CACHE_VALIDITY_DURATION_MS)
-            oldBooks.isEmpty()
         }
     }
 }

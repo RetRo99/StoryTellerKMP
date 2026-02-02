@@ -14,6 +14,5 @@ data class BookSqlDelightEntity(
     override val id: Long,
     override val rating: Float?,
     override val dataJson: String,
-    override val cachedAt: Long,
 ) : BookEntity
 
