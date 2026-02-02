@@ -8,15 +8,7 @@ import org.koin.core.annotation.KoinViewModel
 @KoinViewModel
 class BookDetailViewModel(
     @InjectedParam private val book: BookUiModel,
-    @InjectedParam private val onNavigateToReader: (
-        bookUuid: String,
-        ebookFilePath: String,
-        initialLocatorHref: String?,
-        initialLocatorType: String?,
-        initialLocatorProgression: Double?,
-        initialLocatorPosition: Int?,
-        initialLocatorTotalProgression: Double?,
-    ) -> Unit,
+    @InjectedParam private val onNavigateToReader: (BookUiModel) -> Unit,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(book = book, isLoading = false),
 ) {
@@ -40,17 +32,7 @@ class BookDetailViewModel(
             }
 
             BookDetailIntent.OnReadEbookClicked -> {
-                val currentBook = currentViewState().book ?: return
-                val ebookFilepath = currentBook.ebookFilepath ?: return
-                onNavigateToReader(
-                    currentBook.uuid,
-                    ebookFilepath,
-                    currentBook.locator?.href,
-                    currentBook.locator?.type,
-                    currentBook.locator?.progression,
-                    currentBook.locator?.position,
-                    currentBook.locator?.totalProgression,
-                )
+                onNavigateToReader(book)
             }
 
             BookDetailIntent.OnPlayAudiobookClicked -> {

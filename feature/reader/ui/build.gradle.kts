@@ -38,6 +38,7 @@ kotlin {
             implementation(projects.translations)
             implementation(projects.feature.reader.domain)
             implementation(projects.feature.books.domain)
+            implementation(projects.feature.books.ui)
         }
 
         androidMain.dependencies {
