@@ -4,12 +4,12 @@ import com.github.michaelbull.result.map
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppResult
 import com.retro99.books.data.model.toDomain
+import com.retro99.books.data.model.toLocal
 import com.retro99.books.data.source.BooksLocalSource
 import com.retro99.books.data.source.BooksRemoteSource
 import com.retro99.books.domain.BooksRepository
 import com.retro99.books.domain.model.BookDomainModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 import retro99.network.api.BaseUrlProvider
@@ -25,37 +25,37 @@ internal class BooksDataRepository(
         val baseUrl = baseUrlProvider.getBaseUrl()
         return cachedRemoteFlow(
             cacheSource = {
-                localSource.getBooks()
+                localSource.getBooks().map { books ->
+                    books?.map { it.toDomain(baseUrl) }
+                }
             },
             remoteSource = {
-                remoteSource.getBooks()
+                remoteSource.getBooks().map { books ->
+                    books.map { it.toDomain(baseUrl) }
+                }
             },
-            saveToCache = { books ->
-                localSource.saveBooks(books)
+            saveToCache = { domainBooks ->
+                localSource.saveBooks(domainBooks.map { it.toLocal() })
             },
-        ).map { result ->
-            result.map { books ->
-                books.map { it.toDomain(baseUrl) }
-            }
-        }
+        )
     }
 
     override fun getBook(uuid: String): Flow<AppResult<BookDomainModel>> {
         val baseUrl = baseUrlProvider.getBaseUrl()
         return cachedRemoteFlow(
             cacheSource = {
-                localSource.getBook(uuid)
+                localSource.getBook(uuid).map { book ->
+                    book?.toDomain(baseUrl)
+                }
             },
             remoteSource = {
-                remoteSource.getBook(uuid)
+                remoteSource.getBook(uuid).map { book ->
+                    book.toDomain(baseUrl)
+                }
             },
-            saveToCache = { book ->
-                localSource.saveBook(book)
+            saveToCache = { domainBook ->
+                localSource.saveBook(domainBook.toLocal())
             },
-        ).map { result ->
-            result.map { book ->
-                book.toDomain(baseUrl)
-            }
-        }
+        )
     }
 }
