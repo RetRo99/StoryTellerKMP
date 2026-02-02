@@ -69,6 +69,8 @@ kotlin {
             implementation(projects.lib.preferences.implementation)
             implementation(projects.lib.analytics.api)
             implementation(projects.lib.analytics.implementation)
+            implementation(projects.lib.database.api)
+            implementation(projects.lib.database.implementation)
             implementation(projects.feature.auth.domain)
             implementation(projects.feature.auth.data)
             implementation(projects.feature.login.ui)
