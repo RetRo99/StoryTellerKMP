@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
+import com.retro99.books.ui.model.BookUiModel
+import com.retro99.books.ui.model.toUiModel
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
@@ -11,7 +13,7 @@ import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class BooksViewModel(
-    @InjectedParam private val onNavigateToBookDetail: (bookUuid: String) -> Unit,
+    @InjectedParam private val onNavigateToBookDetail: (book: BookUiModel) -> Unit,
     @Provided private val getBooksUseCase: GetBooksUseCase,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
@@ -22,7 +24,7 @@ class BooksViewModel(
     override fun onIntent(intent: BooksListIntent) {
         when (intent) {
             BooksListIntent.OnRefresh -> refreshBooks()
-            is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book.uuid)
+            is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book)
         }
     }
 
@@ -31,7 +33,13 @@ class BooksViewModel(
         viewModelScope.launch {
             getBooksUseCase().fold(
                 success = { books ->
-                    updateState { it.copy(books = books, isLoading = false, error = null) }
+                    updateState {
+                        it.copy(
+                            books = books.map { book -> book.toUiModel() },
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
                 },
                 failure = { error ->
                     updateState { it.copy(isLoading = false, error = error) }
@@ -45,17 +53,18 @@ class BooksViewModel(
         viewModelScope.launch {
             getBooksUseCase().fold(
                 success = { books ->
-                    updateState { it.copy(books = books, isRefreshing = false) }
+                    updateState {
+                        it.copy(
+                            books = books.map { book -> book.toUiModel() },
+                            isRefreshing = false,
+                        )
+                    }
                 },
                 failure = { error ->
                     updateState { it.copy(isRefreshing = false, error = error) }
                 },
             )
         }
-    }
-
-    private fun handleBookClicked(bookUuid: String) {
-        // TODO: Navigate to book details
     }
 }
 

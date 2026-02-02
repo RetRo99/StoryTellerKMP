@@ -1,17 +1,13 @@
 package com.retro99.books.ui.detail
 
-import androidx.lifecycle.viewModelScope
-import com.github.michaelbull.result.fold
 import com.retro99.base.ui.BaseViewModel
-import com.retro99.books.domain.usecase.GetBookByUuidUseCase
-import kotlinx.coroutines.launch
+import com.retro99.books.ui.model.BookUiModel
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
-import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class BookDetailViewModel(
-    @InjectedParam private val bookUuid: String,
+    @InjectedParam private val book: BookUiModel,
     @InjectedParam private val onNavigateToReader: (
         bookUuid: String,
         ebookFilePath: String,
@@ -21,12 +17,9 @@ class BookDetailViewModel(
         initialLocatorPosition: Int?,
         initialLocatorTotalProgression: Double?,
     ) -> Unit,
-    @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
-) : BaseViewModel<BookDetailViewState, BookDetailIntent>(BookDetailViewState()) {
-
-    init {
-        loadBook(bookUuid)
-    }
+) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
+    BookDetailViewState(book = book, isLoading = false),
+) {
 
     override fun onIntent(intent: BookDetailIntent) {
         when (intent) {
@@ -34,7 +27,10 @@ class BookDetailViewModel(
                 // Navigation is handled by the parent navigation component
             }
 
-            BookDetailIntent.OnRetryClicked -> loadBook(bookUuid)
+            BookDetailIntent.OnRetryClicked -> {
+                // No longer needed since book is passed directly
+            }
+
             is BookDetailIntent.OnTagClicked -> {
                 // TODO: Navigate to tag filter
             }
@@ -44,38 +40,22 @@ class BookDetailViewModel(
             }
 
             BookDetailIntent.OnReadEbookClicked -> {
-                val book = currentViewState().book ?: return
-                val ebook = book.ebook ?: return
-                val locator = book.position?.locator
-                val locations = locator?.locations
+                val currentBook = currentViewState().book ?: return
+                val ebookFilepath = currentBook.ebookFilepath ?: return
                 onNavigateToReader(
-                    bookUuid,
-                    ebook.filepath,
-                    locator?.href,
-                    locator?.type,
-                    locations?.progression,
-                    locations?.position,
-                    locations?.totalProgression,
+                    currentBook.uuid,
+                    ebookFilepath,
+                    currentBook.locator?.href,
+                    currentBook.locator?.type,
+                    currentBook.locator?.progression,
+                    currentBook.locator?.position,
+                    currentBook.locator?.totalProgression,
                 )
             }
 
             BookDetailIntent.OnPlayAudiobookClicked -> {
                 // TODO: Open audiobook player
             }
-        }
-    }
-
-    private fun loadBook(bookUuid: String) {
-        updateState { it.copy(isLoading = true, error = null) }
-        viewModelScope.launch {
-            getBookByUuidUseCase(bookUuid).fold(
-                success = { book ->
-                    updateState { it.copy(book = book, isLoading = false, error = null) }
-                },
-                failure = { error ->
-                    updateState { it.copy(isLoading = false, error = error) }
-                },
-            )
         }
     }
 }
