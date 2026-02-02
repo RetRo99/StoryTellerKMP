@@ -3,12 +3,15 @@ package com.retro99.reader.data.source
 import com.github.michaelbull.result.Ok
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.database.api.DatabaseExecutor
+import com.retro99.database.api.books.BooksDatabase
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
 import com.retro99.reader.data.model.ReadingProgressLocalModel
+import com.retro99.reader.data.model.toLocalModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +28,8 @@ import org.koin.core.annotation.Single
 class ReaderLocalDataSource(
     @Provided private val preferences: Preferences,
     @Provided private val fileDownloader: EbookFileDownloader,
+    @Provided private val booksDatabase: BooksDatabase,
+    @Provided private val databaseExecutor: DatabaseExecutor,
 ) : ReaderLocalSource {
 
     private val _readerSettings = MutableStateFlow(loadReaderSettings())
@@ -32,20 +37,17 @@ class ReaderLocalDataSource(
     override suspend fun getReadingProgress(
         bookUuid: String,
     ): AppResult<ReadingProgressLocalModel?> {
-        val localModel = preferences.getObject<ReadingProgressLocalModel>(
-            PreferencesKey.ReadingProgress(bookUuid),
-        )
-        return Ok(localModel)
+        return databaseExecutor.executeDatabaseOperation {
+            booksDatabase.getReadingProgressByBookUuid(bookUuid)?.toLocalModel()
+        }
     }
 
     override suspend fun saveReadingProgress(
         progress: ReadingProgressLocalModel,
     ): CompletableResult {
-        preferences.putObject(
-            PreferencesKey.ReadingProgress(progress.bookUuid),
-            progress,
-        )
-        return Ok(Unit)
+        return databaseExecutor.executeDatabaseOperation {
+            booksDatabase.upsertReadingProgress(progress)
+        }
     }
 
     override fun getReaderSettings(): Flow<ReaderSettingsLocalModel> {

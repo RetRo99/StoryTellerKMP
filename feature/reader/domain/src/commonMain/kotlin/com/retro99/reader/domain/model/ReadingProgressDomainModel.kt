@@ -5,8 +5,13 @@ package com.retro99.reader.domain.model
  */
 data class ReadingProgressDomainModel(
     val bookUuid: String,
-    val locator: String,
-    val progression: Float,
+    val locatorHref: String?,
+    val locatorType: String?,
+    val locatorTitle: String?,
+    val progression: Double?,
+    val totalProgression: Double?,
+    val chapterIndex: Int?,
+    val totalChapters: Int?,
     val lastReadAt: String,
 )
 

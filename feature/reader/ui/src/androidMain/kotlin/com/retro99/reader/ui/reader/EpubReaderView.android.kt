@@ -36,7 +36,7 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onProgressChanged: (locator: String, progression: Float) -> Unit,
+    onProgressChanged: (ReadingProgressUpdate) -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current

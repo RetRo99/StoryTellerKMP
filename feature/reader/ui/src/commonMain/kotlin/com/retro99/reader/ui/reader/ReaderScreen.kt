@@ -137,8 +137,18 @@ private fun ReaderContent(
             bookUuid = bookUuid,
             publication = publication,
             commands = commands,
-            onProgressChanged = { locator, progression ->
-                intentDispatcher(ReaderIntent.UpdateProgress(locator, progression))
+            onProgressChanged = { progress ->
+                intentDispatcher(
+                    ReaderIntent.UpdateProgress(
+                        locatorHref = progress.locatorHref,
+                        locatorType = progress.locatorType,
+                        locatorTitle = progress.locatorTitle,
+                        progression = progress.progression,
+                        totalProgression = progress.totalProgression,
+                        chapterIndex = progress.chapterIndex,
+                        totalChapters = progress.totalChapters,
+                    ),
+                )
             },
             modifier = Modifier.fillMaxSize(),
         )

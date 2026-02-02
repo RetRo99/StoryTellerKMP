@@ -52,7 +52,7 @@ class ReaderViewModel(
 
     override fun onIntent(intent: ReaderIntent) {
         when (intent) {
-            is ReaderIntent.UpdateProgress -> updateProgress(intent.locator, intent.progression)
+            is ReaderIntent.UpdateProgress -> updateProgress(intent)
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
@@ -113,13 +113,18 @@ class ReaderViewModel(
         }
     }
 
-    private fun updateProgress(locator: String, progression: Float) {
+    private fun updateProgress(intent: ReaderIntent.UpdateProgress) {
         val currentBookUuid = currentViewState().bookUuid ?: return
 
         val progressUiModel = ReadingProgressUiModel(
             bookUuid = currentBookUuid,
-            locator = locator,
-            progression = progression,
+            locatorHref = intent.locatorHref,
+            locatorType = intent.locatorType,
+            locatorTitle = intent.locatorTitle,
+            progression = intent.progression,
+            totalProgression = intent.totalProgression,
+            chapterIndex = intent.chapterIndex,
+            totalChapters = intent.totalChapters,
             lastReadAt = Clock.System.now().toString(),
         )
 

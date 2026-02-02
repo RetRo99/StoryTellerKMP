@@ -32,5 +32,4 @@ sealed class PreferencesKey(val name: String) {
     data object Credentials : PreferencesKey("Credentials")
     data object ReaderSettings : PreferencesKey("ReaderSettings")
     data object DatabaseSchemaVersion : PreferencesKey("DatabaseSchemaVersion")
-    data class ReadingProgress(val bookUuid: String) : PreferencesKey("ReadingProgress_$bookUuid")
 }

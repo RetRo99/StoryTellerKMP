@@ -8,6 +8,19 @@ import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 
 /**
+ * Data class representing reading progress from the platform reader.
+ */
+data class ReadingProgressUpdate(
+    val locatorHref: String?,
+    val locatorType: String?,
+    val locatorTitle: String?,
+    val progression: Double?,
+    val totalProgression: Double?,
+    val chapterIndex: Int?,
+    val totalChapters: Int?,
+)
+
+/**
  * Platform-specific EPUB reader view.
  * On Android, this uses Readium's EpubNavigatorFragment.
  * On iOS, this uses Readium Swift via bridge.
@@ -24,7 +37,7 @@ internal expect fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onProgressChanged: (locator: String, progression: Float) -> Unit,
+    onProgressChanged: (ReadingProgressUpdate) -> Unit,
     modifier: Modifier = Modifier,
 )
 
