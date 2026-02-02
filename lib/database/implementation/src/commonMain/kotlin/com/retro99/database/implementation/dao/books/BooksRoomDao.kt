@@ -6,7 +6,7 @@ import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface BooksDao {
+interface BooksRoomDao {
 
     @Upsert
     suspend fun upsertBooks(books: List<BookRoomEntity>)

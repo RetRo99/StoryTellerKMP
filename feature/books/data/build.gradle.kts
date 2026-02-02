@@ -27,6 +27,7 @@ kotlin {
             implementation(libs.serialization)
             implementation(projects.base)
             implementation(projects.lib.network.api)
+            implementation(projects.lib.database.api)
             implementation(projects.feature.books.domain)
         }
     }
