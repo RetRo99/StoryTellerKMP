@@ -5,13 +5,14 @@ import com.github.michaelbull.result.fold
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.ui.model.BookUiModel
+import com.retro99.books.ui.model.LocatorUiModel
+import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
-import com.retro99.reader.ui.model.ReadingProgressUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.service.EpubPublicationService
@@ -106,7 +107,21 @@ class ReaderViewModel(
             getReadingProgressUseCase(uuid)
                 .fold(
                     success = { progress ->
-                        updateState { it.copy(progress = progress?.toUiModel()) }
+                        val locator = progress?.let {
+                            val href = it.locatorHref ?: return@let null
+                            val type = it.locatorType ?: return@let null
+                            LocatorUiModel(
+                                href = href,
+                                type = type,
+                                title = it.locatorTitle,
+                                progression = it.progression,
+                                position = null,
+                                totalProgression = it.totalProgression,
+                                chapterIndex = it.chapterIndex,
+                                totalChapters = it.totalChapters,
+                            )
+                        }
+                        updateState { it.copy(locator = locator) }
                     },
                     failure = { /* Ignore progress loading failure */ },
                 )
@@ -116,7 +131,23 @@ class ReaderViewModel(
     private fun updateProgress(intent: ReaderIntent.UpdateProgress) {
         val currentBookUuid = currentViewState().bookUuid ?: return
 
-        val progressUiModel = ReadingProgressUiModel(
+        val locator = intent.locatorHref?.let { href ->
+            val type = intent.locatorType ?: return@let null
+            LocatorUiModel(
+                href = href,
+                type = type,
+                title = intent.locatorTitle,
+                progression = intent.progression,
+                position = null,
+                totalProgression = intent.totalProgression,
+                chapterIndex = intent.chapterIndex,
+                totalChapters = intent.totalChapters,
+            )
+        }
+
+        updateState { it.copy(locator = locator) }
+
+        val progressDomainModel = ReadingProgressDomainModel(
             bookUuid = currentBookUuid,
             locatorHref = intent.locatorHref,
             locatorType = intent.locatorType,
@@ -128,10 +159,8 @@ class ReaderViewModel(
             lastReadAt = Clock.System.now().toString(),
         )
 
-        updateState { it.copy(progress = progressUiModel) }
-
         viewModelScope.launch {
-            saveReadingProgressUseCase(progressUiModel.toDomainModel())
+            saveReadingProgressUseCase(progressDomainModel)
         }
     }
 
