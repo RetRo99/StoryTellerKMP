@@ -29,6 +29,7 @@ kotlin {
             implementation(projects.lib.network.api)
             implementation(projects.lib.preferences.api)
             implementation(projects.lib.analytics.api)
+            implementation(projects.lib.database.api)
             implementation(projects.feature.reader.domain)
             implementation(projects.feature.books.domain)
         }

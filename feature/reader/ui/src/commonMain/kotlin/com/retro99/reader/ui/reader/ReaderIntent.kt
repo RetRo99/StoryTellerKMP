@@ -5,8 +5,13 @@ import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 sealed interface ReaderIntent : BaseIntent {
     data class UpdateProgress(
-        val locator: String,
-        val progression: Float,
+        val locatorHref: String?,
+        val locatorType: String?,
+        val locatorTitle: String?,
+        val progression: Double?,
+        val totalProgression: Double?,
+        val chapterIndex: Int?,
+        val totalChapters: Int?,
     ) : ReaderIntent
 
     data class UpdateSettings(
