@@ -3,6 +3,7 @@ package com.retro99.books.data
 import com.github.michaelbull.result.map
 import com.retro99.base.nowMillis
 import com.retro99.base.repository.BaseRepository
+import com.retro99.base.result.AppResult
 import com.retro99.books.data.model.BookApiModel
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.source.BooksLocalSource
@@ -25,7 +26,7 @@ internal class BooksDataRepository(
     @Provided private val json: Json,
 ) : BooksRepository, BaseRepository {
 
-    override fun getBooks(): Flow<List<BookDomainModel>> {
+    override fun getBooks(): Flow<AppResult<List<BookDomainModel>>> {
         val baseUrl = baseUrlProvider.getBaseUrl()
         return cachedRemoteFlow(
             cacheSource = {
@@ -39,12 +40,14 @@ internal class BooksDataRepository(
             saveToCache = { books ->
                 localSource.saveBooks(books.map { it.toEntity() })
             },
-        ).map { books ->
-            books.map { it.toDomain(baseUrl) }
+        ).map { result ->
+            result.map { books ->
+                books.map { it.toDomain(baseUrl) }
+            }
         }
     }
 
-    override fun getBook(uuid: String): Flow<BookDomainModel> {
+    override fun getBook(uuid: String): Flow<AppResult<BookDomainModel>> {
         val baseUrl = baseUrlProvider.getBaseUrl()
         return cachedRemoteFlow(
             cacheSource = {
@@ -56,8 +59,10 @@ internal class BooksDataRepository(
             saveToCache = { book ->
                 localSource.saveBook(book.toEntity())
             },
-        ).map { book ->
-            book.toDomain(baseUrl)
+        ).map { result ->
+            result.map { book ->
+                book.toDomain(baseUrl)
+            }
         }
     }
 
