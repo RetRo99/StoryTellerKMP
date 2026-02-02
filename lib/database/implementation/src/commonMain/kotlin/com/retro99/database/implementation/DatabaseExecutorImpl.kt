@@ -1,6 +1,5 @@
 package com.retro99.database.implementation
 
-import androidx.sqlite.SQLiteException
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.retro99.analytics.api.Analytics
@@ -32,18 +31,28 @@ class DatabaseExecutorImpl(
                 when (e) {
                     is CancellationException -> throw e // Re-throw cancellation exceptions
 
-                    is SQLiteException -> {
-                        // Extract table name from error message if possible
-                        val tableName = extractTableName(e.message ?: "")
-                        Err(
-                            AppError.DatabaseError(
-                                throwable = e,
-                                table = tableName
-                            )
-                        )
-                    }
+                    else -> {
+                        // Check if it's a database-related exception by examining the exception class name
+                        val isDatabaseException =
+                            e::class.simpleName?.contains("SQL", ignoreCase = true) == true ||
+                                    e::class.simpleName?.contains(
+                                        "Database",
+                                        ignoreCase = true
+                                    ) == true
 
-                    else -> Err(AppError.UnknownError(throwable = e))
+                        if (isDatabaseException) {
+                            // Extract table name from error message if possible
+                            val tableName = extractTableName(e.message ?: "")
+                            Err(
+                                AppError.DatabaseError(
+                                    throwable = e,
+                                    table = tableName
+                                )
+                            )
+                        } else {
+                            Err(AppError.UnknownError(throwable = e))
+                        }
+                    }
                 }
             }
         }

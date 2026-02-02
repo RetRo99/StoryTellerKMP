@@ -4,43 +4,43 @@ import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BooksDatabase
 
 internal class BooksDatabaseImpl(
-    private val roomDao: BooksRoomDao,
+    private val sqlDelightDao: BooksSqlDelightDao,
 ) : BooksDatabase {
 
     override suspend fun upsertBooks(books: List<BookEntity>) {
-        roomDao.upsertBooks(books.map { it.toRoomEntity() })
+        sqlDelightDao.upsertBooks(books.map { it.toSqlDelightEntity() })
     }
 
     override suspend fun upsertBook(book: BookEntity) {
-        roomDao.upsertBook(book.toRoomEntity())
+        sqlDelightDao.upsertBook(book.toSqlDelightEntity())
     }
 
     override suspend fun getAllBooks(): List<BookEntity> {
-        return roomDao.getAllBooks()
+        return sqlDelightDao.getAllBooks()
     }
 
     override suspend fun getBookByUuid(uuid: String): BookEntity? {
-        return roomDao.getBookByUuid(uuid)
+        return sqlDelightDao.getBookByUuid(uuid)
     }
 
     override suspend fun deleteAllBooks() {
-        roomDao.deleteAllBooks()
+        sqlDelightDao.deleteAllBooks()
     }
 
     override suspend fun deleteBook(uuid: String) {
-        roomDao.deleteBook(uuid)
+        sqlDelightDao.deleteBook(uuid)
     }
 
     override suspend fun getBooksCount(): Int {
-        return roomDao.getBooksCount()
+        return sqlDelightDao.getBooksCount().toInt()
     }
 
     override suspend fun getBooksOlderThan(timestamp: Long): List<BookEntity> {
-        return roomDao.getBooksOlderThan(timestamp)
+        return sqlDelightDao.getBooksOlderThan(timestamp)
     }
 
-    private fun BookEntity.toRoomEntity(): BookRoomEntity {
-        return BookRoomEntity(
+    private fun BookEntity.toSqlDelightEntity(): BookSqlDelightEntity {
+        return BookSqlDelightEntity(
             uuid = uuid,
             title = title,
             id = id,

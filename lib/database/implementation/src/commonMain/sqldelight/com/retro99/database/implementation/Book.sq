@@ -1,0 +1,33 @@
+-- Books table schema
+CREATE TABLE IF NOT EXISTS books (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    id INTEGER NOT NULL,
+    rating REAL,
+    data_json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL
+);
+
+-- Queries for books
+upsertBook:
+INSERT OR REPLACE INTO books(uuid, title, id, rating, data_json, cached_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getAllBooks:
+SELECT * FROM books ORDER BY title ASC;
+
+getBookByUuid:
+SELECT * FROM books WHERE uuid = ?;
+
+deleteAllBooks:
+DELETE FROM books;
+
+deleteBook:
+DELETE FROM books WHERE uuid = ?;
+
+getBooksCount:
+SELECT COUNT(*) FROM books;
+
+getBooksOlderThan:
+SELECT * FROM books WHERE cached_at < ?;
+
