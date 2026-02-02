@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
+import com.retro99.books.ui.model.BookUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
@@ -29,26 +30,11 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun ReaderScreen(
-    bookUuid: String,
-    ebookFilePath: String,
-    initialLocatorHref: String?,
-    initialLocatorType: String?,
-    initialLocatorProgression: Double?,
-    initialLocatorPosition: Int?,
-    initialLocatorTotalProgression: Double?,
+    book: BookUiModel,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = koinViewModel {
-        parametersOf(
-            bookUuid,
-            ebookFilePath,
-            initialLocatorHref,
-            initialLocatorType,
-            initialLocatorProgression,
-            initialLocatorPosition,
-            initialLocatorTotalProgression,
-            onClose,
-        )
+        parametersOf(book, onClose)
     },
 ) {
     BaseScreen(
@@ -56,7 +42,7 @@ fun ReaderScreen(
         viewModel = viewModel,
     ) { viewState, intentDispatcher ->
         ReaderScreenContent(
-            bookUuid = bookUuid,
+            bookUuid = book.uuid,
             viewState = viewState,
             intentDispatcher = intentDispatcher,
             commands = viewModel.commands,
