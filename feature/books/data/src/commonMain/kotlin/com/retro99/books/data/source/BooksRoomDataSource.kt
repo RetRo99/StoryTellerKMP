@@ -2,10 +2,10 @@ package com.retro99.books.data.source
 
 import com.retro99.base.nowMillis
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
 import com.retro99.database.api.DatabaseExecutor
 import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BooksDatabase
-import kotlinx.coroutines.flow.Flow
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -17,8 +17,10 @@ internal class BooksRoomDataSource(
     @Provided private val databaseExecutor: DatabaseExecutor,
 ) : BooksLocalSource {
 
-    override fun getBooks(): Flow<List<BookEntity>> {
-        return booksDatabase.getAllBooks()
+    override suspend fun getBooks(): AppResult<List<BookEntity>?> {
+        return databaseExecutor.executeDatabaseOperation {
+            booksDatabase.getAllBooks().takeIf { it.isNotEmpty() }
+        }
     }
 
     override suspend fun getBook(uuid: String): AppResult<BookEntity?> {
@@ -27,19 +29,19 @@ internal class BooksRoomDataSource(
         }
     }
 
-    override suspend fun saveBooks(books: List<BookEntity>): AppResult<Unit> {
+    override suspend fun saveBooks(books: List<BookEntity>): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             booksDatabase.upsertBooks(books)
         }
     }
 
-    override suspend fun saveBook(book: BookEntity): AppResult<Unit> {
+    override suspend fun saveBook(book: BookEntity): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             booksDatabase.upsertBook(book)
         }
     }
 
-    override suspend fun clearCache(): AppResult<Unit> {
+    override suspend fun clearCache(): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             booksDatabase.deleteAllBooks()
         }

@@ -3,15 +3,14 @@ package com.retro99.books.data.source
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.database.api.books.BookEntity
-import kotlinx.coroutines.flow.Flow
 
 interface BooksLocalSource {
 
-    fun getBooks(): Flow<List<BookEntity>>
+    suspend fun getBooks(): AppResult<List<BookEntity>?>
 
     suspend fun getBook(uuid: String): AppResult<BookEntity?>
 
-    suspend fun saveBooks(books: List<BookEntity>): AppResult<Unit>
+    suspend fun saveBooks(books: List<BookEntity>): CompletableResult
 
     suspend fun saveBook(book: BookEntity): CompletableResult
 
