@@ -11,14 +11,12 @@ import com.retro99.books.data.model.SeriesApiModel
 import com.retro99.books.data.model.StatusApiModel
 import com.retro99.books.data.model.TagApiModel
 import com.retro99.database.api.DatabaseExecutor
-import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BookWithRelationsEntity
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
 import com.retro99.database.api.books.PersonEntity
 import com.retro99.database.api.books.ReadaloudEntity
-import com.retro99.database.api.books.SeriesEntity
 import com.retro99.database.api.books.SeriesWithPositionEntity
 import com.retro99.database.api.books.StatusEntity
 import com.retro99.database.api.books.TagEntity
@@ -51,14 +49,14 @@ internal class BooksRoomDataSource(
     override suspend fun saveBooks(books: List<BookApiModel>): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             books.forEach { book ->
-                saveBookWithRelations(book)
+                booksDatabase.upsertBookWithRelations(book.toEntity())
             }
         }
     }
 
     override suspend fun saveBook(book: BookApiModel): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
-            saveBookWithRelations(book)
+            booksDatabase.upsertBookWithRelations(book.toEntity())
         }
     }
 
@@ -68,79 +66,10 @@ internal class BooksRoomDataSource(
         }
     }
 
-    private suspend fun saveBookWithRelations(book: BookApiModel) {
-        // Save status first if present
-        book.status?.let { status ->
-            booksDatabase.upsertStatus(status.toEntity())
-        }
-
-        // Save the book
-        booksDatabase.upsertBook(book.toEntity())
-
-        // Clear existing relations
-        booksDatabase.deleteBookAuthors(book.uuid)
-        booksDatabase.deleteBookNarrators(book.uuid)
-        booksDatabase.deleteBookCreators(book.uuid)
-        booksDatabase.deleteBookSeries(book.uuid)
-        booksDatabase.deleteBookTags(book.uuid)
-        booksDatabase.deleteBookCollections(book.uuid)
-        booksDatabase.deleteMediaFilesByBookUuid(book.uuid)
-        booksDatabase.deleteReadaloudByBookUuid(book.uuid)
-
-        // Save authors and relations
-        book.authors.forEach { author ->
-            booksDatabase.upsertPerson(author.toEntity())
-            booksDatabase.insertBookAuthor(book.uuid, author.uuid)
-        }
-
-        // Save narrators and relations
-        book.narrators.forEach { narrator ->
-            booksDatabase.upsertPerson(narrator.toEntity())
-            booksDatabase.insertBookNarrator(book.uuid, narrator.uuid)
-        }
-
-        // Save creators and relations
-        book.creators.forEach { creator ->
-            booksDatabase.upsertPerson(creator.toEntity())
-            booksDatabase.insertBookCreator(book.uuid, creator.uuid)
-        }
-
-        // Save series and relations
-        book.series.forEach { series ->
-            booksDatabase.upsertSeries(series.toEntity())
-            booksDatabase.insertBookSeries(book.uuid, series.uuid, series.position)
-        }
-
-        // Save tags and relations
-        book.tags.forEach { tag ->
-            booksDatabase.upsertTag(tag.toEntity())
-            booksDatabase.insertBookTag(book.uuid, tag.uuid)
-        }
-
-        // Save collections and relations
-        book.collections.forEach { collection ->
-            booksDatabase.upsertCollection(collection.toEntity())
-            booksDatabase.insertBookCollection(book.uuid, collection.uuid)
-        }
-
-        // Save media files
-        book.ebook?.let { ebook ->
-            booksDatabase.upsertMediaFile(ebook.toEntity(book.uuid, "ebook"))
-        }
-        book.audiobook?.let { audiobook ->
-            booksDatabase.upsertMediaFile(audiobook.toEntity(book.uuid, "audiobook"))
-        }
-
-        // Save readaloud
-        book.readaloud?.let { readaloud ->
-            booksDatabase.upsertReadaloud(readaloud.toEntity(book.uuid))
-        }
-    }
-
     // ==================== ENTITY CONVERSIONS ====================
 
-    private fun BookApiModel.toEntity(): BookEntity {
-        return BookEntityImpl(
+    private fun BookApiModel.toEntity(): BookWithRelationsEntity {
+        return BookWithRelationsEntityImpl(
             uuid = uuid,
             id = id,
             title = title,
@@ -150,9 +79,18 @@ internal class BooksRoomDataSource(
             description = description,
             rating = rating,
             suffix = suffix,
-            statusUuid = status?.uuid,
             createdAt = createdAt,
             updatedAt = updatedAt,
+            authors = authors.map { it.toEntity() },
+            narrators = narrators.map { it.toEntity() },
+            creators = creators.map { it.toEntity() },
+            series = series.map { it.toEntity() },
+            tags = tags.map { it.toEntity() },
+            collections = collections.map { it.toEntity() },
+            status = status?.toEntity(),
+            ebook = ebook?.toEntity(uuid, "ebook"),
+            audiobook = audiobook?.toEntity(uuid, "audiobook"),
+            readaloud = readaloud?.toEntity(uuid),
         )
     }
 
@@ -166,11 +104,12 @@ internal class BooksRoomDataSource(
         )
     }
 
-    private fun SeriesApiModel.toEntity(): SeriesEntity {
-        return SeriesEntityImpl(
+    private fun SeriesApiModel.toEntity(): SeriesWithPositionEntity {
+        return SeriesWithPositionEntityImpl(
             uuid = uuid,
             name = name,
             featured = featured,
+            position = position,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
@@ -333,7 +272,7 @@ internal class BooksRoomDataSource(
 
 // ==================== ENTITY IMPLEMENTATIONS ====================
 
-private data class BookEntityImpl(
+private data class BookWithRelationsEntityImpl(
     override val uuid: String,
     override val id: Long,
     override val title: String,
@@ -343,10 +282,19 @@ private data class BookEntityImpl(
     override val description: String?,
     override val rating: Float?,
     override val suffix: String?,
-    override val statusUuid: String?,
     override val createdAt: String?,
     override val updatedAt: String?,
-) : BookEntity
+    override val authors: List<PersonEntity>,
+    override val narrators: List<PersonEntity>,
+    override val creators: List<PersonEntity>,
+    override val series: List<SeriesWithPositionEntity>,
+    override val tags: List<TagEntity>,
+    override val collections: List<CollectionEntity>,
+    override val status: StatusEntity?,
+    override val ebook: MediaFileEntity?,
+    override val audiobook: MediaFileEntity?,
+    override val readaloud: ReadaloudEntity?,
+) : BookWithRelationsEntity
 
 private data class PersonEntityImpl(
     override val uuid: String,
@@ -356,13 +304,14 @@ private data class PersonEntityImpl(
     override val updatedAt: String?,
 ) : PersonEntity
 
-private data class SeriesEntityImpl(
+private data class SeriesWithPositionEntityImpl(
     override val uuid: String,
     override val name: String,
     override val featured: Int?,
+    override val position: Int?,
     override val createdAt: String?,
     override val updatedAt: String?,
-) : SeriesEntity
+) : SeriesWithPositionEntity
 
 private data class TagEntityImpl(
     override val uuid: String,
