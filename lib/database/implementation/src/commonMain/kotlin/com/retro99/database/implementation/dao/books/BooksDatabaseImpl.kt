@@ -24,6 +24,10 @@ internal class BooksDatabaseImpl(
         sqlDelightDao.upsertBook(book.toSqlDelightEntity())
     }
 
+    override suspend fun upsertBookWithRelations(book: BookWithRelationsEntity) {
+        saveBookWithRelations(book)
+    }
+
     override suspend fun getAllBooks(): List<BookEntity> {
         return sqlDelightDao.getAllBooks()
     }
@@ -371,6 +375,104 @@ internal class BooksDatabaseImpl(
             ebook = mediaFiles.find { it.type == "ebook" },
             audiobook = mediaFiles.find { it.type == "audiobook" },
             readaloud = readaloud,
+        )
+    }
+
+    // ==================== RELATION SAVING ====================
+
+    private suspend fun saveBookWithRelations(book: BookWithRelationsEntity) {
+        // Save status first if present
+        book.status?.let { status ->
+            sqlDelightDao.upsertStatus(status.toSqlDelightEntity())
+        }
+
+        // Save the book
+        sqlDelightDao.upsertBook(book.toSqlDelightEntity())
+
+        // Clear existing relations
+        sqlDelightDao.deleteBookAuthors(book.uuid)
+        sqlDelightDao.deleteBookNarrators(book.uuid)
+        sqlDelightDao.deleteBookCreators(book.uuid)
+        sqlDelightDao.deleteBookSeries(book.uuid)
+        sqlDelightDao.deleteBookTags(book.uuid)
+        sqlDelightDao.deleteBookCollections(book.uuid)
+        sqlDelightDao.deleteMediaFilesByBookUuid(book.uuid)
+        sqlDelightDao.deleteReadaloudByBookUuid(book.uuid)
+
+        // Save authors and relations
+        book.authors.forEach { author ->
+            sqlDelightDao.upsertPerson(author.toSqlDelightEntity())
+            sqlDelightDao.insertBookAuthor(book.uuid, author.uuid)
+        }
+
+        // Save narrators and relations
+        book.narrators.forEach { narrator ->
+            sqlDelightDao.upsertPerson(narrator.toSqlDelightEntity())
+            sqlDelightDao.insertBookNarrator(book.uuid, narrator.uuid)
+        }
+
+        // Save creators and relations
+        book.creators.forEach { creator ->
+            sqlDelightDao.upsertPerson(creator.toSqlDelightEntity())
+            sqlDelightDao.insertBookCreator(book.uuid, creator.uuid)
+        }
+
+        // Save series and relations
+        book.series.forEach { series ->
+            sqlDelightDao.upsertSeries(series.toSqlDelightEntity())
+            sqlDelightDao.insertBookSeries(book.uuid, series.uuid, series.position)
+        }
+
+        // Save tags and relations
+        book.tags.forEach { tag ->
+            sqlDelightDao.upsertTag(tag.toSqlDelightEntity())
+            sqlDelightDao.insertBookTag(book.uuid, tag.uuid)
+        }
+
+        // Save collections and relations
+        book.collections.forEach { collection ->
+            sqlDelightDao.upsertCollection(collection.toSqlDelightEntity())
+            sqlDelightDao.insertBookCollection(book.uuid, collection.uuid)
+        }
+
+        // Save media files
+        book.ebook?.let { ebook ->
+            sqlDelightDao.upsertMediaFile(ebook.toSqlDelightEntity())
+        }
+        book.audiobook?.let { audiobook ->
+            sqlDelightDao.upsertMediaFile(audiobook.toSqlDelightEntity())
+        }
+
+        // Save readaloud
+        book.readaloud?.let { readaloud ->
+            sqlDelightDao.upsertReadaloud(readaloud.toSqlDelightEntity())
+        }
+    }
+
+    private fun BookWithRelationsEntity.toSqlDelightEntity(): BookSqlDelightEntity {
+        return BookSqlDelightEntity(
+            uuid = uuid,
+            id = id,
+            title = title,
+            subtitle = subtitle,
+            language = language,
+            publicationDate = publicationDate,
+            description = description,
+            rating = rating,
+            suffix = suffix,
+            statusUuid = status?.uuid,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
+    }
+
+    private fun SeriesWithPositionEntity.toSqlDelightEntity(): SeriesSqlDelightEntity {
+        return SeriesSqlDelightEntity(
+            uuid = uuid,
+            name = name,
+            featured = featured,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
         )
     }
 }

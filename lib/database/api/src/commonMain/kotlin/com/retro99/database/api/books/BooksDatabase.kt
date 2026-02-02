@@ -10,6 +10,8 @@ interface BooksDatabase {
 
     suspend fun upsertBook(book: BookEntity)
 
+    suspend fun upsertBookWithRelations(book: BookWithRelationsEntity)
+
     suspend fun getAllBooks(): List<BookEntity>
 
     suspend fun getAllBooksWithRelations(): List<BookWithRelationsEntity>
