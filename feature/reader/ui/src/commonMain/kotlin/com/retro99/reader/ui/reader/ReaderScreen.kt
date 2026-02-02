@@ -31,9 +31,25 @@ import org.koin.core.parameter.parametersOf
 fun ReaderScreen(
     bookUuid: String,
     ebookFilePath: String,
+    initialLocatorHref: String?,
+    initialLocatorType: String?,
+    initialLocatorProgression: Double?,
+    initialLocatorPosition: Int?,
+    initialLocatorTotalProgression: Double?,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReaderViewModel = koinViewModel { parametersOf(bookUuid, ebookFilePath, onClose) },
+    viewModel: ReaderViewModel = koinViewModel {
+        parametersOf(
+            bookUuid,
+            ebookFilePath,
+            initialLocatorHref,
+            initialLocatorType,
+            initialLocatorProgression,
+            initialLocatorPosition,
+            initialLocatorTotalProgression,
+            onClose,
+        )
+    },
 ) {
     BaseScreen(
         modifier = modifier,

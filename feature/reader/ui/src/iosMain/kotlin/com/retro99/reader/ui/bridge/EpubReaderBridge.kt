@@ -4,6 +4,19 @@ import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import platform.UIKit.UIViewController
 
 /**
+ * Locator data class for iOS bridge.
+ * Represents a position in the EPUB for restoration.
+ */
+data class EpubLocator(
+    val href: String,
+    val type: String,
+    val title: String?,
+    val progression: Double?,
+    val position: Int?,
+    val totalProgression: Double?,
+)
+
+/**
  * Reader settings data class for iOS bridge.
  * This is a simple data holder that can be passed to Swift.
  * Add new settings properties here as needed.
@@ -15,9 +28,13 @@ data class EpubReaderSettings(
     val marginHorizontal: Int,
     val marginVertical: Int,
     val scrollMode: Boolean,
+    val initialLocator: EpubLocator?,
 ) {
     companion object {
-        fun from(settings: ReaderSettingsDomainModel): EpubReaderSettings {
+        fun from(
+            settings: ReaderSettingsDomainModel,
+            initialLocator: EpubLocator? = null,
+        ): EpubReaderSettings {
             return EpubReaderSettings(
                 fontSize = settings.fontSize,
                 fontFamily = settings.fontFamily,
@@ -25,6 +42,7 @@ data class EpubReaderSettings(
                 marginHorizontal = settings.marginHorizontal,
                 marginVertical = settings.marginVertical,
                 scrollMode = settings.scrollMode,
+                initialLocator = initialLocator,
             )
         }
     }

@@ -22,6 +22,9 @@ import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
+import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.Url
+import org.readium.r2.shared.util.mediatype.MediaType
 
 private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 
@@ -89,8 +92,22 @@ internal actual fun EpubReaderView(
             val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                     as? EpubNavigatorFragment
             if (existingFragment == null) {
+                val initialLocator = publication.initialLocator?.let { locator ->
+                    Url(locator.href)?.let { url ->
+                        Locator(
+                            href = url,
+                            mediaType = MediaType(locator.type) ?: MediaType.XHTML,
+                            title = locator.title,
+                            locations = Locator.Locations(
+                                progression = locator.progression,
+                                position = locator.position,
+                                totalProgression = locator.totalProgression,
+                            ),
+                        )
+                    }
+                }
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
-                    initialLocator = null,
+                    initialLocator = initialLocator,
                     initialPreferences = publication.initialSettings.toEpubPreferences(),
                 )
 

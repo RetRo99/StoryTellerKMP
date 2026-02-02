@@ -55,7 +55,15 @@ import resources.translations.books_media_ebook
 @Composable
 fun BookDetailScreen(
     bookUuid: String,
-    onNavigateToReader: (bookUuid: String, ebookFilePath: String) -> Unit,
+    onNavigateToReader: (
+        bookUuid: String,
+        ebookFilePath: String,
+        initialLocatorHref: String?,
+        initialLocatorType: String?,
+        initialLocatorProgression: Double?,
+        initialLocatorPosition: Int?,
+        initialLocatorTotalProgression: Double?,
+    ) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookDetailViewModel = koinViewModel { parametersOf(bookUuid, onNavigateToReader) },
 ) {

@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.reader.domain.model.InitialLocatorDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
@@ -28,6 +29,11 @@ import kotlin.time.Clock
 class ReaderViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val ebookFilePath: String,
+    @InjectedParam private val initialLocatorHref: String?,
+    @InjectedParam private val initialLocatorType: String?,
+    @InjectedParam private val initialLocatorProgression: Double?,
+    @InjectedParam private val initialLocatorPosition: Int?,
+    @InjectedParam private val initialLocatorTotalProgression: Double?,
     @InjectedParam private val onClose: () -> Unit,
     @Provided private val prepareEbookUseCase: PrepareEbookUseCase,
     @Provided private val getReadingProgressUseCase: GetReadingProgressUseCase,
@@ -36,6 +42,19 @@ class ReaderViewModel(
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(ReaderViewState()) {
+
+    private val initialLocator: InitialLocatorDomainModel? =
+        if (initialLocatorHref != null && initialLocatorType != null) {
+            InitialLocatorDomainModel(
+                href = initialLocatorHref,
+                type = initialLocatorType,
+                progression = initialLocatorProgression,
+                position = initialLocatorPosition,
+                totalProgression = initialLocatorTotalProgression,
+            )
+        } else {
+            null
+        }
 
     private val _commands = MutableSharedFlow<ReaderCommand>()
     val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
@@ -80,7 +99,8 @@ class ReaderViewModel(
         // Get initial settings synchronously before opening publication
         val initialSettings = getReaderSettingsUseCase().first()
 
-        val publication = publicationService.openPublication(localPath, initialSettings)
+        val publication =
+            publicationService.openPublication(localPath, initialSettings, initialLocator)
         if (publication != null) {
             updateState {
                 it.copy(
