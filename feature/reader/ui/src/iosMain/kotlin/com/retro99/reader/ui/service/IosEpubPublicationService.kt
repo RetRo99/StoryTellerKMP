@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.reader.domain.model.InitialLocatorDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.publication.EpubPublication
@@ -23,6 +24,7 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
     override suspend fun openPublication(
         filePath: String,
         initialSettings: ReaderSettingsDomainModel,
+        initialLocator: InitialLocatorDomainModel?,
     ): EpubPublication? {
         val currentBridge = bridge
         if (currentBridge == null) {
@@ -38,7 +40,13 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
                 filePath = filePath,
                 onSuccess = {
                     setReady()
-                    continuation.resume(EpubPublication(currentBridge, initialSettings))
+                    continuation.resume(
+                        EpubPublication(
+                            currentBridge,
+                            initialSettings,
+                            initialLocator
+                        )
+                    )
                 },
                 onError = { errorMessage ->
                     setError(errorMessage)

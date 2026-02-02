@@ -44,10 +44,18 @@ fun HomeNavigation(
                 entry<HomeDestination.BookDetail> { destination ->
                     BookDetailScreen(
                         bookUuid = destination.bookUuid,
-                        onNavigateToReader = { bookUuid, ebookFilePath ->
+                        onNavigateToReader = { bookUuid, ebookFilePath, href, type, progression, position, totalProgression ->
                             intentDispatcher(
                                 HomeNavigationIntent.NavigateTo(
-                                    HomeDestination.Reader(bookUuid, ebookFilePath),
+                                    HomeDestination.Reader(
+                                        bookUuid = bookUuid,
+                                        ebookFilePath = ebookFilePath,
+                                        initialLocatorHref = href,
+                                        initialLocatorType = type,
+                                        initialLocatorProgression = progression,
+                                        initialLocatorPosition = position,
+                                        initialLocatorTotalProgression = totalProgression,
+                                    ),
                                 ),
                             )
                         },
@@ -58,6 +66,11 @@ fun HomeNavigation(
                     ReaderScreen(
                         bookUuid = destination.bookUuid,
                         ebookFilePath = destination.ebookFilePath,
+                        initialLocatorHref = destination.initialLocatorHref,
+                        initialLocatorType = destination.initialLocatorType,
+                        initialLocatorProgression = destination.initialLocatorProgression,
+                        initialLocatorPosition = destination.initialLocatorPosition,
+                        initialLocatorTotalProgression = destination.initialLocatorTotalProgression,
                         onClose = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
                     )
                 }

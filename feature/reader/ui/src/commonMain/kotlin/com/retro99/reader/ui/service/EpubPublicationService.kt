@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.reader.domain.model.InitialLocatorDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.StateFlow
@@ -28,11 +29,13 @@ interface EpubPublicationService {
      *
      * @param filePath The local file path to the EPUB file
      * @param initialSettings The initial reader settings to apply when opening the publication
+     * @param initialLocator The initial locator to restore reading position, or null to start from beginning
      * @return The opened [EpubPublication], or null if opening failed
      */
     suspend fun openPublication(
         filePath: String,
         initialSettings: ReaderSettingsDomainModel,
+        initialLocator: InitialLocatorDomainModel? = null,
     ): EpubPublication?
 
     /**

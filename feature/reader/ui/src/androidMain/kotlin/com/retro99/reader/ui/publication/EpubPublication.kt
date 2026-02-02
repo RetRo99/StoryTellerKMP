@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.publication
 
+import com.retro99.reader.domain.model.InitialLocatorDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import org.readium.r2.shared.publication.Publication
 
@@ -10,6 +11,7 @@ import org.readium.r2.shared.publication.Publication
 actual class EpubPublication(
     internal val publication: Publication,
     actual val initialSettings: ReaderSettingsDomainModel,
+    val initialLocator: InitialLocatorDomainModel? = null,
 ) {
     /**
      * Closes the publication and releases resources.

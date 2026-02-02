@@ -88,9 +88,28 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             let initialPreferences = settings.toEpubPreferences()
             print("Creating EPUB navigator with initial fontSize: \(settings.fontSize)")
 
+            // Create initial locator from settings if available
+            var initialLocation: Locator? = nil
+            if let locator = settings.initialLocator,
+               let href = AnyURL(legacyHREF: locator.href) {
+                initialLocation = Locator(
+                    href: href,
+                    mediaType: MediaType(locator.type) ?? .html,
+                    title: locator.title,
+                    locations: Locator.Locations(
+                        progression: locator.progression?.doubleValue,
+                        totalProgression: locator.totalProgression?.doubleValue,
+                        position: locator.position.map {
+                            Int($0.int32Value)
+                        }
+                    )
+                )
+                print("Using initial locator: href=\(locator.href), progression=\(String(describing: locator.progression))")
+            }
+
             let navigator = try EPUBNavigatorViewController(
                 publication: publication,
-                initialLocation: nil,
+                initialLocation: initialLocation,
                 config: EPUBNavigatorViewController.Configuration(
                     preferences: initialPreferences
                 ),
