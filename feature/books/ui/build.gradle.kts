@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.koinCompilerPlugin)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"

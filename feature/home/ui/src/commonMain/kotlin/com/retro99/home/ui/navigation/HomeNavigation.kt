@@ -31,10 +31,10 @@ fun HomeNavigation(
             entryProvider = entryProvider {
                 entry<HomeDestination.BooksList> {
                     BooksListScreen(
-                        onNavigateToBookDetail = { bookUuid ->
+                        onNavigateToBookDetail = { book ->
                             intentDispatcher(
                                 HomeNavigationIntent.NavigateTo(
-                                    HomeDestination.BookDetail(bookUuid),
+                                    HomeDestination.BookDetail(book),
                                 ),
                             )
                         },
@@ -43,7 +43,7 @@ fun HomeNavigation(
 
                 entry<HomeDestination.BookDetail> { destination ->
                     BookDetailScreen(
-                        bookUuid = destination.bookUuid,
+                        book = destination.book,
                         onNavigateToReader = { bookUuid, ebookFilePath, href, type, progression, position, totalProgression ->
                             intentDispatcher(
                                 HomeNavigationIntent.NavigateTo(

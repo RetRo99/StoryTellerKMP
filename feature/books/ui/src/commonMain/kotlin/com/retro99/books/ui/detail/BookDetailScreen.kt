@@ -44,7 +44,8 @@ import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.compose.CoilImage
-import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.books.ui.model.BookUiModel
+import com.retro99.books.ui.model.SeriesUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -54,7 +55,7 @@ import resources.translations.books_media_ebook
 
 @Composable
 fun BookDetailScreen(
-    bookUuid: String,
+    book: BookUiModel,
     onNavigateToReader: (
         bookUuid: String,
         ebookFilePath: String,
@@ -65,15 +66,15 @@ fun BookDetailScreen(
         initialLocatorTotalProgression: Double?,
     ) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: BookDetailViewModel = koinViewModel { parametersOf(bookUuid, onNavigateToReader) },
+    viewModel: BookDetailViewModel = koinViewModel { parametersOf(book, onNavigateToReader) },
 ) {
     BaseScreen(
         modifier = modifier,
         viewModel = viewModel,
     ) { viewState, intentDispatcher ->
-        viewState.book?.let { book ->
+        viewState.book?.let { currentBook ->
             BookDetailScreenContent(
-                book = book,
+                book = currentBook,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -83,7 +84,7 @@ fun BookDetailScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookDetailScreenContent(
-    book: BookDomainModel,
+    book: BookUiModel,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -122,17 +123,17 @@ private fun BookDetailScreenContent(
                 intentDispatcher = intentDispatcher,
             )
 
-            if (book.description != null) {
+            book.description?.let { description ->
                 Spacer(modifier = Modifier.height(24.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
-                DescriptionSection(description = book.description!!)
+                DescriptionSection(description = description)
             }
 
             if (book.tags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(24.dp))
                 TagsSection(
-                    tags = book.tags.map { it.name },
+                    tags = book.tags,
                     onTagClick = { intentDispatcher(BookDetailIntent.OnTagClicked(it)) },
                 )
             }
@@ -152,7 +153,7 @@ private fun BookDetailScreenContent(
 
 @Composable
 private fun BookHeader(
-    book: BookDomainModel,
+    book: BookUiModel,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -194,7 +195,7 @@ private fun BookHeader(
         if (book.authors.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = book.authors.joinToString(", ") { it.name },
+                text = book.authors.joinToString(", "),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -224,7 +225,7 @@ private fun BookHeader(
 
 @Composable
 private fun MediaActionButtons(
-    book: BookDomainModel,
+    book: BookUiModel,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -232,14 +233,14 @@ private fun MediaActionButtons(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
     ) {
-        book.ebook?.let {
+        if (book.hasEbook) {
             MediaButton(
                 icon = Icons.AutoMirrored.Outlined.MenuBook,
                 label = stringResource(StringRes.books_media_ebook),
                 onClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
             )
         }
-        book.audiobook?.let {
+        if (book.hasAudiobook) {
             MediaButton(
                 icon = Icons.Outlined.Headphones,
                 label = stringResource(StringRes.books_media_audio),
@@ -324,7 +325,7 @@ private fun TagsSection(
 
 @Composable
 private fun SeriesSection(
-    series: List<com.retro99.books.domain.model.SeriesDomainModel>,
+    series: List<SeriesUiModel>,
     onSeriesClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {

@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.compose.CoilImage
-import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.books.ui.model.BookUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -48,7 +48,7 @@ import resources.translations.books_series_with_position
 
 @Composable
 fun BooksListScreen(
-    onNavigateToBookDetail: (bookUuid: String) -> Unit,
+    onNavigateToBookDetail: (book: BookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BooksViewModel = koinViewModel { parametersOf(onNavigateToBookDetail) },
 ) {
@@ -98,7 +98,7 @@ private fun BooksListScreenContent(
 
 @Composable
 private fun BookItem(
-    book: BookDomainModel,
+    book: BookUiModel,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -136,7 +136,7 @@ private fun BookItem(
                 if (book.authors.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = book.authors.joinToString(", ") { it.name },
+                        text = book.authors.joinToString(", "),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -151,7 +151,7 @@ private fun BookItem(
                         stringResource(
                             StringRes.books_series_with_position,
                             seriesInfo.name,
-                            seriesInfo.position!!,
+                            seriesInfo.position,
                         )
                     } else {
                         seriesInfo.name
@@ -171,24 +171,24 @@ private fun BookItem(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    book.status?.let { status ->
-                        StatusChip(status = status.name)
+                    book.statusName?.let { status ->
+                        StatusChip(status = status)
                     }
 
-                    if (book.ebook != null) {
+                    if (book.hasEbook) {
                         MediaTypeIndicator(
                             icon = Icons.AutoMirrored.Outlined.MenuBook,
                             label = stringResource(StringRes.books_media_ebook),
                         )
                     }
 
-                    if (book.audiobook != null) {
+                    if (book.hasAudiobook) {
                         MediaTypeIndicator(
                             icon = Icons.Outlined.Headphones,
                             label = stringResource(StringRes.books_media_audio),
                         )
                     }
-                    if (book.readaloud != null) {
+                    if (book.hasReadaloud) {
                         MediaTypeIndicator(
                             icon = Icons.Outlined.RecordVoiceOver,
                             label = stringResource(StringRes.books_media_readaloud),
