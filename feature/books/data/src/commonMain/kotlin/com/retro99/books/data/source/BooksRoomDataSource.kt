@@ -11,7 +11,7 @@ import com.retro99.books.data.model.SeriesApiModel
 import com.retro99.books.data.model.StatusApiModel
 import com.retro99.books.data.model.TagApiModel
 import com.retro99.database.api.DatabaseExecutor
-import com.retro99.database.api.books.BookWithRelationsEntity
+import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
@@ -31,7 +31,7 @@ internal class BooksRoomDataSource(
 
     override suspend fun getBooks(): AppResult<List<BookApiModel>?> {
         return databaseExecutor.executeDatabaseOperation {
-            val books = booksDatabase.getAllBooksWithRelations()
+            val books = booksDatabase.getAllBooks()
             if (books.isEmpty()) {
                 null
             } else {
@@ -42,21 +42,21 @@ internal class BooksRoomDataSource(
 
     override suspend fun getBook(uuid: String): AppResult<BookApiModel?> {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.getBookWithRelations(uuid)?.toApiModel()
+            booksDatabase.getBookByUuid(uuid)?.toApiModel()
         }
     }
 
     override suspend fun saveBooks(books: List<BookApiModel>): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             books.forEach { book ->
-                booksDatabase.upsertBookWithRelations(book.toEntity())
+                booksDatabase.upsertBook(book.toEntity())
             }
         }
     }
 
     override suspend fun saveBook(book: BookApiModel): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.upsertBookWithRelations(book.toEntity())
+            booksDatabase.upsertBook(book.toEntity())
         }
     }
 
@@ -68,8 +68,8 @@ internal class BooksRoomDataSource(
 
     // ==================== ENTITY CONVERSIONS ====================
 
-    private fun BookApiModel.toEntity(): BookWithRelationsEntity {
-        return BookWithRelationsEntityImpl(
+    private fun BookApiModel.toEntity(): BookEntity {
+        return BookEntityImpl(
             uuid = uuid,
             id = id,
             title = title,
@@ -232,7 +232,7 @@ internal class BooksRoomDataSource(
         )
     }
 
-    private fun BookWithRelationsEntity.toApiModel(): BookApiModel {
+    private fun BookEntity.toApiModel(): BookApiModel {
         return BookApiModel(
             uuid = uuid,
             id = id,
@@ -272,7 +272,7 @@ internal class BooksRoomDataSource(
 
 // ==================== ENTITY IMPLEMENTATIONS ====================
 
-private data class BookWithRelationsEntityImpl(
+private data class BookEntityImpl(
     override val uuid: String,
     override val id: Long,
     override val title: String,
@@ -294,7 +294,7 @@ private data class BookWithRelationsEntityImpl(
     override val ebook: MediaFileEntity?,
     override val audiobook: MediaFileEntity?,
     override val readaloud: ReadaloudEntity?,
-) : BookWithRelationsEntity
+) : BookEntity
 
 private data class PersonEntityImpl(
     override val uuid: String,
