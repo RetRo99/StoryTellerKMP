@@ -12,12 +12,14 @@ import com.retro99.books.data.model.StatusApiModel
 import com.retro99.books.data.model.TagApiModel
 import com.retro99.database.api.DatabaseExecutor
 import com.retro99.database.api.books.BookEntity
+import com.retro99.database.api.books.BookWithRelationsEntity
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
 import com.retro99.database.api.books.PersonEntity
 import com.retro99.database.api.books.ReadaloudEntity
 import com.retro99.database.api.books.SeriesEntity
+import com.retro99.database.api.books.SeriesWithPositionEntity
 import com.retro99.database.api.books.StatusEntity
 import com.retro99.database.api.books.TagEntity
 import org.koin.core.annotation.Provided
@@ -31,22 +33,18 @@ internal class BooksRoomDataSource(
 
     override suspend fun getBooks(): AppResult<List<BookApiModel>?> {
         return databaseExecutor.executeDatabaseOperation {
-            val books = booksDatabase.getAllBooks()
+            val books = booksDatabase.getAllBooksWithRelations()
             if (books.isEmpty()) {
                 null
             } else {
-                books.map { bookEntity ->
-                    loadBookWithRelations(bookEntity)
-                }
+                books.map { it.toApiModel() }
             }
         }
     }
 
     override suspend fun getBook(uuid: String): AppResult<BookApiModel?> {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.getBookByUuid(uuid)?.let { bookEntity ->
-                loadBookWithRelations(bookEntity)
-            }
+            booksDatabase.getBookWithRelations(uuid)?.toApiModel()
         }
     }
 
@@ -68,56 +66,6 @@ internal class BooksRoomDataSource(
         return databaseExecutor.executeDatabaseOperation {
             booksDatabase.deleteAllRelatedData()
         }
-    }
-
-    private suspend fun loadBookWithRelations(bookEntity: BookEntity): BookApiModel {
-        val authors = booksDatabase.getAuthorsByBookUuid(bookEntity.uuid)
-        val narrators = booksDatabase.getNarratorsByBookUuid(bookEntity.uuid)
-        val creators = booksDatabase.getCreatorsByBookUuid(bookEntity.uuid)
-        val seriesRelations = booksDatabase.getSeriesByBookUuid(bookEntity.uuid)
-        val tags = booksDatabase.getTagsByBookUuid(bookEntity.uuid)
-        val collections = booksDatabase.getCollectionsByBookUuid(bookEntity.uuid)
-        val status = bookEntity.statusUuid?.let { booksDatabase.getStatusByUuid(it) }
-        val mediaFiles = booksDatabase.getMediaFilesByBookUuid(bookEntity.uuid)
-        val readaloud = booksDatabase.getReadaloudByBookUuid(bookEntity.uuid)
-
-        // Load series entities with positions
-        val seriesList = seriesRelations.mapNotNull { relation ->
-            booksDatabase.getSeriesEntityByUuid(relation.seriesUuid)?.let { series ->
-                SeriesApiModel(
-                    uuid = series.uuid,
-                    name = series.name,
-                    featured = series.featured,
-                    position = relation.position,
-                    createdAt = series.createdAt,
-                    updatedAt = series.updatedAt,
-                )
-            }
-        }
-
-        return BookApiModel(
-            uuid = bookEntity.uuid,
-            id = bookEntity.id,
-            title = bookEntity.title,
-            subtitle = bookEntity.subtitle,
-            language = bookEntity.language,
-            publicationDate = bookEntity.publicationDate,
-            description = bookEntity.description,
-            rating = bookEntity.rating,
-            suffix = bookEntity.suffix,
-            createdAt = bookEntity.createdAt,
-            updatedAt = bookEntity.updatedAt,
-            authors = authors.map { it.toApiModel() },
-            narrators = narrators.map { it.toApiModel() },
-            creators = creators.map { it.toApiModel() },
-            series = seriesList,
-            tags = tags.map { it.toApiModel() },
-            collections = collections.map { it.toApiModel() },
-            status = status?.toApiModel(),
-            ebook = mediaFiles.find { it.type == "ebook" }?.toApiModel(),
-            audiobook = mediaFiles.find { it.type == "audiobook" }?.toApiModel(),
-            readaloud = readaloud?.toApiModel(),
-        )
     }
 
     private suspend fun saveBookWithRelations(book: BookApiModel) {
@@ -340,6 +288,43 @@ internal class BooksRoomDataSource(
             stageProgress = stageProgress,
             queuePosition = queuePosition,
             restartPending = restartPending,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
+    }
+
+    private fun BookWithRelationsEntity.toApiModel(): BookApiModel {
+        return BookApiModel(
+            uuid = uuid,
+            id = id,
+            title = title,
+            subtitle = subtitle,
+            language = language,
+            publicationDate = publicationDate,
+            description = description,
+            rating = rating,
+            suffix = suffix,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            authors = authors.map { it.toApiModel() },
+            narrators = narrators.map { it.toApiModel() },
+            creators = creators.map { it.toApiModel() },
+            series = series.map { it.toApiModel() },
+            tags = tags.map { it.toApiModel() },
+            collections = collections.map { it.toApiModel() },
+            status = status?.toApiModel(),
+            ebook = ebook?.toApiModel(),
+            audiobook = audiobook?.toApiModel(),
+            readaloud = readaloud?.toApiModel(),
+        )
+    }
+
+    private fun SeriesWithPositionEntity.toApiModel(): SeriesApiModel {
+        return SeriesApiModel(
+            uuid = uuid,
+            name = name,
+            featured = featured,
+            position = position,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )

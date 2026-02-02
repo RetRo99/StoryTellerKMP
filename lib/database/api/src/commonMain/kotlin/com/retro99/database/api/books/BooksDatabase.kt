@@ -12,7 +12,11 @@ interface BooksDatabase {
 
     suspend fun getAllBooks(): List<BookEntity>
 
+    suspend fun getAllBooksWithRelations(): List<BookWithRelationsEntity>
+
     suspend fun getBookByUuid(uuid: String): BookEntity?
+
+    suspend fun getBookWithRelations(uuid: String): BookWithRelationsEntity?
 
     suspend fun deleteAllBooks()
 
