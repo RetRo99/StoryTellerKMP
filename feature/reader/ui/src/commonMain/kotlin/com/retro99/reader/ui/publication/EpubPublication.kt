@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.publication
 
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 /**
  * Platform-agnostic wrapper for EPUB publication.
@@ -12,7 +12,7 @@ expect class EpubPublication {
     /**
      * The initial settings that were used to open this publication.
      */
-    val initialSettings: ReaderSettingsDomainModel
+    val initialSettings: ReaderSettingsUiModel
 
     /**
      * Closes the publication and releases any associated resources.

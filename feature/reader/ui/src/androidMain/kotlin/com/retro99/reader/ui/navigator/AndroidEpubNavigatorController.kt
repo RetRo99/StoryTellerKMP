@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.navigator
 
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.shared.publication.Link
@@ -33,7 +33,7 @@ class AndroidEpubNavigatorController(
         navigator.go(link)
     }
 
-    override fun setSettings(settings: ReaderSettingsDomainModel) {
+    override fun setSettings(settings: ReaderSettingsUiModel) {
         navigator.submitPreferences(settings.toEpubPreferences())
     }
 
@@ -42,7 +42,7 @@ class AndroidEpubNavigatorController(
      * This is used both for initial preferences and dynamic updates.
      * Add new preference mappings here as needed.
      */
-    private fun ReaderSettingsDomainModel.toEpubPreferences(): EpubPreferences {
+    private fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
         return EpubPreferences(
             fontSize = fontSize,
             scroll = scrollMode,
@@ -55,10 +55,10 @@ class AndroidEpubNavigatorController(
 }
 
 /**
- * Extension function to convert ReaderSettingsDomainModel to EpubPreferences.
+ * Extension function to convert ReaderSettingsUiModel to EpubPreferences.
  * This is used for initial preferences when creating the navigator.
  */
-fun ReaderSettingsDomainModel.toEpubPreferences(): EpubPreferences {
+fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
     return EpubPreferences(
         fontSize = fontSize,
         scroll = scrollMode,

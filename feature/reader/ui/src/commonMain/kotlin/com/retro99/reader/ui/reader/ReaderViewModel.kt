@@ -6,12 +6,12 @@ import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.reader.domain.model.InitialLocatorDomainModel
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.ReadingProgressUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiModel
@@ -76,7 +76,7 @@ class ReaderViewModel(
     private fun observeSettingsChanges() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                _commands.emit(ReaderCommand.ApplySettings(settings))
+                _commands.emit(ReaderCommand.ApplySettings(settings.toUiModel()))
             }
             .launchIn(viewModelScope)
     }
@@ -97,7 +97,7 @@ class ReaderViewModel(
 
     private suspend fun openPublication(uuid: String, localPath: String) {
         // Get initial settings synchronously before opening publication
-        val initialSettings = getReaderSettingsUseCase().first()
+        val initialSettings = getReaderSettingsUseCase().first().toUiModel()
 
         val publication =
             publicationService.openPublication(localPath, initialSettings, initialLocator)
@@ -144,9 +144,9 @@ class ReaderViewModel(
         }
     }
 
-    private fun updateSettings(settings: ReaderSettingsDomainModel) {
+    private fun updateSettings(settings: ReaderSettingsUiModel) {
         viewModelScope.launch {
-            saveReaderSettingsUseCase(settings)
+            saveReaderSettingsUseCase(settings.toDomainModel())
         }
     }
 

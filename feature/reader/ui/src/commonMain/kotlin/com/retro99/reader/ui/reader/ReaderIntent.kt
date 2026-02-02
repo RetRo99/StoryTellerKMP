@@ -1,7 +1,7 @@
 package com.retro99.reader.ui.reader
 
 import com.retro99.base.ui.BaseIntent
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 sealed interface ReaderIntent : BaseIntent {
     data class UpdateProgress(
@@ -10,7 +10,7 @@ sealed interface ReaderIntent : BaseIntent {
     ) : ReaderIntent
 
     data class UpdateSettings(
-        val settings: ReaderSettingsDomainModel,
+        val settings: ReaderSettingsUiModel,
     ) : ReaderIntent
 
     data object ToggleSettings : ReaderIntent

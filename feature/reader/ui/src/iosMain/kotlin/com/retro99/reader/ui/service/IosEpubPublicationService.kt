@@ -1,8 +1,8 @@
 package com.retro99.reader.ui.service
 
 import com.retro99.reader.domain.model.InitialLocatorDomainModel
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -19,11 +19,11 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
      */
     val bridge get() = EpubReaderBridgeRegistry.getBridge()
 
-    private var initialSettings: ReaderSettingsDomainModel? = null
+    private var initialSettings: ReaderSettingsUiModel? = null
 
     override suspend fun openPublication(
         filePath: String,
-        initialSettings: ReaderSettingsDomainModel,
+        initialSettings: ReaderSettingsUiModel,
         initialLocator: InitialLocatorDomainModel?,
     ): EpubPublication? {
         val currentBridge = bridge
@@ -44,7 +44,7 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
                         EpubPublication(
                             currentBridge,
                             initialSettings,
-                            initialLocator
+                            initialLocator,
                         )
                     )
                 },
@@ -68,6 +68,6 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
      *
      * @return The initial settings, or null if no publication is open
      */
-    fun getInitialSettings(): ReaderSettingsDomainModel? = initialSettings
+    fun getInitialSettings(): ReaderSettingsUiModel? = initialSettings
 }
 
