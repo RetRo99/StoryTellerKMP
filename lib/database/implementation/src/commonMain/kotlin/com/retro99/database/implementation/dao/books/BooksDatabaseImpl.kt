@@ -2,6 +2,7 @@ package com.retro99.database.implementation.dao.books
 
 import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BookSeriesEntity
+import com.retro99.database.api.books.BookWithRelationsEntity
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
@@ -9,6 +10,7 @@ import com.retro99.database.api.books.PersonEntity
 import com.retro99.database.api.books.ReadaloudEntity
 import com.retro99.database.api.books.ReadingProgressEntity
 import com.retro99.database.api.books.SeriesEntity
+import com.retro99.database.api.books.SeriesWithPositionEntity
 import com.retro99.database.api.books.StatusEntity
 import com.retro99.database.api.books.TagEntity
 
@@ -26,8 +28,18 @@ internal class BooksDatabaseImpl(
         return sqlDelightDao.getAllBooks()
     }
 
+    override suspend fun getAllBooksWithRelations(): List<BookWithRelationsEntity> {
+        val books = sqlDelightDao.getAllBooks()
+        return books.map { book -> loadBookWithRelations(book) }
+    }
+
     override suspend fun getBookByUuid(uuid: String): BookEntity? {
         return sqlDelightDao.getBookByUuid(uuid)
+    }
+
+    override suspend fun getBookWithRelations(uuid: String): BookWithRelationsEntity? {
+        val book = sqlDelightDao.getBookByUuid(uuid) ?: return null
+        return loadBookWithRelations(book)
     }
 
     override suspend fun deleteAllBooks() {
@@ -308,4 +320,92 @@ internal class BooksDatabaseImpl(
             lastReadAt = lastReadAt,
         )
     }
+
+    // ==================== RELATION LOADING ====================
+
+    private suspend fun loadBookWithRelations(
+        book: BookSqlDelightEntity,
+    ): BookWithRelationsEntity {
+        val authors = sqlDelightDao.getAuthorsByBookUuid(book.uuid)
+        val narrators = sqlDelightDao.getNarratorsByBookUuid(book.uuid)
+        val creators = sqlDelightDao.getCreatorsByBookUuid(book.uuid)
+        val seriesRelations = sqlDelightDao.getSeriesByBookUuid(book.uuid)
+        val tags = sqlDelightDao.getTagsByBookUuid(book.uuid)
+        val collections = sqlDelightDao.getCollectionsByBookUuid(book.uuid)
+        val status = book.statusUuid?.let { sqlDelightDao.getStatusByUuid(it) }
+        val mediaFiles = sqlDelightDao.getMediaFilesByBookUuid(book.uuid)
+        val readaloud = sqlDelightDao.getReadaloudByBookUuid(book.uuid)
+
+        val seriesList = seriesRelations.mapNotNull { relation ->
+            sqlDelightDao.getSeriesEntityByUuid(relation.seriesUuid)?.let { series ->
+                SeriesWithPositionEntityImpl(
+                    uuid = series.uuid,
+                    name = series.name,
+                    featured = series.featured,
+                    position = relation.position,
+                    createdAt = series.createdAt,
+                    updatedAt = series.updatedAt,
+                )
+            }
+        }
+
+        return BookWithRelationsEntityImpl(
+            uuid = book.uuid,
+            id = book.id,
+            title = book.title,
+            subtitle = book.subtitle,
+            language = book.language,
+            publicationDate = book.publicationDate,
+            description = book.description,
+            rating = book.rating,
+            suffix = book.suffix,
+            createdAt = book.createdAt,
+            updatedAt = book.updatedAt,
+            authors = authors,
+            narrators = narrators,
+            creators = creators,
+            series = seriesList,
+            tags = tags,
+            collections = collections,
+            status = status,
+            ebook = mediaFiles.find { it.type == "ebook" },
+            audiobook = mediaFiles.find { it.type == "audiobook" },
+            readaloud = readaloud,
+        )
+    }
 }
+
+// ==================== ENTITY IMPLEMENTATIONS ====================
+
+private data class BookWithRelationsEntityImpl(
+    override val uuid: String,
+    override val id: Long,
+    override val title: String,
+    override val subtitle: String?,
+    override val language: String?,
+    override val publicationDate: String?,
+    override val description: String?,
+    override val rating: Float?,
+    override val suffix: String?,
+    override val createdAt: String?,
+    override val updatedAt: String?,
+    override val authors: List<PersonEntity>,
+    override val narrators: List<PersonEntity>,
+    override val creators: List<PersonEntity>,
+    override val series: List<SeriesWithPositionEntity>,
+    override val tags: List<TagEntity>,
+    override val collections: List<CollectionEntity>,
+    override val status: StatusEntity?,
+    override val ebook: MediaFileEntity?,
+    override val audiobook: MediaFileEntity?,
+    override val readaloud: ReadaloudEntity?,
+) : BookWithRelationsEntity
+
+private data class SeriesWithPositionEntityImpl(
+    override val uuid: String,
+    override val name: String,
+    override val featured: Int?,
+    override val position: Int?,
+    override val createdAt: String?,
+    override val updatedAt: String?,
+) : SeriesWithPositionEntity
