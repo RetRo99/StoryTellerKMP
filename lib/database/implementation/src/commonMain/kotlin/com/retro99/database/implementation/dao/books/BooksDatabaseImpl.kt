@@ -2,8 +2,6 @@ package com.retro99.database.implementation.dao.books
 
 import com.retro99.database.api.books.BookEntity
 import com.retro99.database.api.books.BooksDatabase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
 internal class BooksDatabaseImpl(
     private val roomDao: BooksRoomDao,
@@ -17,10 +15,8 @@ internal class BooksDatabaseImpl(
         roomDao.upsertBook(book.toRoomEntity())
     }
 
-    override fun getAllBooks(): Flow<List<BookEntity>> {
-        return roomDao.getAllBooks().map { entities ->
-            entities.map { it as BookEntity }
-        }
+    override suspend fun getAllBooks(): List<BookEntity> {
+        return roomDao.getAllBooks()
     }
 
     override suspend fun getBookByUuid(uuid: String): BookEntity? {

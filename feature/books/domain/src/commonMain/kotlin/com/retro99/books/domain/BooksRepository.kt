@@ -1,12 +1,13 @@
 package com.retro99.books.domain
 
-import com.retro99.base.result.AppResult
+import com.retro99.base.repository.BaseRepository
 import com.retro99.books.domain.model.BookDomainModel
+import kotlinx.coroutines.flow.Flow
 
-interface BooksRepository {
+interface BooksRepository : BaseRepository {
 
-    suspend fun getBooks(): AppResult<List<BookDomainModel>>
+    fun getBooks(): Flow<List<BookDomainModel>>
 
-    suspend fun getBook(uuid: String): AppResult<BookDomainModel>
+    fun getBook(uuid: String): Flow<BookDomainModel>
 }
 

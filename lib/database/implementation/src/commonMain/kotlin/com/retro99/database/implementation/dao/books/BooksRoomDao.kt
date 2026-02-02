@@ -3,7 +3,6 @@ package com.retro99.database.implementation.dao.books
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BooksRoomDao {
@@ -15,7 +14,7 @@ interface BooksRoomDao {
     suspend fun upsertBook(book: BookRoomEntity)
 
     @Query("SELECT * FROM books ORDER BY title ASC")
-    fun getAllBooks(): Flow<List<BookRoomEntity>>
+    suspend fun getAllBooks(): List<BookRoomEntity>
 
     @Query("SELECT * FROM books WHERE uuid = :uuid")
     suspend fun getBookByUuid(uuid: String): BookRoomEntity?
