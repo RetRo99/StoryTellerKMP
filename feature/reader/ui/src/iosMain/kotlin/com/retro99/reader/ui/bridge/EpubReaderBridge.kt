@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.bridge
 
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import platform.UIKit.UIViewController
 
 /**
@@ -32,7 +32,7 @@ data class EpubReaderSettings(
 ) {
     companion object {
         fun from(
-            settings: ReaderSettingsDomainModel,
+            settings: ReaderSettingsUiModel,
             initialLocator: EpubLocator? = null,
         ): EpubReaderSettings {
             return EpubReaderSettings(

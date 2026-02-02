@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.navigator
 
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 /**
  * Controller interface for EPUB navigation and settings.
@@ -41,6 +41,6 @@ interface EpubNavigatorController {
      *
      * @param settings The reader settings to apply
      */
-    fun setSettings(settings: ReaderSettingsDomainModel)
+    fun setSettings(settings: ReaderSettingsUiModel)
 }
 

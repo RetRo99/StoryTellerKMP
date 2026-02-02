@@ -1,10 +1,10 @@
 package com.retro99.reader.ui.publication
 
 import com.retro99.reader.domain.model.InitialLocatorDomainModel
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.ui.bridge.EpubLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 
 /**
@@ -17,7 +17,7 @@ import com.retro99.reader.ui.navigator.EpubNavigatorController
  */
 actual class EpubPublication(
     internal val bridge: EpubReaderBridge,
-    actual val initialSettings: ReaderSettingsDomainModel,
+    actual val initialSettings: ReaderSettingsUiModel,
     private val initialLocator: InitialLocatorDomainModel?,
 ) : EpubNavigatorController {
 
@@ -57,7 +57,7 @@ actual class EpubPublication(
         bridge.goToChapter(href)
     }
 
-    override fun setSettings(settings: ReaderSettingsDomainModel) {
+    override fun setSettings(settings: ReaderSettingsUiModel) {
         bridge.setSettings(settings = EpubReaderSettings.from(settings))
     }
 }

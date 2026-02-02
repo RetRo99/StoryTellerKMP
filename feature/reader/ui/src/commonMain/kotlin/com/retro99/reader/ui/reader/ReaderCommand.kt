@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.reader
 
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 /**
  * Commands emitted by the ViewModel for the View to execute.
@@ -37,6 +37,6 @@ sealed class ReaderCommand {
      *
      * @param settings The reader settings to apply
      */
-    data class ApplySettings(val settings: ReaderSettingsDomainModel) : ReaderCommand()
+    data class ApplySettings(val settings: ReaderSettingsUiModel) : ReaderCommand()
 }
 

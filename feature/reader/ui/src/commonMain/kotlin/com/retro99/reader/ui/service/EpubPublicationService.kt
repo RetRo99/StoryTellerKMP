@@ -1,7 +1,7 @@
 package com.retro99.reader.ui.service
 
 import com.retro99.reader.domain.model.InitialLocatorDomainModel
-import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.StateFlow
 
@@ -34,7 +34,7 @@ interface EpubPublicationService {
      */
     suspend fun openPublication(
         filePath: String,
-        initialSettings: ReaderSettingsDomainModel,
+        initialSettings: ReaderSettingsUiModel,
         initialLocator: InitialLocatorDomainModel? = null,
     ): EpubPublication?
 
