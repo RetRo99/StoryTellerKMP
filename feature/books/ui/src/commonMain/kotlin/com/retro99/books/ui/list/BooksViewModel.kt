@@ -1,11 +1,12 @@
 package com.retro99.books.ui.list
 
 import androidx.lifecycle.viewModelScope
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.toUiModel
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -35,18 +36,27 @@ class BooksViewModel(
             .onStart {
                 updateState { it.copy(isLoading = true, error = null) }
             }
-            .onEach { books ->
-                updateState {
-                    it.copy(
-                        books = books.map { book -> book.toUiModel() },
-                        isLoading = false,
-                        isRefreshing = false,
-                        error = null,
-                    )
-                }
-            }
-            .catch { error ->
-                updateState { it.copy(isLoading = false, isRefreshing = false) }
+            .onEach { result ->
+                result
+                    .onSuccess { books ->
+                        updateState {
+                            it.copy(
+                                books = books.map { book -> book.toUiModel() },
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = null,
+                            )
+                        }
+                    }
+                    .onFailure { error ->
+                        updateState {
+                            it.copy(
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = error,
+                            )
+                        }
+                    }
             }
             .launchIn(viewModelScope)
     }

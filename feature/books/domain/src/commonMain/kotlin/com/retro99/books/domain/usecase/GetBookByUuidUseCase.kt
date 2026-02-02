@@ -1,5 +1,6 @@
 package com.retro99.books.domain.usecase
 
+import com.retro99.base.result.AppResult
 import com.retro99.books.domain.BooksRepository
 import com.retro99.books.domain.model.BookDomainModel
 import kotlinx.coroutines.flow.Flow
@@ -10,7 +11,7 @@ import org.koin.core.annotation.Provided
 class GetBookByUuidUseCase(
     @Provided private val booksRepository: BooksRepository,
 ) {
-    operator fun invoke(uuid: String): Flow<BookDomainModel> {
+    operator fun invoke(uuid: String): Flow<AppResult<BookDomainModel>> {
         return booksRepository.getBook(uuid)
     }
 }
