@@ -28,6 +28,8 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
             progression = pos.progression,
             position = pos.position,
             totalProgression = pos.totalProgression,
+            chapterIndex = pos.chapterIndex,
+            totalChapters = pos.totalChapters,
         )
     },
 )

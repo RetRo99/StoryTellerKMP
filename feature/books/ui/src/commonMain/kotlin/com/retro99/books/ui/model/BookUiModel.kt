@@ -36,5 +36,7 @@ data class LocatorUiModel(
     val progression: Double?,
     val position: Int?,
     val totalProgression: Double?,
+    val chapterIndex: Int?,
+    val totalChapters: Int?,
 )
 
