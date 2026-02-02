@@ -27,6 +27,7 @@ kotlin {
             implementation(libs.datetime)
             implementation(libs.coroutines)
             implementation(projects.lib.database.api)
+            implementation(projects.lib.preferences.api)
             implementation(projects.base)
             implementation(projects.lib.analytics.api)
             implementation(libs.sqldelight.runtime)

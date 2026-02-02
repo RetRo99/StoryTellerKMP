@@ -1,0 +1,35 @@
+-- ============================================
+-- BOOK CREATORS JUNCTION TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS book_creators (
+    book_uuid TEXT NOT NULL,
+    person_uuid TEXT NOT NULL,
+    PRIMARY KEY (book_uuid, person_uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_creators_person ON book_creators(person_uuid);
+
+-- Queries
+insertBookCreator:
+INSERT OR IGNORE INTO book_creators(book_uuid, person_uuid)
+VALUES (?, ?);
+
+getCreatorsByBookUuid:
+SELECT p.* FROM persons p
+JOIN book_creators bc ON p.uuid = bc.person_uuid
+WHERE bc.book_uuid = ?
+ORDER BY p.name ASC;
+
+getBooksByCreatorUuid:
+SELECT b.* FROM books b
+JOIN book_creators bc ON b.uuid = bc.book_uuid
+WHERE bc.person_uuid = ?
+ORDER BY b.title ASC;
+
+deleteBookCreators:
+DELETE FROM book_creators WHERE book_uuid = ?;
+
+deleteAllBookCreators:
+DELETE FROM book_creators;
+

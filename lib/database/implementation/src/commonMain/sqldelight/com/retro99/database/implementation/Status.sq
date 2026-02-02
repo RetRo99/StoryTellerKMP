@@ -1,0 +1,28 @@
+-- ============================================
+-- STATUSES TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS statuses (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+-- Queries for statuses
+upsertStatus:
+INSERT OR REPLACE INTO statuses(uuid, name, created_at, updated_at)
+VALUES (?, ?, ?, ?);
+
+getStatusByUuid:
+SELECT * FROM statuses WHERE uuid = ?;
+
+getAllStatuses:
+SELECT * FROM statuses ORDER BY name ASC;
+
+deleteStatus:
+DELETE FROM statuses WHERE uuid = ?;
+
+deleteAllStatuses:
+DELETE FROM statuses;
+

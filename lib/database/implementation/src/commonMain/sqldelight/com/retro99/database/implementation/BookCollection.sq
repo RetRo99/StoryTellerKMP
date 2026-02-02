@@ -1,0 +1,35 @@
+-- ============================================
+-- BOOK COLLECTIONS JUNCTION TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS book_collections (
+    book_uuid TEXT NOT NULL,
+    collection_uuid TEXT NOT NULL,
+    PRIMARY KEY (book_uuid, collection_uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_collections_collection ON book_collections(collection_uuid);
+
+-- Queries
+insertBookCollection:
+INSERT OR IGNORE INTO book_collections(book_uuid, collection_uuid)
+VALUES (?, ?);
+
+getCollectionsByBookUuid:
+SELECT c.* FROM collections c
+JOIN book_collections bc ON c.uuid = bc.collection_uuid
+WHERE bc.book_uuid = ?
+ORDER BY c.name ASC;
+
+getBooksByCollectionUuid:
+SELECT b.* FROM books b
+JOIN book_collections bc ON b.uuid = bc.book_uuid
+WHERE bc.collection_uuid = ?
+ORDER BY b.title ASC;
+
+deleteBookCollections:
+DELETE FROM book_collections WHERE book_uuid = ?;
+
+deleteAllBookCollections:
+DELETE FROM book_collections;
+

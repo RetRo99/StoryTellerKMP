@@ -1,0 +1,34 @@
+-- ============================================
+-- READALOUD TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS readalouds (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    book_uuid TEXT NOT NULL UNIQUE,
+    filepath TEXT NOT NULL,
+    missing INTEGER,
+    status TEXT,
+    current_stage TEXT,
+    stage_progress INTEGER,
+    queue_position INTEGER,
+    restart_pending INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_readalouds_book ON readalouds(book_uuid);
+
+-- Queries
+upsertReadaloud:
+INSERT OR REPLACE INTO readalouds(uuid, book_uuid, filepath, missing, status, current_stage, stage_progress, queue_position, restart_pending, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getReadaloudByBookUuid:
+SELECT * FROM readalouds WHERE book_uuid = ?;
+
+deleteReadaloudByBookUuid:
+DELETE FROM readalouds WHERE book_uuid = ?;
+
+deleteAllReadalouds:
+DELETE FROM readalouds;
+

@@ -1,0 +1,33 @@
+-- ============================================
+-- TAGS TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS tags (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+
+-- Queries for tags
+upsertTag:
+INSERT OR REPLACE INTO tags(uuid, name, created_at, updated_at)
+VALUES (?, ?, ?, ?);
+
+getTagByUuid:
+SELECT * FROM tags WHERE uuid = ?;
+
+getAllTags:
+SELECT * FROM tags ORDER BY name ASC;
+
+searchTagsByName:
+SELECT * FROM tags WHERE name LIKE ? ORDER BY name ASC;
+
+deleteTag:
+DELETE FROM tags WHERE uuid = ?;
+
+deleteAllTags:
+DELETE FROM tags;
+

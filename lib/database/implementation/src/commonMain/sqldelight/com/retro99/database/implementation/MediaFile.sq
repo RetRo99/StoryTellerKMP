@@ -1,0 +1,40 @@
+-- ============================================
+-- MEDIA FILES TABLE (ebook, audiobook)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS media_files (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    book_uuid TEXT NOT NULL,
+    type TEXT NOT NULL,
+    filepath TEXT NOT NULL,
+    missing INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_files_book ON media_files(book_uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_media_files_book_type ON media_files(book_uuid, type);
+
+-- Queries
+upsertMediaFile:
+INSERT OR REPLACE INTO media_files(uuid, book_uuid, type, filepath, missing, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+getMediaFilesByBookUuid:
+SELECT * FROM media_files WHERE book_uuid = ?;
+
+getMediaFileByBookAndType:
+SELECT * FROM media_files WHERE book_uuid = ? AND type = ?;
+
+getEbookByBookUuid:
+SELECT * FROM media_files WHERE book_uuid = ? AND type = 'ebook';
+
+getAudiobookByBookUuid:
+SELECT * FROM media_files WHERE book_uuid = ? AND type = 'audiobook';
+
+deleteMediaFilesByBookUuid:
+DELETE FROM media_files WHERE book_uuid = ?;
+
+deleteAllMediaFiles:
+DELETE FROM media_files;
+

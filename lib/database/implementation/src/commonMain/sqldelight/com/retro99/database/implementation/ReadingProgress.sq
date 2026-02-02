@@ -1,0 +1,55 @@
+-- ============================================
+-- READING PROGRESS TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS reading_progress (
+    book_uuid TEXT NOT NULL PRIMARY KEY,
+    locator_href TEXT,
+    locator_type TEXT,
+    locator_title TEXT,
+    progression REAL,
+    total_progression REAL,
+    chapter_index INTEGER,
+    total_chapters INTEGER,
+    audio_timestamp_ms INTEGER,
+    last_read_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reading_progress_last_read ON reading_progress(last_read_at);
+CREATE INDEX IF NOT EXISTS idx_reading_progress_progression ON reading_progress(progression);
+
+-- Queries
+upsertReadingProgress:
+INSERT OR REPLACE INTO reading_progress(book_uuid, locator_href, locator_type, locator_title, progression, total_progression, chapter_index, total_chapters, audio_timestamp_ms, last_read_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getReadingProgressByBookUuid:
+SELECT * FROM reading_progress WHERE book_uuid = ?;
+
+getAllReadingProgress:
+SELECT * FROM reading_progress ORDER BY last_read_at DESC;
+
+getRecentlyReadBooks:
+SELECT b.*, rp.progression, rp.total_progression, rp.last_read_at FROM books b
+JOIN reading_progress rp ON b.uuid = rp.book_uuid
+ORDER BY rp.last_read_at DESC
+LIMIT ?;
+
+getBooksInProgress:
+SELECT b.*, rp.progression, rp.total_progression, rp.last_read_at FROM books b
+JOIN reading_progress rp ON b.uuid = rp.book_uuid
+WHERE rp.progression > 0 AND (rp.total_progression IS NULL OR rp.total_progression < 1.0)
+ORDER BY rp.last_read_at DESC;
+
+getCompletedBooks:
+SELECT b.*, rp.progression, rp.total_progression, rp.last_read_at FROM books b
+JOIN reading_progress rp ON b.uuid = rp.book_uuid
+WHERE rp.total_progression >= 1.0
+ORDER BY rp.last_read_at DESC;
+
+deleteReadingProgress:
+DELETE FROM reading_progress WHERE book_uuid = ?;
+
+deleteAllReadingProgress:
+DELETE FROM reading_progress;
+
