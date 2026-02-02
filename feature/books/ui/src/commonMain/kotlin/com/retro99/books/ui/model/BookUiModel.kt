@@ -30,8 +30,8 @@ data class SeriesUiModel(
 
 @Serializable
 data class LocatorUiModel(
-    val href: String?,
-    val type: String?,
+    val href: String,
+    val type: String,
     val progression: Double?,
     val position: Int?,
     val totalProgression: Double?,

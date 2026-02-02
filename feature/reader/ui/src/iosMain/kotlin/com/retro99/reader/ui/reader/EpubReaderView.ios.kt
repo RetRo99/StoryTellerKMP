@@ -31,7 +31,7 @@ internal actual fun EpubReaderView(
         publication.bridge.createReaderViewController(
             settings = EpubReaderSettings.from(
                 settings = publication.initialSettings,
-                initialLocator = publication.initialEpubLocator,
+                initialLocator = publication.initialLocator,
             ),
         )
     }

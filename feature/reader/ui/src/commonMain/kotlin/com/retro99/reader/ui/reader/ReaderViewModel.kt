@@ -5,7 +5,6 @@ import com.github.michaelbull.result.fold
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.ui.model.BookUiModel
-import com.retro99.reader.domain.model.InitialLocatorDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
@@ -42,19 +41,6 @@ class ReaderViewModel(
 
     private val bookUuid: String = book.uuid
     private val ebookFilePath: String = book.ebookFilepath ?: ""
-
-    private val initialLocator: InitialLocatorDomainModel? =
-        book.locator?.let { locator ->
-            val href = locator.href ?: return@let null
-            val type = locator.type ?: return@let null
-            InitialLocatorDomainModel(
-                href = href,
-                type = type,
-                progression = locator.progression,
-                position = locator.position,
-                totalProgression = locator.totalProgression,
-            )
-        }
 
     private val _commands = MutableSharedFlow<ReaderCommand>()
     val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
@@ -100,7 +86,7 @@ class ReaderViewModel(
         val initialSettings = getReaderSettingsUseCase().first().toUiModel()
 
         val publication =
-            publicationService.openPublication(localPath, initialSettings, initialLocator)
+            publicationService.openPublication(localPath, initialSettings, book.locator)
         if (publication != null) {
             updateState {
                 it.copy(
