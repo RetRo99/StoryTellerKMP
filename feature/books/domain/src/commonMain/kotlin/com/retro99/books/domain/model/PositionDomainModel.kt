@@ -5,6 +5,7 @@ package com.retro99.books.domain.model
  * This is a flattened model that combines locator and location data.
  */
 data class PositionDomainModel(
+    val bookUuid: String,
     val uuid: String,
     val timestamp: Long?,
     val createdAt: String?,

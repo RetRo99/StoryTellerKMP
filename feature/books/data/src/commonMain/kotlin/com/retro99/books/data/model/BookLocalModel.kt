@@ -78,7 +78,7 @@ fun BookDomainModel.toLocal(): BookLocalModel {
         tags = tags.map { it.toLocal() },
         collections = collections.map { it.toLocal() },
         status = status?.toLocal(),
-        position = position?.toLocal(uuid),
+        position = position?.toLocal(),
         ebook = ebook?.toLocal(uuid, "ebook"),
         audiobook = audiobook?.toLocal(uuid, "audiobook"),
         readaloud = readaloud?.toLocal(uuid),

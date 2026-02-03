@@ -2,8 +2,8 @@ package com.retro99.reader.domain
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
-import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -30,14 +30,14 @@ interface ReaderRepository {
      * @param bookUuid The UUID of the book
      * @return The reading progress or null if not found
      */
-    suspend fun getReadingProgress(bookUuid: String): AppResult<ReadingProgressDomainModel?>
+    suspend fun getReadingProgress(bookUuid: String): AppResult<PositionDomainModel?>
 
     /**
      * Saves the reading progress for a book.
      *
      * @param progress The reading progress to save
      */
-    suspend fun saveReadingProgress(progress: ReadingProgressDomainModel): CompletableResult
+    suspend fun saveReadingProgress(progress: PositionDomainModel): CompletableResult
 
     /**
      * Gets the reader settings.

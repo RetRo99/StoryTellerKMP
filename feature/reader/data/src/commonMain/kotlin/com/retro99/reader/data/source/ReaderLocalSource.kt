@@ -2,7 +2,7 @@ package com.retro99.reader.data.source
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
-import com.retro99.reader.data.model.PositionLocalModel
+import com.retro99.books.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
 import kotlinx.coroutines.flow.Flow
 
