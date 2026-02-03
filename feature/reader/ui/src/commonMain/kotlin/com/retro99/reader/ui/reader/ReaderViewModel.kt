@@ -107,8 +107,8 @@ class ReaderViewModel(
         viewModelScope.launch {
             getReadingProgressUseCase(uuid)
                 .fold(
-                    success = { progress ->
-                        updateState { it.copy(position = progress?.toUiModel()) }
+                    success = { position ->
+                        updateState { it.copy(position = position?.toUiModel()) }
                     },
                     failure = { /* Ignore progress loading failure */ },
                 )
