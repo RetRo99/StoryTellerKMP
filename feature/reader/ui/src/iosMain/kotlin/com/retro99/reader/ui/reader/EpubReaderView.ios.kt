@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
+import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -24,14 +25,14 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onProgressChanged: (ReadingProgressUpdate) -> Unit,
+    onPositionChanged: (PositionUiModel) -> Unit,
     modifier: Modifier,
 ) {
     val readerViewController = remember(publication) {
         publication.bridge.createReaderViewController(
             settings = EpubReaderSettings.from(
                 settings = publication.initialSettings,
-                initialLocator = publication.initialLocator,
+                initialPosition = publication.initialPosition,
             ),
         )
     }

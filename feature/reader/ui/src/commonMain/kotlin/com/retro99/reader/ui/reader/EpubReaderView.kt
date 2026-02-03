@@ -3,22 +3,10 @@ package com.retro99.reader.ui.reader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
-
-/**
- * Data class representing reading progress from the platform reader.
- */
-data class ReadingProgressUpdate(
-    val locatorHref: String?,
-    val locatorType: String?,
-    val locatorTitle: String?,
-    val progression: Double?,
-    val totalProgression: Double?,
-    val chapterIndex: Int?,
-    val totalChapters: Int?,
-)
 
 /**
  * Platform-specific EPUB reader view.
@@ -27,9 +15,8 @@ data class ReadingProgressUpdate(
  *
  * @param bookUuid The unique identifier of the book
  * @param publication The opened EPUB publication
- * @param settings The reader settings to apply (reactive - updates when changed)
  * @param commands Flow of commands from ViewModel for navigation and settings
- * @param onProgressChanged Callback when the reading progress changes
+ * @param onPositionChanged Callback when the reading position changes
  * @param modifier The modifier to apply to the view
  */
 @Composable
@@ -37,7 +24,7 @@ internal expect fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onProgressChanged: (ReadingProgressUpdate) -> Unit,
+    onPositionChanged: (PositionUiModel) -> Unit,
     modifier: Modifier = Modifier,
 )
 

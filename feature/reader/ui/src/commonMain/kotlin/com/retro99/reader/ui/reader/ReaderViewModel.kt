@@ -55,7 +55,7 @@ class ReaderViewModel(
 
     override fun onIntent(intent: ReaderIntent) {
         when (intent) {
-            is ReaderIntent.UpdateProgress -> updateProgress(intent)
+            is ReaderIntent.UpdatePosition -> updatePosition(intent.position)
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
@@ -131,47 +131,33 @@ class ReaderViewModel(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private fun updateProgress(intent: ReaderIntent.UpdateProgress) {
+    private fun updatePosition(position: PositionUiModel) {
         val currentBookUuid = currentViewState().bookUuid ?: return
 
-        val positionUiModel = intent.locatorHref?.let { href ->
-            val type = intent.locatorType ?: return@let null
-            PositionUiModel(
-                href = href,
-                type = type,
-                title = intent.locatorTitle,
-                progression = intent.progression,
-                position = null,
-                totalProgression = intent.totalProgression,
-                chapterIndex = intent.chapterIndex,
-                totalChapters = intent.totalChapters,
-            )
-        }
-
-        updateState { it.copy(position = positionUiModel) }
+        updateState { it.copy(position = position) }
 
         val now = Clock.System.now().toString()
-        val progressDomainModel = PositionDomainModel(
+        val positionDomainModel = PositionDomainModel(
             bookUuid = currentBookUuid,
             uuid = Uuid.random().toString(),
             timestamp = Clock.System.now().toEpochMilliseconds(),
             createdAt = now,
             updatedAt = now,
-            locatorHref = intent.locatorHref,
-            locatorType = intent.locatorType,
-            locatorTitle = intent.locatorTitle,
+            locatorHref = position.href,
+            locatorType = position.type,
+            locatorTitle = position.title,
             locatorTarget = null,
             audioTimestampMs = null,
-            chapterIndex = intent.chapterIndex,
-            progression = intent.progression,
-            totalChapters = intent.totalChapters,
+            chapterIndex = position.chapterIndex,
+            progression = position.progression,
+            totalChapters = position.totalChapters,
             totalDurationMs = null,
-            totalProgression = intent.totalProgression,
-            position = null,
+            totalProgression = position.totalProgression,
+            position = position.position,
         )
 
         viewModelScope.launch {
-            saveReadingProgressUseCase(progressDomainModel)
+            saveReadingProgressUseCase(positionDomainModel)
         }
     }
 
