@@ -7,6 +7,7 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.PositionUiModel
+import com.retro99.books.ui.model.toUiModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
@@ -107,24 +108,7 @@ class ReaderViewModel(
             getReadingProgressUseCase(uuid)
                 .fold(
                     success = { progress ->
-                        val positionUiModel = progress?.let {
-                            val href = it.locatorHref ?: return@let null
-                            val type = it.locatorType ?: return@let null
-                            val createdAt = it.createdAt ?: return@let null
-                            PositionUiModel(
-                                uuid = it.uuid,
-                                createdAt = createdAt,
-                                href = href,
-                                type = type,
-                                title = it.locatorTitle,
-                                progression = it.progression,
-                                position = null,
-                                totalProgression = it.totalProgression,
-                                chapterIndex = it.chapterIndex,
-                                totalChapters = it.totalChapters,
-                            )
-                        }
-                        updateState { it.copy(position = positionUiModel) }
+                        updateState { it.copy(position = progress?.toUiModel()) }
                     },
                     failure = { /* Ignore progress loading failure */ },
                 )
