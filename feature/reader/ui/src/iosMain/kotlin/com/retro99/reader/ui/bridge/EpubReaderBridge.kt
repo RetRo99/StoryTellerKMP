@@ -87,7 +87,26 @@ interface EpubReaderBridge {
      * @param settings The reader settings to apply
      */
     fun setSettings(settings: EpubReaderSettings)
+
+    /**
+     * Sets a callback to be invoked when the reading position changes.
+     * @param callback The callback to invoke with position data, or null to clear
+     */
+    fun setOnPositionChangedCallback(callback: ((PositionLocator) -> Unit)?)
 }
+
+/**
+ * Position locator data class for iOS bridge.
+ * This is a simple data holder that can be passed from Swift to Kotlin.
+ */
+data class PositionLocator(
+    val href: String,
+    val type: String,
+    val title: String?,
+    val progression: Double?,
+    val position: Int?,
+    val totalProgression: Double?,
+)
 
 /**
  * Registry for the EPUB reader bridge.

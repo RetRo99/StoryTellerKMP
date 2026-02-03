@@ -1,9 +1,11 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import kotlinx.coroutines.flow.StateFlow
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.shared.publication.Link
+import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.Url
 
 /**
@@ -18,6 +20,11 @@ import org.readium.r2.shared.util.Url
 class AndroidEpubNavigatorController(
     private val navigator: EpubNavigatorFragment,
 ) : EpubNavigatorController {
+
+    /**
+     * StateFlow of the current locator, emitting location changes as the user navigates.
+     */
+    val currentLocator: StateFlow<Locator> = navigator.currentLocator
 
     override fun goToNextPage() {
         navigator.goForward()
