@@ -2,8 +2,8 @@ package com.retro99.reader.data.source
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
-import com.retro99.reader.data.model.ReadingProgressLocalModel
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -21,14 +21,14 @@ interface ReaderLocalSource {
      * @param bookUuid The UUID of the book
      * @return The reading progress or null if not found
      */
-    suspend fun getReadingProgress(bookUuid: String): AppResult<ReadingProgressLocalModel?>
+    suspend fun getReadingProgress(bookUuid: String): AppResult<PositionLocalModel?>
 
     /**
      * Saves the reading progress for a book.
      *
      * @param progress The reading progress to save
      */
-    suspend fun saveReadingProgress(progress: ReadingProgressLocalModel): CompletableResult
+    suspend fun saveReadingProgress(progress: PositionLocalModel): CompletableResult
 
     /**
      * Gets the reader settings.

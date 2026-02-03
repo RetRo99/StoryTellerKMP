@@ -96,13 +96,13 @@ interface BooksDatabase {
 
     suspend fun deleteReadaloudByBookUuid(bookUuid: String)
 
-    // ==================== READING PROGRESS OPERATIONS ====================
+    // ==================== POSITION OPERATIONS ====================
 
-    suspend fun upsertReadingProgress(progress: ReadingProgressEntity)
+    suspend fun upsertPosition(position: PositionEntity)
 
-    suspend fun getReadingProgressByBookUuid(bookUuid: String): ReadingProgressEntity?
+    suspend fun getPositionByBookUuid(bookUuid: String): PositionEntity?
 
-    suspend fun deleteReadingProgress(bookUuid: String)
+    suspend fun deletePosition(bookUuid: String)
 
     // ==================== TRANSACTION SUPPORT ====================
 

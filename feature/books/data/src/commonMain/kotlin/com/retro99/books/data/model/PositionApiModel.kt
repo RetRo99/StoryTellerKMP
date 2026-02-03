@@ -88,4 +88,3 @@ fun PositionApiModel.toDomain(): PositionDomainModel {
         position = locator?.locations?.position,
     )
 }
-
