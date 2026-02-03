@@ -4,9 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.LocatorUiModel
-import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
@@ -27,6 +27,8 @@ import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @KoinViewModel
 class ReaderViewModel(
@@ -128,6 +130,7 @@ class ReaderViewModel(
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     private fun updateProgress(intent: ReaderIntent.UpdateProgress) {
         val currentBookUuid = currentViewState().bookUuid ?: return
 
@@ -147,16 +150,24 @@ class ReaderViewModel(
 
         updateState { it.copy(locator = locator) }
 
-        val progressDomainModel = ReadingProgressDomainModel(
+        val now = Clock.System.now().toString()
+        val progressDomainModel = PositionDomainModel(
             bookUuid = currentBookUuid,
+            uuid = Uuid.random().toString(),
+            timestamp = Clock.System.now().toEpochMilliseconds(),
+            createdAt = now,
+            updatedAt = now,
             locatorHref = intent.locatorHref,
             locatorType = intent.locatorType,
             locatorTitle = intent.locatorTitle,
-            progression = intent.progression,
-            totalProgression = intent.totalProgression,
+            locatorTarget = null,
+            audioTimestampMs = null,
             chapterIndex = intent.chapterIndex,
+            progression = intent.progression,
             totalChapters = intent.totalChapters,
-            lastReadAt = Clock.System.now().toString(),
+            totalDurationMs = null,
+            totalProgression = intent.totalProgression,
+            position = null,
         )
 
         viewModelScope.launch {

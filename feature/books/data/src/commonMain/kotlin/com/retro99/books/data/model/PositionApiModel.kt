@@ -67,8 +67,9 @@ data class LocationsApiModel(
 /**
  * Flattens the nested API model structure into a flat domain model.
  */
-fun PositionApiModel.toDomain(): PositionDomainModel {
+fun PositionApiModel.toDomain(bookUuid: String): PositionDomainModel {
     return PositionDomainModel(
+        bookUuid = bookUuid,
         uuid = uuid,
         timestamp = timestamp,
         createdAt = createdAt,

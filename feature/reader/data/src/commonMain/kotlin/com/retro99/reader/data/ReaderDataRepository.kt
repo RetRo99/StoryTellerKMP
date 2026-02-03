@@ -7,13 +7,15 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.books.data.model.toDomain
+import com.retro99.books.data.model.toLocal
+import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.data.source.ReaderRemoteSource
 import com.retro99.reader.domain.ReaderRepository
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
-import com.retro99.reader.domain.model.ReadingProgressDomainModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
@@ -45,7 +47,7 @@ internal class ReaderDataRepository(
 
     override suspend fun getReadingProgress(
         bookUuid: String,
-    ): AppResult<ReadingProgressDomainModel?> {
+    ): AppResult<PositionDomainModel?> {
         return localSource.getReadingProgress(bookUuid)
             .map { it?.toDomain() }
             .onFailure { error ->
@@ -54,7 +56,7 @@ internal class ReaderDataRepository(
     }
 
     override suspend fun saveReadingProgress(
-        progress: ReadingProgressDomainModel,
+        progress: PositionDomainModel,
     ): CompletableResult {
         return localSource.saveReadingProgress(progress.toLocal()).onFailure { error ->
             logError(error, "Failed to save reading progress: bookUuid=${progress.bookUuid}")

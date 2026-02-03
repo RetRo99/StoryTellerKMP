@@ -24,6 +24,7 @@ data class PositionLocalModel(
 
 fun PositionLocalModel.toDomain(): PositionDomainModel {
     return PositionDomainModel(
+        bookUuid = bookUuid,
         uuid = uuid ?: "",
         timestamp = timestamp,
         createdAt = createdAt,
@@ -42,7 +43,7 @@ fun PositionLocalModel.toDomain(): PositionDomainModel {
     )
 }
 
-fun PositionDomainModel.toLocal(bookUuid: String): PositionLocalModel {
+fun PositionDomainModel.toLocal(): PositionLocalModel {
     return PositionLocalModel(
         bookUuid = bookUuid,
         uuid = uuid,

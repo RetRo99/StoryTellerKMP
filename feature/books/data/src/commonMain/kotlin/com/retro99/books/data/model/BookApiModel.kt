@@ -105,7 +105,7 @@ fun BookApiModel.toDomain(baseUrl: String?): BookDomainModel {
         tags = tags.map { it.toDomain() },
         collections = collections.map { it.toDomain() },
         status = status?.toDomain(),
-        position = position?.toDomain(),
+        position = position?.toDomain(uuid),
         ebook = ebook?.toDomain(),
         audiobook = audiobook?.toDomain(),
         readaloud = readaloud?.toDomain(),

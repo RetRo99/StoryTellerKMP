@@ -32,6 +32,7 @@ kotlin {
             implementation(projects.lib.database.api)
             implementation(projects.feature.reader.domain)
             implementation(projects.feature.books.domain)
+            implementation(projects.feature.books.data)
         }
 
         androidMain.dependencies {
