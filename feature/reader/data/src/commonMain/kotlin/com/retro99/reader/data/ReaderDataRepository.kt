@@ -4,11 +4,14 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onFailure
 import com.retro99.analytics.api.Analytics
+import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.books.data.model.toApiModel
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.model.toLocal
+import com.retro99.books.data.source.BooksRemoteSource
 import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
@@ -25,8 +28,9 @@ import org.koin.core.annotation.Single
 internal class ReaderDataRepository(
     @Provided private val localSource: ReaderLocalSource,
     @Provided private val remoteSource: ReaderRemoteSource,
+    @Provided private val booksRemoteSource: BooksRemoteSource,
     @Provided private val analytics: Analytics,
-) : ReaderRepository {
+) : ReaderRepository, BaseRepository {
 
     override suspend fun prepareEbook(
         bookUuid: String,
@@ -48,18 +52,41 @@ internal class ReaderDataRepository(
     override suspend fun getReadingProgress(
         bookUuid: String,
     ): AppResult<PositionDomainModel?> {
-        return localSource.getReadingProgress(bookUuid)
-            .map { it?.toDomain() }
-            .onFailure { error ->
-                logError(error, "Failed to get reading progress: bookUuid=$bookUuid")
-            }
+        return remoteWithCacheFallback(
+            remoteSource = {
+                booksRemoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
+            },
+            cacheSource = {
+                localSource.getReadingProgress(bookUuid).map { it?.toDomain() }
+            },
+            saveToCache = { position ->
+                localSource.saveReadingProgress(position.toLocal())
+            },
+        ).onFailure { error ->
+            logError(error, "Failed to get reading progress: bookUuid=$bookUuid")
+        }
     }
 
     override suspend fun saveReadingProgress(
         progress: PositionDomainModel,
     ): CompletableResult {
-        return localSource.saveReadingProgress(progress.toLocal()).onFailure { error ->
-            logError(error, "Failed to save reading progress: bookUuid=${progress.bookUuid}")
+        // Save to local cache first
+        localSource.saveReadingProgress(progress.toLocal()).onFailure { error ->
+            logError(
+                error,
+                "Failed to save reading progress locally: bookUuid=${progress.bookUuid}"
+            )
+        }
+
+        // Then sync to remote
+        return booksRemoteSource.updatePosition(
+            uuid = progress.bookUuid,
+            position = progress.toApiModel(),
+        ).onFailure { error ->
+            logError(
+                error,
+                "Failed to sync reading progress to remote: bookUuid=${progress.bookUuid}"
+            )
         }
     }
 
