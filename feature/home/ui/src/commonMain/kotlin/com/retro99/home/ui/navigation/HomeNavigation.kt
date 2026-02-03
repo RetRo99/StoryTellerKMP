@@ -34,7 +34,7 @@ fun HomeNavigation(
                         onNavigateToBookDetail = { book ->
                             intentDispatcher(
                                 HomeNavigationIntent.NavigateTo(
-                                    HomeDestination.BookDetail(book),
+                                    HomeDestination.BookDetail(book.uuid),
                                 ),
                             )
                         },
@@ -43,11 +43,11 @@ fun HomeNavigation(
 
                 entry<HomeDestination.BookDetail> { destination ->
                     BookDetailScreen(
-                        book = destination.book,
-                        onNavigateToReader = { book ->
+                        bookUuid = destination.bookUuid,
+                        onNavigateToReader = { bookUuid ->
                             intentDispatcher(
                                 HomeNavigationIntent.NavigateTo(
-                                    HomeDestination.Reader(book),
+                                    HomeDestination.Reader(bookUuid),
                                 ),
                             )
                         },
@@ -56,7 +56,7 @@ fun HomeNavigation(
 
                 entry<HomeDestination.Reader> { destination ->
                     ReaderScreen(
-                        book = destination.book,
+                        bookUuid = destination.bookUuid,
                         onClose = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
                     )
                 }

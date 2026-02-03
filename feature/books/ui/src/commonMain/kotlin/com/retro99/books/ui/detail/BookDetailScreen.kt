@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.base.ui.LoadingScreen
 import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
@@ -55,18 +56,19 @@ import resources.translations.books_media_ebook
 
 @Composable
 fun BookDetailScreen(
-    book: BookUiModel,
-    onNavigateToReader: (BookUiModel) -> Unit,
+    bookUuid: String,
+    onNavigateToReader: (bookUuid: String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: BookDetailViewModel = koinViewModel { parametersOf(book, onNavigateToReader) },
+    viewModel: BookDetailViewModel = koinViewModel { parametersOf(bookUuid, onNavigateToReader) },
 ) {
     BaseScreen(
         modifier = modifier,
         viewModel = viewModel,
     ) { viewState, intentDispatcher ->
-        viewState.book?.let { currentBook ->
-            BookDetailScreenContent(
-                book = currentBook,
+        when {
+            viewState.isLoading -> LoadingScreen()
+            viewState.book != null -> BookDetailScreenContent(
+                book = viewState.book,
                 intentDispatcher = intentDispatcher,
             )
         }
