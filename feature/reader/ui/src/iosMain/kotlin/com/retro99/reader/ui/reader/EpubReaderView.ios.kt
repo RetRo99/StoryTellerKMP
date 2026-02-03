@@ -37,11 +37,33 @@ internal actual fun EpubReaderView(
         )
     }
 
+    val initialPosition = publication.initialPosition
+
     // Use common command handling logic
     HandleNavigatorCommands(
         navigator = publication,
         commands = commands,
     )
+
+    // Set up position change callback - copy initial position and update location fields
+    DisposableEffect(publication, initialPosition) {
+        if (initialPosition != null) {
+            publication.bridge.setOnPositionChangedCallback { locator ->
+                val positionUiModel = initialPosition.copy(
+                    href = locator.href,
+                    type = locator.type,
+                    title = locator.title,
+                    progression = locator.progression?.toDouble(),
+                    position = locator.position?.toInt(),
+                    totalProgression = locator.totalProgression?.toDouble(),
+                )
+                onPositionChanged(positionUiModel)
+            }
+        }
+        onDispose {
+            publication.bridge.setOnPositionChangedCallback(null)
+        }
+    }
 
     val currentViewController = readerViewController
     if (currentViewController == null) {

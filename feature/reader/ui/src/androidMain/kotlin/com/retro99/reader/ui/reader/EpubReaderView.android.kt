@@ -4,6 +4,7 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,7 +18,6 @@ import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
 import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
-import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
@@ -48,12 +48,19 @@ internal actual fun EpubReaderView(
 
     val readiumPublication = publication.publication
 
-    var navigatorController by remember { mutableStateOf<EpubNavigatorController?>(null) }
+    var navigatorController by remember { mutableStateOf<AndroidEpubNavigatorController?>(null) }
 
     // Use common command handling logic
     HandleNavigatorCommands(
         navigator = navigatorController,
         commands = commands,
+    )
+
+    // Observe location changes from the navigator and report them back
+    ObserveLocationChanges(
+        navigatorController = navigatorController,
+        initialPosition = publication.initialPosition,
+        onPositionChanged = onPositionChanged,
     )
 
     val navigatorFactory = remember(readiumPublication) {
@@ -139,3 +146,30 @@ internal actual fun EpubReaderView(
     )
 }
 
+/**
+ * Observes location changes from the navigator and reports them via the callback.
+ * Copies the initial position and updates only the location-related fields,
+ * preserving the original UUID and createdAt timestamp.
+ */
+@Composable
+private fun ObserveLocationChanges(
+    navigatorController: AndroidEpubNavigatorController?,
+    initialPosition: PositionUiModel?,
+    onPositionChanged: (PositionUiModel) -> Unit,
+) {
+    LaunchedEffect(navigatorController, initialPosition) {
+        if (initialPosition == null) return@LaunchedEffect
+
+        navigatorController?.currentLocator?.collect { locator ->
+            val positionUiModel = initialPosition.copy(
+                href = locator.href.toString(),
+                type = locator.mediaType.toString(),
+                title = locator.title,
+                progression = locator.locations.progression,
+                position = locator.locations.position,
+                totalProgression = locator.locations.totalProgression,
+            )
+            onPositionChanged(positionUiModel)
+        }
+    }
+}

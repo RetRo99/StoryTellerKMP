@@ -13,6 +13,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     private var publication: Publication?
     private var navigatorViewController: EPUBNavigatorViewController?
+    private var onPositionChangedCallback: ((PositionLocator) -> Void)?
 
     // Readium 3.x infrastructure
     private lazy var httpClient: HTTPClient = DefaultHTTPClient()
@@ -117,6 +118,9 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             )
             self.navigatorViewController = navigator
 
+            // Set delegate to receive location change callbacks
+            navigator.delegate = self
+
             // Force the navigator's view to use screen width
             navigator.view.frame = CGRect(
                 x: 0,
@@ -172,6 +176,40 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
         }
+    }
+
+    func setOnPositionChangedCallback(callback: ((PositionLocator) -> Void)?) {
+        self.onPositionChangedCallback = callback
+    }
+}
+
+// MARK: - NavigatorDelegate
+
+extension ReadiumEpubReaderBridge: NavigatorDelegate {
+    func navigator(_ navigator: any Navigator, didFailToLoadResourceAt href: RelativeURL, withError error: any Error) {
+        print("Failed to load resource at \(href): \(error)")
+    }
+
+    func navigator(_ navigator: any Navigator, locationDidChange locator: Locator) {
+        guard let callback = onPositionChangedCallback else {
+            return
+        }
+
+        let positionLocator = PositionLocator(
+            href: locator.href.string,
+            type: locator.mediaType.string,
+            title: locator.title,
+            progression: locator.locations.progression.map {
+                KotlinDouble(value: $0)
+            },
+            position: locator.locations.position.map {
+                KotlinInt(value: Int32($0))
+            },
+            totalProgression: locator.locations.totalProgression.map {
+                KotlinDouble(value: $0)
+            }
+        )
+        callback(positionLocator)
     }
 }
 
