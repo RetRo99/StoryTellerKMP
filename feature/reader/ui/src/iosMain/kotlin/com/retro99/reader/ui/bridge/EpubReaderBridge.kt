@@ -1,11 +1,11 @@
 package com.retro99.reader.ui.bridge
 
-import com.retro99.books.ui.model.LocatorUiModel
+import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import platform.UIKit.UIViewController
 
 /**
- * Reader sbut wettings data class for iOS bridge.
+ * Reader settings data class for iOS bridge.
  * This is a simple data holder that can be passed to Swift.
  * Add new settings properties here as needed.
  */
@@ -16,12 +16,12 @@ data class EpubReaderSettings(
     val marginHorizontal: Int,
     val marginVertical: Int,
     val scrollMode: Boolean,
-    val initialLocator: LocatorUiModel?,
+    val initialPosition: PositionUiModel?,
 ) {
     companion object {
         fun from(
             settings: ReaderSettingsUiModel,
-            initialLocator: LocatorUiModel? = null,
+            initialPosition: PositionUiModel? = null,
         ): EpubReaderSettings {
             return EpubReaderSettings(
                 fontSize = settings.fontSize,
@@ -30,7 +30,7 @@ data class EpubReaderSettings(
                 marginHorizontal = settings.marginHorizontal,
                 marginVertical = settings.marginVertical,
                 scrollMode = settings.scrollMode,
-                initialLocator = initialLocator,
+                initialPosition = initialPosition,
             )
         }
     }

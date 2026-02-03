@@ -1,7 +1,7 @@
 package com.retro99.reader.ui.service
 
 import android.content.Context
-import com.retro99.books.ui.model.LocatorUiModel
+import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.Dispatchers
@@ -37,18 +37,18 @@ class AndroidEpubPublicationService(
 
     private var publication: Publication? = null
     private var initialSettings: ReaderSettingsUiModel? = null
-    private var initialLocator: LocatorUiModel? = null
+    private var initialPosition: PositionUiModel? = null
 
     override suspend fun openPublication(
         filePath: String,
         initialSettings: ReaderSettingsUiModel,
-        initialLocator: LocatorUiModel?,
+        initialPosition: PositionUiModel?,
     ): EpubPublication? =
         withContext(Dispatchers.IO) {
             try {
                 resetState()
                 this@AndroidEpubPublicationService.initialSettings = initialSettings
-                this@AndroidEpubPublicationService.initialLocator = initialLocator
+                this@AndroidEpubPublicationService.initialPosition = initialPosition
 
                 val file = File(filePath)
                 if (!file.exists()) {
@@ -73,7 +73,7 @@ class AndroidEpubPublicationService(
 
                 publication = openedPublication
                 setReady()
-                EpubPublication(openedPublication, initialSettings, initialLocator)
+                EpubPublication(openedPublication, initialSettings, initialPosition)
             } catch (e: Exception) {
                 setError("Error opening ebook: ${e.message}")
                 null
