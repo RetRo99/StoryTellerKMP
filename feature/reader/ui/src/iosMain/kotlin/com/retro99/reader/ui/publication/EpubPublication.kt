@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.publication
 
-import com.retro99.books.ui.model.LocatorUiModel
+import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -17,7 +17,7 @@ import com.retro99.reader.ui.navigator.EpubNavigatorController
 actual class EpubPublication(
     internal val bridge: EpubReaderBridge,
     actual val initialSettings: ReaderSettingsUiModel,
-    internal val initialLocator: LocatorUiModel?,
+    internal val initialPosition: PositionUiModel?,
 ) : EpubNavigatorController {
 
     /**

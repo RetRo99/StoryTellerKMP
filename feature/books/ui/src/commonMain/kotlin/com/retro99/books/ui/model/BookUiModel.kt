@@ -18,7 +18,7 @@ data class BookUiModel(
     val hasAudiobook: Boolean,
     val hasReadaloud: Boolean,
     val ebookFilepath: String?,
-    val locator: LocatorUiModel?,
+    val position: PositionUiModel?,
 )
 
 @Serializable
@@ -29,7 +29,7 @@ data class SeriesUiModel(
 )
 
 @Serializable
-data class LocatorUiModel(
+data class PositionUiModel(
     val href: String,
     val type: String,
     val title: String?,
