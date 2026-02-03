@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
+import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.navigator.toEpubPreferences
@@ -36,7 +37,7 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onProgressChanged: (ReadingProgressUpdate) -> Unit,
+    onPositionChanged: (PositionUiModel) -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -92,16 +93,16 @@ internal actual fun EpubReaderView(
             val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                     as? EpubNavigatorFragment
             if (existingFragment == null) {
-                val initialLocator = publication.initialLocator?.let { locator ->
-                    Url(locator.href)?.let { url ->
+                val initialLocator = publication.initialPosition?.let { position ->
+                    Url(position.href)?.let { url ->
                         Locator(
                             href = url,
-                            mediaType = MediaType(locator.type) ?: MediaType.XHTML,
-                            title = locator.title,
+                            mediaType = MediaType(position.type) ?: MediaType.XHTML,
+                            title = position.title,
                             locations = Locator.Locations(
-                                progression = locator.progression,
-                                position = locator.position,
-                                totalProgression = locator.totalProgression,
+                                progression = position.progression,
+                                position = position.position,
+                                totalProgression = position.totalProgression,
                             ),
                         )
                     }
