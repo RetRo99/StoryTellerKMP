@@ -30,6 +30,8 @@ data class SeriesUiModel(
 
 @Serializable
 data class PositionUiModel(
+    val uuid: String,
+    val createdAt: String,
     val href: String,
     val type: String,
     val title: String?,
