@@ -61,4 +61,44 @@ interface BaseRepository {
                 }
         }
     }
+
+    /**
+     * Fetches data from remote first, falls back to cache on failure.
+     * - Tries remote source first
+     * - If remote succeeds, saves to cache and returns the result
+     * - If remote fails, tries to get data from cache
+     * - If both fail, returns the remote error
+     *
+     * @param remoteSource Suspend function that fetches data from remote
+     * @param cacheSource Suspend function that returns cached data result (null value means no cache)
+     * @param saveToCache Suspend function that saves remote data to cache
+     * @return AppResult with remote data, or cached data on remote failure, or error if both fail
+     */
+    suspend fun <T : Any> remoteWithCacheFallback(
+        remoteSource: suspend () -> AppResult<T?>,
+        cacheSource: suspend () -> AppResult<T?>,
+        saveToCache: suspend (T) -> Unit,
+    ): AppResult<T?> {
+        val remoteResult = remoteSource()
+
+        remoteResult.onSuccess { remoteData ->
+            if (remoteData != null) {
+                try {
+                    saveToCache(remoteData)
+                } catch (_: Exception) {
+                    // Ignore cache save failures
+                }
+            }
+        }
+
+        return remoteResult.getOrElse { remoteError ->
+            // Remote failed, try cache
+            val cachedData = cacheSource().getOrElse { null }
+            return if (cachedData != null) {
+                Ok(cachedData)
+            } else {
+                Err(remoteError)
+            }
+        }.let { Ok(it) }
+    }
 }

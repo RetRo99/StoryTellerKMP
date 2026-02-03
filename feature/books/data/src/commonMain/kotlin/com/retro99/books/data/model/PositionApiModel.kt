@@ -89,3 +89,30 @@ fun PositionApiModel.toDomain(bookUuid: String): PositionDomainModel {
         position = locator?.locations?.position,
     )
 }
+
+/**
+ * Converts a flat domain model back to the nested API model structure.
+ */
+fun PositionDomainModel.toApiModel(): PositionApiModel {
+    return PositionApiModel(
+        uuid = uuid,
+        timestamp = timestamp,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        locator = LocatorApiModel(
+            href = locatorHref,
+            type = locatorType,
+            title = locatorTitle,
+            target = locatorTarget,
+            locations = LocationsApiModel(
+                audioTimestampMs = audioTimestampMs,
+                chapterIndex = chapterIndex,
+                progression = progression,
+                totalChapters = totalChapters,
+                totalDurationMs = totalDurationMs,
+                totalProgression = totalProgression,
+                position = position,
+            ),
+        ),
+    )
+}
