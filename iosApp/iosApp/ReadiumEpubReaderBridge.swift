@@ -9,6 +9,7 @@ import ReadiumAdapterGCDWebServer
 
 /// Swift implementation of the EPUB reader bridge.
 /// This class wraps Readium iOS SDK and exposes it to Kotlin.
+@MainActor
 class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     private var publication: Publication?
@@ -91,21 +92,21 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
             // Create initial locator from settings if available
             var initialLocation: Locator? = nil
-            if let locator = settings.initialLocator,
-               let href = AnyURL(legacyHREF: locator.href) {
+            if let position = settings.initialPosition,
+               let href = AnyURL(legacyHREF: position.href) {
                 initialLocation = Locator(
                     href: href,
-                    mediaType: MediaType(locator.type) ?? .html,
-                    title: locator.title,
+                    mediaType: MediaType(position.type) ?? .html,
+                    title: position.title,
                     locations: Locator.Locations(
-                        progression: locator.progression?.doubleValue,
-                        totalProgression: locator.totalProgression?.doubleValue,
-                        position: locator.position.map {
+                        progression: position.progression?.doubleValue,
+                        totalProgression: position.totalProgression?.doubleValue,
+                        position: position.position.map {
                             Int($0.int32Value)
                         }
                     )
                 )
-                print("Using initial locator: href=\(locator.href), progression=\(String(describing: locator.progression))")
+                print("Using initial locator: href=\(position.href), progression=\(String(describing: position.progression))")
             }
 
             let navigator = try EPUBNavigatorViewController(
@@ -183,10 +184,14 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     }
 }
 
-// MARK: - NavigatorDelegate
+// MARK: - EPUBNavigatorDelegate
 
-extension ReadiumEpubReaderBridge: NavigatorDelegate {
-    func navigator(_ navigator: any Navigator, didFailToLoadResourceAt href: RelativeURL, withError error: any Error) {
+extension ReadiumEpubReaderBridge: EPUBNavigatorDelegate {
+    func navigator(_ navigator: any Navigator, presentError error: NavigatorError) {
+        print("Navigator error: \(error)")
+    }
+
+    func navigator(_ navigator: any Navigator, didFailToLoadResourceAt href: RelativeURL, withError error: ReadError) {
         print("Failed to load resource at \(href): \(error)")
     }
 
