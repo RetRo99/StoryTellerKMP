@@ -283,7 +283,6 @@ internal class BooksDatabaseImpl(
     private fun PositionEntity.toSqlDelightEntity(): PositionSqlDelightEntity {
         return PositionSqlDelightEntity(
             bookUuid = bookUuid,
-            uuid = uuid,
             timestamp = timestamp,
             createdAt = createdAt,
             updatedAt = updatedAt,

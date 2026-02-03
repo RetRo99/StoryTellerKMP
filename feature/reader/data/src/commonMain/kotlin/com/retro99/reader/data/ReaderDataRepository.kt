@@ -54,10 +54,14 @@ internal class ReaderDataRepository(
     ): AppResult<PositionDomainModel?> {
         return remoteWithCacheFallback(
             remoteSource = {
-                booksRemoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
+                booksRemoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }.onFailure {
+                    it
+                }
             },
             cacheSource = {
-                localSource.getReadingProgress(bookUuid).map { it?.toDomain() }
+                localSource.getReadingProgress(bookUuid).map { it?.toDomain() }.onFailure {
+                    it
+                }
             },
             saveToCache = { position ->
                 localSource.saveReadingProgress(position.toLocal())
