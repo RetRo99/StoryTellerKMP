@@ -6,8 +6,8 @@ import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
 import com.retro99.database.api.books.PersonEntity
+import com.retro99.database.api.books.PositionEntity
 import com.retro99.database.api.books.ReadaloudEntity
-import com.retro99.database.api.books.ReadingProgressEntity
 import com.retro99.database.api.books.SeriesEntity
 import com.retro99.database.api.books.SeriesWithPositionEntity
 import com.retro99.database.api.books.StatusEntity
@@ -183,18 +183,18 @@ internal class BooksDatabaseImpl(
         sqlDelightDao.deleteReadaloudByBookUuid(bookUuid)
     }
 
-    // ==================== READING PROGRESS OPERATIONS ====================
+    // ==================== POSITION OPERATIONS ====================
 
-    override suspend fun upsertReadingProgress(progress: ReadingProgressEntity) {
-        sqlDelightDao.upsertReadingProgress(progress.toSqlDelightEntity())
+    override suspend fun upsertPosition(position: PositionEntity) {
+        sqlDelightDao.upsertPosition(position.toSqlDelightEntity())
     }
 
-    override suspend fun getReadingProgressByBookUuid(bookUuid: String): ReadingProgressEntity? {
-        return sqlDelightDao.getReadingProgressByBookUuid(bookUuid)
+    override suspend fun getPositionByBookUuid(bookUuid: String): PositionEntity? {
+        return sqlDelightDao.getPositionByBookUuid(bookUuid)
     }
 
-    override suspend fun deleteReadingProgress(bookUuid: String) {
-        sqlDelightDao.deleteReadingProgress(bookUuid)
+    override suspend fun deletePosition(bookUuid: String) {
+        sqlDelightDao.deletePosition(bookUuid)
     }
 
     // ==================== TRANSACTION SUPPORT ====================
@@ -280,18 +280,24 @@ internal class BooksDatabaseImpl(
         )
     }
 
-    private fun ReadingProgressEntity.toSqlDelightEntity(): ReadingProgressSqlDelightEntity {
-        return ReadingProgressSqlDelightEntity(
+    private fun PositionEntity.toSqlDelightEntity(): PositionSqlDelightEntity {
+        return PositionSqlDelightEntity(
             bookUuid = bookUuid,
+            uuid = uuid,
+            timestamp = timestamp,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
             locatorHref = locatorHref,
             locatorType = locatorType,
             locatorTitle = locatorTitle,
-            progression = progression,
-            totalProgression = totalProgression,
-            chapterIndex = chapterIndex,
-            totalChapters = totalChapters,
+            locatorTarget = locatorTarget,
             audioTimestampMs = audioTimestampMs,
-            lastReadAt = lastReadAt,
+            chapterIndex = chapterIndex,
+            progression = progression,
+            totalChapters = totalChapters,
+            totalDurationMs = totalDurationMs,
+            totalProgression = totalProgression,
+            position = position,
         )
     }
 
@@ -309,6 +315,7 @@ internal class BooksDatabaseImpl(
         val status = book.statusUuid?.let { sqlDelightDao.getStatusByUuid(it) }
         val mediaFiles = sqlDelightDao.getMediaFilesByBookUuid(book.uuid)
         val readaloud = sqlDelightDao.getReadaloudByBookUuid(book.uuid)
+        val position = sqlDelightDao.getPositionByBookUuid(book.uuid)
 
         val seriesList = seriesRelations.mapNotNull { relation ->
             sqlDelightDao.getSeriesEntityByUuid(relation.seriesUuid)?.let { series ->
@@ -342,6 +349,7 @@ internal class BooksDatabaseImpl(
             tags = tags,
             collections = collections,
             status = status,
+            position = position,
             ebook = mediaFiles.find { it.type == "ebook" },
             audiobook = mediaFiles.find { it.type == "audiobook" },
             readaloud = readaloud,
@@ -468,6 +476,7 @@ private data class BookEntityImpl(
     override val tags: List<TagEntity>,
     override val collections: List<CollectionEntity>,
     override val status: StatusEntity?,
+    override val position: PositionEntity?,
     override val ebook: MediaFileEntity?,
     override val audiobook: MediaFileEntity?,
     override val readaloud: ReadaloudEntity?,

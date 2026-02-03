@@ -1,0 +1,66 @@
+-- ============================================
+-- POSITION TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS position (
+    book_uuid TEXT NOT NULL PRIMARY KEY,
+    uuid TEXT,
+    timestamp INTEGER,
+    created_at TEXT,
+    updated_at TEXT,
+    locator_href TEXT,
+    locator_type TEXT,
+    locator_title TEXT,
+    locator_target INTEGER,
+    audio_timestamp_ms INTEGER,
+    chapter_index INTEGER,
+    progression REAL,
+    total_chapters INTEGER,
+    total_duration_ms INTEGER,
+    total_progression REAL,
+    position INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_position_updated ON position(updated_at);
+CREATE INDEX IF NOT EXISTS idx_position_progression ON position(progression);
+
+-- Queries
+upsertPosition:
+INSERT OR REPLACE INTO position(
+    book_uuid, uuid, timestamp, created_at, updated_at,
+    locator_href, locator_type, locator_title, locator_target,
+    audio_timestamp_ms, chapter_index, progression, total_chapters,
+    total_duration_ms, total_progression, position
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getPositionByBookUuid:
+SELECT * FROM position WHERE book_uuid = ?;
+
+getAllPositions:
+SELECT * FROM position ORDER BY updated_at DESC;
+
+getRecentlyReadBooks:
+SELECT b.*, p.progression, p.total_progression, p.updated_at FROM books b
+JOIN position p ON b.uuid = p.book_uuid
+ORDER BY p.updated_at DESC
+LIMIT ?;
+
+getBooksInProgress:
+SELECT b.*, p.progression, p.total_progression, p.updated_at FROM books b
+JOIN position p ON b.uuid = p.book_uuid
+WHERE p.progression > 0 AND (p.total_progression IS NULL OR p.total_progression < 1.0)
+ORDER BY p.updated_at DESC;
+
+getCompletedBooks:
+SELECT b.*, p.progression, p.total_progression, p.updated_at FROM books b
+JOIN position p ON b.uuid = p.book_uuid
+WHERE p.total_progression >= 1.0
+ORDER BY p.updated_at DESC;
+
+deletePosition:
+DELETE FROM position WHERE book_uuid = ?;
+
+deleteAllPositions:
+DELETE FROM position;
+

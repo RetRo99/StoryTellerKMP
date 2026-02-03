@@ -6,6 +6,7 @@ import com.retro99.books.data.model.BookLocalModel
 import com.retro99.books.data.model.CollectionLocalModel
 import com.retro99.books.data.model.MediaFileLocalModel
 import com.retro99.books.data.model.PersonLocalModel
+import com.retro99.books.data.model.PositionLocalModel
 import com.retro99.books.data.model.ReadaloudLocalModel
 import com.retro99.books.data.model.SeriesWithPositionLocalModel
 import com.retro99.books.data.model.StatusLocalModel
@@ -131,6 +132,26 @@ internal class BooksRoomDataSource(
                     name = it.name,
                     createdAt = it.createdAt,
                     updatedAt = it.updatedAt,
+                )
+            },
+            position = position?.let {
+                PositionLocalModel(
+                    bookUuid = it.bookUuid,
+                    uuid = it.uuid,
+                    timestamp = it.timestamp,
+                    createdAt = it.createdAt,
+                    updatedAt = it.updatedAt,
+                    locatorHref = it.locatorHref,
+                    locatorType = it.locatorType,
+                    locatorTitle = it.locatorTitle,
+                    locatorTarget = it.locatorTarget,
+                    audioTimestampMs = it.audioTimestampMs,
+                    chapterIndex = it.chapterIndex,
+                    progression = it.progression,
+                    totalChapters = it.totalChapters,
+                    totalDurationMs = it.totalDurationMs,
+                    totalProgression = it.totalProgression,
+                    position = it.position,
                 )
             },
             ebook = ebook?.let {

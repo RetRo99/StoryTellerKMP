@@ -9,8 +9,8 @@ import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
+import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
-import com.retro99.reader.data.model.ReadingProgressLocalModel
 import com.retro99.reader.data.model.toLocalModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,17 +36,17 @@ class ReaderLocalDataSource(
 
     override suspend fun getReadingProgress(
         bookUuid: String,
-    ): AppResult<ReadingProgressLocalModel?> {
+    ): AppResult<PositionLocalModel?> {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.getReadingProgressByBookUuid(bookUuid)?.toLocalModel()
+            booksDatabase.getPositionByBookUuid(bookUuid)?.toLocalModel()
         }
     }
 
     override suspend fun saveReadingProgress(
-        progress: ReadingProgressLocalModel,
+        progress: PositionLocalModel,
     ): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.upsertReadingProgress(progress)
+            booksDatabase.upsertPosition(progress)
         }
     }
 

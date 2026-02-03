@@ -25,7 +25,7 @@ internal class BooksSqlDelightDao(
     private val bookCollectionQueries = database.bookCollectionQueries
     private val mediaFileQueries = database.mediaFileQueries
     private val readaloudQueries = database.readaloudQueries
-    private val readingProgressQueries = database.readingProgressQueries
+    private val positionQueries = database.positionQueries
 
     // ==================== BOOK OPERATIONS ====================
 
@@ -452,48 +452,60 @@ internal class BooksSqlDelightDao(
         }
     }
 
-    // ==================== READING PROGRESS OPERATIONS ====================
+    // ==================== POSITION OPERATIONS ====================
 
-    suspend fun upsertReadingProgress(progress: ReadingProgressSqlDelightEntity) {
+    suspend fun upsertPosition(position: PositionSqlDelightEntity) {
         withContext(Dispatchers.IO) {
-            readingProgressQueries.upsertReadingProgress(
-                book_uuid = progress.bookUuid,
-                locator_href = progress.locatorHref,
-                locator_type = progress.locatorType,
-                locator_title = progress.locatorTitle,
-                progression = progress.progression,
-                total_progression = progress.totalProgression,
-                chapter_index = progress.chapterIndex?.toLong(),
-                total_chapters = progress.totalChapters?.toLong(),
-                audio_timestamp_ms = progress.audioTimestampMs,
-                last_read_at = progress.lastReadAt,
+            positionQueries.upsertPosition(
+                book_uuid = position.bookUuid,
+                uuid = position.uuid,
+                timestamp = position.timestamp,
+                created_at = position.createdAt,
+                updated_at = position.updatedAt,
+                locator_href = position.locatorHref,
+                locator_type = position.locatorType,
+                locator_title = position.locatorTitle,
+                locator_target = position.locatorTarget?.toLong(),
+                audio_timestamp_ms = position.audioTimestampMs,
+                chapter_index = position.chapterIndex?.toLong(),
+                progression = position.progression,
+                total_chapters = position.totalChapters?.toLong(),
+                total_duration_ms = position.totalDurationMs,
+                total_progression = position.totalProgression,
+                position = position.position?.toLong(),
             )
         }
     }
 
-    suspend fun getReadingProgressByBookUuid(bookUuid: String): ReadingProgressSqlDelightEntity? {
+    suspend fun getPositionByBookUuid(bookUuid: String): PositionSqlDelightEntity? {
         return withContext(Dispatchers.IO) {
-            readingProgressQueries.getReadingProgressByBookUuid(bookUuid)
+            positionQueries.getPositionByBookUuid(bookUuid)
                 .executeAsOneOrNull()?.let { row ->
-                    ReadingProgressSqlDelightEntity(
+                    PositionSqlDelightEntity(
                         bookUuid = row.book_uuid,
+                        uuid = row.uuid,
+                        timestamp = row.timestamp,
+                        createdAt = row.created_at,
+                        updatedAt = row.updated_at,
                         locatorHref = row.locator_href,
                         locatorType = row.locator_type,
                         locatorTitle = row.locator_title,
-                        progression = row.progression,
-                        totalProgression = row.total_progression,
-                        chapterIndex = row.chapter_index?.toInt(),
-                        totalChapters = row.total_chapters?.toInt(),
+                        locatorTarget = row.locator_target?.toInt(),
                         audioTimestampMs = row.audio_timestamp_ms,
-                        lastReadAt = row.last_read_at,
+                        chapterIndex = row.chapter_index?.toInt(),
+                        progression = row.progression,
+                        totalChapters = row.total_chapters?.toInt(),
+                        totalDurationMs = row.total_duration_ms,
+                        totalProgression = row.total_progression,
+                        position = row.position?.toInt(),
                     )
                 }
         }
     }
 
-    suspend fun deleteReadingProgress(bookUuid: String) {
+    suspend fun deletePosition(bookUuid: String) {
         withContext(Dispatchers.IO) {
-            readingProgressQueries.deleteReadingProgress(bookUuid)
+            positionQueries.deletePosition(bookUuid)
         }
     }
 
@@ -518,7 +530,7 @@ internal class BooksSqlDelightDao(
                 bookCollectionQueries.deleteAllBookCollections()
                 mediaFileQueries.deleteAllMediaFiles()
                 readaloudQueries.deleteAllReadalouds()
-                readingProgressQueries.deleteAllReadingProgress()
+                positionQueries.deleteAllPositions()
                 personQueries.deleteAllPersons()
                 seriesQueries.deleteAllSeries()
                 tagQueries.deleteAllTags()

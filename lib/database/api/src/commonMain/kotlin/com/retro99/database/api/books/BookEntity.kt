@@ -24,6 +24,7 @@ interface BookEntity {
     val tags: List<TagEntity>
     val collections: List<CollectionEntity>
     val status: StatusEntity?
+    val position: PositionEntity?
     val ebook: MediaFileEntity?
     val audiobook: MediaFileEntity?
     val readaloud: ReadaloudEntity?
