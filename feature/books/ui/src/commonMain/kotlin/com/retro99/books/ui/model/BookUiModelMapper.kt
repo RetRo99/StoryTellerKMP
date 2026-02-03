@@ -21,7 +21,10 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
     position = position?.let { pos ->
         val href = pos.locatorHref ?: return@let null
         val type = pos.locatorType ?: return@let null
+        val createdAt = pos.createdAt ?: return@let null
         PositionUiModel(
+            uuid = pos.uuid,
+            createdAt = createdAt,
             href = href,
             type = type,
             title = pos.locatorTitle,

@@ -27,8 +27,6 @@ import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 import kotlin.time.Clock
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @KoinViewModel
 class ReaderViewModel(
@@ -112,7 +110,10 @@ class ReaderViewModel(
                         val positionUiModel = progress?.let {
                             val href = it.locatorHref ?: return@let null
                             val type = it.locatorType ?: return@let null
+                            val createdAt = it.createdAt ?: return@let null
                             PositionUiModel(
+                                uuid = it.uuid,
+                                createdAt = createdAt,
                                 href = href,
                                 type = type,
                                 title = it.locatorTitle,
@@ -130,18 +131,14 @@ class ReaderViewModel(
         }
     }
 
-    @OptIn(ExperimentalUuidApi::class)
     private fun updatePosition(position: PositionUiModel) {
-        val currentBookUuid = currentViewState().bookUuid ?: return
-
         updateState { it.copy(position = position) }
-
         val now = Clock.System.now().toString()
         val positionDomainModel = PositionDomainModel(
-            bookUuid = currentBookUuid,
-            uuid = Uuid.random().toString(),
+            bookUuid = bookUuid,
+            uuid = position.uuid,
             timestamp = Clock.System.now().toEpochMilliseconds(),
-            createdAt = now,
+            createdAt = position.createdAt,
             updatedAt = now,
             locatorHref = position.href,
             locatorType = position.type,
