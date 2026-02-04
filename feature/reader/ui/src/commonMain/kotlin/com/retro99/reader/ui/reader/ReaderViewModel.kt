@@ -93,7 +93,6 @@ class ReaderViewModel(
                 state.copy(
                     bookUuid = data.bookUuid,
                     publication = it,
-                    position = position,
                     positionConflict = conflict,
                     error = null,
                 )
@@ -105,12 +104,7 @@ class ReaderViewModel(
     private fun resolveConflictWithLocal() {
         val conflict = viewState.value.positionConflict ?: return
         viewModelScope.launch {
-            updateState {
-                it.copy(
-                    position = conflict.localPosition,
-                    positionConflict = null,
-                )
-            }
+            updateState { it.copy(positionConflict = null) }
             _commands.emit(ReaderCommand.GoToPosition(conflict.localPosition))
         }
     }
@@ -118,18 +112,14 @@ class ReaderViewModel(
     private fun resolveConflictWithRemote() {
         val conflict = viewState.value.positionConflict ?: return
         viewModelScope.launch {
-            updateState {
-                it.copy(
-                    position = conflict.remotePosition,
-                    positionConflict = null,
-                )
-            }
+            updateState { it.copy(positionConflict = null) }
             _commands.emit(ReaderCommand.GoToPosition(conflict.remotePosition))
         }
     }
 
     private fun updatePosition(position: PositionUiModel) {
-        updateState { it.copy(position = position) }
+        if (viewState.value.positionConflict != null) return
+
         val now = Clock.System.now().toString()
         val positionDomainModel = PositionDomainModel(
             bookUuid = bookUuid,
