@@ -3,7 +3,7 @@ package com.retro99.books.data.source
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.books.data.model.BookApiModel
-import com.retro99.books.data.model.PositionApiModel
+import com.retro99.reader.data.model.PositionApiModel
 
 interface BooksRemoteSource {
 

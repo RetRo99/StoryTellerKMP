@@ -1,7 +1,5 @@
 package com.retro99.reader.domain.model
 
-import com.retro99.books.domain.model.PositionDomainModel
-
 /**
  * Represents the result of fetching reading progress with conflict detection.
  *

@@ -1,8 +1,8 @@
 package com.retro99.reader.domain.usecase
 
 import com.retro99.base.result.AppResult
-import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.reader.domain.ReaderRepository
+import com.retro99.reader.domain.model.PositionDomainModel
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 

@@ -1,4 +1,4 @@
-package com.retro99.books.domain.model
+package com.retro99.reader.domain.model
 
 /**
  * Represents the reading position for a book.

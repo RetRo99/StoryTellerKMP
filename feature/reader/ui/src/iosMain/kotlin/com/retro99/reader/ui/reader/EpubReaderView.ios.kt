@@ -7,8 +7,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
-import com.retro99.books.ui.model.PositionUiModel
 import com.retro99.reader.ui.bridge.EpubReaderSettings
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.flow.Flow
