@@ -30,8 +30,13 @@ class DatabaseModule {
         return BooksSqlDelightDao(database)
     }
 
-    @Single(binds = [BooksDatabase::class, PositionDatabase::class])
-    internal fun provideBooksDatabase(dao: BooksSqlDelightDao): BooksDatabaseImpl {
+    @Single
+    internal fun provideBooksDatabase(dao: BooksSqlDelightDao): BooksDatabase {
         return BooksDatabaseImpl(dao)
+    }
+
+    @Single
+    internal fun providePositionDatabase(booksDatabase: BooksDatabase): PositionDatabase {
+        return booksDatabase
     }
 }

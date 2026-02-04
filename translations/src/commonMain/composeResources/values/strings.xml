@@ -39,4 +39,14 @@
     <string name="books_media_ebook">eBook</string>
     <string name="books_media_audio">Audio</string>
     <string name="books_media_readaloud">ReadALoud</string>
+
+    <!-- Reader Position Conflict Dialog -->
+    <string name="reader_conflict_title">Reading Position Conflict</string>
+    <string name="reader_conflict_message">Your reading position differs between this device and the server. Which position would you like to use?</string>
+    <string name="reader_conflict_local_title">This Device</string>
+    <string name="reader_conflict_remote_title">Server</string>
+    <string name="reader_conflict_chapter">Chapter %1$d of %2$d</string>
+    <string name="reader_conflict_progress">%1$d% complete</string>
+    <string name="reader_conflict_use_local">Use This Device</string>
+    <string name="reader_conflict_use_remote">Use Server</string>
 </resources>

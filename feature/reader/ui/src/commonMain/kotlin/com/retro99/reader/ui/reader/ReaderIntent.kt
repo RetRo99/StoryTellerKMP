@@ -16,5 +16,15 @@ sealed interface ReaderIntent : BaseIntent {
     data object ToggleSettings : ReaderIntent
 
     data object Close : ReaderIntent
+
+    /**
+     * User chose to use the local position when a conflict was detected.
+     */
+    data object UseLocalPosition : ReaderIntent
+
+    /**
+     * User chose to use the remote position when a conflict was detected.
+     */
+    data object UseRemotePosition : ReaderIntent
 }
 
