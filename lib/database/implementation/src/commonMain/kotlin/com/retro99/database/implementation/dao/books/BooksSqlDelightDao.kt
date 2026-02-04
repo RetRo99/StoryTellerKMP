@@ -458,7 +458,6 @@ internal class BooksSqlDelightDao(
         withContext(Dispatchers.IO) {
             positionQueries.upsertPosition(
                 book_uuid = position.bookUuid,
-                uuid = position.uuid,
                 timestamp = position.timestamp,
                 created_at = position.createdAt,
                 updated_at = position.updatedAt,
@@ -483,7 +482,6 @@ internal class BooksSqlDelightDao(
                 .executeAsOneOrNull()?.let { row ->
                     PositionSqlDelightEntity(
                         bookUuid = row.book_uuid,
-                        uuid = row.uuid,
                         timestamp = row.timestamp,
                         createdAt = row.created_at,
                         updatedAt = row.updated_at,

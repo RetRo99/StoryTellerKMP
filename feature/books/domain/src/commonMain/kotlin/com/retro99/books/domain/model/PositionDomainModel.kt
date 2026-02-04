@@ -6,7 +6,6 @@ package com.retro99.books.domain.model
  */
 data class PositionDomainModel(
     val bookUuid: String,
-    val uuid: String,
     val timestamp: Long?,
     val createdAt: String?,
     val updatedAt: String?,

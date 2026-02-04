@@ -4,7 +4,6 @@ import com.retro99.database.api.books.PositionEntity
 
 data class PositionSqlDelightEntity(
     override val bookUuid: String,
-    override val uuid: String?,
     override val timestamp: Long?,
     override val createdAt: String?,
     override val updatedAt: String?,

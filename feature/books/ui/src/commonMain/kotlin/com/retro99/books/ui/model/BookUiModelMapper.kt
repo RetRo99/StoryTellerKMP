@@ -25,9 +25,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
 fun PositionDomainModel.toUiModel(): PositionUiModel? {
     val href = locatorHref ?: return null
     val type = locatorType ?: return null
-    val createdAt = createdAt ?: return null
     return PositionUiModel(
-        uuid = uuid,
         createdAt = createdAt,
         href = href,
         type = type,

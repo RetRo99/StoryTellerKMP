@@ -137,7 +137,6 @@ internal class BooksRoomDataSource(
             position = position?.let {
                 PositionLocalModel(
                     bookUuid = it.bookUuid,
-                    uuid = it.uuid,
                     timestamp = it.timestamp,
                     createdAt = it.createdAt,
                     updatedAt = it.updatedAt,
