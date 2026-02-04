@@ -67,6 +67,24 @@ internal class ReaderDataRepository(
         }
     }
 
+    override suspend fun getLocalReadingProgress(
+        bookUuid: String,
+    ): AppResult<PositionDomainModel?> {
+        return localSource.getReadingProgress(bookUuid).map { it?.toDomain() }
+            .onFailure { error ->
+                logError(error, "Failed to get local reading progress: bookUuid=$bookUuid")
+            }
+    }
+
+    override suspend fun getRemoteReadingProgress(
+        bookUuid: String,
+    ): AppResult<PositionDomainModel?> {
+        return booksRemoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
+            .onFailure { error ->
+                logError(error, "Failed to get remote reading progress: bookUuid=$bookUuid")
+            }
+    }
+
     override suspend fun saveReadingProgress(
         progress: PositionDomainModel,
     ): CompletableResult {

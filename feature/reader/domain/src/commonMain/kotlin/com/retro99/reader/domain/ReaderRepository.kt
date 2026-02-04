@@ -26,11 +26,28 @@ interface ReaderRepository {
 
     /**
      * Gets the reading progress for a book.
+     * Uses remote with cache fallback strategy.
      *
      * @param bookUuid The UUID of the book
      * @return The reading progress or null if not found
      */
     suspend fun getReadingProgress(bookUuid: String): AppResult<PositionDomainModel?>
+
+    /**
+     * Gets the locally cached reading progress for a book.
+     *
+     * @param bookUuid The UUID of the book
+     * @return The local reading progress or null if not found
+     */
+    suspend fun getLocalReadingProgress(bookUuid: String): AppResult<PositionDomainModel?>
+
+    /**
+     * Gets the remote reading progress for a book.
+     *
+     * @param bookUuid The UUID of the book
+     * @return The remote reading progress or null if not found
+     */
+    suspend fun getRemoteReadingProgress(bookUuid: String): AppResult<PositionDomainModel?>
 
     /**
      * Saves the reading progress for a book.
