@@ -7,7 +7,6 @@ package com.retro99.database.api.books
  */
 interface PositionEntity {
     val bookUuid: String
-    val uuid: String?
     val timestamp: Long?
     val createdAt: String?
     val updatedAt: String?

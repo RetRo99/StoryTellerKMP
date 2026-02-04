@@ -6,9 +6,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PositionApiModel(
-    @SerialName("uuid")
-    val uuid: String,
-
     @SerialName("locator")
     val locator: LocatorApiModel? = null,
 
@@ -70,7 +67,6 @@ data class LocationsApiModel(
 fun PositionApiModel.toDomain(bookUuid: String): PositionDomainModel {
     return PositionDomainModel(
         bookUuid = bookUuid,
-        uuid = uuid,
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
@@ -95,7 +91,6 @@ fun PositionApiModel.toDomain(bookUuid: String): PositionDomainModel {
  */
 fun PositionDomainModel.toApiModel(): PositionApiModel {
     return PositionApiModel(
-        uuid = uuid,
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,

@@ -137,7 +137,6 @@ class ReaderViewModel(
         val now = Clock.System.now().toString()
         val positionDomainModel = PositionDomainModel(
             bookUuid = bookUuid,
-            uuid = position.uuid,
             timestamp = Clock.System.now().toEpochMilliseconds(),
             createdAt = position.createdAt,
             updatedAt = now,

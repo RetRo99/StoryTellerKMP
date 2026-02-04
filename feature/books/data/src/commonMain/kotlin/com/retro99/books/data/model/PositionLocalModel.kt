@@ -5,7 +5,6 @@ import com.retro99.database.api.books.PositionEntity
 
 data class PositionLocalModel(
     override val bookUuid: String,
-    override val uuid: String?,
     override val timestamp: Long?,
     override val createdAt: String?,
     override val updatedAt: String?,
@@ -25,7 +24,6 @@ data class PositionLocalModel(
 fun PositionLocalModel.toDomain(): PositionDomainModel {
     return PositionDomainModel(
         bookUuid = bookUuid,
-        uuid = uuid ?: "",
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
@@ -46,7 +44,6 @@ fun PositionLocalModel.toDomain(): PositionDomainModel {
 fun PositionDomainModel.toLocal(): PositionLocalModel {
     return PositionLocalModel(
         bookUuid = bookUuid,
-        uuid = uuid,
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
@@ -67,7 +64,6 @@ fun PositionDomainModel.toLocal(): PositionLocalModel {
 fun PositionEntity.toLocalModel(): PositionLocalModel {
     return PositionLocalModel(
         bookUuid = bookUuid,
-        uuid = uuid,
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
