@@ -16,7 +16,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
-import com.retro99.books.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication

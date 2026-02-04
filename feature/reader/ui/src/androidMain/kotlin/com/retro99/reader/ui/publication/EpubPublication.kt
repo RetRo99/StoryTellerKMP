@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.publication
 
-import com.retro99.books.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import org.readium.r2.shared.publication.Publication
 

@@ -1,7 +1,7 @@
-package com.retro99.books.data.model
+package com.retro99.reader.data.model
 
-import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.database.api.books.PositionEntity
+import com.retro99.reader.domain.model.PositionDomainModel
 
 data class PositionLocalModel(
     override val bookUuid: String,

@@ -6,15 +6,14 @@ import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
-import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
-import com.retro99.books.ui.model.PositionUiModel
-import com.retro99.books.ui.model.toUiModel
+import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
 import com.retro99.reader.domain.usecase.PrepareEbookUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiModel

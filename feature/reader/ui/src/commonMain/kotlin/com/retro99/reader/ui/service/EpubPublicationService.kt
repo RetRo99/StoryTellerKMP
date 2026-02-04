@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.service
 
-import com.retro99.books.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.StateFlow

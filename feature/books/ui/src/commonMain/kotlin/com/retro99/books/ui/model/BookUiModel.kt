@@ -26,17 +26,3 @@ data class SeriesUiModel(
     val name: String,
     val position: Int?,
 )
-
-@Serializable
-data class PositionUiModel(
-    val createdAt: String?,
-    val href: String,
-    val type: String,
-    val title: String?,
-    val progression: Double?,
-    val position: Int?,
-    val totalProgression: Double?,
-    val chapterIndex: Int?,
-    val totalChapters: Int?,
-)
-

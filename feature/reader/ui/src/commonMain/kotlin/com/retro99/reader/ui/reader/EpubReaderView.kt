@@ -3,7 +3,7 @@ package com.retro99.reader.ui.reader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.retro99.books.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow

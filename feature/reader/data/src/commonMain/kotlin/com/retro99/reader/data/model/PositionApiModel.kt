@@ -1,6 +1,6 @@
-package com.retro99.books.data.model
+package com.retro99.reader.data.model
 
-import com.retro99.books.domain.model.PositionDomainModel
+import com.retro99.reader.domain.model.PositionDomainModel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -111,3 +111,4 @@ fun PositionDomainModel.toApiModel(): PositionApiModel {
         ),
     )
 }
+
