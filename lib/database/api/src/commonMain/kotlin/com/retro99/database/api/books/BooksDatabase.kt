@@ -4,7 +4,7 @@ package com.retro99.database.api.books
  * Database interface for book-related operations.
  * Supports normalized schema with related entities.
  */
-interface BooksDatabase {
+interface BooksDatabase : PositionDatabase {
 
     // ==================== BOOK OPERATIONS ====================
 

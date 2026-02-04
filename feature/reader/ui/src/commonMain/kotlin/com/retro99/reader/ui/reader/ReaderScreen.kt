@@ -70,6 +70,15 @@ private fun ReaderScreenContent(
         } else {
             LoadingScreen()
         }
+
+        // Show position conflict dialog when there's a conflict
+        viewState.positionConflict?.let { conflict ->
+            PositionConflictDialog(
+                conflict = conflict,
+                onUseLocal = { intentDispatcher(ReaderIntent.UseLocalPosition) },
+                onUseRemote = { intentDispatcher(ReaderIntent.UseRemotePosition) },
+            )
+        }
     }
 }
 

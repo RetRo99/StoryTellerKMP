@@ -25,4 +25,3 @@ fun SeriesDomainModel.toUiModel(): SeriesUiModel = SeriesUiModel(
     name = name,
     position = position,
 )
-

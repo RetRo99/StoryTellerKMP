@@ -1,28 +1,25 @@
 package com.retro99.reader.ui.reader
 
 import androidx.lifecycle.viewModelScope
-import com.github.michaelbull.result.fold
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
-import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.reader.domain.model.PositionDomainModel
+import com.retro99.reader.domain.model.ReaderInitializationData
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
-import com.retro99.reader.domain.usecase.GetReadingProgressUseCase
-import com.retro99.reader.domain.usecase.PrepareEbookUseCase
+import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
+import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.service.EpubPublicationService
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -35,9 +32,7 @@ import kotlin.time.Clock
 class ReaderViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val onClose: () -> Unit,
-    @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
-    @Provided private val prepareEbookUseCase: PrepareEbookUseCase,
-    @Provided private val getReadingProgressUseCase: GetReadingProgressUseCase,
+    @Provided private val initializeReaderUseCase: InitializeReaderUseCase,
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
@@ -48,7 +43,7 @@ class ReaderViewModel(
     val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
 
     init {
-        loadBook()
+        initializeReader()
         observeSettingsChanges()
     }
 
@@ -58,6 +53,8 @@ class ReaderViewModel(
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
+            ReaderIntent.UseLocalPosition -> resolveConflictWithLocal()
+            ReaderIntent.UseRemotePosition -> resolveConflictWithRemote()
         }
     }
 
@@ -69,19 +66,11 @@ class ReaderViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun loadBook() {
+    private fun initializeReader() {
         viewModelScope.launch {
-            getBookByUuidUseCase(bookUuid)
-                .first()
-                .onSuccess { book ->
-                    val ebookFilepath = book.ebook?.filepath
-                    if (ebookFilepath == null) {
-                        updateState {
-                            it.copy(error = AppError.UnknownError(Throwable("Book has no ebook")))
-                        }
-                        return@onSuccess
-                    }
-                    prepareAndOpenPublication(bookUuid, ebookFilepath)
+            initializeReaderUseCase(bookUuid)
+                .onSuccess { data ->
+                    openPublication(data)
                 }
                 .onFailure { error ->
                     updateState { it.copy(error = error) }
@@ -89,45 +78,53 @@ class ReaderViewModel(
         }
     }
 
-    private suspend fun prepareAndOpenPublication(uuid: String, ebookFilepath: String) {
-        prepareEbookUseCase(uuid, ebookFilepath)
-            .fold(
-                success = { localPath ->
-                    openPublication(uuid, localPath)
-                },
-                failure = { error ->
-                    updateState { it.copy(error = error) }
-                },
-            )
-    }
+    private suspend fun openPublication(data: ReaderInitializationData) {
+        val settings = data.initialSettings.toUiModel()
+        val (position, conflict) = data.progressResult.toUiData()
 
-    private suspend fun openPublication(uuid: String, localPath: String) {
-        val settingsDeferred = viewModelScope.async {
-            getReaderSettingsUseCase().first().toUiModel()
-        }
-        val positionDeferred = viewModelScope.async {
-            getReadingProgressUseCase(uuid).fold(
-                success = { it?.toUiModel() },
-                failure = { null },
-            )
-        }
+        val publication = publicationService.openPublication(
+            filePath = data.localEbookPath,
+            initialSettings = settings,
+            initialPosition = position,
+        )
 
-        val initialSettings = settingsDeferred.await()
-        val initialPosition = positionDeferred.await()
-
-        val publication =
-            publicationService.openPublication(localPath, initialSettings, initialPosition)
-        if (publication != null) {
-            updateState {
-                it.copy(
-                    bookUuid = uuid,
-                    publication = publication,
-                    position = initialPosition,
+        publication?.let {
+            updateState { state ->
+                state.copy(
+                    bookUuid = data.bookUuid,
+                    publication = it,
+                    position = position,
+                    positionConflict = conflict,
                     error = null,
                 )
             }
-        } else {
-            updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
+        }
+            ?: updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
+    }
+
+    private fun resolveConflictWithLocal() {
+        val conflict = viewState.value.positionConflict ?: return
+        viewModelScope.launch {
+            updateState {
+                it.copy(
+                    position = conflict.localPosition,
+                    positionConflict = null,
+                )
+            }
+            _commands.emit(ReaderCommand.GoToPosition(conflict.localPosition))
+        }
+    }
+
+    private fun resolveConflictWithRemote() {
+        val conflict = viewState.value.positionConflict ?: return
+        viewModelScope.launch {
+            updateState {
+                it.copy(
+                    position = conflict.remotePosition,
+                    positionConflict = null,
+                )
+            }
+            _commands.emit(ReaderCommand.GoToPosition(conflict.remotePosition))
         }
     }
 
@@ -171,4 +168,3 @@ class ReaderViewModel(
         onClose()
     }
 }
-

@@ -83,6 +83,20 @@ interface EpubReaderBridge {
     fun goToChapter(href: String)
 
     /**
+     * Navigates to a specific position in the publication.
+     * @param href The href of the resource
+     * @param type The media type of the resource
+     * @param progression The progression within the resource (0.0 to 1.0)
+     * @param position The position index, if available
+     */
+    fun goToPosition(
+        href: String,
+        type: String,
+        progression: Double?,
+        position: Int?,
+    )
+
+    /**
      * Applies reader settings to the publication.
      * @param settings The reader settings to apply
      */

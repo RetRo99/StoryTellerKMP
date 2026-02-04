@@ -44,5 +44,14 @@ actual class EpubPublication(
     override fun setSettings(settings: ReaderSettingsUiModel) {
         bridge.setSettings(settings = EpubReaderSettings.from(settings))
     }
+
+    override fun goToPosition(position: PositionUiModel) {
+        bridge.goToPosition(
+            href = position.href,
+            type = position.type,
+            progression = position.progression,
+            position = position.position,
+        )
+    }
 }
 

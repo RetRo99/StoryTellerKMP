@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 /**
@@ -42,5 +43,12 @@ interface EpubNavigatorController {
      * @param settings The reader settings to apply
      */
     fun setSettings(settings: ReaderSettingsUiModel)
+
+    /**
+     * Navigates to a specific position in the publication.
+     *
+     * @param position The position to navigate to
+     */
+    fun goToPosition(position: PositionUiModel)
 }
 

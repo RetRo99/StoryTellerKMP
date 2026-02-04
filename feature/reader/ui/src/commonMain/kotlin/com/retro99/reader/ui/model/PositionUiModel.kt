@@ -29,4 +29,3 @@ fun PositionDomainModel.toUiModel(): PositionUiModel {
         totalChapters = totalChapters,
     )
 }
-
