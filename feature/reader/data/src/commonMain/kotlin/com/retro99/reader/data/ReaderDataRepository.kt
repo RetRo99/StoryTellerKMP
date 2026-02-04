@@ -8,7 +8,6 @@ import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
-import com.retro99.books.data.source.BooksRemoteSource
 import com.retro99.reader.data.model.toApiModel
 import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
@@ -26,7 +25,6 @@ import org.koin.core.annotation.Single
 internal class ReaderDataRepository(
     @Provided private val localSource: ReaderLocalSource,
     @Provided private val remoteSource: ReaderRemoteSource,
-    @Provided private val booksRemoteSource: BooksRemoteSource,
     @Provided private val analytics: Analytics,
 ) : ReaderRepository, BaseRepository {
 
@@ -52,7 +50,7 @@ internal class ReaderDataRepository(
     ): AppResult<PositionDomainModel?> {
         return remoteWithCacheFallback(
             remoteSource = {
-                booksRemoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
+                remoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
             },
             cacheSource = {
                 localSource.getReadingProgress(bookUuid).map { it?.toDomain() }
@@ -77,7 +75,7 @@ internal class ReaderDataRepository(
     override suspend fun getRemoteReadingProgress(
         bookUuid: String,
     ): AppResult<PositionDomainModel?> {
-        return booksRemoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
+        return remoteSource.getPosition(bookUuid).map { it?.toDomain(bookUuid) }
             .onFailure { error ->
                 logError(error, "Failed to get remote reading progress: bookUuid=$bookUuid")
             }
@@ -95,8 +93,8 @@ internal class ReaderDataRepository(
         }
 
         // Then sync to remote
-        return booksRemoteSource.updatePosition(
-            uuid = progress.bookUuid,
+        return remoteSource.updatePosition(
+            bookUuid = progress.bookUuid,
             position = progress.toApiModel(),
         ).onFailure { error ->
             logError(
