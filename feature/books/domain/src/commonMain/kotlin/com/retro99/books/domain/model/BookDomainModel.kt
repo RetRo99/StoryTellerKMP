@@ -22,7 +22,6 @@ data class BookDomainModel(
     val tags: List<TagDomainModel>,
     val collections: List<CollectionDomainModel>,
     val status: StatusDomainModel?,
-    val position: PositionDomainModel?,
     val ebook: MediaFileDomainModel?,
     val audiobook: MediaFileDomainModel?,
     val readaloud: ReadaloudDomainModel?,
