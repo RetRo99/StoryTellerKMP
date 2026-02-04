@@ -1,7 +1,6 @@
 package com.retro99.books.ui.model
 
 import com.retro99.books.domain.model.BookDomainModel
-import com.retro99.books.domain.model.PositionDomainModel
 import com.retro99.books.domain.model.SeriesDomainModel
 
 fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
@@ -19,24 +18,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
     hasAudiobook = audiobook != null,
     hasReadaloud = readaloud != null,
     ebookFilepath = ebook?.filepath,
-    position = position?.toUiModel(),
 )
-
-fun PositionDomainModel.toUiModel(): PositionUiModel? {
-    val href = locatorHref ?: return null
-    val type = locatorType ?: return null
-    return PositionUiModel(
-        createdAt = createdAt,
-        href = href,
-        type = type,
-        title = locatorTitle,
-        progression = progression,
-        position = position,
-        totalProgression = totalProgression,
-        chapterIndex = chapterIndex,
-        totalChapters = totalChapters,
-    )
-}
 
 fun SeriesDomainModel.toUiModel(): SeriesUiModel = SeriesUiModel(
     uuid = uuid,

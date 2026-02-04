@@ -69,9 +69,6 @@ data class BookApiModel(
     @SerialName("status")
     val status: StatusApiModel? = null,
 
-    @SerialName("position")
-    val position: PositionApiModel? = null,
-
     @SerialName("ebook")
     val ebook: MediaFileApiModel? = null,
 
@@ -105,7 +102,6 @@ fun BookApiModel.toDomain(baseUrl: String?): BookDomainModel {
         tags = tags.map { it.toDomain() },
         collections = collections.map { it.toDomain() },
         status = status?.toDomain(),
-        position = position?.toDomain(uuid),
         ebook = ebook?.toDomain(),
         audiobook = audiobook?.toDomain(),
         readaloud = readaloud?.toDomain(),

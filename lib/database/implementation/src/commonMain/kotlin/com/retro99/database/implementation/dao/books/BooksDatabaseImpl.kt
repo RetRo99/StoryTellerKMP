@@ -314,7 +314,6 @@ internal class BooksDatabaseImpl(
         val status = book.statusUuid?.let { sqlDelightDao.getStatusByUuid(it) }
         val mediaFiles = sqlDelightDao.getMediaFilesByBookUuid(book.uuid)
         val readaloud = sqlDelightDao.getReadaloudByBookUuid(book.uuid)
-        val position = sqlDelightDao.getPositionByBookUuid(book.uuid)
 
         val seriesList = seriesRelations.mapNotNull { relation ->
             sqlDelightDao.getSeriesEntityByUuid(relation.seriesUuid)?.let { series ->
@@ -348,7 +347,6 @@ internal class BooksDatabaseImpl(
             tags = tags,
             collections = collections,
             status = status,
-            position = position,
             ebook = mediaFiles.find { it.type == "ebook" },
             audiobook = mediaFiles.find { it.type == "audiobook" },
             readaloud = readaloud,
@@ -475,7 +473,6 @@ private data class BookEntityImpl(
     override val tags: List<TagEntity>,
     override val collections: List<CollectionEntity>,
     override val status: StatusEntity?,
-    override val position: PositionEntity?,
     override val ebook: MediaFileEntity?,
     override val audiobook: MediaFileEntity?,
     override val readaloud: ReadaloudEntity?,
