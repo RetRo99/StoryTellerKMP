@@ -96,14 +96,6 @@ interface BooksDatabase {
 
     suspend fun deleteReadaloudByBookUuid(bookUuid: String)
 
-    // ==================== POSITION OPERATIONS ====================
-
-    suspend fun upsertPosition(position: PositionEntity)
-
-    suspend fun getPositionByBookUuid(bookUuid: String): PositionEntity?
-
-    suspend fun deletePosition(bookUuid: String)
-
     // ==================== TRANSACTION SUPPORT ====================
 
     suspend fun deleteAllRelatedData()

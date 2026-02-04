@@ -4,7 +4,7 @@ import com.github.michaelbull.result.Ok
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.database.api.DatabaseExecutor
-import com.retro99.database.api.books.BooksDatabase
+import com.retro99.database.api.books.PositionDatabase
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
@@ -28,7 +28,7 @@ import org.koin.core.annotation.Single
 class ReaderLocalDataSource(
     @Provided private val preferences: Preferences,
     @Provided private val fileDownloader: EbookFileDownloader,
-    @Provided private val booksDatabase: BooksDatabase,
+    @Provided private val positionDatabase: PositionDatabase,
     @Provided private val databaseExecutor: DatabaseExecutor,
 ) : ReaderLocalSource {
 
@@ -38,7 +38,7 @@ class ReaderLocalDataSource(
         bookUuid: String,
     ): AppResult<PositionLocalModel?> {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.getPositionByBookUuid(bookUuid)?.toLocalModel()
+            positionDatabase.getPositionByBookUuid(bookUuid)?.toLocalModel()
         }
     }
 
@@ -46,7 +46,7 @@ class ReaderLocalDataSource(
         progress: PositionLocalModel,
     ): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.upsertPosition(progress)
+            positionDatabase.upsertPosition(progress)
         }
     }
 
