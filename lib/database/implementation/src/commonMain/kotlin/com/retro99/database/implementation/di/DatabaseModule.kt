@@ -2,6 +2,7 @@ package com.retro99.database.implementation.di
 
 import app.cash.sqldelight.db.SqlDriver
 import com.retro99.database.api.books.BooksDatabase
+import com.retro99.database.api.books.PositionDatabase
 import com.retro99.database.implementation.AppDatabase
 import com.retro99.database.implementation.dao.books.BooksDatabaseImpl
 import com.retro99.database.implementation.dao.books.BooksSqlDelightDao
@@ -29,8 +30,8 @@ class DatabaseModule {
         return BooksSqlDelightDao(database)
     }
 
-    @Single
-    internal fun provideBooksDatabase(dao: BooksSqlDelightDao): BooksDatabase {
+    @Single(binds = [BooksDatabase::class, PositionDatabase::class])
+    internal fun provideBooksDatabase(dao: BooksSqlDelightDao): BooksDatabaseImpl {
         return BooksDatabaseImpl(dao)
     }
 }

@@ -6,6 +6,7 @@ import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.CollectionEntity
 import com.retro99.database.api.books.MediaFileEntity
 import com.retro99.database.api.books.PersonEntity
+import com.retro99.database.api.books.PositionDatabase
 import com.retro99.database.api.books.PositionEntity
 import com.retro99.database.api.books.ReadaloudEntity
 import com.retro99.database.api.books.SeriesEntity
@@ -15,7 +16,7 @@ import com.retro99.database.api.books.TagEntity
 
 internal class BooksDatabaseImpl(
     private val sqlDelightDao: BooksSqlDelightDao,
-) : BooksDatabase {
+) : BooksDatabase, PositionDatabase {
 
     // ==================== BOOK OPERATIONS ====================
 
