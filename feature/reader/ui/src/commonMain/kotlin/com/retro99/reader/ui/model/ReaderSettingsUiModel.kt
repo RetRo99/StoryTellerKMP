@@ -10,7 +10,10 @@ data class ReaderSettingsUiModel(
     val lineHeight: Float = 1.5f,
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
-    val scrollMode: Boolean = true,
+    val scrollMode: Boolean? = null,
+    // Media playback settings for ReadAloud books
+    val playbackSpeed: Float = 1.0f,
+    val volume: Float = 1.0f,
 )
 
 enum class ReaderThemeUi {
@@ -28,6 +31,8 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     marginHorizontal = marginHorizontal,
     marginVertical = marginVertical,
     scrollMode = scrollMode,
+    playbackSpeed = playbackSpeed,
+    volume = volume,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -38,6 +43,8 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     marginHorizontal = marginHorizontal,
     marginVertical = marginVertical,
     scrollMode = scrollMode,
+    playbackSpeed = playbackSpeed,
+    volume = volume,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {

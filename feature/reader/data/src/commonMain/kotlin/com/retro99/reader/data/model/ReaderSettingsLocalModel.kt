@@ -20,7 +20,11 @@ data class ReaderSettingsLocalModel(
     @SerialName("margin_vertical")
     val marginVertical: Int = 16,
     @SerialName("scroll_mode")
-    val scrollMode: Boolean = true,
+    val scrollMode: Boolean? = null,
+    @SerialName("playback_speed")
+    val playbackSpeed: Float = 1.0f,
+    @SerialName("volume")
+    val volume: Float = 1.0f,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -36,6 +40,8 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
         scrollMode = scrollMode,
+        playbackSpeed = playbackSpeed,
+        volume = volume,
     )
 }
 
@@ -48,6 +54,8 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
         scrollMode = scrollMode,
+        playbackSpeed = playbackSpeed,
+        volume = volume,
     )
 }
 
