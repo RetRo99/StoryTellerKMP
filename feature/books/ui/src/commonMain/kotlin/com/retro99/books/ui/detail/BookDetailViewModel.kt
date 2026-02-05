@@ -6,6 +6,7 @@ import com.github.michaelbull.result.onSuccess
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.ui.model.toUiModel
+import com.retro99.reader.domain.model.BookType
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -16,7 +17,7 @@ import org.koin.core.annotation.Provided
 @KoinViewModel
 class BookDetailViewModel(
     @InjectedParam private val bookUuid: String,
-    @InjectedParam private val onNavigateToReader: (bookUuid: String) -> Unit,
+    @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(),
@@ -45,11 +46,15 @@ class BookDetailViewModel(
             }
 
             BookDetailIntent.OnReadEbookClicked -> {
-                onNavigateToReader(bookUuid)
+                onNavigateToReader(bookUuid, BookType.EBOOK)
             }
 
             BookDetailIntent.OnPlayAudiobookClicked -> {
                 // TODO: Open audiobook player
+            }
+
+            BookDetailIntent.OnReadReadaloudClicked -> {
+                onNavigateToReader(bookUuid, BookType.READALOUD)
             }
         }
     }

@@ -39,6 +39,7 @@ kotlin {
             implementation(projects.translations)
             implementation(projects.feature.home.domain)
             implementation(projects.feature.books.ui)
+            implementation(projects.feature.reader.domain)
             implementation(projects.feature.reader.ui)
         }
     }

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Headphones
+import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -47,17 +48,19 @@ import com.retro99.base.ui.LoadingScreen
 import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
+import com.retro99.reader.domain.model.BookType
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
+import resources.translations.books_media_readaloud
 
 @Composable
 fun BookDetailScreen(
     bookUuid: String,
-    onNavigateToReader: (bookUuid: String) -> Unit,
+    onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookDetailViewModel = koinViewModel { parametersOf(bookUuid, onNavigateToReader) },
 ) {
@@ -239,6 +242,13 @@ private fun MediaActionButtons(
                 icon = Icons.Outlined.Headphones,
                 label = stringResource(StringRes.books_media_audio),
                 onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
+            )
+        }
+        if (book.hasReadaloud) {
+            MediaButton(
+                icon = Icons.Outlined.RecordVoiceOver,
+                label = stringResource(StringRes.books_media_readaloud),
+                onClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
             )
         }
     }
