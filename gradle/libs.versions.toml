@@ -120,14 +120,10 @@ readium-shared = { module = "org.readium.kotlin-toolkit:readium-shared", version
 readium-streamer = { module = "org.readium.kotlin-toolkit:readium-streamer", version.ref = "readium" }
 readium-navigator = { module = "org.readium.kotlin-toolkit:readium-navigator", version.ref = "readium" }
 readium-navigatorMedia = { module = "org.readium.kotlin-toolkit:readium-navigator-media", version.ref = "readium" }
+readium-adapterExoplayer = { module = "org.readium.kotlin-toolkit:readium-adapter-exoplayer", version.ref = "readium" }
 
 # Core library desugaring (required for Readium 3.0 on API < 26)
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version = "2.1.4" }
-
-# Room Database
-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 
 # SQLDelight
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
