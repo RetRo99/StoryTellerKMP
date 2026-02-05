@@ -16,16 +16,15 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
+import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
+import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
-import org.readium.r2.shared.publication.Locator
-import org.readium.r2.shared.util.Url
-import org.readium.r2.shared.util.mediatype.MediaType
 
 private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 
@@ -37,7 +36,7 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onPositionChanged: (PositionUiModel) -> Unit,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -60,7 +59,13 @@ internal actual fun EpubReaderView(
     ObserveLocationChanges(
         navigatorController = navigatorController,
         initialPosition = publication.initialPosition,
-        onPositionChanged = onPositionChanged,
+        intentDispatcher = intentDispatcher,
+    )
+
+    // Observe audio playback state for ReadAloud books
+    ObserveAudioPlaybackState(
+        navigator = navigatorController,
+        intentDispatcher = intentDispatcher,
     )
 
     val navigatorFactory = remember(readiumPublication) {
@@ -71,6 +76,8 @@ internal actual fun EpubReaderView(
 
     DisposableEffect(bookUuid) {
         onDispose {
+            // Release media overlay player resources
+            navigatorController?.release()
             // Clean up the navigator controller
             navigatorController = null
             // Clean up the publication
@@ -100,20 +107,7 @@ internal actual fun EpubReaderView(
             val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                     as? EpubNavigatorFragment
             if (existingFragment == null) {
-                val initialLocator = publication.initialPosition?.let { position ->
-                    Url(position.href)?.let { url ->
-                        Locator(
-                            href = url,
-                            mediaType = MediaType(position.type) ?: MediaType.XHTML,
-                            title = position.title,
-                            locations = Locator.Locations(
-                                progression = position.progression,
-                                position = position.position,
-                                totalProgression = position.totalProgression,
-                            ),
-                        )
-                    }
-                }
+                val initialLocator = publication.initialPosition?.toAndroidLocator()
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = initialLocator,
                     initialPreferences = publication.initialSettings.toEpubPreferences(),
@@ -129,17 +123,20 @@ internal actual fun EpubReaderView(
                         NAVIGATOR_FRAGMENT_TAG,
                     )
                 }
+            }
 
-                // Create navigator controller from the fragment
-                val navigatorFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+            // Create navigator controller if needed
+            if (navigatorController == null) {
+                val navigatorFragment = (existingFragment
+                    ?: fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG))
                         as? EpubNavigatorFragment
+
                 navigatorFragment?.let {
-                    navigatorController = AndroidEpubNavigatorController(it)
-                }
-            } else {
-                // Fragment already exists, ensure controller is created
-                if (navigatorController == null) {
-                    navigatorController = AndroidEpubNavigatorController(existingFragment)
+                    navigatorController = AndroidEpubNavigatorController(
+                        navigator = it,
+                        publication = publication,
+                        context = context,
+                    )
                 }
             }
         },
@@ -147,7 +144,7 @@ internal actual fun EpubReaderView(
 }
 
 /**
- * Observes location changes from the navigator and reports them via the callback.
+ * Observes location changes from the navigator and dispatches intents.
  * Copies the initial position and updates only the location-related fields,
  * preserving the original UUID and createdAt timestamp.
  */
@@ -155,7 +152,7 @@ internal actual fun EpubReaderView(
 private fun ObserveLocationChanges(
     navigatorController: AndroidEpubNavigatorController?,
     initialPosition: PositionUiModel?,
-    onPositionChanged: (PositionUiModel) -> Unit,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
     LaunchedEffect(navigatorController, initialPosition) {
         if (initialPosition == null) return@LaunchedEffect
@@ -169,7 +166,7 @@ private fun ObserveLocationChanges(
                 position = locator.locations.position,
                 totalProgression = locator.locations.totalProgression,
             )
-            onPositionChanged(positionUiModel)
+            intentDispatcher(ReaderIntent.UpdatePosition(positionUiModel))
         }
     }
 }
