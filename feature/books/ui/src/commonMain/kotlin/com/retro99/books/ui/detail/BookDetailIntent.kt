@@ -9,5 +9,6 @@ sealed interface BookDetailIntent : BaseIntent {
     data class OnSeriesClicked(val seriesUuid: String) : BookDetailIntent
     data object OnReadEbookClicked : BookDetailIntent
     data object OnPlayAudiobookClicked : BookDetailIntent
+    data object OnReadReadaloudClicked : BookDetailIntent
 }
 
