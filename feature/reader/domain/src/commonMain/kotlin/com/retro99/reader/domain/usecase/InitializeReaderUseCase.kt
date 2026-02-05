@@ -7,6 +7,7 @@ import com.github.michaelbull.result.getOrElse
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
+import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.ReaderInitializationData
 import com.retro99.reader.domain.model.ReadingProgressResult
 import kotlinx.coroutines.async
@@ -38,23 +39,26 @@ class InitializeReaderUseCase(
      * Initializes the reader for the given book.
      *
      * @param bookUuid The UUID of the book to open in the reader
+     * @param bookType The type of book to open (EBOOK, AUDIOBOOK, or READALOUD)
      * @return [ReaderInitializationData] containing everything needed to open the publication,
      *         or an error if initialization fails
      */
-    suspend operator fun invoke(bookUuid: String): AppResult<ReaderInitializationData> =
+    suspend operator fun invoke(
+        bookUuid: String,
+        bookType: BookType,
+    ): AppResult<ReaderInitializationData> =
         coroutineScope {
-            // First, get the book to find the ebook file path
             val bookResult = getBookByUuidUseCase(bookUuid).first()
 
             bookResult.flatMap { book ->
-                val ebookFilePath = book.ebook?.filepath
-                    ?: return@coroutineScope Err(
-                        AppError.UnknownError(Throwable("Book has no ebook"))
-                    )
-
-                // Prepare the ebook (download if needed)
-                prepareEbookUseCase(bookUuid, ebookFilePath).flatMap { localPath ->
-                    // Load settings and progress in parallel
+                val ebookFilePath = when (bookType) {
+                    BookType.READALOUD -> book.readaloud?.filepath
+                    BookType.AUDIOBOOK -> book.audiobook?.filepath
+                    BookType.EBOOK -> book.ebook?.filepath
+                } ?: return@coroutineScope Err(
+                    AppError.UnknownError(Throwable("Book has no $bookType file"))
+                )
+                prepareEbookUseCase(bookUuid, ebookFilePath, bookType).flatMap { localPath ->
                     val settingsDeferred = async {
                         getReaderSettingsUseCase().first()
                     }
@@ -70,6 +74,7 @@ class InitializeReaderUseCase(
                         ReaderInitializationData(
                             bookUuid = bookUuid,
                             localEbookPath = localPath,
+                            bookType = bookType,
                             initialSettings = settings,
                             progressResult = progressResult,
                         )
