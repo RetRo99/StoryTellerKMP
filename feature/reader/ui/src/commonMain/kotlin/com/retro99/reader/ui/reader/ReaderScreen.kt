@@ -1,8 +1,9 @@
 package com.retro99.reader.ui.reader
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -10,30 +11,38 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.retro99.base.nowMillis
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
+import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.publication.EpubPublication
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+/** Duration in milliseconds before auto-hiding the media controls */
+private const val CONTROLS_AUTO_HIDE_DELAY_MS = 5000L
+
 @Composable
 fun ReaderScreen(
     bookUuid: String,
+    bookType: BookType,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = koinViewModel {
-        parametersOf(bookUuid, onClose)
+        parametersOf(bookUuid, bookType, onClose)
     },
 ) {
     BaseScreen(
@@ -64,6 +73,11 @@ private fun ReaderScreenContent(
             ReaderContent(
                 bookUuid = bookUuid,
                 publication = viewState.publication,
+                isReadAloud = viewState.isReadAloud,
+                isPlaying = viewState.isPlaying,
+                currentAudioPositionMs = viewState.currentAudioPositionMs,
+                totalDurationMs = viewState.totalDurationMs,
+                playbackSpeed = viewState.playbackSpeed,
                 intentDispatcher = intentDispatcher,
                 commands = commands,
             )
@@ -71,7 +85,6 @@ private fun ReaderScreenContent(
             LoadingScreen()
         }
 
-        // Show position conflict dialog when there's a conflict
         viewState.positionConflict?.let { conflict ->
             PositionConflictDialog(
                 conflict = conflict,
@@ -86,88 +99,117 @@ private fun ReaderScreenContent(
 private fun ReaderContent(
     bookUuid: String,
     publication: EpubPublication,
+    isReadAloud: Boolean,
+    isPlaying: Boolean,
+    currentAudioPositionMs: Long,
+    totalDurationMs: Long?,
+    playbackSpeed: Float,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     commands: Flow<ReaderCommand>,
 ) {
-    // Get initial settings from the publication
     val settings = publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
 
+    var areControlsVisible by remember { mutableStateOf(true) }
+    var lastInteractionTime by remember { mutableStateOf(0L) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+    LaunchedEffect(areControlsVisible, lastInteractionTime) {
+        if (areControlsVisible && isReadAloud) {
+            delay(CONTROLS_AUTO_HIDE_DELAY_MS)
+            areControlsVisible = false
+        }
+    }
+
+    val onControlsInteraction: () -> Unit = {
+        lastInteractionTime = nowMillis()
+        areControlsVisible = true
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .pointerInput(settings.fontSize) {
-                awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false)
-                    var zoomAccumulator = 1f
-                    var gestureActive = false
-
-                    do {
-                        val event = awaitPointerEvent()
-                        if (event.changes.size >= 2) {
-                            val zoomChange = event.calculateZoom()
-
-                            if (!gestureActive) {
-                                zoomAccumulator *= zoomChange
-                                val isZoomingOut = zoomAccumulator < 0.80f
-                                val isZoomingIn = zoomAccumulator > 1.20f
-
-                                if (isZoomingIn || isZoomingOut) {
-                                    gestureActive = true
-                                    isZooming = true
-                                    tempScale = (tempScale * zoomAccumulator).coerceIn(0.5, 3.0)
-                                }
-                            } else {
-                                if (zoomChange != 1f) {
-                                    tempScale = (tempScale * zoomChange).coerceIn(0.5, 3.0)
-                                }
-                                event.changes.forEach {
-                                    if (it.positionChanged()) it.consume()
-                                }
-                            }
-                        }
-                    } while (event.changes.any { it.pressed })
-
-                    // 4. Gesture Ended: Save to DB
-                    if (isZooming) {
-                        intentDispatcher(
-                            ReaderIntent.UpdateSettings(
-                                settings.copy(fontSize = tempScale)
-                            )
-                        )
-                        isZooming = false
-                    }
-                }
-            }
+            .onSizeChanged { containerSize = it },
     ) {
         EpubReaderView(
             bookUuid = bookUuid,
             publication = publication,
             commands = commands,
-            onPositionChanged = { position ->
-                intentDispatcher(ReaderIntent.UpdatePosition(position))
-            },
-            modifier = Modifier.fillMaxSize(),
+            intentDispatcher = intentDispatcher,
+            modifier = Modifier
+                .fillMaxSize()
+                .readerGestures(
+                    containerSize = containerSize,
+                    onZoomChange = { scale ->
+                        isZooming = true
+                        tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)
+                        onControlsInteraction()
+                    },
+                    onZoomEnd = { finalScale ->
+                        val newFontSize = (settings.fontSize * finalScale).coerceIn(0.5, 3.0)
+                        intentDispatcher(
+                            ReaderIntent.UpdateSettings(
+                                settings.copy(fontSize = newFontSize)
+                            )
+                        )
+                        isZooming = false
+                    },
+                    onLeftTap = {
+                        intentDispatcher(ReaderIntent.GoToPreviousPage)
+                        onControlsInteraction()
+                    },
+                    onRightTap = {
+                        intentDispatcher(ReaderIntent.GoToNextPage)
+                        onControlsInteraction()
+                    },
+                    onMiddleTap = {
+                        if (isReadAloud) {
+                            areControlsVisible = !areControlsVisible
+                            if (areControlsVisible) {
+                                lastInteractionTime = nowMillis()
+                            }
+                        }
+                    },
+                ),
         )
 
-        // 4. Optional: Visual Overlay (Shows only while pinching)
+        // Visual Overlay (Shows only while pinching)
         if (isZooming) {
             Box(
                 modifier = Modifier.align(Alignment.Center),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
                     shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
                         text = "${(tempScale * 100).toInt()}%",
                         style = MaterialTheme.typography.headlineLarge,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
+            }
+        }
+
+        if (isReadAloud) {
+            AnimatedVisibility(
+                visible = areControlsVisible,
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.BottomCenter),
+            ) {
+                ReadAloudControls(
+                    isPlaying = isPlaying,
+                    currentPositionMs = currentAudioPositionMs,
+                    totalDurationMs = totalDurationMs,
+                    playbackSpeed = playbackSpeed,
+                    intentDispatcher = intentDispatcher,
+                    onInteraction = onControlsInteraction,
+                    onSwipeDown = { areControlsVisible = false },
+                )
             }
         }
     }
