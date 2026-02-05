@@ -1,23 +1,17 @@
 package com.retro99.reader.data.source
 
-import com.github.michaelbull.result.map
 import com.retro99.base.result.AppResult
-import kotlinx.cinterop.BetaInteropApi
+import com.retro99.reader.domain.model.BookType
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 import platform.Foundation.NSCachesDirectory
-import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask
-import platform.Foundation.create
-import platform.Foundation.writeToFile
 import retro99.network.api.NetworkClient
 
 @Single
@@ -44,37 +38,36 @@ actual class EbookFileDownloader(
             return ebooksPath
         }
 
-    @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
     actual suspend fun downloadEbook(
         ebookFilePath: String,
         bookUuid: String,
+        bookType: BookType,
     ): AppResult<String> = withContext(Dispatchers.IO) {
-        val localPath = "$ebooksDir/$bookUuid.epub"
+        val localPath = "$ebooksDir/${getFileName(bookUuid, bookType)}"
 
-        networkClient.downloadFile(
+        // Use streaming download to avoid loading large files into memory
+        networkClient.downloadFileToPath(
             path = "/api/v2/books/$bookUuid/files",
-            queryBuilder = { "format" to "ebook" },
-        ).map { bytes ->
-            bytes.usePinned { pinned ->
-                val data = NSData.create(
-                    bytes = pinned.addressOf(0),
-                    length = bytes.size.toULong(),
-                )
-                data.writeToFile(localPath, atomically = true)
-            }
-            localPath
-        }
+            destinationPath = localPath,
+            queryBuilder = { "format" to bookType.value },
+        )
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    actual fun getCachedEbookPath(bookUuid: String): String? {
-        val path = "$ebooksDir/$bookUuid.epub"
+    actual fun getCachedEbookPath(bookUuid: String, bookType: BookType): String? {
+        val path = "$ebooksDir/${getFileName(bookUuid, bookType)}"
         return if (NSFileManager.defaultManager.fileExistsAtPath(path)) path else null
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    actual fun isEbookCached(bookUuid: String): Boolean {
-        return NSFileManager.defaultManager.fileExistsAtPath("$ebooksDir/$bookUuid.epub")
+    actual fun isEbookCached(bookUuid: String, bookType: BookType): Boolean {
+        return NSFileManager.defaultManager.fileExistsAtPath(
+            "$ebooksDir/${getFileName(bookUuid, bookType)}",
+        )
+    }
+
+    private fun getFileName(bookUuid: String, bookType: BookType): String {
+        return "${bookUuid}_${bookType.value}.epub"
     }
 }
 

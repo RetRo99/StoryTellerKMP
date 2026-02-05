@@ -1,8 +1,8 @@
 package com.retro99.reader.data.source
 
 import android.content.Context
-import com.github.michaelbull.result.map
 import com.retro99.base.result.AppResult
+import com.retro99.reader.domain.model.BookType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Provided
@@ -22,25 +22,29 @@ actual class EbookFileDownloader(
     actual suspend fun downloadEbook(
         ebookFilePath: String,
         bookUuid: String,
+        bookType: BookType,
     ): AppResult<String> = withContext(Dispatchers.IO) {
-        val localFile = File(ebooksDir, "$bookUuid.epub")
+        val localFile = File(ebooksDir, getFileName(bookUuid, bookType))
 
-        networkClient.downloadFile(
+        // Use streaming download to avoid loading large files into memory
+        networkClient.downloadFileToPath(
             path = "/api/v2/books/$bookUuid/files",
-            queryBuilder = { "format" to "ebook" },
-        ).map { bytes ->
-            localFile.writeBytes(bytes)
-            localFile.absolutePath
-        }
+            destinationPath = localFile.absolutePath,
+            queryBuilder = { "format" to bookType.value },
+        )
     }
 
-    actual fun getCachedEbookPath(bookUuid: String): String? {
-        val file = File(ebooksDir, "$bookUuid.epub")
+    actual fun getCachedEbookPath(bookUuid: String, bookType: BookType): String? {
+        val file = File(ebooksDir, getFileName(bookUuid, bookType))
         return if (file.exists()) file.absolutePath else null
     }
 
-    actual fun isEbookCached(bookUuid: String): Boolean {
-        return File(ebooksDir, "$bookUuid.epub").exists()
+    actual fun isEbookCached(bookUuid: String, bookType: BookType): Boolean {
+        return File(ebooksDir, getFileName(bookUuid, bookType)).exists()
+    }
+
+    private fun getFileName(bookUuid: String, bookType: BookType): String {
+        return "${bookUuid}_${bookType.value}.epub"
     }
 }
 
