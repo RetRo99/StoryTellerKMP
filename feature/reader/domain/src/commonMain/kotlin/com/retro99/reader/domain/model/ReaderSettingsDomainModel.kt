@@ -10,7 +10,10 @@ data class ReaderSettingsDomainModel(
     val lineHeight: Float = 1.5f,
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
-    val scrollMode: Boolean = true,
+    val scrollMode: Boolean? = null,
+    // Media playback settings for ReadAloud books
+    val playbackSpeed: Float = 1.0f,
+    val volume: Float = 1.0f,
 )
 
 enum class ReaderTheme {
