@@ -1,5 +1,6 @@
 package com.retro99.home.ui.navigation
 
+import com.retro99.reader.domain.model.BookType
 import kotlinx.serialization.Serializable
 
 sealed interface HomeDestination {
@@ -11,7 +12,10 @@ sealed interface HomeDestination {
     data class BookDetail(val bookUuid: String) : HomeDestination
 
     @Serializable
-    data class Reader(val bookUuid: String) : HomeDestination
+    data class Reader(
+        val bookUuid: String,
+        val bookType: BookType,
+    ) : HomeDestination
 
 }
 
