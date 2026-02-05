@@ -137,27 +137,21 @@ class KtorNetworkClient(
     ): AppResult<String> = withContext(Dispatchers.IO) {
         try {
             val url = buildUrl(path, queryBuilder)
-            println("čič: downloadFileToPath starting: url=$url, dest=$destinationPath")
 
             // Use prepareGet for streaming - this doesn't buffer the entire response in memory
             httpClient.prepareGet(url) {
                 headers(headers)
             }.execute { response ->
-                println("čič: downloadFileToPath got response: status=${response.status}")
 
                 if (response.status.isSuccess()) {
-                    println("čič: downloadFileToPath calling bodyAsChannel()")
                     val channel = response.bodyAsChannel()
-                    println("čič: downloadFileToPath calling writeChannelToFile()")
                     writeChannelToFile(channel, destinationPath)
-                    println("čič: downloadFileToPath completed successfully")
                     Ok(destinationPath)
                 } else {
                     handleHttpError(response)
                 }
             }
         } catch (e: Exception) {
-            println("čič: downloadFileToPath exception: ${e.message}")
             ensureActive()
             handleException(e)
         }
