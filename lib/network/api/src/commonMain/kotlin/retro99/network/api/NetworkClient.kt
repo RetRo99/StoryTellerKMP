@@ -43,6 +43,23 @@ interface NetworkClient {
         headers: HeadersBuilder.() -> Unit = {},
     ): AppResult<ByteArray>
 
+    /**
+     * Downloads a file and streams it directly to the specified destination path.
+     * This is memory-efficient for large files as it doesn't load the entire file into memory.
+     *
+     * @param path The API path to download from
+     * @param destinationPath The local file path to write the downloaded content to
+     * @param queryBuilder Optional query parameters
+     * @param headers Optional headers
+     * @return AppResult with the destination path on success, or an error
+     */
+    suspend fun downloadFileToPath(
+        path: String,
+        destinationPath: String,
+        queryBuilder: QueryParamsScope.() -> Unit = {},
+        headers: HeadersBuilder.() -> Unit = {},
+    ): AppResult<String>
+
     fun close()
 }
 

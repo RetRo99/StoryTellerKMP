@@ -13,9 +13,11 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
+import io.ktor.client.request.prepareGet
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
@@ -122,6 +124,40 @@ class KtorNetworkClient(
                 handleHttpError(response)
             }
         } catch (e: Exception) {
+            ensureActive()
+            handleException(e)
+        }
+    }
+
+    override suspend fun downloadFileToPath(
+        path: String,
+        destinationPath: String,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit,
+    ): AppResult<String> = withContext(Dispatchers.IO) {
+        try {
+            val url = buildUrl(path, queryBuilder)
+            println("čič: downloadFileToPath starting: url=$url, dest=$destinationPath")
+
+            // Use prepareGet for streaming - this doesn't buffer the entire response in memory
+            httpClient.prepareGet(url) {
+                headers(headers)
+            }.execute { response ->
+                println("čič: downloadFileToPath got response: status=${response.status}")
+
+                if (response.status.isSuccess()) {
+                    println("čič: downloadFileToPath calling bodyAsChannel()")
+                    val channel = response.bodyAsChannel()
+                    println("čič: downloadFileToPath calling writeChannelToFile()")
+                    writeChannelToFile(channel, destinationPath)
+                    println("čič: downloadFileToPath completed successfully")
+                    Ok(destinationPath)
+                } else {
+                    handleHttpError(response)
+                }
+            }
+        } catch (e: Exception) {
+            println("čič: downloadFileToPath exception: ${e.message}")
             ensureActive()
             handleException(e)
         }
