@@ -48,8 +48,6 @@ kotlin {
             implementation(libs.readium.shared)
             implementation(libs.readium.streamer)
             implementation(libs.readium.adapterExoplayer)
-            implementation(libs.media3.exoplayer)
-            implementation(libs.media3.datasource)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.fragment)
             implementation(projects.feature.reader.data)
