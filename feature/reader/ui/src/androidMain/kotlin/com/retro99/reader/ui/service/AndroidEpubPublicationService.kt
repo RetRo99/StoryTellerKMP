@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.service
 
 import android.content.Context
+import com.retro99.reader.ui.model.BookTypeUi
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
@@ -42,6 +43,7 @@ class AndroidEpubPublicationService(
     override suspend fun openPublication(
         filePath: String,
         initialSettings: ReaderSettingsUiModel,
+        bookType: BookTypeUi,
         initialPosition: PositionUiModel?,
     ): EpubPublication? =
         withContext(Dispatchers.IO) {
@@ -73,7 +75,7 @@ class AndroidEpubPublicationService(
 
                 publication = openedPublication
                 setReady()
-                EpubPublication(openedPublication, initialSettings, initialPosition)
+                EpubPublication(openedPublication, initialSettings, bookType, initialPosition)
             } catch (e: Exception) {
                 setError("Error opening ebook: ${e.message}")
                 null
