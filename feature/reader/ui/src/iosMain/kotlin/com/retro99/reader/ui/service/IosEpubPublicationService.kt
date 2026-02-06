@@ -31,27 +31,24 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
         bookType: BookType,
         initialPosition: PositionUiModel?,
     ): EpubPublication? {
-        logger.d { "openPublication called with filePath=$filePath, bookType=$bookType" }
-        logger.d { "initialSettings=$initialSettings" }
-        logger.d { "initialPosition=$initialPosition" }
-
         val currentBridge = bridge
         if (currentBridge == null) {
             logger.e { "EPUB reader bridge not registered!" }
             setError("EPUB reader bridge not registered")
             return null
         }
-        logger.d { "Bridge found: $currentBridge" }
+
+        // Close any existing publication before opening a new one
+        // This ensures proper cleanup of the previous view controller
+        currentBridge.closePublication()
 
         resetState()
         this.initialSettings = initialSettings
 
         return suspendCoroutine { continuation ->
-            logger.d { "Calling bridge.openPublication..." }
             currentBridge.openPublication(
                 filePath = filePath,
                 onSuccess = {
-                    logger.i { "openPublication onSuccess callback received" }
                     setReady()
                     val publication = EpubPublication(
                         currentBridge,
@@ -59,11 +56,10 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
                         bookType,
                         initialPosition,
                     )
-                    logger.d { "Created EpubPublication: $publication" }
                     continuation.resume(publication)
                 },
                 onError = { errorMessage ->
-                    logger.e { "openPublication onError callback: $errorMessage" }
+                    logger.e { "openPublication failed: $errorMessage" }
                     setError(errorMessage)
                     continuation.resume(null)
                 },
@@ -72,7 +68,6 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
     }
 
     override fun closePublication() {
-        logger.d { "closePublication called" }
         bridge?.closePublication()
         initialSettings = null
         resetState()

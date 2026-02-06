@@ -1,15 +1,77 @@
 import Foundation
 import UIKit
 import WebKit
-import os.log
 import ComposeApp
 import ReadiumShared
 import ReadiumStreamer
 import ReadiumNavigator
 import ReadiumAdapterGCDWebServer
 
-/// Logger for the EPUB reader bridge
-private let logger = Logger(subsystem: "com.retro99.storyteller", category: "EpubReaderBridge")
+/// Container view controller that properly handles layout for the EPUB navigator.
+/// This ensures the child view controller's view always fills the container bounds,
+/// which is necessary for proper integration with Compose Multiplatform's UIKitViewController.
+///
+/// The key fix here is width clamping: Compose's InteropWrappingView starts with 0x0 bounds,
+/// and the WKWebView's cached intrinsic content size can push the container wider than the screen.
+/// We prevent this by tracking the expected width and clamping the child frame.
+class ReaderContainerViewController: UIViewController {
+    private let childController: UIViewController
+
+    /// Track the expected width to prevent the WKWebView from pushing the container wider.
+    /// Initialized from screen width since Compose's InteropWrappingView has 0x0 bounds initially.
+    private var expectedWidth: CGFloat
+
+    /// Flag to track if we've captured the first valid width from layout.
+    private var hasValidWidth: Bool = false
+
+    init(childController: UIViewController) {
+        self.childController = childController
+        self.expectedWidth = UIScreen.main.bounds.width
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Add child view controller using proper containment API
+        addChild(childController)
+        view.addSubview(childController.view)
+        childController.didMove(toParent: self)
+
+        childController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        childController.view.frame = view.bounds
+
+        // Ensure content doesn't extend beyond bounds
+        view.clipsToBounds = true
+        childController.view.clipsToBounds = true
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        // Capture the first valid width to use as our maximum
+        if !hasValidWidth && view.bounds.width > 0 && view.bounds.width <= self.expectedWidth {
+            hasValidWidth = true
+            if view.bounds.width < self.expectedWidth {
+                self.expectedWidth = view.bounds.width
+            }
+        }
+
+        // Calculate target frame, clamping width if it exceeds expected
+        var targetFrame = view.bounds
+        if view.bounds.width > self.expectedWidth + 1 {
+            targetFrame.size.width = self.expectedWidth
+        }
+
+        if childController.view.frame != targetFrame {
+            childController.view.frame = targetFrame
+        }
+    }
+}
 
 /// Swift implementation of the EPUB reader bridge.
 /// This class wraps Readium iOS SDK and exposes it to Kotlin.
@@ -41,7 +103,6 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     )
 
     init() {
-        logger.info("ReadiumEpubReaderBridge initialized")
     }
 
     func openPublication(
@@ -49,32 +110,25 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         onSuccess: @escaping () -> Void,
         onError: @escaping (String) -> Void
     ) {
-        logger.info("openPublication called with filePath: \(filePath)")
         Task { @MainActor in
             do {
                 // Convert file path to Foundation URL, then to Readium's FileURL
                 let foundationUrl = URL(fileURLWithPath: filePath)
                 guard let fileUrl = FileURL(url: foundationUrl) else {
-                    logger.error("Invalid file path: \(filePath)")
                     onError("Invalid file path: \(filePath)")
                     return
                 }
-                logger.debug("FileURL created: \(fileUrl)")
 
                 // Retrieve the asset
-                logger.debug("Retrieving asset...")
                 let assetResult = await assetRetriever.retrieve(url: fileUrl)
                 guard case .success(let asset) = assetResult else {
                     if case .failure(let error) = assetResult {
-                        logger.error("Failed to retrieve asset: \(error)")
                         onError("Failed to retrieve asset: \(error)")
                     }
                     return
                 }
-                logger.debug("Asset retrieved successfully")
 
                 // Open the publication using PublicationOpener
-                logger.debug("Opening publication...")
                 let publicationResult = await publicationOpener.open(
                     asset: asset,
                     allowUserInteraction: false
@@ -82,11 +136,9 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
                 switch publicationResult {
                 case .success(let publication):
-                    logger.info("Publication opened successfully: \(publication.metadata.title ?? "Unknown")")
                     self.publication = publication
                     onSuccess()
                 case .failure(let error):
-                    logger.error("Failed to open publication: \(error)")
                     onError("Failed to open publication: \(error)")
                 }
             }
@@ -94,38 +146,33 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     }
 
     func closePublication() {
-        logger.info("closePublication called")
         mediaOverlayPlayer?.release()
         mediaOverlayPlayer = nil
+
+        // Properly clean up the navigator view controller
+        // Remove it from its parent view controller and view hierarchy
+        if let navigator = navigatorViewController {
+            navigator.willMove(toParent: nil)
+            navigator.view.removeFromSuperview()
+            navigator.removeFromParent()
+        }
         navigatorViewController = nil
         publication = nil
     }
 
     func createReaderViewController(settings: EpubReaderSettings) -> UIViewController? {
-        logger.info("createReaderViewController called")
-        logger.debug("Settings - fontSize: \(settings.fontSize), fontFamily: \(settings.fontFamily)")
-        logger.debug("Publication is \(self.publication == nil ? "nil" : "set")")
-
         guard let publication = self.publication else {
-            logger.warning("createReaderViewController returning nil - publication is nil")
             return nil
         }
-        logger.debug("Publication found: \(publication.metadata.title ?? "Unknown")")
 
         do {
-            // Get the screen bounds to constrain the navigator
-            let screenBounds = UIScreen.main.bounds
-            logger.debug("Screen bounds: \(screenBounds.width)x\(screenBounds.height)")
-
             // Create initial preferences from settings
             let initialPreferences = settings.toEpubPreferences()
-            logger.debug("Initial preferences created")
 
             // Create initial locator from settings if available
             var initialLocation: Locator? = nil
             if let position = settings.initialPosition,
                let href = AnyURL(legacyHREF: position.href) {
-                logger.debug("Creating initial locator from position: href=\(position.href)")
                 initialLocation = Locator(
                     href: href,
                     mediaType: MediaType(position.type) ?? .html,
@@ -138,11 +185,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                         }
                     )
                 )
-            } else {
-                logger.debug("No initial position provided")
             }
 
-            logger.debug("Creating EPUBNavigatorViewController...")
             let navigator = try EPUBNavigatorViewController(
                 publication: publication,
                 initialLocation: initialLocation,
@@ -151,28 +195,23 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 ),
                 httpServer: httpServer
             )
-            logger.info("EPUBNavigatorViewController created successfully")
             self.navigatorViewController = navigator
 
             // Set delegate to receive location change callbacks
             navigator.delegate = self
-            logger.debug("Delegate set")
 
-            // Force the navigator's view to use screen width
-            navigator.view.frame = CGRect(
-                x: 0,
-                y: 0,
-                width: screenBounds.width,
-                height: screenBounds.height
-            )
+            // Reset the navigator's view to a standard size
+            // This prevents any cached sizing from the previous session from affecting layout
+            let screenBounds = UIScreen.main.bounds
+            navigator.view.frame = CGRect(x: 0, y: 0, width: screenBounds.width, height: screenBounds.height)
             navigator.view.clipsToBounds = true
-            navigator.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            logger.debug("Navigator view configured with frame: \(navigator.view.frame.width)x\(navigator.view.frame.height)")
 
-            logger.info("createReaderViewController returning navigator successfully")
-            return navigator
+            // Wrap the navigator in a container that properly handles layout
+            // This ensures the navigator's view always fills its parent bounds
+            let containerVC = ReaderContainerViewController(childController: navigator)
+
+            return containerVC
         } catch {
-            logger.error("Failed to create EPUBNavigatorViewController: \(error)")
             return nil
         }
     }
