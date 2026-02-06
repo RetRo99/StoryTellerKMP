@@ -12,6 +12,7 @@ import com.retro99.preferences.api.putObject
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
 import com.retro99.reader.data.model.toLocalModel
+import com.retro99.reader.domain.model.BookType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,12 +63,12 @@ class ReaderLocalDataSource(
         return Ok(Unit)
     }
 
-    override suspend fun isEbookCached(bookUuid: String): Boolean {
-        return fileDownloader.isEbookCached(bookUuid)
+    override suspend fun isEbookCached(bookUuid: String, bookType: BookType): Boolean {
+        return fileDownloader.isEbookCached(bookUuid, bookType)
     }
 
-    override suspend fun getCachedEbookPath(bookUuid: String): String? {
-        return fileDownloader.getCachedEbookPath(bookUuid)
+    override suspend fun getCachedEbookPath(bookUuid: String, bookType: BookType): String? {
+        return fileDownloader.getCachedEbookPath(bookUuid, bookType)
     }
 
     private fun loadReaderSettings(): ReaderSettingsLocalModel {

@@ -4,6 +4,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
+import com.retro99.reader.domain.model.BookType
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -48,16 +49,18 @@ interface ReaderLocalSource {
      * Checks if an ebook file exists locally.
      *
      * @param bookUuid The UUID of the book
+     * @param bookType The type of book
      * @return True if the file exists locally
      */
-    suspend fun isEbookCached(bookUuid: String): Boolean
+    suspend fun isEbookCached(bookUuid: String, bookType: BookType): Boolean
 
     /**
      * Gets the local file path for a cached ebook.
      *
      * @param bookUuid The UUID of the book
+     * @param bookType The type of book
      * @return The local file path or null if not cached
      */
-    suspend fun getCachedEbookPath(bookUuid: String): String?
+    suspend fun getCachedEbookPath(bookUuid: String, bookType: BookType): String?
 }
 
