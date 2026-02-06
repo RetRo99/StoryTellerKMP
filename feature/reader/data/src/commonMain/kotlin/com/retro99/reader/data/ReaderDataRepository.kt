@@ -14,6 +14,7 @@ import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.data.source.ReaderRemoteSource
 import com.retro99.reader.domain.ReaderRepository
+import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.Flow
@@ -31,17 +32,18 @@ internal class ReaderDataRepository(
     override suspend fun prepareEbook(
         bookUuid: String,
         ebookFilePath: String,
+        bookType: BookType,
     ): AppResult<String> {
-        // Check if ebook is already cached
-        val cachedPath = localSource.getCachedEbookPath(bookUuid)
+        // Check if ebook is already cached for this specific book type
+        val cachedPath = localSource.getCachedEbookPath(bookUuid, bookType)
 
         return if (cachedPath != null) {
             Ok(cachedPath)
         } else {
             // Download the ebook
-            remoteSource.downloadEbook(ebookFilePath, bookUuid)
+            remoteSource.downloadEbook(ebookFilePath, bookUuid, bookType)
         }.onFailure { error ->
-            logError(error, "Failed to prepare ebook: bookUuid=$bookUuid")
+            logError(error, "Failed to prepare ebook: bookUuid=$bookUuid, bookType=$bookType")
         }
     }
 

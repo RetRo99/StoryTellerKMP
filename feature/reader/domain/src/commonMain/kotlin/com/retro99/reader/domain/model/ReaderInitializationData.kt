@@ -11,12 +11,14 @@ package com.retro99.reader.domain.model
  *
  * @param bookUuid The unique identifier of the book
  * @param localEbookPath The local file path where the ebook is ready to be opened
+ * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
  * @param initialSettings The initial reader settings to apply
  * @param progressResult The reading progress result, which may contain a conflict
  */
 data class ReaderInitializationData(
     val bookUuid: String,
     val localEbookPath: String,
+    val bookType: BookType,
     val initialSettings: ReaderSettingsDomainModel,
     val progressResult: ReadingProgressResult,
 )
