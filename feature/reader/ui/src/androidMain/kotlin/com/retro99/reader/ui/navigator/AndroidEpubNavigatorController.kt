@@ -1,7 +1,10 @@
 package com.retro99.reader.ui.navigator
 
 import android.content.Context
+import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.media.MediaOverlayPlayer
+import com.retro99.reader.ui.model.AudioPositionState
+import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
@@ -9,7 +12,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
@@ -39,11 +49,13 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  * @param navigator The Readium EpubNavigatorFragment to wrap
  * @param publication The Readium Publication for accessing metadata
  * @param context Android context for creating the media player
+ * @param analytics Analytics instance for logging errors and events
  */
-class AndroidEpubNavigatorController(
+class AndroidEpubNavigatorController internal constructor(
     private val navigator: EpubNavigatorFragment,
     private val publication: EpubPublication,
     private val context: Context,
+    private val analytics: Analytics,
 ) : EpubNavigatorController {
 
     /**
@@ -54,12 +66,54 @@ class AndroidEpubNavigatorController(
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     /**
-     * StateFlow of the current locator, emitting location changes as the user navigates.
+     * Flow of current reading position/locator changes.
+     * Converts Readium's Locator to the common LocatorState model.
      */
-    val currentLocator: StateFlow<Locator> = navigator.currentLocator
+    override val currentLocator: Flow<LocatorState> = navigator.currentLocator.map { locator ->
+        LocatorState(
+            href = locator.href.toString(),
+            type = locator.mediaType.toString(),
+            title = locator.title,
+            progression = locator.locations.progression,
+            position = locator.locations.position,
+            totalProgression = locator.locations.totalProgression,
+        )
+    }
 
-    // Media overlay player for ReadAloud books
-    private var mediaOverlayPlayer: MediaOverlayPlayer? = null
+    // Media overlay player for ReadAloud books - wrapped in StateFlow for reactive access
+    private val _mediaOverlayPlayer = MutableStateFlow<MediaOverlayPlayer?>(null)
+
+    /**
+     * Flow of audio position updates (currentPosition and totalDuration).
+     * Emits on every position change from the media player.
+     */
+    override val audioPositionState: Flow<AudioPositionState> =
+        _mediaOverlayPlayer.flatMapLatest { player ->
+            player?.let {
+                combine(
+                    it.currentPosition,
+                    it.totalDuration,
+                ) { positionMs, durationMs ->
+                    AudioPositionState(
+                        currentPositionMs = positionMs,
+                        totalDurationMs = durationMs,
+                    )
+                }
+            } ?: flowOf()
+        }
+
+    /**
+     * Flow of playing state changes.
+     * Drops the first emission to skip the initial state from player initialization.
+     */
+    override val isPlayingState: Flow<Boolean> = _mediaOverlayPlayer.flatMapLatest { player ->
+        player?.isPlaying?.drop(1) ?: flowOf()
+    }
+
+    /**
+     * Flow that emits true when the media player is ready.
+     */
+    override val isPlayerReady: Flow<Boolean> = _mediaOverlayPlayer.map { it != null }
 
     init {
         // Initialize media overlays automatically if the book supports them
@@ -103,12 +157,24 @@ class AndroidEpubNavigatorController(
             val player = MediaOverlayPlayer(
                 context = context,
                 publication = publication.publication,
+                analytics = analytics,
                 onLocatorChanged = { locator ->
                     controllerScope.launch { applyHighlight(locator) }
                 },
             )
             player.initialize()
-            mediaOverlayPlayer = player
+            _mediaOverlayPlayer.value = player
+
+            // Prepare duration for the initial chapter
+            val initialChapterHref = navigator.currentLocator.value.href
+            player.prepareChapterDuration(initialChapterHref)
+
+            navigator.currentLocator
+                .map { it.href }
+                .distinctUntilChanged()
+                .collect { chapterHref ->
+                    player.prepareChapterDuration(chapterHref)
+                }
         }
     }
 
@@ -136,7 +202,10 @@ class AndroidEpubNavigatorController(
     }
 
     override fun playAudio(initialPositionMs: Long?) {
-        val player = mediaOverlayPlayer ?: return
+        val player = _mediaOverlayPlayer.value ?: run {
+            logPlayerNotInitialized("playAudio")
+            return
+        }
 
         // Get the current locator with chapter href, fragment, and progression
         val currentLocator = navigator.currentLocator.value
@@ -148,16 +217,46 @@ class AndroidEpubNavigatorController(
         player.play(currentChapterHref, fragmentId, progression, initialPositionMs)
     }
 
+    override fun resumeAudio() {
+        val player = _mediaOverlayPlayer.value ?: run {
+            logPlayerNotInitialized("resumeAudio")
+            return
+        }
+        player.resume()
+    }
+
     override fun pauseAudio() {
-        mediaOverlayPlayer?.pause()
+        val player = _mediaOverlayPlayer.value ?: run {
+            logPlayerNotInitialized("pauseAudio")
+            return
+        }
+        player.pause()
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {
-        mediaOverlayPlayer?.seekTo(timestampMs)
+        val player = _mediaOverlayPlayer.value ?: run {
+            logPlayerNotInitialized("seekToAudioPosition")
+            return
+        }
+        player.seekTo(timestampMs)
     }
 
     override fun setPlaybackSpeed(speed: Float) {
-        mediaOverlayPlayer?.setPlaybackSpeed(speed)
+        val player = _mediaOverlayPlayer.value ?: run {
+            logPlayerNotInitialized("setPlaybackSpeed")
+            return
+        }
+        player.setPlaybackSpeed(speed)
+    }
+
+    /**
+     * Logs an error when a media method is called before the player is initialized.
+     */
+    private fun logPlayerNotInitialized(methodName: String) {
+        analytics.logException(
+            throwable = IllegalStateException("Media player not initialized"),
+            message = "$methodName called before media player was initialized",
+        )
     }
 
     /**
@@ -165,8 +264,8 @@ class AndroidEpubNavigatorController(
      * Should be called when the controller is no longer needed.
      */
     fun release() {
-        mediaOverlayPlayer?.release()
-        mediaOverlayPlayer = null
+        _mediaOverlayPlayer.value?.release()
+        _mediaOverlayPlayer.value = null
         controllerScope.cancel()
     }
 }
@@ -205,4 +304,3 @@ fun PositionUiModel.toAndroidLocator(): Locator? {
         ),
     )
 }
-

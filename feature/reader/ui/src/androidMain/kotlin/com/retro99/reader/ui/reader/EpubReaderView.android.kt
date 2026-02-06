@@ -4,7 +4,6 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,12 +16,13 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
 import com.retro99.base.ui.IntentDispatcher
-import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
+import com.retro99.reader.ui.navigator.AndroidEpubNavigatorControllerFactory
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
+import org.koin.compose.koinInject
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 
@@ -46,6 +46,7 @@ internal actual fun EpubReaderView(
     }
 
     val readiumPublication = publication.publication
+    val controllerFactory: AndroidEpubNavigatorControllerFactory = koinInject()
 
     var navigatorController by remember { mutableStateOf<AndroidEpubNavigatorController?>(null) }
 
@@ -57,12 +58,12 @@ internal actual fun EpubReaderView(
 
     // Observe location changes from the navigator and report them back
     ObserveLocationChanges(
-        navigatorController = navigatorController,
+        navigator = navigatorController,
         initialPosition = publication.initialPosition,
         intentDispatcher = intentDispatcher,
     )
 
-    // Observe audio playback state for ReadAloud books
+    // Observe audio playback state changes for ReadAloud books
     ObserveAudioPlaybackState(
         navigator = navigatorController,
         intentDispatcher = intentDispatcher,
@@ -132,7 +133,7 @@ internal actual fun EpubReaderView(
                         as? EpubNavigatorFragment
 
                 navigatorFragment?.let {
-                    navigatorController = AndroidEpubNavigatorController(
+                    navigatorController = controllerFactory.create(
                         navigator = it,
                         publication = publication,
                         context = context,
@@ -141,32 +142,4 @@ internal actual fun EpubReaderView(
             }
         },
     )
-}
-
-/**
- * Observes location changes from the navigator and dispatches intents.
- * Copies the initial position and updates only the location-related fields,
- * preserving the original UUID and createdAt timestamp.
- */
-@Composable
-private fun ObserveLocationChanges(
-    navigatorController: AndroidEpubNavigatorController?,
-    initialPosition: PositionUiModel?,
-    intentDispatcher: IntentDispatcher<ReaderIntent>,
-) {
-    LaunchedEffect(navigatorController, initialPosition) {
-        if (initialPosition == null) return@LaunchedEffect
-
-        navigatorController?.currentLocator?.collect { locator ->
-            val positionUiModel = initialPosition.copy(
-                href = locator.href.toString(),
-                type = locator.mediaType.toString(),
-                title = locator.title,
-                progression = locator.locations.progression,
-                position = locator.locations.position,
-                totalProgression = locator.locations.totalProgression,
-            )
-            intentDispatcher(ReaderIntent.UpdatePosition(positionUiModel))
-        }
-    }
 }

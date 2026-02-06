@@ -14,6 +14,9 @@ data class PositionUiModel(
     val totalProgression: Double?,
     val chapterIndex: Int?,
     val totalChapters: Int?,
+    // Audio position for ReadAloud books
+    val audioTimestampMs: Long? = null,
+    val totalDurationMs: Long? = null,
 )
 
 fun PositionDomainModel.toUiModel(): PositionUiModel {
@@ -27,5 +30,7 @@ fun PositionDomainModel.toUiModel(): PositionUiModel {
         totalProgression = totalProgression,
         chapterIndex = chapterIndex,
         totalChapters = totalChapters,
+        audioTimestampMs = audioTimestampMs,
+        totalDurationMs = totalDurationMs,
     )
 }

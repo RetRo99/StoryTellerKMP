@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,6 +70,10 @@ private fun ReaderScreenContent(
         modifier = Modifier
             .fillMaxSize(),
     ) {
+
+        val movableLoader = movableContentOf {
+            LoadingScreen()
+        }
         if (viewState.publication != null) {
             ReaderContent(
                 bookUuid = bookUuid,
@@ -78,11 +83,13 @@ private fun ReaderScreenContent(
                 currentAudioPositionMs = viewState.currentAudioPositionMs,
                 totalDurationMs = viewState.totalDurationMs,
                 playbackSpeed = viewState.playbackSpeed,
+                isAudioPlayerReady = viewState.isAudioPlayerReady,
                 intentDispatcher = intentDispatcher,
                 commands = commands,
+                loader = movableLoader,
             )
         } else {
-            LoadingScreen()
+            movableLoader()
         }
 
         viewState.positionConflict?.let { conflict ->
@@ -106,6 +113,8 @@ private fun ReaderContent(
     playbackSpeed: Float,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     commands: Flow<ReaderCommand>,
+    isAudioPlayerReady: Boolean,
+    loader: @Composable (() -> Unit),
 ) {
     val settings = publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
@@ -174,6 +183,11 @@ private fun ReaderContent(
                 ),
         )
 
+        // Loading overlay for ReadAloud books while audio player initializes
+        if (isReadAloud && !isAudioPlayerReady) {
+            loader()
+        }
+
         // Visual Overlay (Shows only while pinching)
         if (isZooming) {
             Box(
@@ -194,7 +208,7 @@ private fun ReaderContent(
             }
         }
 
-        if (isReadAloud) {
+        if (isReadAloud && isAudioPlayerReady) {
             AnimatedVisibility(
                 visible = areControlsVisible,
                 enter = fadeIn() + slideInVertically { it },
