@@ -1,11 +1,15 @@
 import Foundation
 import UIKit
 import WebKit
+import os.log
 import ComposeApp
 import ReadiumShared
 import ReadiumStreamer
 import ReadiumNavigator
 import ReadiumAdapterGCDWebServer
+
+/// Logger for the EPUB reader bridge
+private let logger = Logger(subsystem: "com.retro99.storyteller", category: "EpubReaderBridge")
 
 /// Swift implementation of the EPUB reader bridge.
 /// This class wraps Readium iOS SDK and exposes it to Kotlin.
@@ -37,6 +41,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     )
 
     init() {
+        logger.info("ReadiumEpubReaderBridge initialized")
     }
 
     func openPublication(
@@ -44,25 +49,32 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         onSuccess: @escaping () -> Void,
         onError: @escaping (String) -> Void
     ) {
+        logger.info("openPublication called with filePath: \(filePath)")
         Task { @MainActor in
             do {
                 // Convert file path to Foundation URL, then to Readium's FileURL
                 let foundationUrl = URL(fileURLWithPath: filePath)
                 guard let fileUrl = FileURL(url: foundationUrl) else {
+                    logger.error("Invalid file path: \(filePath)")
                     onError("Invalid file path: \(filePath)")
                     return
                 }
+                logger.debug("FileURL created: \(fileUrl)")
 
                 // Retrieve the asset
+                logger.debug("Retrieving asset...")
                 let assetResult = await assetRetriever.retrieve(url: fileUrl)
                 guard case .success(let asset) = assetResult else {
                     if case .failure(let error) = assetResult {
+                        logger.error("Failed to retrieve asset: \(error)")
                         onError("Failed to retrieve asset: \(error)")
                     }
                     return
                 }
+                logger.debug("Asset retrieved successfully")
 
                 // Open the publication using PublicationOpener
+                logger.debug("Opening publication...")
                 let publicationResult = await publicationOpener.open(
                     asset: asset,
                     allowUserInteraction: false
@@ -70,9 +82,11 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
                 switch publicationResult {
                 case .success(let publication):
+                    logger.info("Publication opened successfully: \(publication.metadata.title ?? "Unknown")")
                     self.publication = publication
                     onSuccess()
                 case .failure(let error):
+                    logger.error("Failed to open publication: \(error)")
                     onError("Failed to open publication: \(error)")
                 }
             }
@@ -80,6 +94,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     }
 
     func closePublication() {
+        logger.info("closePublication called")
         mediaOverlayPlayer?.release()
         mediaOverlayPlayer = nil
         navigatorViewController = nil
@@ -87,21 +102,30 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     }
 
     func createReaderViewController(settings: EpubReaderSettings) -> UIViewController? {
+        logger.info("createReaderViewController called")
+        logger.debug("Settings - fontSize: \(settings.fontSize), fontFamily: \(settings.fontFamily)")
+        logger.debug("Publication is \(self.publication == nil ? "nil" : "set")")
+
         guard let publication = self.publication else {
+            logger.warning("createReaderViewController returning nil - publication is nil")
             return nil
         }
+        logger.debug("Publication found: \(publication.metadata.title ?? "Unknown")")
 
         do {
             // Get the screen bounds to constrain the navigator
             let screenBounds = UIScreen.main.bounds
+            logger.debug("Screen bounds: \(screenBounds.width)x\(screenBounds.height)")
 
             // Create initial preferences from settings
             let initialPreferences = settings.toEpubPreferences()
+            logger.debug("Initial preferences created")
 
             // Create initial locator from settings if available
             var initialLocation: Locator? = nil
             if let position = settings.initialPosition,
                let href = AnyURL(legacyHREF: position.href) {
+                logger.debug("Creating initial locator from position: href=\(position.href)")
                 initialLocation = Locator(
                     href: href,
                     mediaType: MediaType(position.type) ?? .html,
@@ -114,8 +138,11 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                         }
                     )
                 )
+            } else {
+                logger.debug("No initial position provided")
             }
 
+            logger.debug("Creating EPUBNavigatorViewController...")
             let navigator = try EPUBNavigatorViewController(
                 publication: publication,
                 initialLocation: initialLocation,
@@ -124,10 +151,12 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 ),
                 httpServer: httpServer
             )
+            logger.info("EPUBNavigatorViewController created successfully")
             self.navigatorViewController = navigator
 
             // Set delegate to receive location change callbacks
             navigator.delegate = self
+            logger.debug("Delegate set")
 
             // Force the navigator's view to use screen width
             navigator.view.frame = CGRect(
@@ -138,22 +167,25 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             )
             navigator.view.clipsToBounds = true
             navigator.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            logger.debug("Navigator view configured with frame: \(navigator.view.frame.width)x\(navigator.view.frame.height)")
 
+            logger.info("createReaderViewController returning navigator successfully")
             return navigator
         } catch {
+            logger.error("Failed to create EPUBNavigatorViewController: \(error)")
             return nil
         }
     }
 
     func goToNextPage() {
         Task { @MainActor in
-            _ = await navigatorViewController?.goForward()
+            _ = await navigatorViewController?.goForward(options: .animated)
         }
     }
 
     func goToPreviousPage() {
         Task { @MainActor in
-            _ = await navigatorViewController?.goBackward()
+            _ = await navigatorViewController?.goBackward(options: .animated)
         }
     }
 

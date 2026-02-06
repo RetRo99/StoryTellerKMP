@@ -54,6 +54,32 @@ actual class EpubPublication(
         setupCallbacks()
     }
 
+    /**
+     * Initializes media overlays for ReadAloud books.
+     * This should be called AFTER the navigator view controller is created,
+     * because the Swift MediaOverlayPlayer needs access to the navigator's current location.
+     *
+     * On Android, this happens in AndroidEpubNavigatorController.init which is created
+     * after the navigator fragment exists. On iOS, we need to call this explicitly
+     * after createReaderViewController returns.
+     */
+    fun initializeMediaOverlaysIfNeeded() {
+        if (mediaOverlaysInitialized) {
+            return
+        }
+
+        if (!hasMediaOverlays) {
+            // For non-readaloud books, mark as ready immediately
+            _isPlayerReady.value = true
+            return
+        }
+
+        bridge.initializeMediaOverlays {
+            mediaOverlaysInitialized = true
+            // The callback will trigger _isPlayerReady.value = true via setupCallbacks
+        }
+    }
+
     private fun setupCallbacks() {
         bridge.setOnPositionChangedCallback { locator ->
             _currentLocator.tryEmit(
