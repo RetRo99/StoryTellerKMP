@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -109,28 +110,33 @@ internal actual fun EpubReaderView(
         logger.d { "DisposableEffect started for bookUuid=$bookUuid" }
         onDispose {
             logger.d { "DisposableEffect onDispose - closing publication" }
+            // Clear the local view controller reference first
+            readerViewController = null
+            // Then close the publication which will clean up the Swift side
             publication.close()
         }
     }
 
     val currentViewController = readerViewController
     if (currentViewController != null) {
-        logger.d { "Rendering UIKitViewController with controller: $currentViewController" }
-        UIKitViewController(
-            factory = {
-                logger.d { "UIKitViewController factory called" }
-                currentViewController
-            },
-            modifier = modifier.fillMaxSize(),
-            update = { logger.v { "UIKitViewController update called" } },
-            onRelease = { logger.d { "UIKitViewController onRelease called" } },
-            properties = UIKitInteropProperties(
-                isInteractive = true,
-                isNativeAccessibilityEnabled = true,
-            ),
-        )
+        // Use key to force recreation when bookUuid changes
+        // This ensures a fresh UIKitViewController is created for each book
+        key(bookUuid) {
+            UIKitViewController(
+                factory = { currentViewController },
+                modifier = modifier.fillMaxSize(),
+                update = { viewController ->
+                    // Force the view to layout within its parent bounds
+                    viewController.view.setNeedsLayout()
+                    viewController.view.layoutIfNeeded()
+                },
+                properties = UIKitInteropProperties(
+                    isInteractive = true,
+                    isNativeAccessibilityEnabled = true,
+                ),
+            )
+        }
     } else {
-        logger.d { "readerViewController is null - showing loading indicator" }
         // Show loading indicator while waiting for the view controller
         Box(
             modifier = modifier.fillMaxSize(),
