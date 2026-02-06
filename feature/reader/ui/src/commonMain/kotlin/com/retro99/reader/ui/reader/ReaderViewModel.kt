@@ -3,6 +3,8 @@ package com.retro99.reader.ui.reader
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.base.now
+import com.retro99.base.nowMillis
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.model.BookType
@@ -27,7 +29,6 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
-import kotlin.time.Clock
 
 @KoinViewModel
 class ReaderViewModel(
@@ -164,12 +165,12 @@ class ReaderViewModel(
 
         updateState { it.copy(lastKnownPosition = position) }
 
-        val now = Clock.System.now().toString()
+        val now = now().toString()
         val currentState = viewState.value
         val audioTimestamp = currentState.currentAudioPositionMs.takeIf { it > 0 }
         val positionDomainModel = PositionDomainModel(
             bookUuid = bookUuid,
-            timestamp = Clock.System.now().toEpochMilliseconds(),
+            timestamp = nowMillis(),
             createdAt = position.createdAt,
             updatedAt = now,
             locatorHref = position.href,
@@ -309,10 +310,10 @@ class ReaderViewModel(
 
         viewModelScope.launch {
             // Create a position with the current audio timestamp
-            val now = Clock.System.now().toString()
+            val now = now().toString()
             val positionDomainModel = PositionDomainModel(
                 bookUuid = bookUuid,
-                timestamp = Clock.System.now().toEpochMilliseconds(),
+                timestamp = nowMillis(),
                 createdAt = lastPosition.createdAt,
                 updatedAt = now,
                 locatorHref = lastPosition.href,

@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.media.smil
 
 import com.retro99.analytics.api.Analytics
+import com.retro99.base.nowMillis
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -361,6 +362,5 @@ class SmilLoadingManager(
         index.clear()
     }
 
-    private fun currentTimeMillis(): Long =
-        kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+    private fun currentTimeMillis(): Long = nowMillis()
 }
