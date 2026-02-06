@@ -166,11 +166,9 @@ private fun ReaderContent(
                     },
                     onLeftTap = {
                         intentDispatcher(ReaderIntent.GoToPreviousPage)
-                        onControlsInteraction()
                     },
                     onRightTap = {
                         intentDispatcher(ReaderIntent.GoToNextPage)
-                        onControlsInteraction()
                     },
                     onMiddleTap = {
                         if (isReadAloud) {
