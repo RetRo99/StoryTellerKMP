@@ -9,7 +9,11 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.retro99.analytics.api.Analytics
+import com.retro99.reader.ui.media.smil.SmilClip
+import com.retro99.reader.ui.media.smil.SmilContentProvider
+import com.retro99.reader.ui.media.smil.SmilLoadingManager
 import com.retro99.reader.ui.media.smil.SmilParser
+import com.retro99.reader.ui.media.smil.SmilQuickScanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,8 +58,16 @@ class MediaOverlayPlayer(
     private val publication: Publication,
     private val analytics: Analytics,
     private val smilParser: SmilParser,
+    private val quickScanner: SmilQuickScanner,
     private val onLocatorChanged: ((Locator) -> Unit)? = null,
 ) {
+    // Lazy loading manager for SMIL files
+    private val smilLoadingManager = SmilLoadingManager(
+        smilParser = smilParser,
+        quickScanner = quickScanner,
+        analytics = analytics,
+        ioDispatcher = Dispatchers.IO,
+    )
 
     /**
      * Internal coroutine scope for this player.
@@ -83,14 +95,47 @@ class MediaOverlayPlayer(
 
     private var positionUpdateJob: Job? = null
 
-    // All clips from all SMIL files, sorted by audio file and start time
-    private var allClips: List<MediaOverlayClip> = emptyList()
-
-    // Current chapter's clips
+    // Current chapter's clips (loaded on-demand)
     private var currentChapterClips: List<MediaOverlayClip> = emptyList()
 
     // Current audio file being played
     private var currentAudioHref: Url? = null
+
+    // Content provider for reading SMIL files from the publication
+    private val contentProvider = object : SmilContentProvider {
+        override suspend fun readSmilContent(smilHref: String): String? {
+            return withContext(Dispatchers.IO) {
+                try {
+                    val url = Url(smilHref) ?: return@withContext null
+                    val resource = publication.get(url) ?: return@withContext null
+                    val bytes = resource.read().getOrElse { return@withContext null }
+                    bytes.decodeToString()
+                } catch (e: Exception) {
+                    analytics.logException(e, "Failed to read SMIL file: $smilHref")
+                    null
+                }
+            }
+        }
+
+        override fun getAllSmilHrefs(): List<String> {
+            return publication.resources
+                .filter { link ->
+                    link.mediaType?.toString()?.contains("smil") == true ||
+                            link.href.toString().endsWith(".smil")
+                }
+                .map { it.href.toString() }
+        }
+
+        override fun getReadingOrder(): List<String> {
+            return publication.readingOrder.map { it.href.toString() }
+        }
+
+        override fun resolveSmilPath(smilHref: String, relativePath: String): String {
+            val smilUrl = Url(smilHref) ?: return relativePath
+            val relativeUrl = Url(relativePath) ?: return relativePath
+            return smilUrl.resolve(relativeUrl).toString()
+        }
+    }
 
     init {
         exoPlayer.addListener(object : Player.Listener {
@@ -129,10 +174,22 @@ class MediaOverlayPlayer(
     }
 
     /**
-     * Initializes the player by parsing all SMIL files from the publication.
+     * Initializes the player with lazy SMIL loading.
+     *
+     * This builds a lightweight index of SMIL files without fully parsing them.
+     * Full parsing happens on-demand when a chapter is prepared.
+     *
+     * @param initialChapterHref The initial chapter href to optimize index building for
      */
-    suspend fun initialize() {
-        allClips = parseAllSmilFiles()
+    suspend fun initialize(initialChapterHref: String? = null) {
+        smilLoadingManager.initialize(contentProvider, playerScope)
+
+        // Build initial index for current chapter and nearby chapters
+        val chapterHref = initialChapterHref
+            ?: publication.readingOrder.firstOrNull()?.href?.toString()
+            ?: return
+
+        smilLoadingManager.buildInitialIndex(chapterHref)
     }
 
     /**
@@ -223,13 +280,18 @@ class MediaOverlayPlayer(
      * Prepares the duration for a specific chapter without starting playback.
      * This allows the UI to show the chapter duration before the user presses play.
      *
+     * Uses lazy loading to parse SMIL files on-demand.
+     *
      * @param chapterHref The href of the chapter to get duration for
      */
-    fun prepareChapterDuration(chapterHref: Url) {
-        // Find clips for this chapter
-        val chapterClips = allClips.filter { clip ->
-            clip.textHref.removeFragment() == chapterHref.removeFragment()
-        }
+    suspend fun prepareChapterDuration(chapterHref: Url) {
+        val normalizedHref = chapterHref.removeFragment().toString()
+
+        // Load clips for this chapter using lazy loading
+        val smilClips = smilLoadingManager.getClipsForChapter(normalizedHref)
+
+        // Convert SmilClip to MediaOverlayClip
+        val chapterClips = convertSmilClipsToMediaOverlayClips(smilClips, chapterHref)
 
         if (chapterClips.isEmpty()) {
             return
@@ -240,11 +302,18 @@ class MediaOverlayPlayer(
         if (chapterDurationMs != null && chapterDurationMs > 0) {
             _totalDuration.value = chapterDurationMs
         }
+
+        // Prefetch next chapter in background
+        smilLoadingManager.prefetchNextChapter(normalizedHref)
     }
 
     fun release() {
         stopPositionUpdates()
         exoPlayer.release()
+        // Release the SMIL loading manager
+        playerScope.launch {
+            smilLoadingManager.release()
+        }
         // Cancel the player's scope to clean up all coroutines
         playerScope.cancel()
     }
@@ -254,6 +323,7 @@ class MediaOverlayPlayer(
 
     /**
      * Prepares playback for a specific chapter.
+     * Uses lazy loading to parse SMIL files on-demand.
      *
      * @param chapterHref The href of the chapter to prepare
      * @param initialFragmentId Optional fragment ID to start from
@@ -267,10 +337,32 @@ class MediaOverlayPlayer(
         initialProgression: Double? = null,
         initialPositionMs: Long? = null,
     ) {
-        // Find clips for this chapter
-        currentChapterClips = allClips.filter { clip ->
-            clip.textHref.removeFragment() == chapterHref.removeFragment()
+        playerScope.launch {
+            prepareChapterAsync(
+                chapterHref,
+                initialFragmentId,
+                initialProgression,
+                initialPositionMs
+            )
         }
+    }
+
+    /**
+     * Async implementation of chapter preparation with lazy SMIL loading.
+     */
+    private suspend fun prepareChapterAsync(
+        chapterHref: Url,
+        initialFragmentId: String?,
+        initialProgression: Double?,
+        initialPositionMs: Long?,
+    ) {
+        val normalizedHref = chapterHref.removeFragment().toString()
+
+        // Load clips for this chapter using lazy loading
+        val smilClips = smilLoadingManager.getClipsForChapter(normalizedHref)
+
+        // Convert SmilClip to MediaOverlayClip
+        currentChapterClips = convertSmilClipsToMediaOverlayClips(smilClips, chapterHref)
 
         if (currentChapterClips.isEmpty()) return
 
@@ -298,6 +390,9 @@ class MediaOverlayPlayer(
             // Same audio file, just seek to the position
             exoPlayer.seekTo(positionToSeek)
         }
+
+        // Prefetch next chapter in background
+        smilLoadingManager.prefetchNextChapter(normalizedHref)
     }
 
     /**
@@ -363,86 +458,40 @@ class MediaOverlayPlayer(
     }
 
     /**
-     * Parses all SMIL files from the publication to extract media overlay clips.
-     */
-    private suspend fun parseAllSmilFiles(): List<MediaOverlayClip> {
-        val clips = mutableListOf<MediaOverlayClip>()
-
-        // Find all SMIL resources in the publication
-        val smilResources = publication.resources.filter { link ->
-            link.mediaType?.toString()?.contains("smil") == true ||
-                    link.href.toString().endsWith(".smil")
-        }
-
-        for (smilLink in smilResources) {
-            try {
-                val smilUrl = smilLink.url()
-                val smilClips = parseSmilFile(smilUrl)
-                clips.addAll(smilClips)
-            } catch (e: Exception) {
-                analytics.logException(e, "Failed to parse SMIL file: ${smilLink.url()}")
-            }
-        }
-
-        return clips.sortedWith(compareBy({ it.audioHref.toString() }, { it.startTime }))
-    }
-
-    /**
-     * Parses a single SMIL file and returns the media overlay clips.
+     * Converts SmilClip (from shared parser) to MediaOverlayClip (Android-specific).
      *
-     * SMIL structure for EPUB Media Overlays:
-     * ```xml
-     * <smil>
-     *   <body>
-     *     <seq epub:textref="chapter1.xhtml">
-     *       <par>
-     *         <text src="chapter1.xhtml#s1"/>
-     *         <audio src="audio/chapter1.mp3" clipBegin="0s" clipEnd="2.5s"/>
-     *       </par>
-     *       ...
-     *     </seq>
-     *   </body>
-     * </smil>
-     * ```
+     * SmilClip contains raw string references, while MediaOverlayClip uses Readium Url objects.
+     * This method resolves the relative paths and extracts fragment IDs.
+     *
+     * @param smilClips The raw clips from the shared parser
+     * @param chapterHref The chapter href for context (used to resolve relative paths)
+     * @return List of MediaOverlayClip with resolved URLs
      */
-    private suspend fun parseSmilFile(smilHref: Url): List<MediaOverlayClip> =
-        withContext(Dispatchers.IO) {
-            val clips = mutableListOf<MediaOverlayClip>()
-
+    private fun convertSmilClipsToMediaOverlayClips(
+        smilClips: List<SmilClip>,
+        chapterHref: Url,
+    ): List<MediaOverlayClip> {
+        return smilClips.mapNotNull { raw ->
             try {
-                // Get the SMIL file content from the publication
-                val resource = publication.get(smilHref) ?: return@withContext emptyList()
-                val bytes = resource.read().getOrElse {
-                    return@withContext emptyList()
-                }
-                val content = bytes.decodeToString()
+                val textUrl = Url(raw.textSrc) ?: return@mapNotNull null
+                // Resolve relative to chapter href's directory
+                val resolvedTextUrl = chapterHref.resolve(textUrl)
+                val fragmentId = resolvedTextUrl.fragment
 
-                // Parse the XML using shared SMIL parser
-                val rawClips = smilParser.parseClips(content)
+                val audioUrl = Url(raw.audioSrc) ?: return@mapNotNull null
+                val resolvedAudioUrl = chapterHref.resolve(audioUrl)
 
-                rawClips.forEach { raw ->
-                    val textUrl = Url(raw.textSrc) ?: return@forEach
-                    val resolvedTextUrl = smilHref.resolve(textUrl)
-                    val fragmentId = resolvedTextUrl.fragment
-
-                    val audioUrl = Url(raw.audioSrc) ?: return@forEach
-                    val resolvedAudioUrl = smilHref.resolve(audioUrl)
-
-                    clips.add(
-                        MediaOverlayClip(
-                            textHref = resolvedTextUrl.removeFragment(),
-                            fragmentId = fragmentId,
-                            audioHref = resolvedAudioUrl.removeFragment(),
-                            startTime = raw.clipBegin,
-                            endTime = raw.clipEnd,
-                        ),
-                    )
-                }
-
+                MediaOverlayClip(
+                    textHref = resolvedTextUrl.removeFragment(),
+                    fragmentId = fragmentId,
+                    audioHref = resolvedAudioUrl.removeFragment(),
+                    startTime = raw.clipBegin,
+                    endTime = raw.clipEnd,
+                )
             } catch (e: Exception) {
-                analytics.logException(e, "Error parsing SMIL file: $smilHref")
+                analytics.logException(e, "Failed to convert clip")
+                null
             }
-
-            clips
         }
+    }
 }
