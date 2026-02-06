@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import ComposeApp
 import ReadiumShared
 import ReadiumNavigator
 
@@ -387,148 +388,39 @@ class MediaOverlayPlayer {
             return []
         }
 
-        // Parse XML
-        let parser = SmilParser(smilHref: smilHref, content: content)
-        let clips = parser.parse()
+        // Parse XML using shared Kotlin SMIL parser
+        let parser = SmilParser()
+        let rawClips = parser.parseClips(content: content)
+        var clips: [MediaOverlayClip] = []
+
+        for item in rawClips {
+            guard let raw = item as? SmilClip else {
+                continue
+            }
+            guard let textUrl = RelativeURL(string: raw.textSrc),
+                  let resolvedTextUrl = smilHref.resolve(textUrl)
+            else {
+                continue
+            }
+            let fragmentId = resolvedTextUrl.fragment
+
+            guard let audioUrl = RelativeURL(string: raw.audioSrc),
+                  let resolvedAudioUrl = smilHref.resolve(audioUrl)?.removingFragment()
+            else {
+                continue
+            }
+
+            clips.append(
+                MediaOverlayClip(
+                    textHref: resolvedTextUrl.removingFragment(),
+                    fragmentId: fragmentId,
+                    audioHref: resolvedAudioUrl,
+                    startTime: raw.clipBegin,
+                    endTime: raw.clipEnd
+                )
+            )
+        }
 
         return clips
-    }
-}
-
-// MARK: - SMIL XML Parser
-
-private class SmilParser: NSObject, XMLParserDelegate {
-    private let smilHref: RelativeURL
-    private let content: String
-    private var clips: [MediaOverlayClip] = []
-
-    // Current parsing state
-    private var currentTextSrc: String?
-    private var currentAudioSrc: String?
-    private var currentClipBegin: Double?
-    private var currentClipEnd: Double?
-    private var inPar: Bool = false
-
-    init(smilHref: RelativeURL, content: String) {
-        self.smilHref = smilHref
-        self.content = content
-    }
-
-    func parse() -> [MediaOverlayClip] {
-        guard let data = content.data(using: .utf8) else {
-            return []
-        }
-        let parser = XMLParser(data: data)
-        parser.delegate = self
-        parser.parse()
-        return clips
-    }
-
-    // MARK: - XMLParserDelegate
-
-    func parser(_ parser: XMLParser, didStartElement elementName: String,
-                namespaceURI: String?, qualifiedName qName: String?,
-                attributes attributeDict: [String: String] = [:]) {
-        switch elementName {
-        case "par":
-            inPar = true
-            currentTextSrc = nil
-            currentAudioSrc = nil
-            currentClipBegin = nil
-            currentClipEnd = nil
-
-        case "text" where inPar:
-            currentTextSrc = attributeDict["src"]
-
-        case "audio" where inPar:
-            currentAudioSrc = attributeDict["src"]
-            currentClipBegin = parseClockValue(attributeDict["clipBegin"])
-            currentClipEnd = parseClockValue(attributeDict["clipEnd"])
-
-        default:
-            break
-        }
-    }
-
-    func parser(_ parser: XMLParser, didEndElement elementName: String,
-                namespaceURI: String?, qualifiedName qName: String?) {
-        guard elementName == "par", inPar else {
-            return
-        }
-        inPar = false
-
-        guard let textSrc = currentTextSrc,
-              let audioSrc = currentAudioSrc
-        else {
-            return
-        }
-
-        // Parse text reference to get href and fragment
-        guard let textUrl = RelativeURL(string: textSrc),
-              let resolvedTextUrl = smilHref.resolve(textUrl)
-        else {
-            return
-        }
-        let fragmentId = resolvedTextUrl.fragment
-
-        // Parse audio reference
-        guard let audioUrl = RelativeURL(string: audioSrc),
-              let resolvedAudioUrl = smilHref.resolve(audioUrl)?.removingFragment()
-        else {
-            return
-        }
-
-        let clip = MediaOverlayClip(
-            textHref: resolvedTextUrl.removingFragment(),
-            fragmentId: fragmentId,
-            audioHref: resolvedAudioUrl,
-            startTime: currentClipBegin ?? 0.0,
-            endTime: currentClipEnd ?? 0.0
-        )
-        clips.append(clip)
-    }
-
-    // MARK: - Clock Value Parsing
-
-    private func parseClockValue(_ value: String?) -> Double? {
-        guard let value = value?.trimmingCharacters(in: .whitespaces), !value.isEmpty else {
-            return nil
-        }
-
-        // Handle colon format (HH:MM:SS or MM:SS)
-        if value.contains(":") {
-            return parseColonClockValue(value)
-        }
-
-        // Handle metric format (1.5s, 500ms, 2min, 1h)
-        return parseMetricClockValue(value)
-    }
-
-    private func parseColonClockValue(_ value: String) -> Double? {
-        let parts = value.split(separator: ":").compactMap {
-            Double($0)
-        }
-        switch parts.count {
-        case 2: return parts[0] * 60 + parts[1]  // MM:SS
-        case 3: return parts[0] * 3600 + parts[1] * 60 + parts[2]  // HH:MM:SS
-        default: return parts.last
-        }
-    }
-
-    private func parseMetricClockValue(_ value: String) -> Double? {
-        // Find where the numeric part ends
-        let metricStart = value.firstIndex(where: { $0.isLetter }) ?? value.endIndex
-        guard let count = Double(value[..<metricStart]) else {
-            return nil
-        }
-
-        let metric = String(value[metricStart...])
-        switch metric {
-        case "h": return count * 3600
-        case "min": return count * 60
-        case "s", "": return count
-        case "ms": return count / 1000
-        default: return count
-        }
     }
 }

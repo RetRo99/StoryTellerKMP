@@ -9,6 +9,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.retro99.analytics.api.Analytics
+import com.retro99.reader.ui.media.smil.SmilParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,8 +26,7 @@ import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.getOrElse
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserFactory
+import org.readium.r2.shared.util.mediatype.MediaType
 
 /** Interval in milliseconds for position updates during playback */
 private const val POSITION_UPDATE_INTERVAL_MS = 100L
@@ -53,6 +53,7 @@ class MediaOverlayPlayer(
     private val context: Context,
     private val publication: Publication,
     private val analytics: Analytics,
+    private val smilParser: SmilParser,
     private val onLocatorChanged: ((Locator) -> Unit)? = null,
 ) {
     /**
@@ -349,7 +350,7 @@ class MediaOverlayPlayer(
             // Create a locator for the current text fragment
             val locator = Locator(
                 href = currentClip.textHref,
-                mediaType = org.readium.r2.shared.util.mediatype.MediaType.XHTML,
+                mediaType = MediaType.XHTML,
                 locations = Locator.Locations(
                     fragments = listOf(currentClip.fragmentId),
                 ),
@@ -422,18 +423,25 @@ class MediaOverlayPlayer(
                 }
                 val content = bytes.decodeToString()
 
-                // Parse the XML
-                val factory = XmlPullParserFactory.newInstance()
-                factory.isNamespaceAware = true
-                val parser = factory.newPullParser()
-                parser.setInput(content.reader())
+                // Parse the XML using shared SMIL parser
+                val rawClips = smilParser.parseClips(content)
+                rawClips.forEach { raw ->
+                    val textUrl = Url(raw.textSrc) ?: return@forEach
+                    val resolvedTextUrl = smilHref.resolve(textUrl)
+                    val fragmentId = resolvedTextUrl.fragment
 
-                var eventType = parser.eventType
-                while (eventType != XmlPullParser.END_DOCUMENT) {
-                    if (eventType == XmlPullParser.START_TAG && parser.name == "par") {
-                        parseParElement(parser, smilHref)?.let { clips.add(it) }
-                    }
-                    eventType = parser.next()
+                    val audioUrl = Url(raw.audioSrc) ?: return@forEach
+                    val resolvedAudioUrl = smilHref.resolve(audioUrl)
+
+                    clips.add(
+                        MediaOverlayClip(
+                            textHref = resolvedTextUrl.removeFragment(),
+                            fragmentId = fragmentId,
+                            audioHref = resolvedAudioUrl.removeFragment(),
+                            startTime = raw.clipBegin,
+                            endTime = raw.clipEnd,
+                        ),
+                    )
                 }
 
             } catch (e: Exception) {
@@ -442,108 +450,4 @@ class MediaOverlayPlayer(
 
             clips
         }
-
-    /**
-     * Parses a <par> element containing <text> and <audio> children.
-     */
-    private fun parseParElement(parser: XmlPullParser, smilHref: Url): MediaOverlayClip? {
-        var textSrc: String? = null
-        var audioSrc: String? = null
-        var clipBegin: Double? = null
-        var clipEnd: Double? = null
-
-        val depth = parser.depth
-        var eventType = parser.next()
-
-        while (!(eventType == XmlPullParser.END_TAG && parser.depth == depth)) {
-            if (eventType == XmlPullParser.START_TAG) {
-                when (parser.name) {
-                    "text" -> {
-                        textSrc = parser.getAttributeValue(null, "src")
-                    }
-
-                    "audio" -> {
-                        audioSrc = parser.getAttributeValue(null, "src")
-                        clipBegin = parseClockValue(
-                            parser.getAttributeValue(null, "clipBegin"),
-                        )
-                        clipEnd = parseClockValue(parser.getAttributeValue(null, "clipEnd"))
-                    }
-                }
-            }
-            eventType = parser.next()
-        }
-
-        if (textSrc == null || audioSrc == null) {
-            return null
-        }
-
-        // Parse the text reference to get href and fragment
-        val textUrl = Url(textSrc) ?: return null
-        val resolvedTextUrl = smilHref.resolve(textUrl)
-        val fragmentId = resolvedTextUrl.fragment
-
-        // Parse the audio reference
-        val audioUrl = Url(audioSrc) ?: return null
-        val resolvedAudioUrl = smilHref.resolve(audioUrl)
-
-        return MediaOverlayClip(
-            textHref = resolvedTextUrl.removeFragment(),
-            fragmentId = fragmentId,
-            audioHref = resolvedAudioUrl.removeFragment(),
-            startTime = clipBegin ?: 0.0,
-            endTime = clipEnd ?: 0.0,
-        )
-    }
-
-    /**
-     * Parses SMIL clock values like "0s", "2.5s", "00:01:30", "1.5h", "90min", "500ms".
-     */
-    private fun parseClockValue(value: String?): Double? {
-        if (value == null) return null
-        val trimmed = value.trim()
-        if (trimmed.isEmpty()) return null
-
-        return try {
-            when {
-                ":" in trimmed -> parseColonClockValue(trimmed)
-                else -> parseMetricClockValue(trimmed)
-            }
-        } catch (e: Exception) {
-            analytics.logException(e, "Error parsing clock value: $value")
-            null
-        }
-    }
-
-    /**
-     * Parses clock values in HH:MM:SS or MM:SS format.
-     */
-    private fun parseColonClockValue(value: String): Double {
-        val parts = value.split(":").map { it.toDouble() }
-        return when (parts.size) {
-            2 -> parts[0] * 60 + parts[1] // MM:SS
-            3 -> parts[0] * 3600 + parts[1] * 60 + parts[2] // HH:MM:SS
-            else -> parts.last()
-        }
-    }
-
-    /**
-     * Parses clock values with metric suffixes (h, min, s, ms).
-     */
-    private fun parseMetricClockValue(value: String): Double {
-        val metricStart = value.indexOfFirst { it.isLetter() }
-        return if (metricStart == -1) {
-            value.toDouble()
-        } else {
-            val count = value.take(metricStart).toDouble()
-            val metric = value.substring(metricStart)
-            when (metric) {
-                "h" -> count * 3600
-                "min" -> count * 60
-                "s" -> count
-                "ms" -> count / 1000
-                else -> count
-            }
-        }
-    }
 }

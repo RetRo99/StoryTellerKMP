@@ -1,7 +1,9 @@
 package com.retro99.reader.ui.di
 
+import nl.adaptivity.xmlutil.serialization.XML
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Single
 
 @Module(
     includes = [
@@ -9,5 +11,9 @@ import org.koin.core.annotation.Module
     ],
 )
 @ComponentScan("com.retro99.reader.ui")
-class ReaderUiModule
+class ReaderUiModule {
+
+    @Single
+    fun provideXml(): XML = XML.recommended()
+}
 

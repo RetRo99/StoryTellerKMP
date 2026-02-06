@@ -36,6 +36,7 @@ gradlePlugins-google-services = "4.4.2"
 kermit = "2.0.8"
 readium = "3.0.0"
 media3 = "1.5.1"
+xmlutil = "1.0.0-rc2"
 room = "2.8.4"
 ksp = "2.3.5"
 sqlite = "2.6.2"
@@ -115,6 +116,7 @@ firebase-crashlytics-android = { module = "com.google.firebase:firebase-crashlyt
 firebase-analytics-android = { module = "com.google.firebase:firebase-analytics", version = "22.1.2" }
 firebase-common = { module = "com.google.firebase:firebase-common", version = "21.0.0" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+xmlutil-serialization = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xmlutil" }
 
 # Readium (Android-only EPUB reader SDK)
 readium-shared = { module = "org.readium.kotlin-toolkit:readium-shared", version.ref = "readium" }
