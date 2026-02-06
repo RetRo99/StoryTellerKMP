@@ -14,6 +14,11 @@ import org.koin.core.annotation.Single
 class ReaderUiModule {
 
     @Single
-    fun provideXml(): XML = XML.recommended()
+    fun provideXml(): XML = XML.v1 {
+        // Be lenient with unknown attributes and elements (like version, xmlns:epub, etc.)
+        policy {
+            ignoreUnknownChildren()
+        }
+    }
 }
 
