@@ -3,6 +3,7 @@ package com.retro99.reader.ui.navigator
 import android.content.Context
 import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
+import com.retro99.base.nowMillis
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
@@ -161,10 +162,10 @@ class AndroidEpubNavigatorController internal constructor(
         }
 
         controllerScope.launch {
-            val totalStartTime = System.currentTimeMillis()
+            val totalStartTime = nowMillis()
             logger.i { "⏱️ MediaOverlay initialization STARTED (lazy loading)" }
 
-            val playerCreateStart = System.currentTimeMillis()
+            val playerCreateStart = nowMillis()
             val player = MediaOverlayPlayer(
                 context = context,
                 publication = publication.publication,
@@ -175,26 +176,26 @@ class AndroidEpubNavigatorController internal constructor(
                     controllerScope.launch { applyHighlight(locator) }
                 },
             )
-            val playerCreateTime = System.currentTimeMillis() - playerCreateStart
+            val playerCreateTime = nowMillis() - playerCreateStart
             logger.i { "⏱️ MediaOverlayPlayer created in ${playerCreateTime}ms" }
 
             // Get initial chapter href for optimized index building
             val initialChapterHref = navigator.currentLocator.value.href.toString()
 
-            val initializeStart = System.currentTimeMillis()
+            val initializeStart = nowMillis()
             player.initialize(initialChapterHref)
-            val initializeTime = System.currentTimeMillis() - initializeStart
+            val initializeTime = nowMillis() - initializeStart
             logger.i { "⏱️ player.initialize() (index building) completed in ${initializeTime}ms" }
 
             _mediaOverlayPlayer.value = player
 
             // Prepare duration for the initial chapter (this now parses SMIL on-demand)
-            val chapterPrepareStart = System.currentTimeMillis()
+            val chapterPrepareStart = nowMillis()
             player.prepareChapterDuration(navigator.currentLocator.value.href)
-            val chapterPrepareTime = System.currentTimeMillis() - chapterPrepareStart
+            val chapterPrepareTime = nowMillis() - chapterPrepareStart
             logger.i { "⏱️ prepareChapterDuration() completed in ${chapterPrepareTime}ms" }
 
-            val totalTime = System.currentTimeMillis() - totalStartTime
+            val totalTime = nowMillis() - totalStartTime
             logger.i { "⏱️ MediaOverlay initialization COMPLETE - TOTAL: ${totalTime}ms" }
 
             navigator.currentLocator
