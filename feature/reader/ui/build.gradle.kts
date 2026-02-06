@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.koinCompilerPlugin)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"
@@ -27,6 +28,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.coroutines)
             implementation(libs.datetime)
+            implementation(libs.xmlutil.serialization)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

@@ -3,6 +3,7 @@ package com.retro99.reader.ui.navigator
 import android.content.Context
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.media.MediaOverlayPlayer
+import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.model.AudioPositionState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
@@ -50,12 +51,14 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  * @param publication The Readium Publication for accessing metadata
  * @param context Android context for creating the media player
  * @param analytics Analytics instance for logging errors and events
+ * @param smilParser Parser for SMIL media overlay files
  */
 class AndroidEpubNavigatorController internal constructor(
     private val navigator: EpubNavigatorFragment,
     private val publication: EpubPublication,
     private val context: Context,
     private val analytics: Analytics,
+    private val smilParser: SmilParser,
 ) : EpubNavigatorController {
 
     /**
@@ -158,6 +161,7 @@ class AndroidEpubNavigatorController internal constructor(
                 context = context,
                 publication = publication.publication,
                 analytics = analytics,
+                smilParser = smilParser,
                 onLocatorChanged = { locator ->
                     controllerScope.launch { applyHighlight(locator) }
                 },
