@@ -1,9 +1,11 @@
 package com.retro99.reader.ui.navigator
 
 import android.content.Context
+import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.media.smil.SmilParser
+import com.retro99.reader.ui.media.smil.SmilQuickScanner
 import com.retro99.reader.ui.model.AudioPositionState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
@@ -52,6 +54,7 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  * @param context Android context for creating the media player
  * @param analytics Analytics instance for logging errors and events
  * @param smilParser Parser for SMIL media overlay files
+ * @param quickScanner Quick scanner for SMIL file indexing
  */
 class AndroidEpubNavigatorController internal constructor(
     private val navigator: EpubNavigatorFragment,
@@ -59,6 +62,7 @@ class AndroidEpubNavigatorController internal constructor(
     private val context: Context,
     private val analytics: Analytics,
     private val smilParser: SmilParser,
+    private val quickScanner: SmilQuickScanner,
 ) : EpubNavigatorController {
 
     /**
@@ -157,21 +161,41 @@ class AndroidEpubNavigatorController internal constructor(
         }
 
         controllerScope.launch {
+            val totalStartTime = System.currentTimeMillis()
+            logger.i { "⏱️ MediaOverlay initialization STARTED (lazy loading)" }
+
+            val playerCreateStart = System.currentTimeMillis()
             val player = MediaOverlayPlayer(
                 context = context,
                 publication = publication.publication,
                 analytics = analytics,
                 smilParser = smilParser,
+                quickScanner = quickScanner,
                 onLocatorChanged = { locator ->
                     controllerScope.launch { applyHighlight(locator) }
                 },
             )
-            player.initialize()
+            val playerCreateTime = System.currentTimeMillis() - playerCreateStart
+            logger.i { "⏱️ MediaOverlayPlayer created in ${playerCreateTime}ms" }
+
+            // Get initial chapter href for optimized index building
+            val initialChapterHref = navigator.currentLocator.value.href.toString()
+
+            val initializeStart = System.currentTimeMillis()
+            player.initialize(initialChapterHref)
+            val initializeTime = System.currentTimeMillis() - initializeStart
+            logger.i { "⏱️ player.initialize() (index building) completed in ${initializeTime}ms" }
+
             _mediaOverlayPlayer.value = player
 
-            // Prepare duration for the initial chapter
-            val initialChapterHref = navigator.currentLocator.value.href
-            player.prepareChapterDuration(initialChapterHref)
+            // Prepare duration for the initial chapter (this now parses SMIL on-demand)
+            val chapterPrepareStart = System.currentTimeMillis()
+            player.prepareChapterDuration(navigator.currentLocator.value.href)
+            val chapterPrepareTime = System.currentTimeMillis() - chapterPrepareStart
+            logger.i { "⏱️ prepareChapterDuration() completed in ${chapterPrepareTime}ms" }
+
+            val totalTime = System.currentTimeMillis() - totalStartTime
+            logger.i { "⏱️ MediaOverlay initialization COMPLETE - TOTAL: ${totalTime}ms" }
 
             navigator.currentLocator
                 .map { it.href }
@@ -268,9 +292,21 @@ class AndroidEpubNavigatorController internal constructor(
      * Should be called when the controller is no longer needed.
      */
     fun release() {
-        _mediaOverlayPlayer.value?.release()
+        logger.i { "AndroidEpubNavigatorController RELEASE called" }
+        val player = _mediaOverlayPlayer.value
+        if (player != null) {
+            logger.i { "Releasing MediaOverlayPlayer..." }
+            player.release()
+        } else {
+            logger.w { "MediaOverlayPlayer was NULL - nothing to release" }
+        }
         _mediaOverlayPlayer.value = null
         controllerScope.cancel()
+        logger.i { "AndroidEpubNavigatorController RELEASED - scope cancelled" }
+    }
+
+    private companion object {
+        private val logger = Logger.withTag("čič")
     }
 }
 
