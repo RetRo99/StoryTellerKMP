@@ -16,6 +16,13 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var navigatorViewController: EPUBNavigatorViewController?
     private var onPositionChangedCallback: ((PositionLocator) -> Void)?
 
+    // Media overlay support
+    private var mediaOverlayPlayer: MediaOverlayPlayer?
+    private var onPlaybackStateChangedCallback: ((PlaybackState) -> Void)?
+    private var onMediaPlayerReadyCallback: (() -> Void)?
+    private var currentHighlightId: String?
+    private var currentChapterHref: RelativeURL?
+
     // Readium 3.x infrastructure
     private lazy var httpClient: HTTPClient = DefaultHTTPClient()
     private lazy var assetRetriever = AssetRetriever(httpClient: httpClient)
@@ -73,6 +80,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     }
 
     func closePublication() {
+        mediaOverlayPlayer?.release()
+        mediaOverlayPlayer = nil
         navigatorViewController = nil
         publication = nil
     }
@@ -88,7 +97,6 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
             // Create initial preferences from settings
             let initialPreferences = settings.toEpubPreferences()
-            print("Creating EPUB navigator with initial fontSize: \(settings.fontSize)")
 
             // Create initial locator from settings if available
             var initialLocation: Locator? = nil
@@ -106,7 +114,6 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                         }
                     )
                 )
-                print("Using initial locator: href=\(position.href), progression=\(String(describing: position.progression))")
             }
 
             let navigator = try EPUBNavigatorViewController(
@@ -134,7 +141,6 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
             return navigator
         } catch {
-            print("Failed to create EPUBNavigatorViewController: \(error)")
             return nil
         }
     }
@@ -154,7 +160,6 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     func goToChapter(href: String) {
         Task { @MainActor in
             guard let publication = self.publication else {
-                print("Cannot navigate to chapter: no publication loaded")
                 return
             }
 
@@ -165,22 +170,183 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
             if let link = link {
                 _ = await navigatorViewController?.go(to: link)
-            } else {
-                print("Chapter with href '\(href)' not found in reading order")
             }
         }
     }
 
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
-            print("Setting font typeScale to: \(settings.fontSize)")
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
         }
     }
 
+    func goToPosition(href: String, type: String, progression: KotlinDouble?, position: KotlinInt?) {
+        Task { @MainActor in
+            guard let url = AnyURL(legacyHREF: href) else {
+                return
+            }
+
+            let locator = Locator(
+                href: url,
+                mediaType: MediaType(type) ?? .html,
+                locations: Locator.Locations(
+                    progression: progression?.doubleValue,
+                    position: position.map {
+                        Int($0.int32Value)
+                    }
+                )
+            )
+            _ = await navigatorViewController?.go(to: locator)
+        }
+    }
+
     func setOnPositionChangedCallback(callback: ((PositionLocator) -> Void)?) {
         self.onPositionChangedCallback = callback
+    }
+
+    // MARK: - Media Overlay Methods
+
+    func hasMediaOverlays() -> Bool {
+        guard let publication = self.publication else {
+            return false
+        }
+        // Check if publication has SMIL resources
+        // Use description to get the URL string to avoid SwiftSoup conflict
+        let hasSmil = publication.resources.contains(where: { link in
+            let hrefString: String = link.href.description
+            return hrefString.hasSuffix(".smil")
+        })
+        return hasSmil
+    }
+
+    func initializeMediaOverlays(onReady: @escaping () -> Void) {
+        guard let publication = self.publication else {
+            onReady()
+            return
+        }
+
+        let player = MediaOverlayPlayer(publication: publication)
+        self.mediaOverlayPlayer = player
+
+        // Set up callbacks
+        player.onPlaybackStateChanged = { [weak self] state in
+            self?.handlePlaybackStateChanged(state)
+        }
+
+        player.onLocatorChanged = { [weak self] locator in
+            self?.handleLocatorChanged(locator)
+        }
+
+        Task {
+            await player.initialize()
+
+            // Prepare duration for the initial chapter
+            if let currentLocator = self.navigatorViewController?.currentLocation,
+               let chapterHref = currentLocator.href.relativeURL {
+                self.currentChapterHref = chapterHref
+                player.prepareChapterDuration(chapterHref: chapterHref)
+            }
+
+            onReady()
+            self.onMediaPlayerReadyCallback?()
+        }
+    }
+
+    func playAudio(initialPositionMs: KotlinLong?) {
+        guard let player = mediaOverlayPlayer else {
+            return
+        }
+
+        // Get current locator from navigator
+        let currentLocator = navigatorViewController?.currentLocation
+        // Extract the fragment ID from the locator (e.g., "chapter44.xhtml-sentence50")
+        let fragmentId = currentLocator?.locations.fragments.first
+        // Extract the progression (0.0 to 1.0) through the chapter
+        let progression = currentLocator?.locations.progression
+
+        // Get current chapter href from navigator and convert to RelativeURL
+        if let currentHref = currentLocator?.href,
+           let relativeHref = RelativeURL(string: currentHref.string) {
+            player.play(chapterHref: relativeHref, initialFragmentId: fragmentId, initialProgression: progression, initialPositionMs: initialPositionMs?.int64Value)
+        } else {
+            player.play(chapterHref: nil, initialFragmentId: fragmentId, initialProgression: progression, initialPositionMs: initialPositionMs?.int64Value)
+        }
+    }
+
+    func resumeAudio() {
+        mediaOverlayPlayer?.resume()
+    }
+
+    func pauseAudio() {
+        mediaOverlayPlayer?.pause()
+    }
+
+    func seekToAudioPosition(timestampMs: Int64) {
+        mediaOverlayPlayer?.seekTo(positionMs: timestampMs)
+    }
+
+    func setPlaybackSpeed(speed: Float) {
+        mediaOverlayPlayer?.setPlaybackSpeed(speed: speed)
+    }
+
+    func setOnPlaybackStateChangedCallback(callback: ((PlaybackState) -> Void)?) {
+        self.onPlaybackStateChangedCallback = callback
+    }
+
+    func setOnMediaPlayerReadyCallback(callback: (() -> Void)?) {
+        self.onMediaPlayerReadyCallback = callback
+    }
+
+    // MARK: - Private Media Overlay Helpers
+
+    private func handlePlaybackStateChanged(_ state: MediaPlaybackState) {
+        let playbackState = PlaybackState(
+            isPlaying: state.isPlaying,
+            currentPositionMs: state.currentPositionMs,
+            durationMs: state.durationMs.map {
+                KotlinLong(value: $0)
+            }
+        )
+        onPlaybackStateChangedCallback?(playbackState)
+    }
+
+    private func handleLocatorChanged(_ locator: Locator) {
+        applyHighlightDecoration(locator: locator)
+    }
+
+    private func applyHighlightDecoration(locator: Locator) {
+        guard let navigator = navigatorViewController else {
+            return
+        }
+
+        guard let fragmentId = locator.locations.fragments.first else {
+            return
+        }
+
+        // Skip if same fragment
+        guard fragmentId != currentHighlightId else {
+            return
+        }
+        currentHighlightId = fragmentId
+
+        // Create decoration for the current text fragment
+        // Decoration.Id is a String typealias, group is also a String
+        let decoration = Decoration(
+            id: "media-overlay-highlight",
+            locator: locator,
+            style: .highlight(tint: .yellow, isActive: true)
+        )
+
+        // Apply decoration using Readium's Decoration API
+        // EPUBNavigatorViewController conforms to DecorableNavigator
+        navigator.apply(decorations: [decoration], in: "media-overlay")
+
+        // Navigate to the locator to ensure the highlighted text is visible on screen
+        // This is especially important when seeking audio - the text should follow
+        Task {
+            _ = await navigator.go(to: locator, options: .init(animated: false))
+        }
     }
 }
 
@@ -196,6 +362,13 @@ extension ReadiumEpubReaderBridge: EPUBNavigatorDelegate {
     }
 
     func navigator(_ navigator: any Navigator, locationDidChange locator: Locator) {
+        // Update chapter duration if chapter changed
+        if let chapterHref = locator.href.relativeURL,
+           chapterHref.removingFragment() != currentChapterHref?.removingFragment() {
+            currentChapterHref = chapterHref
+            mediaOverlayPlayer?.prepareChapterDuration(chapterHref: chapterHref)
+        }
+
         guard let callback = onPositionChangedCallback else {
             return
         }
@@ -227,7 +400,7 @@ extension EpubReaderSettings {
     func toEpubPreferences() -> EPUBPreferences {
         return EPUBPreferences(
             fontSize: fontSize,
-            scroll: scrollMode
+            scroll: scrollMode?.boolValue
             // Add more preferences here as needed:
             // fontFamily: fontFamily,
             // lineHeight: lineHeight,

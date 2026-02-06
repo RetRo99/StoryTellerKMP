@@ -15,7 +15,7 @@ data class EpubReaderSettings(
     val lineHeight: Float,
     val marginHorizontal: Int,
     val marginVertical: Int,
-    val scrollMode: Boolean,
+    val scrollMode: Boolean?,
     val initialPosition: PositionUiModel?,
 ) {
     companion object {
@@ -107,6 +107,61 @@ interface EpubReaderBridge {
      * @param callback The callback to invoke with position data, or null to clear
      */
     fun setOnPositionChangedCallback(callback: ((PositionLocator) -> Unit)?)
+
+    // Media playback methods for ReadAloud books
+
+    /**
+     * Whether the publication has media overlays (audio narration).
+     * @return true if the publication has SMIL files or audio resources
+     */
+    fun hasMediaOverlays(): Boolean
+
+    /**
+     * Initializes the media overlay player.
+     * Should be called before attempting to play audio.
+     * @param onReady Called when initialization is complete
+     */
+    fun initializeMediaOverlays(onReady: () -> Unit)
+
+    /**
+     * Starts audio playback for the current chapter, optionally seeking to a specific position.
+     * @param initialPositionMs Optional initial position in milliseconds to seek to before playing
+     */
+    fun playAudio(initialPositionMs: Long? = null)
+
+    /**
+     * Resumes audio playback from the current position without seeking.
+     */
+    fun resumeAudio()
+
+    /**
+     * Pauses audio playback.
+     */
+    fun pauseAudio()
+
+    /**
+     * Seeks to a specific audio position.
+     * @param timestampMs The position in milliseconds
+     */
+    fun seekToAudioPosition(timestampMs: Long)
+
+    /**
+     * Sets the playback speed.
+     * @param speed The playback speed (e.g., 0.5, 1.0, 1.5, 2.0)
+     */
+    fun setPlaybackSpeed(speed: Float)
+
+    /**
+     * Sets a callback to be invoked when the audio playback state changes.
+     * @param callback The callback with isPlaying state and current position in ms
+     */
+    fun setOnPlaybackStateChangedCallback(callback: ((PlaybackState) -> Unit)?)
+
+    /**
+     * Sets a callback to be invoked when the media player is ready.
+     * @param callback The callback to invoke when the player is ready
+     */
+    fun setOnMediaPlayerReadyCallback(callback: (() -> Unit)?)
 }
 
 /**
@@ -120,6 +175,16 @@ data class PositionLocator(
     val progression: Double?,
     val position: Int?,
     val totalProgression: Double?,
+)
+
+/**
+ * Playback state data class for iOS bridge.
+ * This is a simple data holder that can be passed from Swift to Kotlin.
+ */
+data class PlaybackState(
+    val isPlaying: Boolean,
+    val currentPositionMs: Long,
+    val durationMs: Long?,
 )
 
 /**

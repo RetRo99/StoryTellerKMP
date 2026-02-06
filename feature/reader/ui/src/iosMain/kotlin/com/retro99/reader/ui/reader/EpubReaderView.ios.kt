@@ -7,8 +7,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
+import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
-import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +25,7 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
-    onPositionChanged: (PositionUiModel) -> Unit,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
     modifier: Modifier,
 ) {
     val readerViewController = remember(publication) {
@@ -37,33 +37,24 @@ internal actual fun EpubReaderView(
         )
     }
 
-    val initialPosition = publication.initialPosition
-
     // Use common command handling logic
     HandleNavigatorCommands(
         navigator = publication,
         commands = commands,
     )
 
-    // Set up position change callback - copy initial position and update location fields
-    DisposableEffect(publication, initialPosition) {
-        if (initialPosition != null) {
-            publication.bridge.setOnPositionChangedCallback { locator ->
-                val positionUiModel = initialPosition.copy(
-                    href = locator.href,
-                    type = locator.type,
-                    title = locator.title,
-                    progression = locator.progression?.toDouble(),
-                    position = locator.position?.toInt(),
-                    totalProgression = locator.totalProgression?.toDouble(),
-                )
-                onPositionChanged(positionUiModel)
-            }
-        }
-        onDispose {
-            publication.bridge.setOnPositionChangedCallback(null)
-        }
-    }
+    // Use common observation logic for location changes
+    ObserveLocationChanges(
+        navigator = publication,
+        initialPosition = publication.initialPosition,
+        intentDispatcher = intentDispatcher,
+    )
+
+    // Use common observation logic for audio playback state
+    ObserveAudioPlaybackState(
+        navigator = publication,
+        intentDispatcher = intentDispatcher,
+    )
 
     val currentViewController = readerViewController
     if (currentViewController == null) {

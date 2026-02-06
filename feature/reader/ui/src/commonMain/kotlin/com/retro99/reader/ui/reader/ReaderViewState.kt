@@ -1,15 +1,38 @@
 package com.retro99.reader.ui.reader
 
 import com.retro99.base.result.AppError
+import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionConflictUiModel
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 
 data class ReaderViewState(
-    val bookUuid: String? = null,
+    val bookType: BookType,
+    val bookUuid: String,
     val localFilePath: String? = null,
     val publication: EpubPublication? = null,
     val positionConflict: PositionConflictUiModel? = null,
     val isSettingsVisible: Boolean = false,
     val error: AppError? = null,
-)
+    // Book type
+    // Media playback state for ReadAloud books
+    val isPlaying: Boolean = false,
+    val currentAudioPositionMs: Long = 0L,
+    val totalDurationMs: Long? = null,
+    val playbackSpeed: Float = 1.0f,
+    // Initial audio position from saved reading progress (used on first playback)
+    val initialAudioPositionMs: Long? = null,
+    // Whether playback has been started at least once (to know when to use initial position)
+    val hasStartedPlayback: Boolean = false,
+    // Last known text position (used for saving audio position)
+    val lastKnownPosition: PositionUiModel? = null,
+    // Whether the media player is ready (for ReadAloud books)
+    val isAudioPlayerReady: Boolean = false,
+) {
+    /**
+     * Whether this is a ReadAloud book with media overlay support.
+     */
+    val isReadAloud: Boolean
+        get() = bookType == BookType.READALOUD
+}
 
