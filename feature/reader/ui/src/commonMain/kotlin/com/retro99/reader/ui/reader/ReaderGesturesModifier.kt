@@ -30,7 +30,7 @@ internal fun Modifier.readerGestures(
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onMiddleTap: () -> Unit,
-): Modifier = this.pointerInput(Unit) {
+): Modifier = this.pointerInput(containerSize) {
     val touchSlop = viewConfiguration.touchSlop
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
