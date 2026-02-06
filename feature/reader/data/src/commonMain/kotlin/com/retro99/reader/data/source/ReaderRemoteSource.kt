@@ -3,6 +3,7 @@ package com.retro99.reader.data.source
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.reader.data.model.PositionApiModel
+import com.retro99.reader.domain.model.BookType
 
 /**
  * Remote source interface for downloading ebook files.
@@ -14,11 +15,13 @@ interface ReaderRemoteSource {
      *
      * @param ebookFilePath The file path on the server
      * @param bookUuid The UUID of the book (used for local storage)
+     * @param bookType The type of book (determines the download format query)
      * @return The local file path where the ebook was saved
      */
     suspend fun downloadEbook(
         ebookFilePath: String,
         bookUuid: String,
+        bookType: BookType,
     ): AppResult<String>
 
     /**

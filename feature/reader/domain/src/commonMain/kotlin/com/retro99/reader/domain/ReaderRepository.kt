@@ -2,6 +2,7 @@ package com.retro99.reader.domain
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.Flow
@@ -17,11 +18,13 @@ interface ReaderRepository {
      *
      * @param bookUuid The UUID of the book to prepare
      * @param ebookFilePath The file path of the ebook on the server
+     * @param bookType The type of book (determines the download format query)
      * @return The local file path of the downloaded ebook
      */
     suspend fun prepareEbook(
         bookUuid: String,
         ebookFilePath: String,
+        bookType: BookType,
     ): AppResult<String>
 
     /**
