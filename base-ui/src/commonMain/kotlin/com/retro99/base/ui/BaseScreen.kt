@@ -26,7 +26,7 @@ fun <State, Intent : BaseIntent> BaseScreen(
 
 @Composable
 fun LoadingScreen() {
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         CircularProgressIndicator(
             modifier = Modifier.align(Alignment.Center)
         )
