@@ -8,7 +8,6 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.media.smil.SmilParser
 import kotlinx.coroutines.CoroutineScope
@@ -57,7 +56,6 @@ class MediaOverlayPlayer(
     private val smilParser: SmilParser,
     private val onLocatorChanged: ((Locator) -> Unit)? = null,
 ) {
-    private val logger = Logger.withTag("čič")
 
     /**
      * Internal coroutine scope for this player.
@@ -134,9 +132,7 @@ class MediaOverlayPlayer(
      * Initializes the player by parsing all SMIL files from the publication.
      */
     suspend fun initialize() {
-        logger.d { "initialize() called" }
         allClips = parseAllSmilFiles()
-        logger.d { "initialize() complete, total clips: ${allClips.size}" }
     }
 
     /**
@@ -271,21 +267,12 @@ class MediaOverlayPlayer(
         initialProgression: Double? = null,
         initialPositionMs: Long? = null,
     ) {
-        logger.d { "prepareChapter() called for: $chapterHref" }
-        logger.d { "  allClips count: ${allClips.size}" }
-
         // Find clips for this chapter
         currentChapterClips = allClips.filter { clip ->
             clip.textHref.removeFragment() == chapterHref.removeFragment()
         }
 
-        logger.d { "  currentChapterClips count: ${currentChapterClips.size}" }
-
-        if (currentChapterClips.isEmpty()) {
-            logger.w { "No clips found for chapter: $chapterHref" }
-            logger.v { "Available text hrefs: ${allClips.map { it.textHref }.distinct().take(10)}" }
-            return
-        }
+        if (currentChapterClips.isEmpty()) return
 
         // Calculate total duration from clips (last clip's end time)
         val chapterDurationMs =
@@ -379,7 +366,6 @@ class MediaOverlayPlayer(
      * Parses all SMIL files from the publication to extract media overlay clips.
      */
     private suspend fun parseAllSmilFiles(): List<MediaOverlayClip> {
-        logger.d { "parseAllSmilFiles() called" }
         val clips = mutableListOf<MediaOverlayClip>()
 
         // Find all SMIL resources in the publication
@@ -388,25 +374,16 @@ class MediaOverlayPlayer(
                     link.href.toString().endsWith(".smil")
         }
 
-        logger.d { "Found ${smilResources.size} SMIL resources in publication" }
-        smilResources.forEachIndexed { index, link ->
-            logger.v { "  SMIL[$index]: ${link.href}, mediaType: ${link.mediaType}" }
-        }
-
         for (smilLink in smilResources) {
             try {
                 val smilUrl = smilLink.url()
-                logger.d { "Parsing SMIL file: $smilUrl" }
                 val smilClips = parseSmilFile(smilUrl)
-                logger.d { "Parsed ${smilClips.size} clips from $smilUrl" }
                 clips.addAll(smilClips)
             } catch (e: Exception) {
-                logger.e(e) { "Failed to parse SMIL file: ${smilLink.url()}" }
                 analytics.logException(e, "Failed to parse SMIL file: ${smilLink.url()}")
             }
         }
 
-        logger.d { "parseAllSmilFiles() complete, total clips: ${clips.size}" }
         return clips.sortedWith(compareBy({ it.audioHref.toString() }, { it.startTime }))
     }
 
@@ -434,39 +411,21 @@ class MediaOverlayPlayer(
 
             try {
                 // Get the SMIL file content from the publication
-                val resource = publication.get(smilHref)
-                if (resource == null) {
-                    logger.w { "Resource is null for SMIL href: $smilHref" }
-                    return@withContext emptyList()
-                }
-                val bytes = resource.read().getOrElse { error ->
-                    logger.e { "Failed to read SMIL resource: $smilHref, error: $error" }
+                val resource = publication.get(smilHref) ?: return@withContext emptyList()
+                val bytes = resource.read().getOrElse {
                     return@withContext emptyList()
                 }
                 val content = bytes.decodeToString()
-                logger.v { "SMIL content length: ${content.length} for $smilHref" }
 
                 // Parse the XML using shared SMIL parser
                 val rawClips = smilParser.parseClips(content)
-                logger.d { "SmilParser returned ${rawClips.size} raw clips for $smilHref" }
-
-                if (rawClips.isEmpty()) {
-                    logger.w { "No clips parsed from SMIL file: $smilHref" }
-                    logger.v { "SMIL content preview: ${content.take(500)}" }
-                }
 
                 rawClips.forEach { raw ->
-                    val textUrl = Url(raw.textSrc) ?: run {
-                        logger.w { "Invalid textSrc URL: ${raw.textSrc}" }
-                        return@forEach
-                    }
+                    val textUrl = Url(raw.textSrc) ?: return@forEach
                     val resolvedTextUrl = smilHref.resolve(textUrl)
                     val fragmentId = resolvedTextUrl.fragment
 
-                    val audioUrl = Url(raw.audioSrc) ?: run {
-                        logger.w { "Invalid audioSrc URL: ${raw.audioSrc}" }
-                        return@forEach
-                    }
+                    val audioUrl = Url(raw.audioSrc) ?: return@forEach
                     val resolvedAudioUrl = smilHref.resolve(audioUrl)
 
                     clips.add(
@@ -481,11 +440,9 @@ class MediaOverlayPlayer(
                 }
 
             } catch (e: Exception) {
-                logger.e(e) { "Error parsing SMIL file: $smilHref" }
                 analytics.logException(e, "Error parsing SMIL file: $smilHref")
             }
 
-            logger.d { "parseSmilFile complete for $smilHref, clips: ${clips.size}" }
             clips
         }
 }

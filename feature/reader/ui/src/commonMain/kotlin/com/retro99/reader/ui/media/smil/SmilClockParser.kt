@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.media.smil
 
-import co.touchlab.kermit.Logger
 import org.koin.core.annotation.Single
 
 /**
@@ -13,7 +12,6 @@ import org.koin.core.annotation.Single
  */
 @Single
 class SmilClockParser {
-    private val logger = Logger.withTag("čič")
 
     /**
      * Parses a SMIL clock value string into seconds.
@@ -25,18 +23,13 @@ class SmilClockParser {
         val trimmed = value?.trim().orEmpty()
         if (trimmed.isEmpty()) return null
 
-        val result = runCatching {
+        return runCatching {
             if (":" in trimmed) {
                 parseColonFormat(trimmed)
             } else {
                 parseMetricFormat(trimmed)
             }
-        }.onFailure { e ->
-            logger.e(e) { "Failed to parse clock value: '$value'" }
         }.getOrNull()
-
-        logger.v { "Parsed clock value '$value' -> $result seconds" }
-        return result
     }
 
     /**

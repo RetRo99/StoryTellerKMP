@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.media.smil
 
-import co.touchlab.kermit.Logger
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
@@ -33,39 +32,20 @@ class SmilParser(
     private val xml: XML,
     private val clockParser: SmilClockParser,
 ) {
-    private val logger = Logger.withTag("čič")
 
     fun parseClips(content: String): List<SmilClip> {
-        logger.d { "parseClips called, content length: ${content.length}" }
-
-        if (content.isBlank()) {
-            logger.w { "Content is blank, returning empty list" }
-            return emptyList()
-        }
+        if (content.isBlank()) return emptyList()
 
         val document = runCatching {
             xml.decodeFromString(SmilDocument.serializer(), content)
-        }.onFailure { e ->
-            logger.e(e) { "Failed to decode SMIL XML" }
-        }.getOrNull()
-
-        if (document == null) {
-            logger.e { "Document is null after parsing, returning empty list" }
-            return emptyList()
-        }
-
-        logger.d { "Document parsed, body: ${document.body != null}" }
+        }.getOrNull() ?: return emptyList()
 
         val pars = document.body?.collectPars().orEmpty()
-        logger.d { "Found ${pars.size} <par> elements" }
 
-        val clips = pars.mapNotNull { par ->
+        return pars.mapNotNull { par ->
             val textSrc = par.text?.src?.trim().orEmpty()
             val audioSrc = par.audio?.src?.trim().orEmpty()
-            if (textSrc.isEmpty() || audioSrc.isEmpty()) {
-                logger.v { "Skipping par: textSrc='$textSrc', audioSrc='$audioSrc'" }
-                return@mapNotNull null
-            }
+            if (textSrc.isEmpty() || audioSrc.isEmpty()) return@mapNotNull null
 
             val clipBegin = clockParser.parse(par.audio?.clipBegin) ?: 0.0
             val clipEnd = clockParser.parse(par.audio?.clipEnd) ?: 0.0
@@ -77,9 +57,6 @@ class SmilParser(
                 clipEnd = clipEnd,
             )
         }
-
-        logger.d { "Parsed ${clips.size} clips from ${pars.size} pars" }
-        return clips
     }
 }
 
