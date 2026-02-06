@@ -64,6 +64,10 @@ class MediaOverlayPlayer {
     private(set) var currentPositionMs: Int64 = 0
     private(set) var durationMs: Int64?
 
+    /// Flag to prevent time observer from overwriting position immediately after seek
+    /// The time observer should wait until AVPlayer's position catches up to our seeked position
+    private var lastSeekTargetMs: Int64?
+
     /// Cache of temp file URLs indexed by audio href for reuse
     private var tempFileCache: [String: URL] = [:]
 
@@ -110,19 +114,18 @@ class MediaOverlayPlayer {
     ///   - initialFragmentId: Optional fragment ID to start from (e.g., "chapter44.xhtml-sentence50")
     ///   - initialProgression: Optional text progression (0.0 to 1.0) to estimate audio position
     ///   - initialPositionMs: Optional initial position in milliseconds to seek to before playing
-    ///                        (used if fragment ID and progression are not provided or not found)
+    ///                        (preferred over fragment/progression when provided, matching Android behavior)
     func play(chapterHref: RelativeURL?, initialFragmentId: String? = nil, initialProgression: Double? = nil, initialPositionMs: Int64? = nil) {
         if let chapterHref = chapterHref {
             prepareChapter(chapterHref: chapterHref, initialFragmentId: initialFragmentId, initialProgression: initialProgression, initialPositionMs: initialPositionMs)
         } else {
-            // No chapter change - try to seek to fragment, progression, or position
-            let positionToSeek = findPositionForFragment(fragmentId: initialFragmentId)
+            // No chapter change - try to seek to position, fragment, or progression
+            // Prefer initialPositionMs first (saved audio position), then fall back to text-based positions
+            let positionToSeek = initialPositionMs
+                ?? findPositionForFragment(fragmentId: initialFragmentId)
                 ?? findPositionForProgression(progression: initialProgression)
-                ?? initialPositionMs
-            if let positionMs = positionToSeek, positionMs > 0 {
-                seekTo(positionMs: positionMs)
-            }
-            startPlayback()
+            // Use helper to ensure seek completes before playback starts
+            setupAndPlay(initialPositionMs: positionToSeek, shouldAutoPlay: true)
         }
     }
 
@@ -179,10 +182,16 @@ class MediaOverlayPlayer {
         notifyPlaybackStateChanged()
     }
 
-    func seekTo(positionMs: Int64) {
+    func seekTo(positionMs: Int64, completion: (() -> Void)? = nil) {
         let time = CMTime(value: positionMs, timescale: 1000)
-        player?.seek(to: time)
-        updateCurrentLocator()
+        // Update position immediately to avoid emitting stale position
+        currentPositionMs = positionMs
+        // Set the seek target so time observer knows to wait for AVPlayer to catch up
+        lastSeekTargetMs = positionMs
+        player?.seek(to: time) { [weak self] _ in
+            self?.updateCurrentLocator()
+            completion?()
+        }
     }
 
     func setPlaybackSpeed(speed: Float) {
@@ -251,6 +260,19 @@ class MediaOverlayPlayer {
                 return
             }
 
+            // Determine the position to seek to - prefer initialPositionMs (saved audio position),
+            // then fall back to fragment or progression (text-based positions)
+            // This matches Android behavior for consistent position restoration
+            let positionToSeek = initialPositionMs
+                ?? findPositionForFragment(fragmentId: initialFragmentId)
+                ?? findPositionForProgression(progression: initialProgression)
+
+            // Set currentPositionMs to the target position before emitting any state updates
+            // This prevents the UI from briefly showing 0 while preparing
+            if let targetPosition = positionToSeek, targetPosition > 0 {
+                currentPositionMs = targetPosition
+            }
+
             // Calculate total duration from clips (last clip's end time)
             if let maxEndTime = currentChapterClips.map({ $0.endTime }).max() {
                 let chapterDurationMs = Int64(maxEndTime * 1000)
@@ -265,21 +287,12 @@ class MediaOverlayPlayer {
                 return
             }
 
-            // Determine the position to seek to - prefer fragment, then progression, then position
-            let positionToSeek = findPositionForFragment(fragmentId: initialFragmentId)
-                ?? findPositionForProgression(progression: initialProgression)
-                ?? initialPositionMs
-
             if currentAudioHref != audioHref {
                 currentAudioHref = audioHref
                 prepareAudio(audioHref: audioHref, shouldAutoPlay: true, initialPositionMs: positionToSeek)
-            } else if let positionMs = positionToSeek, positionMs > 0 {
-                // Same audio file, seek to position and start playback
-                seekTo(positionMs: positionMs)
-                startPlayback()
             } else {
-                // Same audio file, just start playback
-                startPlayback()
+                // Same audio file, use helper to seek and play
+                setupAndPlay(initialPositionMs: positionToSeek, shouldAutoPlay: true)
             }
 
             // Prefetch next chapter in background
@@ -293,16 +306,7 @@ class MediaOverlayPlayer {
         // Check if we already have this audio file cached
         if let cachedURL = tempFileCache[cacheKey], FileManager.default.fileExists(atPath: cachedURL.path) {
             setupPlayer(with: cachedURL)
-
-            // Seek to initial position if provided
-            if let positionMs = initialPositionMs, positionMs > 0 {
-                seekTo(positionMs: positionMs)
-            }
-
-            // Auto-play after setup if requested
-            if shouldAutoPlay {
-                startPlayback()
-            }
+            setupAndPlay(initialPositionMs: initialPositionMs, shouldAutoPlay: shouldAutoPlay)
             return
         }
 
@@ -345,19 +349,26 @@ class MediaOverlayPlayer {
                 tempFileCache[cacheKey] = tempURL
 
                 setupPlayer(with: tempURL)
-
-                // Seek to initial position if provided
-                if let positionMs = initialPositionMs, positionMs > 0 {
-                    seekTo(positionMs: positionMs)
-                }
-
-                // Auto-play after setup if requested
-                if shouldAutoPlay {
-                    startPlayback()
-                }
+                setupAndPlay(initialPositionMs: initialPositionMs, shouldAutoPlay: shouldAutoPlay)
             } catch {
                 // Failed to prepare audio
             }
+        }
+    }
+
+    /// Helper to seek to initial position and optionally start playback.
+    /// Ensures playback only starts after seek completes to avoid emitting position 0.
+    private func setupAndPlay(initialPositionMs: Int64?, shouldAutoPlay: Bool) {
+        if let positionMs = initialPositionMs, positionMs > 0 {
+            // Seek first, then start playback after seek completes
+            seekTo(positionMs: positionMs) { [weak self] in
+                if shouldAutoPlay {
+                    self?.startPlayback()
+                }
+            }
+        } else if shouldAutoPlay {
+            // No seek needed, start playback immediately
+            startPlayback()
         }
     }
 
@@ -383,13 +394,36 @@ class MediaOverlayPlayer {
         }
 
         // Add periodic time observer for sync (100ms interval)
+        // Only emit position updates when actually playing to avoid emitting 0 during seek
         let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self = self else {
+            guard let self = self, self.isPlaying else {
                 return
             }
             let seconds = CMTimeGetSeconds(time)
-            self.currentPositionMs = Int64(seconds * 1000)
+            let observedPositionMs = Int64(seconds * 1000)
+
+            // If we recently seeked, wait for AVPlayer's position to catch up
+            // before allowing the time observer to update currentPositionMs
+            if let seekTarget = self.lastSeekTargetMs {
+                // Allow some tolerance (500ms) for the position to be considered "caught up"
+                // This handles cases where the seek might not land exactly on the target
+                let tolerance: Int64 = 500
+                if abs(observedPositionMs - seekTarget) <= tolerance {
+                    // AVPlayer has caught up, clear the flag and use observed position
+                    self.lastSeekTargetMs = nil
+                    self.currentPositionMs = observedPositionMs
+                } else if observedPositionMs > seekTarget {
+                    // We've passed the seek target, clear the flag
+                    self.lastSeekTargetMs = nil
+                    self.currentPositionMs = observedPositionMs
+                }
+                // Otherwise, keep using the seeked position (don't update currentPositionMs)
+            } else {
+                // Normal playback, update position from observer
+                self.currentPositionMs = observedPositionMs
+            }
+
             self.updateCurrentLocator()
             self.notifyPlaybackStateChanged()
         }
