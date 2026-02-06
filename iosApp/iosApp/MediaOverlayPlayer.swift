@@ -50,9 +50,9 @@ class MediaOverlayPlayer {
     // Reading order for prefetching
     private var readingOrder: [String] = []
 
-    // Shared parsers from Kotlin
-    private let smilParser = SmilParser()
-    private let quickScanner = SmilQuickScanner()
+    // Shared parsers from Kotlin (accessed via Koin provider)
+    private let smilParser: SmilParser
+    private let quickScanner: SmilQuickScanner
 
     // Number of chapters ahead to scan during initial index build
     private let initialScanAhead = 3
@@ -75,6 +75,8 @@ class MediaOverlayPlayer {
 
     init(publication: Publication) {
         self.publication = publication
+        self.smilParser = SmilParserProvider.shared.smilParser
+        self.quickScanner = SmilParserProvider.shared.quickScanner
     }
 
     /// Initializes the player with lazy SMIL loading.
