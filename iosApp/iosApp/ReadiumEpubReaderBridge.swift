@@ -239,13 +239,22 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
 
         Task {
-            await player.initialize()
-
-            // Prepare duration for the initial chapter
+            // Get initial chapter href for optimized lazy loading
+            let initialChapterHref: String?
             if let currentLocator = self.navigatorViewController?.currentLocation,
                let chapterHref = currentLocator.href.relativeURL {
                 self.currentChapterHref = chapterHref
-                player.prepareChapterDuration(chapterHref: chapterHref)
+                initialChapterHref = chapterHref.description
+            } else {
+                initialChapterHref = nil
+            }
+
+            // Initialize with lazy loading, passing initial chapter for optimization
+            await player.initialize(initialChapterHref: initialChapterHref)
+
+            // Prepare duration for the initial chapter
+            if let chapterHref = self.currentChapterHref {
+                await player.prepareChapterDuration(chapterHref: chapterHref)
             }
 
             onReady()
@@ -366,7 +375,9 @@ extension ReadiumEpubReaderBridge: EPUBNavigatorDelegate {
         if let chapterHref = locator.href.relativeURL,
            chapterHref.removingFragment() != currentChapterHref?.removingFragment() {
             currentChapterHref = chapterHref
-            mediaOverlayPlayer?.prepareChapterDuration(chapterHref: chapterHref)
+            Task {
+                await mediaOverlayPlayer?.prepareChapterDuration(chapterHref: chapterHref)
+            }
         }
 
         guard let callback = onPositionChangedCallback else {

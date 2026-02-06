@@ -22,10 +22,11 @@ struct MediaPlaybackState {
 
 /// Player for EPUB Media Overlays (SMIL-based text-audio synchronization).
 ///
-/// This player:
-/// 1. Parses SMIL files from the EPUB to get text-audio sync data
-/// 2. Uses AVPlayer to play the audio files
-/// 3. Tracks playback position and emits the current Locator for text highlighting
+/// This player uses lazy loading to optimize initialization:
+/// 1. Builds a lightweight SMIL→chapter index on init (fast regex scan)
+/// 2. Parses SMIL files on-demand when a chapter is accessed
+/// 3. Caches parsed clips for the session
+/// 4. Prefetches next chapter in background
 @MainActor
 class MediaOverlayPlayer {
 
@@ -34,7 +35,28 @@ class MediaOverlayPlayer {
     private var playerItem: AVPlayerItem?
     private var timeObserver: Any?
 
-    private var allClips: [MediaOverlayClip] = []
+    // Lazy loading: chapter→clips cache (parsed on demand)
+    private var chapterClipsCache: [String: [MediaOverlayClip]] = [:]
+
+    // Lazy loading: chapter→SMIL files index (built on init)
+    private var chapterToSmilIndex: [String: [RelativeURL]] = [:]
+
+    // Set of SMIL files that have been scanned for indexing
+    private var scannedSmilFiles: Set<String> = []
+
+    // All SMIL resources in the publication
+    private var allSmilResources: [Link] = []
+
+    // Reading order for prefetching
+    private var readingOrder: [String] = []
+
+    // Shared parsers from Kotlin
+    private let smilParser = SmilParser()
+    private let quickScanner = SmilQuickScanner()
+
+    // Number of chapters ahead to scan during initial index build
+    private let initialScanAhead = 3
+
     private var currentChapterClips: [MediaOverlayClip] = []
     private var currentAudioHref: RelativeURL?
 
@@ -45,6 +67,9 @@ class MediaOverlayPlayer {
     /// Cache of temp file URLs indexed by audio href for reuse
     private var tempFileCache: [String: URL] = [:]
 
+    /// Background prefetch task
+    private var prefetchTask: Task<Void, Never>?
+
     var onPlaybackStateChanged: ((MediaPlaybackState) -> Void)?
     var onLocatorChanged: ((Locator) -> Void)?
 
@@ -52,9 +77,29 @@ class MediaOverlayPlayer {
         self.publication = publication
     }
 
-    /// Initializes the player by parsing all SMIL files from the publication.
+    /// Initializes the player with lazy SMIL loading.
+    /// Builds a lightweight index without fully parsing all SMIL files.
+    /// - Parameter initialChapterHref: The initial chapter to optimize index building for
+    func initialize(initialChapterHref: String? = nil) async {
+        // Collect all SMIL resources
+        allSmilResources = publication.resources.filter { link in
+            let hrefString: String = link.href.description
+            return link.mediaType?.matches(.smil) == true || hrefString.hasSuffix(".smil")
+        }
+
+        // Build reading order
+        readingOrder = publication.readingOrder.map {
+            normalizeChapterHref($0.href.description)
+        }
+
+        // Build initial index for current chapter and nearby chapters
+        let chapterHref = initialChapterHref ?? publication.readingOrder.first?.href.description ?? ""
+        await buildInitialIndex(currentChapterHref: chapterHref)
+    }
+
+    /// Legacy initialize for backward compatibility
     func initialize() async {
-        allClips = await parseAllSmilFiles()
+        await initialize(initialChapterHref: nil)
     }
 
     /// Starts or resumes playback for the current chapter.
@@ -145,13 +190,11 @@ class MediaOverlayPlayer {
     /// Prepares the duration for a specific chapter without starting playback.
     /// This allows the UI to show the chapter duration before the user presses play.
     /// - Parameter chapterHref: The href of the chapter to get duration for
-    func prepareChapterDuration(chapterHref: RelativeURL) {
-        let chapterPath = chapterHref.removingFragment()
+    func prepareChapterDuration(chapterHref: RelativeURL) async {
+        let normalizedHref = normalizeChapterHref(chapterHref.description)
 
-        // Find clips for this chapter
-        let chapterClips = allClips.filter { clip in
-            clip.textHref.removingFragment() == chapterPath
-        }
+        // Get clips using lazy loading
+        let chapterClips = await getClipsForChapter(chapterHref: normalizedHref)
 
         guard !chapterClips.isEmpty else {
             return
@@ -168,6 +211,10 @@ class MediaOverlayPlayer {
     }
 
     func release() {
+        // Cancel any pending prefetch
+        prefetchTask?.cancel()
+        prefetchTask = nil
+
         if let observer = timeObserver {
             player?.removeTimeObserver(observer)
             timeObserver = nil
@@ -181,52 +228,60 @@ class MediaOverlayPlayer {
             try? FileManager.default.removeItem(at: tempURL)
         }
         tempFileCache.removeAll()
+
+        // Clear lazy loading caches
+        chapterClipsCache.removeAll()
+        chapterToSmilIndex.removeAll()
+        scannedSmilFiles.removeAll()
     }
 
     // MARK: - Private Methods
 
     private func prepareChapter(chapterHref: RelativeURL, initialFragmentId: String? = nil, initialProgression: Double? = nil, initialPositionMs: Int64? = nil) {
-        // Remove fragment from href for comparison
-        let chapterPath = chapterHref.removingFragment()
+        let normalizedHref = normalizeChapterHref(chapterHref.description)
 
-        // Find clips for this chapter
-        currentChapterClips = allClips.filter { clip in
-            clip.textHref.removingFragment() == chapterPath
-        }
+        // Use Task to handle async clip loading
+        Task {
+            // Get clips using lazy loading
+            currentChapterClips = await getClipsForChapter(chapterHref: normalizedHref)
 
-        guard !currentChapterClips.isEmpty else {
-            return
-        }
-
-        // Calculate total duration from clips (last clip's end time)
-        if let maxEndTime = currentChapterClips.map({ $0.endTime }).max() {
-            let chapterDurationMs = Int64(maxEndTime * 1000)
-            if chapterDurationMs > 0 {
-                self.durationMs = chapterDurationMs
-                notifyPlaybackStateChanged()
+            guard !currentChapterClips.isEmpty else {
+                return
             }
-        }
 
-        // Get the audio file for this chapter
-        guard let audioHref = currentChapterClips.first?.audioHref else {
-            return
-        }
+            // Calculate total duration from clips (last clip's end time)
+            if let maxEndTime = currentChapterClips.map({ $0.endTime }).max() {
+                let chapterDurationMs = Int64(maxEndTime * 1000)
+                if chapterDurationMs > 0 {
+                    self.durationMs = chapterDurationMs
+                    notifyPlaybackStateChanged()
+                }
+            }
 
-        // Determine the position to seek to - prefer fragment, then progression, then position
-        let positionToSeek = findPositionForFragment(fragmentId: initialFragmentId)
-            ?? findPositionForProgression(progression: initialProgression)
-            ?? initialPositionMs
+            // Get the audio file for this chapter
+            guard let audioHref = currentChapterClips.first?.audioHref else {
+                return
+            }
 
-        if currentAudioHref != audioHref {
-            currentAudioHref = audioHref
-            prepareAudio(audioHref: audioHref, shouldAutoPlay: true, initialPositionMs: positionToSeek)
-        } else if let positionMs = positionToSeek, positionMs > 0 {
-            // Same audio file, seek to position and start playback
-            seekTo(positionMs: positionMs)
-            startPlayback()
-        } else {
-            // Same audio file, just start playback
-            startPlayback()
+            // Determine the position to seek to - prefer fragment, then progression, then position
+            let positionToSeek = findPositionForFragment(fragmentId: initialFragmentId)
+                ?? findPositionForProgression(progression: initialProgression)
+                ?? initialPositionMs
+
+            if currentAudioHref != audioHref {
+                currentAudioHref = audioHref
+                prepareAudio(audioHref: audioHref, shouldAutoPlay: true, initialPositionMs: positionToSeek)
+            } else if let positionMs = positionToSeek, positionMs > 0 {
+                // Same audio file, seek to position and start playback
+                seekTo(positionMs: positionMs)
+                startPlayback()
+            } else {
+                // Same audio file, just start playback
+                startPlayback()
+            }
+
+            // Prefetch next chapter in background
+            prefetchNextChapter(currentChapterHref: normalizedHref)
         }
     }
 
@@ -384,41 +439,191 @@ class MediaOverlayPlayer {
     }
 
 
-    // MARK: - SMIL Parsing
+    // MARK: - Lazy Loading
 
-    private func parseAllSmilFiles() async -> [MediaOverlayClip] {
-        var clips: [MediaOverlayClip] = []
+    /// Builds the initial SMIL→chapter index for the current chapter and nearby chapters.
+    /// Uses fast regex scanning instead of full XML parsing.
+    private func buildInitialIndex(currentChapterHref: String) async {
+        let normalizedCurrent = normalizeChapterHref(currentChapterHref)
 
-        // Find all SMIL resources in the publication
-        // Use explicit Array filter to avoid SwiftSoup String extension conflict
-        var smilResources: [Link] = []
-        for link in publication.resources {
-            // Use description to get the URL string to avoid SwiftSoup conflict
-            let hrefString: String = link.href.description
-            if link.mediaType?.matches(.smil) == true ||
-                   hrefString.hasSuffix(".smil") {
-                smilResources.append(link)
+        // Find current chapter index in reading order
+        let currentIndex = readingOrder.firstIndex(of: normalizedCurrent) ?? 0
+
+        // Determine which chapters we need to find SMILs for
+        let startIndex = max(0, currentIndex)
+        let endIndex = min(readingOrder.count, currentIndex + initialScanAhead + 1)
+        let chaptersToFind = Set(readingOrder[startIndex..<endIndex])
+
+        var remainingChapters = chaptersToFind
+
+        // Scan SMIL files until we find all needed chapters
+        for smilLink in allSmilResources {
+            // Early exit if we found all needed chapters
+            if remainingChapters.isEmpty {
+                break
             }
-        }
 
-        for smilLink in smilResources {
-            // Convert AnyURL to RelativeURL
-            guard let relativeHref = RelativeURL(string: smilLink.href.description) else {
+            let smilHref = smilLink.href.description
+
+            // Skip if already scanned
+            if scannedSmilFiles.contains(smilHref) {
                 continue
             }
-            do {
-                let smilClips = try await parseSmilFile(smilHref: relativeHref)
-                clips.append(contentsOf: smilClips)
-            } catch {
-                // Failed to parse SMIL file
+
+            // Quick scan to find chapter reference
+            if let chapterHref = await scanSmilFile(smilHref: smilHref) {
+                // Register in index
+                if chapterToSmilIndex[chapterHref] == nil {
+                    chapterToSmilIndex[chapterHref] = []
+                }
+                if let relativeUrl = RelativeURL(string: smilHref) {
+                    chapterToSmilIndex[chapterHref]?.append(relativeUrl)
+                }
+
+                // Check if this was one of the chapters we needed
+                if remainingChapters.contains(chapterHref) {
+                    remainingChapters.remove(chapterHref)
+                }
+            }
+
+            scannedSmilFiles.insert(smilHref)
+        }
+    }
+
+    /// Quick scans a SMIL file to extract the chapter it references.
+    /// Uses regex instead of full XML parsing for speed.
+    private func scanSmilFile(smilHref: String) async -> String? {
+        guard let relativeHref = RelativeURL(string: smilHref),
+              let resource = publication.get(relativeHref)
+        else {
+            return nil
+        }
+
+        do {
+            let data = try await resource.read().get()
+            guard let content = String(data: data, encoding: .utf8) else {
+                return nil
+            }
+
+            // Use shared Kotlin quick scanner
+            guard let chapterHref = quickScanner.scanForChapterHref(
+                content: content,
+                smilHref: smilHref
+            )
+            else {
+                return nil
+            }
+
+            return normalizeChapterHref(chapterHref)
+        } catch {
+            return nil
+        }
+    }
+
+    /// Gets clips for a chapter, parsing on-demand if not cached.
+    private func getClipsForChapter(chapterHref: String) async -> [MediaOverlayClip] {
+        let normalizedHref = normalizeChapterHref(chapterHref)
+
+        // Check cache first
+        if let cached = chapterClipsCache[normalizedHref] {
+            return cached
+        }
+
+        // Parse SMIL files for this chapter
+        let clips = await parseChapterSmilFiles(chapterHref: normalizedHref)
+
+        // Cache the result
+        chapterClipsCache[normalizedHref] = clips
+
+        return clips
+    }
+
+    /// Parses all SMIL files for a specific chapter.
+    private func parseChapterSmilFiles(chapterHref: String) async -> [MediaOverlayClip] {
+        // First, ensure we have the index for this chapter
+        if chapterToSmilIndex[chapterHref] == nil {
+            // Scan all remaining SMIL files to find this chapter
+            for smilLink in allSmilResources {
+                let smilHref = smilLink.href.description
+
+                if scannedSmilFiles.contains(smilHref) {
+                    continue
+                }
+
+                if let foundChapter = await scanSmilFile(smilHref: smilHref) {
+                    if chapterToSmilIndex[foundChapter] == nil {
+                        chapterToSmilIndex[foundChapter] = []
+                    }
+                    if let relativeUrl = RelativeURL(string: smilHref) {
+                        chapterToSmilIndex[foundChapter]?.append(relativeUrl)
+                    }
+                }
+
+                scannedSmilFiles.insert(smilHref)
+
+                // Stop if we found the chapter we're looking for
+                if chapterToSmilIndex[chapterHref] != nil {
+                    break
+                }
             }
         }
 
-        // Sort by audio file and start time
-        return clips.sorted {
-            ($0.audioHref.description, $0.startTime) < ($1.audioHref.description, $1.startTime)
+        // Get SMIL files for this chapter
+        guard let smilFiles = chapterToSmilIndex[chapterHref], !smilFiles.isEmpty else {
+            return []
+        }
+
+        // Parse all SMIL files for this chapter
+        var allClips: [MediaOverlayClip] = []
+        for smilHref in smilFiles {
+            do {
+                let clips = try await parseSmilFile(smilHref: smilHref)
+                allClips.append(contentsOf: clips)
+            } catch {
+                // Failed to parse SMIL file - continue with others
+            }
+        }
+
+        // Sort by start time
+        return allClips.sorted {
+            $0.startTime < $1.startTime
         }
     }
+
+    /// Prefetches the next chapter's clips in the background.
+    private func prefetchNextChapter(currentChapterHref: String) {
+        let normalizedCurrent = normalizeChapterHref(currentChapterHref)
+
+        // Find next chapter in reading order
+        guard let currentIndex = readingOrder.firstIndex(of: normalizedCurrent),
+              currentIndex + 1 < readingOrder.count
+        else {
+            return
+        }
+
+        let nextChapterHref = readingOrder[currentIndex + 1]
+
+        // Skip if already cached
+        if chapterClipsCache[nextChapterHref] != nil {
+            return
+        }
+
+        // Cancel any existing prefetch
+        prefetchTask?.cancel()
+
+        // Start background prefetch
+        prefetchTask = Task {
+            _ = await getClipsForChapter(chapterHref: nextChapterHref)
+        }
+    }
+
+    /// Normalizes a chapter href for consistent comparison.
+    private func normalizeChapterHref(_ href: String) -> String {
+        // Use shared Kotlin normalizer
+        return quickScanner.normalizeChapterHref(href: href)
+    }
+
+    // MARK: - SMIL Parsing
 
     private func parseSmilFile(smilHref: RelativeURL) async throws -> [MediaOverlayClip] {
         guard let resource = publication.get(smilHref) else {
@@ -431,8 +636,7 @@ class MediaOverlayPlayer {
         }
 
         // Parse XML using shared Kotlin SMIL parser
-        let parser = SmilParser()
-        let rawClips = parser.parseClips(content: content)
+        let rawClips = smilParser.parseClips(content: content)
         var clips: [MediaOverlayClip] = []
 
         for item in rawClips {
