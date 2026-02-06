@@ -42,6 +42,9 @@ class MediaOverlayPlayer {
     private(set) var currentPositionMs: Int64 = 0
     private(set) var durationMs: Int64?
 
+    /// Cache of temp file URLs indexed by audio href for reuse
+    private var tempFileCache: [String: URL] = [:]
+
     var onPlaybackStateChanged: ((MediaPlaybackState) -> Void)?
     var onLocatorChanged: ((Locator) -> Void)?
 
@@ -172,6 +175,12 @@ class MediaOverlayPlayer {
         player?.pause()
         player = nil
         playerItem = nil
+
+        // Clean up all cached temp files
+        for (_, tempURL) in tempFileCache {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+        tempFileCache.removeAll()
     }
 
     // MARK: - Private Methods
@@ -222,6 +231,24 @@ class MediaOverlayPlayer {
     }
 
     private func prepareAudio(audioHref: RelativeURL, shouldAutoPlay: Bool = false, initialPositionMs: Int64? = nil) {
+        let cacheKey = audioHref.description
+
+        // Check if we already have this audio file cached
+        if let cachedURL = tempFileCache[cacheKey], FileManager.default.fileExists(atPath: cachedURL.path) {
+            setupPlayer(with: cachedURL)
+
+            // Seek to initial position if provided
+            if let positionMs = initialPositionMs, positionMs > 0 {
+                seekTo(positionMs: positionMs)
+            }
+
+            // Auto-play after setup if requested
+            if shouldAutoPlay {
+                startPlayback()
+            }
+            return
+        }
+
         // Get the resource from the publication
         guard let resource = publication.get(audioHref) else {
             return
@@ -229,21 +256,36 @@ class MediaOverlayPlayer {
 
         Task {
             do {
-                // Read the data from the resource
-                let data = try await resource.read().get()
-
                 // Determine file extension from href
                 let hrefString: String = audioHref.description
                 let pathExtension = (hrefString as NSString).pathExtension.isEmpty
                     ? "mp3"
                     : (hrefString as NSString).pathExtension
 
-                // Write to a temporary file
+                // Create a temporary file URL
                 let tempURL = FileManager.default.temporaryDirectory
                     .appendingPathComponent(UUID().uuidString)
                     .appendingPathExtension(pathExtension)
 
-                try data.write(to: tempURL)
+                // Create file handle for streaming write
+                FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+                let fileHandle = try FileHandle(forWritingTo: tempURL)
+
+                // Stream data directly to file in chunks instead of loading all into memory
+                let result = await resource.stream { chunk in
+                    try? fileHandle.write(contentsOf: chunk)
+                }
+
+                try fileHandle.close()
+
+                // Check if streaming was successful
+                guard case .success = result else {
+                    try? FileManager.default.removeItem(at: tempURL)
+                    return
+                }
+
+                // Cache the temp file URL for reuse
+                tempFileCache[cacheKey] = tempURL
 
                 setupPlayer(with: tempURL)
 
@@ -257,7 +299,7 @@ class MediaOverlayPlayer {
                     startPlayback()
                 }
             } catch {
-                // Failed to read audio data
+                // Failed to prepare audio
             }
         }
     }
