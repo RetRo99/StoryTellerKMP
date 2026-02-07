@@ -4,6 +4,8 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
 import androidx.media3.common.C
@@ -26,6 +28,9 @@ import androidx.media3.exoplayer.ExoPlayer
  * (typically the audio thread). All boolean flags that are read/written from both
  * the main thread and the focus listener are marked as @Volatile to ensure visibility.
  *
+ * ExoPlayer methods (play, pause, volume) must be called on the main thread, so
+ * the focus listener dispatches these calls via a Handler.
+ *
  * Public methods should be called from the main thread.
  */
 @OptIn(UnstableApi::class)
@@ -34,6 +39,8 @@ class AudioFocusManager(
     private val player: ExoPlayer,
 ) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var focusRequest: AudioFocusRequest? = null
 
@@ -58,6 +65,18 @@ class AudioFocusManager(
     private var onDelayedFocusGranted: (() -> Unit)? = null
 
     private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        // Dispatch to main thread since ExoPlayer methods must be called on main thread
+        mainHandler.post {
+            handleFocusChange(focusChange)
+        }
+    }
+
+    /**
+     * Handles audio focus changes on the main thread.
+     * This is called from the focus listener via mainHandler.post().
+     */
+    @MainThread
+    private fun handleFocusChange(focusChange: Int) {
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
                 // Regained focus - restore volume and optionally resume

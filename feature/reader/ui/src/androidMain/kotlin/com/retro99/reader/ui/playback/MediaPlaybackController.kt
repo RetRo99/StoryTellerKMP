@@ -54,16 +54,37 @@ class MediaPlaybackController {
         get() = synchronized(lock) { _playerSession?.session }
 
     /**
+     * Returns true if a player/session pair is currently registered.
+     * Use this to check before registering a new session.
+     */
+    fun hasActiveSession(): Boolean {
+        return synchronized(lock) { _playerSession != null }
+    }
+
+    /**
      * Registers the ExoPlayer and MediaSession with the controller.
      * Called by MediaSessionManager when it creates the session.
      *
      * If the service is already running, the session will be added to it immediately.
      *
-     * Note: If a previous player/session pair exists, it will be silently replaced.
-     * Callers should ensure the previous session is released before registering a new one.
+     * IMPORTANT: If a previous player/session pair exists, this method will release
+     * the old session before registering the new one. This prevents zombie notifications
+     * when opening a new book while another is playing.
+     *
+     * @param player The ExoPlayer instance
+     * @param session The MediaSession to register
      */
     fun registerPlayer(player: ExoPlayer, session: MediaSession) {
         synchronized(lock) {
+            // Release previous session if it exists to prevent zombie notifications
+            val previousSession = _playerSession?.session
+            if (previousSession != null && previousSession != session) {
+                // Remove from service first
+                _serviceInstance?.removeSession(previousSession)
+                // Release the old session
+                previousSession.release()
+            }
+
             _playerSession = PlayerSessionPair(player, session)
             // Add the session to the service if it's already running and not already added
             val service = _serviceInstance

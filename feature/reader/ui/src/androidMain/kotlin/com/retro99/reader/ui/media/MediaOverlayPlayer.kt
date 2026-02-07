@@ -263,9 +263,18 @@ class MediaOverlayPlayer(
     ) {
         playerScope.launch {
             // Use tryLock to prevent concurrent play calls from double-taps
-            // If already playing/starting, ignore the second tap
+            // If already playing/starting, ignore the second tap but show feedback
             if (!playMutex.tryLock()) {
                 logger.d { "play() ignored - already in progress" }
+                // Show BUFFERING state so user knows their tap was received
+                // This provides feedback when the first tap is still processing
+                // (e.g., waiting for permission dialog)
+                val currentState = playbackStateTracker.playbackState.value
+                if (currentState != PlaybackState.PLAYING &&
+                    currentState != PlaybackState.BUFFERING
+                ) {
+                    playbackStateTracker.setPlaybackState(PlaybackState.BUFFERING)
+                }
                 return@launch
             }
             try {

@@ -152,6 +152,18 @@ interface EpubReaderBridge {
     fun setPlaybackSpeed(speed: Float)
 
     /**
+     * Skips forward by a fixed increment (10 seconds).
+     * Uses the player's authoritative position.
+     */
+    fun skipForward()
+
+    /**
+     * Skips backward by a fixed increment (10 seconds).
+     * Uses the player's authoritative position.
+     */
+    fun skipBackward()
+
+    /**
      * Sets a callback to be invoked when the audio playback state changes.
      * @param callback The callback with isPlaying state and current position in ms
      */

@@ -80,5 +80,17 @@ sealed class ReaderCommand {
      * @param speed The playback speed (e.g., 0.5, 1.0, 1.5, 2.0)
      */
     data class SetPlaybackSpeed(val speed: Float) : ReaderCommand()
+
+    /**
+     * Command to skip forward by a fixed increment (10 seconds).
+     * Uses the player's authoritative position rather than ViewModel state.
+     */
+    data object SkipForward : ReaderCommand()
+
+    /**
+     * Command to skip backward by a fixed increment (10 seconds).
+     * Uses the player's authoritative position rather than ViewModel state.
+     */
+    data object SkipBackward : ReaderCommand()
 }
 

@@ -370,6 +370,14 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         mediaOverlayPlayer?.setPlaybackSpeed(speed: speed)
     }
 
+    func skipForward() {
+        mediaOverlayPlayer?.skipForward()
+    }
+
+    func skipBackward() {
+        mediaOverlayPlayer?.skipBackward()
+    }
+
     func setOnPlaybackStateChangedCallback(callback: ((PlaybackState) -> Void)?) {
         self.onPlaybackStateChangedCallback = callback
     }

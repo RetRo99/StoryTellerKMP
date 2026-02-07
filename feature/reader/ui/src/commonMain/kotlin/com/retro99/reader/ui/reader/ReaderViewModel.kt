@@ -208,23 +208,36 @@ class ReaderViewModel(
         onClose()
     }
 
+    /**
+     * Toggles audio playback.
+     *
+     * IMPORTANT: We do NOT optimistically update isPlaying here. The player is the single
+     * source of truth for playback state. The UI will update when the player reports its
+     * actual state via UpdatePlayingState intent. This prevents state divergence when:
+     * - Permission check fails
+     * - Audio focus acquisition fails
+     * - Foreground service fails to start
+     * - Any other playback initialization error occurs
+     */
     private fun togglePlayback() {
         val currentState = viewState.value
         val isCurrentlyPlaying = currentState.isPlaying
         viewModelScope.launch {
             if (isCurrentlyPlaying) {
                 _commands.emit(ReaderCommand.PausePlayback)
-                updateState { it.copy(isPlaying = false) }
+                // Note: isPlaying will be updated via UpdatePlayingState when player confirms
             } else {
                 if (!currentState.hasStartedPlayback) {
                     // First playback - use StartPlayback to prepare the chapter
                     // Pass initial position if available from saved reading progress
                     _commands.emit(ReaderCommand.StartPlayback(currentState.initialAudioPositionMs))
-                    updateState { it.copy(isPlaying = true, hasStartedPlayback = true) }
+                    // Mark that we've attempted playback (for initial position handling)
+                    // but don't set isPlaying - wait for player confirmation
+                    updateState { it.copy(hasStartedPlayback = true) }
                 } else {
                     // Already started before - just resume from current position
                     _commands.emit(ReaderCommand.ResumePlayback)
-                    updateState { it.copy(isPlaying = true) }
+                    // Note: isPlaying will be updated via UpdatePlayingState when player confirms
                 }
             }
         }
@@ -249,17 +262,28 @@ class ReaderViewModel(
         }
     }
 
+    /**
+     * Skips forward by a fixed increment (10 seconds).
+     * Delegates to the player which uses its authoritative position.
+     * The milliseconds parameter is ignored - the player uses a fixed 10-second increment.
+     */
+    @Suppress("UNUSED_PARAMETER")
     private fun skipForward(milliseconds: Long) {
-        val currentPosition = viewState.value.currentAudioPositionMs
-        val totalDuration = viewState.value.totalDurationMs ?: Long.MAX_VALUE
-        val newPosition = (currentPosition + milliseconds).coerceAtMost(totalDuration)
-        seekTo(newPosition)
+        viewModelScope.launch {
+            _commands.emit(ReaderCommand.SkipForward)
+        }
     }
 
+    /**
+     * Skips backward by a fixed increment (10 seconds).
+     * Delegates to the player which uses its authoritative position.
+     * The milliseconds parameter is ignored - the player uses a fixed 10-second increment.
+     */
+    @Suppress("UNUSED_PARAMETER")
     private fun skipBackward(milliseconds: Long) {
-        val currentPosition = viewState.value.currentAudioPositionMs
-        val newPosition = (currentPosition - milliseconds).coerceAtLeast(0L)
-        seekTo(newPosition)
+        viewModelScope.launch {
+            _commands.emit(ReaderCommand.SkipBackward)
+        }
     }
 
     /**
