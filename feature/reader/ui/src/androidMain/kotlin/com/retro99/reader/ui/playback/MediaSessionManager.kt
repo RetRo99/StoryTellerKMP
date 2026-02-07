@@ -46,13 +46,24 @@ class MediaSessionManager(
      * Using a tracked state is more reliable than checking player.isPlaying
      * in onPlayerCommandRequest, as it doesn't depend on timing assumptions
      * about when Media3 processes the command.
+     *
+     * Access is synchronized via [stateLock] to prevent TOCTOU races during
+     * rapid play/pause sequences from the notification.
      */
-    @Volatile
     private var wasPlaying: Boolean = false
+
+    /**
+     * Lock for synchronizing access to [wasPlaying].
+     * This prevents race conditions during rapid play/pause sequences where
+     * onPlayerCommandRequest and onIsPlayingChanged might interleave.
+     */
+    private val stateLock = Any()
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
-            wasPlaying = isPlaying
+            synchronized(stateLock) {
+                wasPlaying = isPlaying
+            }
         }
     }
 
@@ -125,7 +136,9 @@ class MediaSessionManager(
         mediaSession?.release()
         mediaSession = null
         // Reset tracked state to prevent stale values if this manager is reused
-        wasPlaying = false
+        synchronized(stateLock) {
+            wasPlaying = false
+        }
     }
 
     /**
@@ -148,7 +161,9 @@ class MediaSessionManager(
                 // Use tracked wasPlaying state instead of player.isPlaying.
                 // This is more reliable as it doesn't depend on timing assumptions
                 // about when Media3 processes the command internally.
-                if (wasPlaying) {
+                // Synchronized to prevent TOCTOU race with onIsPlayingChanged.
+                val shouldNotifyPause = synchronized(stateLock) { wasPlaying }
+                if (shouldNotifyPause) {
                     onUserPausedFromSession?.invoke()
                 }
             }

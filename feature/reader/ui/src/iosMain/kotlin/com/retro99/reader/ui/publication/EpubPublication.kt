@@ -5,6 +5,7 @@ import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.model.AudioPositionState
 import com.retro99.reader.ui.model.LocatorState
+import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
@@ -45,12 +46,14 @@ actual class EpubPublication(
     )
     private val _isPlayerReady = MutableStateFlow(false)
     private val _showPermissionDeniedDialog = MutableStateFlow(false)
+    private val _playbackState = MutableStateFlow(PlaybackState.STOPPED)
 
     // EpubNavigatorController state observation flows
     override val currentLocator: Flow<LocatorState> = _currentLocator
     override val audioPositionState: Flow<AudioPositionState> = _audioPositionState
     override val isPlayingState: Flow<Boolean> = _isPlayingState
     override val isPlayerReady: Flow<Boolean> = _isPlayerReady
+    override val playbackState: Flow<PlaybackState> = _playbackState
 
     // iOS doesn't require notification permission for audio playback
     override val showPermissionDeniedDialog: Flow<Boolean> = _showPermissionDeniedDialog
@@ -110,6 +113,13 @@ actual class EpubPublication(
                 ),
             )
             _isPlayingState.tryEmit(state.isPlaying)
+            // Map isPlaying to PlaybackState enum
+            // Note: iOS bridge doesn't currently expose BUFFERING or ERROR states
+            _playbackState.value = if (state.isPlaying) {
+                PlaybackState.PLAYING
+            } else {
+                PlaybackState.PAUSED
+            }
         }
 
         bridge.setOnMediaPlayerReadyCallback {
@@ -181,6 +191,14 @@ actual class EpubPublication(
 
     override fun setPlaybackSpeed(speed: Float) {
         bridge.setPlaybackSpeed(speed)
+    }
+
+    override fun skipForward() {
+        bridge.skipForward()
+    }
+
+    override fun skipBackward() {
+        bridge.skipBackward()
     }
 
     override fun dismissPermissionDeniedDialog() {

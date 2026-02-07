@@ -70,6 +70,14 @@ internal fun HandleNavigatorCommands(
                     is ReaderCommand.SetPlaybackSpeed -> {
                         controller.setPlaybackSpeed(command.speed)
                     }
+
+                    is ReaderCommand.SkipForward -> {
+                        controller.skipForward()
+                    }
+
+                    is ReaderCommand.SkipBackward -> {
+                        controller.skipBackward()
+                    }
                 }
             }
         }

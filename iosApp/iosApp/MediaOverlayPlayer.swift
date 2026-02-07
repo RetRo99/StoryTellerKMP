@@ -198,6 +198,24 @@ class MediaOverlayPlayer {
         player?.rate = speed
     }
 
+    /// Seek increment in milliseconds (10 seconds)
+    private static let seekIncrementMs: Int64 = 10_000
+
+    /// Skips forward by 10 seconds from the current position.
+    /// The position is clamped to the duration of the current media.
+    func skipForward() {
+        let maxPosition = durationMs ?? Int64.max
+        let newPosition = min(currentPositionMs + Self.seekIncrementMs, maxPosition)
+        seekTo(positionMs: newPosition)
+    }
+
+    /// Skips backward by 10 seconds from the current position.
+    /// The position is clamped to 0.
+    func skipBackward() {
+        let newPosition = max(currentPositionMs - Self.seekIncrementMs, 0)
+        seekTo(positionMs: newPosition)
+    }
+
     /// Prepares the duration for a specific chapter without starting playback.
     /// This allows the UI to show the chapter duration before the user presses play.
     /// - Parameter chapterHref: The href of the chapter to get duration for

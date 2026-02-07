@@ -9,6 +9,7 @@ import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
 import com.retro99.reader.ui.model.AudioPositionState
 import com.retro99.reader.ui.model.LocatorState
+import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.playback.MediaPlaybackController
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -96,6 +96,27 @@ class AndroidEpubNavigatorController internal constructor(
     private val _mediaOverlayPlayer = MutableStateFlow<MediaOverlayPlayer?>(null)
 
     /**
+     * Sealed class representing pending media commands that should be executed
+     * when the player becomes available.
+     *
+     * This prevents commands from being silently dropped when the user taps play
+     * before SMIL initialization completes.
+     */
+    private sealed class PendingMediaCommand {
+        data class Play(val initialPositionMs: Long?) : PendingMediaCommand()
+        data object Resume : PendingMediaCommand()
+        data object Pause : PendingMediaCommand()
+        data class SeekTo(val timestampMs: Long) : PendingMediaCommand()
+        data class SetSpeed(val speed: Float) : PendingMediaCommand()
+    }
+
+    /**
+     * Queue of pending media commands to execute when the player becomes available.
+     * Only the most recent command of each type is kept (e.g., multiple seeks are collapsed).
+     */
+    private var pendingCommand: PendingMediaCommand? = null
+
+    /**
      * Flow of audio position updates (currentPosition and totalDuration).
      * Emits on every position change from the media player.
      */
@@ -116,10 +137,25 @@ class AndroidEpubNavigatorController internal constructor(
 
     /**
      * Flow of playing state changes.
-     * Drops the first emission to skip the initial state from player initialization.
+     *
+     * Note: We use distinctUntilChanged() instead of drop(1) to avoid duplicate emissions
+     * while still receiving the initial state. The previous drop(1) was dangerous because:
+     * - It could swallow important state corrections (e.g., after permission denial)
+     * - Every time _mediaOverlayPlayer emits a new player, drop(1) would skip the first
+     *   value again, potentially missing critical state updates
+     * - After config change/recreation, the initial false state would be dropped, leaving
+     *   the ViewModel with stale optimistic state
      */
     override val isPlayingState: Flow<Boolean> = _mediaOverlayPlayer.flatMapLatest { player ->
-        player?.isPlaying?.drop(1) ?: flowOf()
+        player?.isPlaying ?: flowOf()
+    }
+
+    /**
+     * Flow of playback state changes (PLAYING, PAUSED, BUFFERING, STOPPED, ERROR).
+     * Use this to show error feedback to the user when SMIL parsing fails or other errors occur.
+     */
+    override val playbackState: Flow<PlaybackState> = _mediaOverlayPlayer.flatMapLatest { player ->
+        player?.playbackState ?: flowOf(PlaybackState.STOPPED)
     }
 
     /**
@@ -212,6 +248,9 @@ class AndroidEpubNavigatorController internal constructor(
 
             _mediaOverlayPlayer.value = player
 
+            // Execute any pending command that was queued before the player was ready
+            executePendingCommand(player)
+
             // Prepare duration for the initial chapter (this now parses SMIL on-demand)
             val chapterPrepareStart = nowMillis()
             player.prepareChapterDuration(navigator.currentLocator.value.href)
@@ -255,53 +294,73 @@ class AndroidEpubNavigatorController internal constructor(
 
     override fun playAudio(initialPositionMs: Long?) {
         logger.i { "🎵 playAudio() called - initialPositionMs=$initialPositionMs" }
-        val player = _mediaOverlayPlayer.value ?: run {
-            logPlayerNotInitialized("playAudio")
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            logger.i { "🎵 Player not ready, queuing Play command" }
+            pendingCommand = PendingMediaCommand.Play(initialPositionMs)
             return
         }
-        logger.i { "🎵 MediaOverlayPlayer is available" }
-
-        // Get the current locator with chapter href, fragment, and progression
-        val currentLocator = navigator.currentLocator.value
-        val currentChapterHref = currentLocator.href
-        // Extract the fragment ID from the locator (e.g., "chapter44.xhtml-sentence50")
-        val fragmentId = currentLocator.locations.fragments.firstOrNull()
-        // Extract the progression (0.0 to 1.0) through the chapter
-        val progression = currentLocator.locations.progression
-        logger.i { "🎵 Calling player.play() - href=$currentChapterHref, fragmentId=$fragmentId, progression=$progression" }
-        player.play(currentChapterHref, fragmentId, progression, initialPositionMs)
+        executePlayCommand(player, initialPositionMs)
     }
 
     override fun resumeAudio() {
-        val player = _mediaOverlayPlayer.value ?: run {
-            logPlayerNotInitialized("resumeAudio")
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            logger.i { "🎵 Player not ready, queuing Resume command" }
+            pendingCommand = PendingMediaCommand.Resume
             return
         }
         player.resume()
     }
 
     override fun pauseAudio() {
-        val player = _mediaOverlayPlayer.value ?: run {
-            logPlayerNotInitialized("pauseAudio")
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            // For pause, we can clear any pending play/resume command
+            // since the user changed their mind before playback started
+            logger.i { "🎵 Player not ready, clearing pending command (pause requested)" }
+            pendingCommand = null
             return
         }
         player.pause()
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {
-        val player = _mediaOverlayPlayer.value ?: run {
-            logPlayerNotInitialized("seekToAudioPosition")
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            logger.i { "🎵 Player not ready, queuing SeekTo command: $timestampMs" }
+            pendingCommand = PendingMediaCommand.SeekTo(timestampMs)
             return
         }
         player.seekTo(timestampMs)
     }
 
     override fun setPlaybackSpeed(speed: Float) {
-        val player = _mediaOverlayPlayer.value ?: run {
-            logPlayerNotInitialized("setPlaybackSpeed")
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            logger.i { "🎵 Player not ready, queuing SetSpeed command: $speed" }
+            pendingCommand = PendingMediaCommand.SetSpeed(speed)
             return
         }
         player.setPlaybackSpeed(speed)
+    }
+
+    override fun skipForward() {
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            logger.i { "🎵 Player not ready, ignoring skipForward" }
+            return
+        }
+        player.seekForward()
+    }
+
+    override fun skipBackward() {
+        val player = _mediaOverlayPlayer.value
+        if (player == null) {
+            logger.i { "🎵 Player not ready, ignoring skipBackward" }
+            return
+        }
+        player.seekBackward()
     }
 
     override fun dismissPermissionDeniedDialog() {
@@ -309,13 +368,41 @@ class AndroidEpubNavigatorController internal constructor(
     }
 
     /**
-     * Logs an error when a media method is called before the player is initialized.
+     * Executes the play command on the player.
+     * Extracted to avoid code duplication between immediate and deferred execution.
      */
-    private fun logPlayerNotInitialized(methodName: String) {
-        analytics.logException(
-            throwable = IllegalStateException("Media player not initialized"),
-            message = "$methodName called before media player was initialized",
-        )
+    private fun executePlayCommand(player: MediaOverlayPlayer, initialPositionMs: Long?) {
+        logger.i { "🎵 MediaOverlayPlayer is available" }
+        // Get the current locator with chapter href, fragment, and progression
+        val currentLocator = navigator.currentLocator.value
+        val currentChapterHref = currentLocator.href
+        // Extract the fragment ID from the locator (e.g., "chapter44.xhtml-sentence50")
+        val fragmentId = currentLocator.locations.fragments.firstOrNull()
+        // Extract the progression (0.0 to 1.0) through the chapter
+        val progression = currentLocator.locations.progression
+        logger.i {
+            "🎵 Calling player.play() - href=$currentChapterHref, " +
+                    "fragmentId=$fragmentId, progression=$progression"
+        }
+        player.play(currentChapterHref, fragmentId, progression, initialPositionMs)
+    }
+
+    /**
+     * Executes any pending media command that was queued before the player was ready.
+     * Called after the player is initialized.
+     */
+    private fun executePendingCommand(player: MediaOverlayPlayer) {
+        val command = pendingCommand ?: return
+        pendingCommand = null
+
+        logger.i { "🎵 Executing pending command: $command" }
+        when (command) {
+            is PendingMediaCommand.Play -> executePlayCommand(player, command.initialPositionMs)
+            is PendingMediaCommand.Resume -> player.resume()
+            is PendingMediaCommand.Pause -> player.pause()
+            is PendingMediaCommand.SeekTo -> player.seekTo(command.timestampMs)
+            is PendingMediaCommand.SetSpeed -> player.setPlaybackSpeed(command.speed)
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.ui.model.AudioPositionState
 import com.retro99.reader.ui.model.LocatorState
+import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +46,14 @@ interface EpubNavigatorController {
      * Returns an empty flow if the book doesn't support media overlays.
      */
     val isPlayingState: Flow<Boolean>
+
+    /**
+     * Flow of playback state changes for ReadAloud books.
+     * This includes states like PLAYING, PAUSED, BUFFERING, STOPPED, and ERROR.
+     * Use this to show error feedback to the user when SMIL parsing fails or other errors occur.
+     * Returns an empty flow if the book doesn't support media overlays.
+     */
+    val playbackState: Flow<PlaybackState>
 
     /**
      * Flow that emits true when the media player is ready.
@@ -140,6 +149,18 @@ interface EpubNavigatorController {
      * @param speed The playback speed (e.g., 0.5, 1.0, 1.5, 2.0)
      */
     fun setPlaybackSpeed(speed: Float)
+
+    /**
+     * Skips forward by a fixed increment (10 seconds).
+     * Uses the player's authoritative position rather than ViewModel state.
+     */
+    fun skipForward()
+
+    /**
+     * Skips backward by a fixed increment (10 seconds).
+     * Uses the player's authoritative position rather than ViewModel state.
+     */
+    fun skipBackward()
 
     /**
      * Dismisses the permission denied dialog.
