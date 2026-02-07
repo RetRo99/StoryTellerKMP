@@ -352,7 +352,7 @@ class SmilLoadingManager(
     /**
      * Releases all resources and clears caches.
      */
-    suspend fun release() {
+    fun release() {
         prefetchJob?.cancel()
         prefetchJob = null
         managerScope?.cancel()

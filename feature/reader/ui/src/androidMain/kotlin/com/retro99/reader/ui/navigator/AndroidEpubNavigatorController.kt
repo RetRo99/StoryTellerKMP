@@ -11,6 +11,8 @@ import com.retro99.reader.ui.model.AudioPositionState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.playback.MediaPlaybackController
+import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +66,8 @@ class AndroidEpubNavigatorController internal constructor(
     private val analytics: Analytics,
     private val smilParser: SmilParser,
     private val quickScanner: SmilQuickScanner,
+    private val mediaPlaybackController: MediaPlaybackController,
+    private val notificationPermissionHandler: NotificationPermissionHandler,
 ) : EpubNavigatorController {
 
     /**
@@ -123,6 +127,23 @@ class AndroidEpubNavigatorController internal constructor(
      */
     override val isPlayerReady: Flow<Boolean> = _mediaOverlayPlayer.map { it != null }
 
+    /**
+     * Flow that emits true when the notification permission was denied.
+     */
+    override val showPermissionDeniedDialog: Flow<Boolean> =
+        _mediaOverlayPlayer.flatMapLatest { player ->
+            player?.showPermissionDeniedDialog ?: flowOf(false)
+        }
+
+    /**
+     * Flow that emits true when the permission denial dialog should show a rationale
+     * (user can be asked again) vs directing to settings (permanently denied).
+     */
+    override val showPermissionRationale: Flow<Boolean> =
+        _mediaOverlayPlayer.flatMapLatest { player ->
+            player?.showPermissionRationale ?: flowOf(false)
+        }
+
     init {
         // Initialize media overlays automatically if the book supports them
         initializeMediaOverlays()
@@ -172,6 +193,8 @@ class AndroidEpubNavigatorController internal constructor(
                 analytics = analytics,
                 smilParser = smilParser,
                 quickScanner = quickScanner,
+                mediaPlaybackController = mediaPlaybackController,
+                notificationPermissionHandler = notificationPermissionHandler,
                 onLocatorChanged = { locator ->
                     controllerScope.launch { applyHighlight(locator) }
                 },
@@ -231,10 +254,12 @@ class AndroidEpubNavigatorController internal constructor(
     }
 
     override fun playAudio(initialPositionMs: Long?) {
+        logger.i { "🎵 playAudio() called - initialPositionMs=$initialPositionMs" }
         val player = _mediaOverlayPlayer.value ?: run {
             logPlayerNotInitialized("playAudio")
             return
         }
+        logger.i { "🎵 MediaOverlayPlayer is available" }
 
         // Get the current locator with chapter href, fragment, and progression
         val currentLocator = navigator.currentLocator.value
@@ -243,6 +268,7 @@ class AndroidEpubNavigatorController internal constructor(
         val fragmentId = currentLocator.locations.fragments.firstOrNull()
         // Extract the progression (0.0 to 1.0) through the chapter
         val progression = currentLocator.locations.progression
+        logger.i { "🎵 Calling player.play() - href=$currentChapterHref, fragmentId=$fragmentId, progression=$progression" }
         player.play(currentChapterHref, fragmentId, progression, initialPositionMs)
     }
 
@@ -276,6 +302,10 @@ class AndroidEpubNavigatorController internal constructor(
             return
         }
         player.setPlaybackSpeed(speed)
+    }
+
+    override fun dismissPermissionDeniedDialog() {
+        _mediaOverlayPlayer.value?.dismissPermissionDeniedDialog()
     }
 
     /**

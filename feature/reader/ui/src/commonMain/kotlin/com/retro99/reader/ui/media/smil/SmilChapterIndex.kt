@@ -117,12 +117,10 @@ class SmilChapterIndex {
      * Clears all index data.
      * Should be called when the reader session ends.
      */
-    suspend fun clear() {
-        mutex.withLock {
-            chapterToSmilMap.clear()
-            scannedSmilFiles.clear()
-            failedSmilFiles.clear()
-        }
+    fun clear() {
+        chapterToSmilMap.clear()
+        scannedSmilFiles.clear()
+        failedSmilFiles.clear()
     }
 }
 

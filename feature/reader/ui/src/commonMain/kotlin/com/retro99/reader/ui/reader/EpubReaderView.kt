@@ -148,3 +148,42 @@ internal fun ObserveAudioPlaybackState(
         }
     }
 }
+
+/**
+ * Common composable that observes permission denied dialog state from the navigator.
+ * Shows a dialog when notification permission is denied on Android.
+ *
+ * @param navigator The navigator controller to observe
+ * @param showDialog Whether to show the permission denied dialog
+ * @param showRationale Whether to show rationale (can ask again) vs settings (permanently denied)
+ * @param onOpenSettings Callback to open app settings
+ * @param onTryAgain Callback when user wants to try requesting permission again
+ * @param onDismiss Callback when the dialog is dismissed
+ */
+@Composable
+internal fun ObservePermissionDeniedDialog(
+    navigator: EpubNavigatorController?,
+    showDialog: Boolean,
+    showRationale: Boolean = false,
+    onOpenSettings: () -> Unit,
+    onTryAgain: () -> Unit = {},
+    onDismiss: () -> Unit,
+) {
+    if (showDialog) {
+        NotificationPermissionDeniedDialog(
+            showRationale = showRationale,
+            onOpenSettings = {
+                onOpenSettings()
+                navigator?.dismissPermissionDeniedDialog()
+            },
+            onTryAgain = {
+                onTryAgain()
+                navigator?.dismissPermissionDeniedDialog()
+            },
+            onDismiss = {
+                onDismiss()
+                navigator?.dismissPermissionDeniedDialog()
+            },
+        )
+    }
+}

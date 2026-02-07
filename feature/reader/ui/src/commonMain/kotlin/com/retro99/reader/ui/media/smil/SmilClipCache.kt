@@ -101,10 +101,8 @@ class SmilClipCache {
      * Clears all cached data.
      * Should be called when the reader session ends.
      */
-    suspend fun clear() {
-        mutex.withLock {
+    fun clear() {
             cache.clear()
-        }
     }
 
     /**

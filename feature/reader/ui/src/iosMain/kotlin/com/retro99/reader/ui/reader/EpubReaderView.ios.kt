@@ -6,6 +6,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import co.touchlab.kermit.Logger
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -104,6 +106,25 @@ internal actual fun EpubReaderView(
     ObserveAudioPlaybackState(
         navigator = publication,
         intentDispatcher = intentDispatcher,
+    )
+
+    // Observe permission denied dialog state (iOS doesn't need this, but included for consistency)
+    val showPermissionDeniedDialog by publication.showPermissionDeniedDialog
+        .collectAsState(initial = false)
+    val showPermissionRationale by publication.showPermissionRationale
+        .collectAsState(initial = false)
+    val openAppSettings = rememberOpenAppSettings()
+
+    ObservePermissionDeniedDialog(
+        navigator = publication,
+        showDialog = showPermissionDeniedDialog,
+        showRationale = showPermissionRationale,
+        onOpenSettings = openAppSettings,
+        onTryAgain = {
+            // User wants to try again - trigger play which will re-request permission
+            publication.playAudio()
+        },
+        onDismiss = { /* Dialog dismissed without opening settings */ },
     )
 
     DisposableEffect(bookUuid) {
