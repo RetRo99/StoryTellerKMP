@@ -4,6 +4,7 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,7 @@ import com.retro99.reader.ui.navigator.AndroidEpubNavigatorControllerFactory
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.koinInject
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
@@ -67,6 +69,27 @@ internal actual fun EpubReaderView(
     ObserveAudioPlaybackState(
         navigator = navigatorController,
         intentDispatcher = intentDispatcher,
+    )
+
+    // Observe permission denied dialog state
+    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
+        ?.collectAsState(initial = false)
+        ?: remember { mutableStateOf(false) }
+    val showPermissionRationale by navigatorController?.showPermissionRationale
+        ?.collectAsState(initial = false)
+        ?: remember { mutableStateOf(false) }
+    val openAppSettings = rememberOpenAppSettings()
+
+    ObservePermissionDeniedDialog(
+        navigator = navigatorController,
+        showDialog = showPermissionDeniedDialog,
+        showRationale = showPermissionRationale,
+        onOpenSettings = openAppSettings,
+        onTryAgain = {
+            // User wants to try again - trigger play which will re-request permission
+            navigatorController?.playAudio()
+        },
+        onDismiss = { /* Dialog dismissed without opening settings */ },
     )
 
     val navigatorFactory = remember(readiumPublication) {

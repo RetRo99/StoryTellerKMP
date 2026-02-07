@@ -1,0 +1,207 @@
+package com.retro99.reader.ui.playback
+
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import androidx.annotation.MainThread
+import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+
+/**
+ * Manages audio focus for the media player.
+ *
+ * This class handles:
+ * - Requesting audio focus before playback
+ * - Responding to audio focus changes (ducking, pausing)
+ * - Releasing audio focus when playback stops
+ * - Handling interruptions from phone calls, other apps, etc.
+ * - Distinguishing between user-initiated and system-initiated pauses
+ *
+ * ## Thread Safety
+ *
+ * The [OnAudioFocusChangeListener] callback may be invoked on a different thread
+ * (typically the audio thread). All boolean flags that are read/written from both
+ * the main thread and the focus listener are marked as @Volatile to ensure visibility.
+ *
+ * Public methods should be called from the main thread.
+ */
+@OptIn(UnstableApi::class)
+class AudioFocusManager(
+    private val context: Context,
+    private val player: ExoPlayer,
+) {
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    private var focusRequest: AudioFocusRequest? = null
+
+    @Volatile
+    private var hasAudioFocus = false
+
+    // Whether we're waiting for delayed focus grant
+    @Volatile
+    private var pendingDelayedFocus = false
+
+    // Volume level before ducking
+    @Volatile
+    private var volumeBeforeDuck: Float = 1.0f
+
+    // Whether we were playing before losing focus due to SYSTEM interruption
+    // This is only set when the system takes focus away, not when user pauses
+    @Volatile
+    private var wasPlayingBeforeSystemFocusLoss = false
+
+    // Callback for when delayed focus is granted
+    @Volatile
+    private var onDelayedFocusGranted: (() -> Unit)? = null
+
+    private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Regained focus - restore volume and optionally resume
+                hasAudioFocus = true
+                pendingDelayedFocus = false
+                player.volume = volumeBeforeDuck
+
+                // Only auto-resume if the SYSTEM paused us, not if user manually paused
+                if (wasPlayingBeforeSystemFocusLoss) {
+                    player.play()
+                    wasPlayingBeforeSystemFocusLoss = false
+                }
+
+                // Handle delayed focus grant
+                onDelayedFocusGranted?.invoke()
+                onDelayedFocusGranted = null
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // Permanent loss - pause playback but don't auto-resume later
+                hasAudioFocus = false
+                pendingDelayedFocus = false
+                // Don't set wasPlayingBeforeSystemFocusLoss - permanent loss shouldn't auto-resume
+                player.pause()
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Temporary loss (e.g., phone call) - pause and remember for auto-resume
+                hasAudioFocus = false
+                // Only remember if we were actually playing when system interrupted
+                if (player.isPlaying) {
+                    wasPlayingBeforeSystemFocusLoss = true
+                    player.pause()
+                }
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Can duck - lower volume instead of pausing
+                hasAudioFocus = true
+                volumeBeforeDuck = player.volume
+                player.volume = DUCK_VOLUME
+            }
+        }
+    }
+
+    /**
+     * Notifies the manager that the user manually paused playback.
+     * This prevents auto-resume when focus is regained.
+     */
+    @MainThread
+    fun onUserPaused() {
+        wasPlayingBeforeSystemFocusLoss = false
+    }
+
+    /**
+     * Requests audio focus for playback.
+     *
+     * @param onDelayedGrant Optional callback invoked if focus is granted after a delay.
+     *                       The caller should start playback when this is called.
+     * @return true if focus was granted immediately or delayed, false if denied
+     */
+    @MainThread
+    fun requestFocus(onDelayedGrant: (() -> Unit)? = null): Boolean {
+        if (hasAudioFocus) return true
+
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+
+        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(audioAttributes)
+            .setAcceptsDelayedFocusGain(true)
+            .setOnAudioFocusChangeListener(focusChangeListener)
+            .build()
+
+        val result = audioManager.requestAudioFocus(focusRequest!!)
+
+        return when (result) {
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                hasAudioFocus = true
+                pendingDelayedFocus = false
+                true
+            }
+
+            AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+                // Focus will be granted later via the listener
+                hasAudioFocus = false
+                pendingDelayedFocus = true
+                onDelayedFocusGranted = onDelayedGrant
+                // Return true because focus will be granted, just not immediately
+                true
+            }
+
+            else -> {
+                hasAudioFocus = false
+                pendingDelayedFocus = false
+                false
+            }
+        }
+    }
+
+    /**
+     * Checks if we have audio focus or are waiting for delayed focus.
+     */
+    fun hasFocusOrPending(): Boolean = hasAudioFocus || pendingDelayedFocus
+
+    /**
+     * Abandons audio focus.
+     * Should be called when playback is stopped.
+     */
+    @MainThread
+    fun abandonFocus() {
+        if (!hasAudioFocus && !pendingDelayedFocus) return
+
+        focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+
+        hasAudioFocus = false
+        pendingDelayedFocus = false
+        onDelayedFocusGranted = null
+        focusRequest = null
+    }
+
+    /**
+     * Configures the ExoPlayer with appropriate audio attributes.
+     * Should be called when creating the player.
+     *
+     * Note: We set handleAudioFocus=false because we manage audio focus manually
+     * via requestFocus() and abandonFocus(). This gives us more control over
+     * ducking behavior and focus change handling.
+     */
+    @MainThread
+    fun configurePlayerAudioAttributes() {
+        val audioAttributes = androidx.media3.common.AudioAttributes.Builder()
+            .setUsage(C.USAGE_MEDIA)
+            .setContentType(C.AUDIO_CONTENT_TYPE_SPEECH)
+            .build()
+
+        // handleAudioFocus=false because we manage focus manually in this class
+        player.setAudioAttributes(audioAttributes, false)
+    }
+
+    companion object {
+        private const val DUCK_VOLUME = 0.2f
+    }
+}
+

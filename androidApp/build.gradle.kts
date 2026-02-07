@@ -40,6 +40,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(projects.composeApp)
     implementation(projects.base)
+    implementation(projects.feature.reader.ui)
     implementation(libs.compose.uiToolingPreview)
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)

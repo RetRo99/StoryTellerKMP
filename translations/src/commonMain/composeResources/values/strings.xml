@@ -49,4 +49,13 @@
     <string name="reader_conflict_progress">%1$d% complete</string>
     <string name="reader_conflict_use_local">Use This Device</string>
     <string name="reader_conflict_use_remote">Use Server</string>
+
+    <!-- Notification Permission Denied Dialog -->
+    <string name="notification_permission_title">Notification Permission Required</string>
+    <string name="notification_permission_message">Audio playback requires notification permission to work properly. Please enable it in Settings.</string>
+    <string name="notification_permission_rationale_message">Audio playback requires notification permission to show playback controls and keep playing in the background. Please grant this permission to continue.</string>
+    <string name="notification_permission_open_settings">Open Settings</string>
+    <string name="notification_permission_try_again">Try Again</string>
+    <string name="notification_permission_cancel">Cancel</string>
+
 </resources>

@@ -1,0 +1,160 @@
+package com.retro99.reader.ui.playback
+
+import android.content.Context
+import androidx.annotation.OptIn
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionResult
+import com.google.common.collect.ImmutableList
+
+/**
+ * Manages MediaSession integration for audio playback.
+ *
+ * This class is responsible ONLY for:
+ * - Creating and managing the MediaSession
+ * - Handling media button events (play/pause from headphones, car, etc.)
+ * - Updating media metadata for lockscreen and notification display
+ * - Registering/unregistering with the [MediaPlaybackController]
+ *
+ * Playback state tracking and foreground service management are handled
+ * by [MediaOverlayPlayer] to avoid duplicate listeners and race conditions.
+ *
+ * @param onUserPausedFromSession Callback invoked when user pauses via notification/lockscreen/Bluetooth.
+ *                                 This allows [AudioFocusManager] to know not to auto-resume.
+ */
+@OptIn(UnstableApi::class)
+class MediaSessionManager(
+    private val context: Context,
+    private val player: ExoPlayer,
+    private val controller: MediaPlaybackController,
+    private val onUserPausedFromSession: (() -> Unit)? = null,
+) {
+    private var mediaSession: MediaSession? = null
+
+    private var bookTitle: String = "Reading Aloud"
+    private var chapterTitle: String? = null
+
+    /**
+     * Tracks the last known playing state.
+     * This is updated by a Player.Listener and used to reliably determine
+     * if a PLAY_PAUSE command is a pause (was playing) or play (was paused).
+     *
+     * Using a tracked state is more reliable than checking player.isPlaying
+     * in onPlayerCommandRequest, as it doesn't depend on timing assumptions
+     * about when Media3 processes the command.
+     */
+    @Volatile
+    private var wasPlaying: Boolean = false
+
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            wasPlaying = isPlaying
+        }
+    }
+
+    /**
+     * Initializes the MediaSession and registers it with the controller.
+     */
+    fun initialize() {
+        if (mediaSession != null) return
+
+        // Add listener to track playing state
+        player.addListener(playerListener)
+
+        // Create seek backward button (10 seconds)
+        val seekBackwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
+            .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+            .setSlots(CommandButton.SLOT_BACK)
+            .build()
+
+        // Create seek forward button (10 seconds)
+        val seekForwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_10)
+            .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+            .setSlots(CommandButton.SLOT_FORWARD)
+            .build()
+
+        mediaSession = MediaSession.Builder(context, player)
+            .setCallback(MediaSessionCallback())
+            .setMediaButtonPreferences(ImmutableList.of(seekBackwardButton, seekForwardButton))
+            .build()
+
+        // Register with the controller
+        mediaSession?.let { session ->
+            controller.registerPlayer(player, session)
+        }
+    }
+
+    /**
+     * Updates the stored metadata for notifications and lockscreen.
+     * The metadata will be applied to new MediaItems when they are prepared.
+     *
+     * Note: This does NOT update currently playing media. For that, the caller
+     * should rebuild the MediaItem with [buildCurrentMetadata] and set it on the player.
+     */
+    fun updateMetadata(bookTitle: String, chapterTitle: String? = null) {
+        this.bookTitle = bookTitle
+        this.chapterTitle = chapterTitle
+    }
+
+    /**
+     * Builds the current MediaMetadata based on stored book/chapter titles.
+     * Use this when creating a new MediaItem to ensure proper notification display.
+     *
+     * Media3's notification controller prefers MediaItem.mediaMetadata over
+     * player.playlistMetadata, so metadata should be set on the MediaItem itself.
+     */
+    fun buildCurrentMetadata(): MediaMetadata {
+        return MediaMetadata.Builder()
+            .setTitle(chapterTitle ?: bookTitle)
+            .setArtist(if (chapterTitle != null) bookTitle else "StoryTeller")
+            .setDisplayTitle(chapterTitle ?: bookTitle)
+            .build()
+    }
+
+    /**
+     * Releases the MediaSession and unregisters from the controller.
+     * Resets all tracked state to prevent stale values on reuse.
+     */
+    fun release() {
+        player.removeListener(playerListener)
+        controller.unregisterPlayer()
+        mediaSession?.release()
+        mediaSession = null
+        // Reset tracked state to prevent stale values if this manager is reused
+        wasPlaying = false
+    }
+
+    /**
+     * Callback for handling MediaSession events.
+     *
+     * Intercepts pause commands from notification/lockscreen/Bluetooth to notify
+     * [AudioFocusManager] that this is a user-initiated pause (not system focus loss).
+     */
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onPlayerCommandRequest(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            playerCommand: Int,
+        ): Int {
+            // Intercept pause command to notify AudioFocusManager
+            // This prevents auto-resume when focus is regained after user paused from notification
+            if (playerCommand == Player.COMMAND_PLAY_PAUSE ||
+                playerCommand == Player.COMMAND_STOP
+            ) {
+                // Use tracked wasPlaying state instead of player.isPlaying.
+                // This is more reliable as it doesn't depend on timing assumptions
+                // about when Media3 processes the command internally.
+                if (wasPlaying) {
+                    onUserPausedFromSession?.invoke()
+                }
+            }
+            // Allow the command to proceed
+            return SessionResult.RESULT_SUCCESS
+        }
+    }
+}
+

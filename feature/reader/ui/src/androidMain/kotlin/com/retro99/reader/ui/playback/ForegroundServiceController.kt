@@ -1,0 +1,59 @@
+package com.retro99.reader.ui.playback
+
+import android.app.ForegroundServiceStartNotAllowedException
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.content.ContextCompat
+import co.touchlab.kermit.Logger
+
+/**
+ * Controls the foreground service lifecycle for audio playback.
+ *
+ * This class is responsible for:
+ * - Starting the foreground service when playback begins
+ * - Stopping the foreground service when playback ends
+ *
+ * @param context Android context for starting/stopping the service
+ */
+class ForegroundServiceController(
+    private val context: Context,
+) {
+    private val logger = Logger.withTag("ForegroundServiceController")
+
+    /**
+     * Starts the foreground service for background playback.
+     * Should be called after notification permission is granted and audio focus is acquired.
+     *
+     * @return true if service was started successfully, false if blocked by system
+     *         (e.g., app backgrounded during permission dialog on Android 12+)
+     */
+    fun startService(): Boolean {
+        val intent = Intent(context, MediaPlaybackService::class.java)
+        return try {
+            ContextCompat.startForegroundService(context, intent)
+            true
+        } catch (e: Exception) {
+            // On Android 12+, ForegroundServiceStartNotAllowedException is thrown
+            // if the app isn't in a foreground-allowed state
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                e is ForegroundServiceStartNotAllowedException
+            ) {
+                logger.e(e) { "Cannot start foreground service - app not in foreground state" }
+            } else {
+                logger.e(e) { "Failed to start foreground service" }
+            }
+            false
+        }
+    }
+
+    /**
+     * Stops the foreground service.
+     * Should be called when playback ends or is stopped.
+     */
+    fun stopService() {
+        val intent = Intent(context, MediaPlaybackService::class.java)
+        context.stopService(intent)
+    }
+}
+

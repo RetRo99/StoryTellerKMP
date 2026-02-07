@@ -16,6 +16,10 @@ kotlin {
         namespace = "com.retro99.feature.reader.ui"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
+
+        androidResources {
+            enable = true
+        }
     }
 
     iosArm64()
@@ -53,8 +57,10 @@ kotlin {
             implementation(libs.readium.adapterExoplayer)
             implementation(libs.media3.exoplayer)
             implementation(libs.media3.datasource)
+            implementation(libs.media3.session)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.fragment)
+            implementation(libs.androidx.lifecycle.process)
             implementation(projects.feature.reader.data)
         }
     }

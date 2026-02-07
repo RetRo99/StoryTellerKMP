@@ -11,6 +11,7 @@ import com.retro99.reader.ui.navigator.EpubNavigatorController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * iOS implementation of EpubPublication.
@@ -43,12 +44,19 @@ actual class EpubPublication(
         extraBufferCapacity = 1,
     )
     private val _isPlayerReady = MutableStateFlow(false)
+    private val _showPermissionDeniedDialog = MutableStateFlow(false)
 
     // EpubNavigatorController state observation flows
     override val currentLocator: Flow<LocatorState> = _currentLocator
     override val audioPositionState: Flow<AudioPositionState> = _audioPositionState
     override val isPlayingState: Flow<Boolean> = _isPlayingState
     override val isPlayerReady: Flow<Boolean> = _isPlayerReady
+
+    // iOS doesn't require notification permission for audio playback
+    override val showPermissionDeniedDialog: Flow<Boolean> = _showPermissionDeniedDialog
+
+    // iOS doesn't need permission rationale - always false
+    override val showPermissionRationale: Flow<Boolean> = flowOf(false)
 
     init {
         setupCallbacks()
@@ -173,6 +181,10 @@ actual class EpubPublication(
 
     override fun setPlaybackSpeed(speed: Float) {
         bridge.setPlaybackSpeed(speed)
+    }
+
+    override fun dismissPermissionDeniedDialog() {
+        _showPermissionDeniedDialog.value = false
     }
 
     private fun ensureMediaOverlaysInitialized(onReady: () -> Unit) {

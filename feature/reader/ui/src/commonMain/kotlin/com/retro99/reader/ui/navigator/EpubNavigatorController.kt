@@ -53,6 +53,30 @@ interface EpubNavigatorController {
     val isPlayerReady: Flow<Boolean>
 
     /**
+     * Flow that emits true when the notification permission was denied
+     * and a dialog should be shown to the user.
+     *
+     * **Platform behavior:**
+     * - **Android**: Emits true when POST_NOTIFICATIONS permission is denied (Android 13+).
+     *   The dialog prompts the user to open app settings.
+     * - **iOS**: Always emits false (no-op). iOS doesn't require notification permission
+     *   for audio playback, so this flow is included only for API parity.
+     *
+     * Returns an empty flow if the book doesn't support media overlays.
+     */
+    val showPermissionDeniedDialog: Flow<Boolean>
+
+    /**
+     * Flow that emits true when the permission denial dialog should show a rationale
+     * (user can be asked again) vs directing to settings (permanently denied).
+     *
+     * **Platform behavior:**
+     * - **Android**: Emits true when user denied but can be asked again.
+     * - **iOS**: Always emits false (no-op).
+     */
+    val showPermissionRationale: Flow<Boolean>
+
+    /**
      * Navigates to the next page.
      */
     fun goToNextPage()
@@ -116,5 +140,10 @@ interface EpubNavigatorController {
      * @param speed The playback speed (e.g., 0.5, 1.0, 1.5, 2.0)
      */
     fun setPlaybackSpeed(speed: Float)
+
+    /**
+     * Dismisses the permission denied dialog.
+     */
+    fun dismissPermissionDeniedDialog()
 }
 
