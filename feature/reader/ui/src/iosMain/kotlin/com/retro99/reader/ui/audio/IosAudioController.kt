@@ -27,7 +27,7 @@ class IosAudioController(
     // Internal mutable flows for state observation
     private val _audioPlaybackState = MutableStateFlow(
         AudioPlaybackState(
-            currentPositionMs = 0L,
+            currentPositionMs = null,
             totalDurationMs = null,
             isPlaying = false,
             playbackState = PlaybackState.STOPPED,

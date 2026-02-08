@@ -329,19 +329,13 @@ class ReaderViewModel(
     /**
      * Updates the current audio position from the navigator.
      * Called by the View when the navigator reports position changes.
+     * Position is only updated if positionMs is not null (null means position not yet known).
+     * Duration is always updated if available.
      */
-    private fun updateAudioPosition(positionMs: Long, totalDurationMs: Long?) {
-        println("čič updateAudioPosition: positionMs=$positionMs, totalDurationMs=$totalDurationMs")
-        val currentState = viewState.value
+    private fun updateAudioPosition(positionMs: Long?, totalDurationMs: Long?) {
         updateState {
             it.copy(
-                // Only update position if playback has started, or if new position is not 0
-                // This preserves the saved position before first playback
-                currentAudioPositionMs = if (currentState.hasStartedPlayback || positionMs > 0) {
-                    positionMs
-                } else {
-                    it.currentAudioPositionMs
-                },
+                currentAudioPositionMs = positionMs ?: it.currentAudioPositionMs,
                 totalDurationMs = totalDurationMs ?: it.totalDurationMs,
             )
         }

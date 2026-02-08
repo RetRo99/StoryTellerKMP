@@ -148,7 +148,7 @@ class MediaOverlayPlayer(
     // Expose state from trackers
     val isPlaying: StateFlow<Boolean> get() = playbackStateTracker.isPlaying
     val playbackState: StateFlow<PlaybackState> get() = playbackStateTracker.playbackState
-    val currentPosition: StateFlow<Long> get() = locatorTracker.currentPosition
+    val currentPosition: StateFlow<Long?> get() = locatorTracker.currentPosition
     val totalDuration: StateFlow<Long?> get() = playbackStateTracker.totalDuration
     val currentLocator: StateFlow<LocatorState?> get() = locatorTracker.currentLocator
 
@@ -262,18 +262,9 @@ class MediaOverlayPlayer(
     ) {
         playerScope.launch {
             // Use tryLock to prevent concurrent play calls from double-taps
-            // If already playing/starting, ignore the second tap but show feedback
+            // If already playing/starting, ignore the second tap
             if (!playMutex.tryLock()) {
                 logger.d { "play() ignored - already in progress" }
-                // Show BUFFERING state so user knows their tap was received
-                // This provides feedback when the first tap is still processing
-                // (e.g., waiting for permission dialog)
-                val currentState = playbackStateTracker.playbackState.value
-                if (currentState != PlaybackState.PLAYING &&
-                    currentState != PlaybackState.BUFFERING
-                ) {
-                    playbackStateTracker.setPlaybackState(PlaybackState.BUFFERING)
-                }
                 return@launch
             }
             try {
@@ -300,16 +291,9 @@ class MediaOverlayPlayer(
             return
         }
 
-        // Permission granted - now we can set optimistic state for immediate UI feedback
-        playbackStateTracker.setPlayingState(true)
-        playbackStateTracker.setPlaybackState(PlaybackState.BUFFERING)
-
         // Request audio focus before starting playback
         val focusGranted = audioFocusManager.requestFocus()
         if (!focusGranted) {
-            // Reset state to prevent infinite spinner in UI
-            playbackStateTracker.setPlayingState(false)
-            playbackStateTracker.setPlaybackState(PlaybackState.STOPPED)
             analytics.logException(
                 IllegalStateException("Failed to acquire audio focus"),
                 "Could not acquire audio focus for playback",
@@ -321,8 +305,6 @@ class MediaOverlayPlayer(
         val serviceStarted = foregroundServiceController.startService()
         if (!serviceStarted) {
             // App was backgrounded during permission dialog or other system restriction
-            playbackStateTracker.setPlayingState(false)
-            playbackStateTracker.setPlaybackState(PlaybackState.STOPPED)
             audioFocusManager.abandonFocus()
             analytics.logException(
                 IllegalStateException("Cannot start foreground service from background"),
