@@ -7,6 +7,7 @@ import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.core.annotation.Single
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.asset.AssetRetriever
 import org.readium.r2.shared.util.http.DefaultHttpClient
@@ -25,6 +26,7 @@ import java.io.File
  * The service is scoped per reader session and should be cleaned up
  * when the reader screen is disposed.
  */
+@Single(binds = [EpubPublicationService::class])
 class AndroidEpubPublicationService(
     private val context: Context,
 ) : BaseEpubPublicationService() {
