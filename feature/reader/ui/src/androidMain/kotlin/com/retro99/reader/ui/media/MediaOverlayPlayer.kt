@@ -359,7 +359,7 @@ class MediaOverlayPlayer(
 
     fun seekTo(positionMs: Long) {
         exoPlayer.seekTo(positionMs)
-        locatorTracker.forceUpdateLocator()
+        locatorTracker.forceUpdatePosition()
     }
 
     /**

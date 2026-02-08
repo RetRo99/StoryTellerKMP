@@ -191,10 +191,11 @@ class LocatorTracker(
     }
 
     /**
-     * Forces an update of the current locator.
-     * Called after seeking.
+     * Forces an update of the current position and locator.
+     * Called after seeking to ensure UI reflects the new position.
      */
-    fun forceUpdateLocator() {
+    fun forceUpdatePosition() {
+        _currentPosition.value = player.currentPosition
         updateCurrentLocator()
     }
 
