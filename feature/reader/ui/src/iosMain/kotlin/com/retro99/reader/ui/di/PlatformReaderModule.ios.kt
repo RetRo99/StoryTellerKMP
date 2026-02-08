@@ -1,7 +1,7 @@
 package com.retro99.reader.ui.di
 
-import com.retro99.reader.ui.service.EpubPublicationService
-import com.retro99.reader.ui.service.IosEpubPublicationService
+import com.retro99.reader.ui.bridge.EpubReaderBridge
+import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
@@ -13,8 +13,7 @@ import org.koin.core.annotation.Single
 actual class PlatformReaderModule {
 
     @Single
-    fun providesEpubPublicationService(): EpubPublicationService {
-        return IosEpubPublicationService()
+    fun providesEpubReaderBridge(): EpubReaderBridge {
+        return EpubReaderBridgeRegistry.getBridge() ?: error("EpubReaderBridge not registered")
     }
 }
-

@@ -20,19 +20,18 @@ import co.touchlab.kermit.Logger
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.navigator.BookController
+import com.retro99.reader.ui.navigator.IosEpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
 import platform.UIKit.UIViewController
 
 private val logger = Logger.withTag("EpubReaderView.iOS")
 
 /**
  * iOS implementation of EPUB reader using Readium Swift via bridge.
- *
- * The [publication] object implements [EpubNavigatorController], so we use it
- * directly for navigation instead of creating a separate controller wrapper.
  */
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -45,16 +44,16 @@ internal actual fun EpubReaderView(
 ) {
     logger.d { "EpubReaderView composing for bookUuid=$bookUuid" }
 
+    val navigator = bookController as? IosEpubNavigatorController
+
     // Key the state by bookUuid to ensure it persists across recompositions
     // but resets when opening a different book
     var readerViewController by remember(bookUuid) { mutableStateOf<UIViewController?>(null) }
 
     // Create the reader view controller when the publication is ready
-    LaunchedEffect(publication) {
+    LaunchedEffect(publication, navigator) {
         logger.d { "LaunchedEffect started for publication" }
-        logger.d { "Publication bridge: ${publication.bridge}" }
         logger.d { "Initial settings: ${publication.initialSettings}" }
-        logger.d { "Initial position: ${publication.initialPosition}" }
 
         // Try to create the view controller, retrying if needed
         var attempts = 0
@@ -76,7 +75,7 @@ internal actual fun EpubReaderView(
                 // This is needed because the Swift MediaOverlayPlayer needs access to
                 // the navigator's current location for proper initialization
                 logger.d { "Initializing media overlays after navigator creation" }
-                publication.initializeMediaOverlaysIfNeeded()
+                navigator?.initializeMediaOverlaysIfNeeded()
             } else {
                 attempts++
                 logger.w { "createReaderViewController returned null, attempt $attempts/10" }
@@ -89,40 +88,34 @@ internal actual fun EpubReaderView(
         }
     }
 
-    // Use common command handling logic
-//    HandleNavigatorCommands(
-//        navigator = publication,
-//        commands = commands,
-//    )
-
     // Use common observation logic for location changes
     ObserveLocationChanges(
-        navigator = publication,
+        navigator = navigator,
         initialPosition = publication.initialPosition,
         intentDispatcher = intentDispatcher,
     )
 
     // Use common observation logic for audio playback state
     ObserveAudioPlaybackState(
-        navigator = publication,
+        navigator = navigator,
         intentDispatcher = intentDispatcher,
     )
 
     // Observe permission denied dialog state (iOS doesn't need this, but included for consistency)
-    val showPermissionDeniedDialog by publication.showPermissionDeniedDialog
+    val showPermissionDeniedDialog by (navigator?.showPermissionDeniedDialog ?: flowOf(false))
         .collectAsState(initial = false)
-    val showPermissionRationale by publication.showPermissionRationale
+    val showPermissionRationale by (navigator?.showPermissionRationale ?: flowOf(false))
         .collectAsState(initial = false)
     val openAppSettings = rememberOpenAppSettings()
 
     ObservePermissionDeniedDialog(
-        navigator = publication,
+        navigator = navigator,
         showDialog = showPermissionDeniedDialog,
         showRationale = showPermissionRationale,
         onOpenSettings = openAppSettings,
         onTryAgain = {
             // User wants to try again - trigger play which will re-request permission
-            publication.playAudio()
+            navigator?.playAudio()
         },
         onDismiss = { /* Dialog dismissed without opening settings */ },
     )
@@ -131,10 +124,8 @@ internal actual fun EpubReaderView(
         logger.d { "DisposableEffect started for bookUuid=$bookUuid" }
         onDispose {
             logger.d { "DisposableEffect onDispose - closing publication" }
-            // Clear the local view controller reference first
             readerViewController = null
-            // Then close the publication which will clean up the Swift side
-            publication.close()
+            navigator?.close()
         }
     }
 
