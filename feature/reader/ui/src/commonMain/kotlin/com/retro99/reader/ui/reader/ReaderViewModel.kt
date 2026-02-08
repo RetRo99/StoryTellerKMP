@@ -52,12 +52,12 @@ class ReaderViewModel(
         addCloseable(bookController)
         initializeReader()
         observeSettingsChanges()
+        observeLocationChanges()
     }
 
     override fun onIntent(intent: ReaderIntent) {
         println("čič $intent")
         when (intent) {
-            is ReaderIntent.UpdatePosition -> updatePosition(intent.position)
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
@@ -92,6 +92,24 @@ class ReaderViewModel(
         getReaderSettingsUseCase()
             .onEach { settings ->
                 bookController.setSettings(settings.toUiModel())
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeLocationChanges() {
+        bookController.currentLocator
+            .onEach { locator ->
+                val basePosition = viewState.value.lastKnownPosition ?: return@onEach
+
+                val positionUiModel = basePosition.copy(
+                    href = locator.href,
+                    type = locator.type,
+                    title = locator.title,
+                    progression = locator.progression,
+                    position = locator.position,
+                    totalProgression = locator.totalProgression,
+                )
+                updatePosition(positionUiModel)
             }
             .launchIn(viewModelScope)
     }
@@ -133,6 +151,7 @@ class ReaderViewModel(
                     error = null,
                     initialAudioPositionMs = position?.audioTimestampMs,
                     currentAudioPositionMs = position?.audioTimestampMs ?: 0L,
+                    lastKnownPosition = position,
                 )
             }
         }
