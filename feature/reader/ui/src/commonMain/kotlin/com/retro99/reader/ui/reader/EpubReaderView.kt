@@ -48,11 +48,6 @@ internal fun HandleNavigatorCommands(
         navigator?.let { controller ->
             commands.collect { command ->
                 when (command) {
-                    is ReaderCommand.GoToNextPage -> controller.goToNextPage()
-                    is ReaderCommand.GoToPreviousPage -> controller.goToPreviousPage()
-                    is ReaderCommand.GoToChapter -> controller.goToChapter(command.href)
-                    is ReaderCommand.ApplySettings -> controller.setSettings(command.settings)
-                    is ReaderCommand.GoToPosition -> controller.goToPosition(command.position)
                     is ReaderCommand.StartPlayback -> {
                         controller.playAudio(command.initialPositionMs)
                     }

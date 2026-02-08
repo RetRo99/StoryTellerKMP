@@ -56,7 +56,7 @@ fun ReaderScreen(
             viewState = viewState,
             intentDispatcher = intentDispatcher,
             commands = viewModel.commands,
-            bookController = viewModel.epubNavigatorControllerNew,
+            bookController = viewModel.bookController,
         )
     }
 }
