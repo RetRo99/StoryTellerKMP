@@ -136,7 +136,7 @@ actual class EpubPublication(
     /**
      * Closes the publication and releases resources.
      */
-    actual fun close() {
+    actual override fun close() {
         // Clear callbacks to prevent memory leaks
         bridge.setOnPositionChangedCallback(null)
         bridge.setOnPlaybackStateChangedCallback(null)
