@@ -27,6 +27,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -55,6 +56,7 @@ fun ReaderScreen(
             viewState = viewState,
             intentDispatcher = intentDispatcher,
             commands = viewModel.commands,
+            bookController = viewModel.epubNavigatorControllerNew,
         )
     }
 }
@@ -65,6 +67,7 @@ private fun ReaderScreenContent(
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     commands: Flow<ReaderCommand>,
+    bookController: EpubNavigatorControllerNew,
 ) {
     Box(
         modifier = Modifier
@@ -87,6 +90,7 @@ private fun ReaderScreenContent(
                 intentDispatcher = intentDispatcher,
                 commands = commands,
                 loader = movableLoader,
+                bookController = bookController,
             )
         } else {
             movableLoader()
@@ -115,6 +119,7 @@ private fun ReaderContent(
     commands: Flow<ReaderCommand>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
+    bookController: EpubNavigatorControllerNew,
 ) {
     val settings = publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
@@ -146,6 +151,7 @@ private fun ReaderContent(
             publication = publication,
             commands = commands,
             intentDispatcher = intentDispatcher,
+            bookController = bookController,
             modifier = Modifier
                 .fillMaxSize()
                 .readerGestures(

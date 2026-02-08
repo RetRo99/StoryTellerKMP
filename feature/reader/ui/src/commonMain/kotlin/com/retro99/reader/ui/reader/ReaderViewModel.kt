@@ -19,6 +19,7 @@ import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
+import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.service.EpubPublicationService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -40,6 +41,7 @@ class ReaderViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
+    @Provided val epubNavigatorControllerNew: EpubNavigatorControllerNew,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(
         bookUuid = bookUuid,
@@ -51,6 +53,7 @@ class ReaderViewModel(
     val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
 
     init {
+        addCloseable(epubNavigatorControllerNew)
         initializeReader()
         observeSettingsChanges()
     }

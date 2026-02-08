@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
+import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 
@@ -26,6 +27,7 @@ internal expect fun EpubReaderView(
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    bookController: EpubNavigatorControllerNew,
     modifier: Modifier = Modifier,
 )
 

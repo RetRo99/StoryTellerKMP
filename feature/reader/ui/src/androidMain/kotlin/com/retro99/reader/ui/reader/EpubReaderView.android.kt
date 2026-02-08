@@ -8,7 +8,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -18,13 +17,12 @@ import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
-import com.retro99.reader.ui.navigator.AndroidEpubNavigatorControllerFactory
+import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.coroutines.flow.Flow
-import org.koin.compose.koinInject
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 
@@ -39,6 +37,7 @@ internal actual fun EpubReaderView(
     publication: EpubPublication,
     commands: Flow<ReaderCommand>,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    bookController: EpubNavigatorControllerNew,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -48,10 +47,8 @@ internal actual fun EpubReaderView(
     }
 
     val readiumPublication = publication.publication
-    val controllerFactory: AndroidEpubNavigatorControllerFactory = koinInject()
 
-    var navigatorController by remember { mutableStateOf<AndroidEpubNavigatorController?>(null) }
-
+    val navigatorController = bookController as? AndroidEpubNavigatorController
     // Use common command handling logic
     HandleNavigatorCommands(
         navigator = navigatorController,
@@ -101,10 +98,8 @@ internal actual fun EpubReaderView(
     DisposableEffect(bookUuid) {
         onDispose {
             // Release media overlay player resources
-            navigatorController?.release()
+            navigatorController?.close()
             // Clean up the navigator controller
-            navigatorController = null
-            // Clean up the publication
             publication.close()
             // Clean up the fragment when the composable is disposed
             val existingFragment = activity.supportFragmentManager
@@ -150,18 +145,12 @@ internal actual fun EpubReaderView(
             }
 
             // Create navigator controller if needed
-            if (navigatorController == null) {
-                val navigatorFragment = (existingFragment
-                    ?: fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG))
-                        as? EpubNavigatorFragment
+            val navigatorFragment = (existingFragment
+                ?: fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG))
+                    as? EpubNavigatorFragment
 
-                navigatorFragment?.let {
-                    navigatorController = controllerFactory.create(
-                        navigator = it,
-                        publication = publication,
-                        context = context,
-                    )
-                }
+            navigatorFragment?.let {
+                navigatorController?.init(publication, it)
             }
         },
     )
