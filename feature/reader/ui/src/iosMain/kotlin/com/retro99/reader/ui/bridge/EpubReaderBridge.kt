@@ -170,10 +170,21 @@ interface EpubReaderBridge {
     fun setOnPlaybackStateChangedCallback(callback: ((PlaybackState) -> Unit)?)
 
     /**
+     * Sets a callback to be invoked when the audio locator changes.
+     * @param callback The callback with locator details for highlighting
+     */
+    fun setOnAudioLocatorChangedCallback(callback: ((AudioLocator) -> Unit)?)
+
+    /**
      * Sets a callback to be invoked when the media player is ready.
      * @param callback The callback to invoke when the player is ready
      */
     fun setOnMediaPlayerReadyCallback(callback: (() -> Unit)?)
+
+    /**
+     * Applies a highlight for the given audio locator in the navigator.
+     */
+    fun applyAudioHighlight(locator: AudioLocator)
 }
 
 /**
@@ -197,6 +208,20 @@ data class PlaybackState(
     val isPlaying: Boolean,
     val currentPositionMs: Long,
     val durationMs: Long?,
+)
+
+/**
+ * Audio locator data class for iOS bridge.
+ * This is a simple data holder that can be passed from Swift to Kotlin.
+ */
+data class AudioLocator(
+    val href: String,
+    val type: String,
+    val title: String?,
+    val progression: Double?,
+    val position: Int?,
+    val totalProgression: Double?,
+    val fragment: String?,
 )
 
 /**

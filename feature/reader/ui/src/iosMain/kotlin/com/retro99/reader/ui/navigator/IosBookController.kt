@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.model.LocatorState
@@ -38,6 +39,7 @@ class IosBookController(
                     progression = locator.progression,
                     position = locator.position,
                     totalProgression = locator.totalProgression,
+                    fragments = null,
                 ),
             )
         }
@@ -68,7 +70,23 @@ class IosBookController(
         )
     }
 
+    override suspend fun applyHighlight(locator: LocatorState) {
+        bridge.applyAudioHighlight(locator.toAudioLocator())
+    }
+
     override fun close() {
         bridge.setOnPositionChangedCallback(null)
     }
+}
+
+private fun LocatorState.toAudioLocator(): AudioLocator {
+    return AudioLocator(
+        href = href,
+        type = type,
+        title = title,
+        progression = progression,
+        position = position,
+        totalProgression = totalProgression,
+        fragment = fragments?.firstOrNull(),
+    )
 }

@@ -85,6 +85,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     // Media overlay support
     private var mediaOverlayPlayer: MediaOverlayPlayer?
     private var onPlaybackStateChangedCallback: ((PlaybackState) -> Void)?
+    private var onAudioLocatorChangedCallback: ((AudioLocator) -> Void)?
     private var onMediaPlayerReadyCallback: (() -> Void)?
     private var currentHighlightId: String?
     private var currentChapterHref: RelativeURL?
@@ -382,8 +383,37 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         self.onPlaybackStateChangedCallback = callback
     }
 
+    func setOnAudioLocatorChangedCallback(callback: ((AudioLocator) -> Void)?) {
+        self.onAudioLocatorChangedCallback = callback
+    }
+
     func setOnMediaPlayerReadyCallback(callback: (() -> Void)?) {
         self.onMediaPlayerReadyCallback = callback
+    }
+
+    func applyAudioHighlight(locator: AudioLocator) {
+        guard let href = AnyURL(legacyHREF: locator.href) else {
+            return
+        }
+
+        let fragmentId = locator.fragment
+        let fragments = fragmentId.map {
+            [$0]
+        } ?? []
+        let readiumLocator = Locator(
+            href: href,
+            mediaType: MediaType(locator.type) ?? .html,
+            title: locator.title,
+            locations: Locator.Locations(
+                fragments: fragments,
+                progression: locator.progression?.doubleValue,
+                totalProgression: locator.totalProgression?.doubleValue,
+                position: locator.position.map {
+                    Int($0.int32Value)
+                },
+                )
+        )
+        applyHighlightDecoration(locator: readiumLocator)
     }
 
     // MARK: - Private Media Overlay Helpers
@@ -401,6 +431,30 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     private func handleLocatorChanged(_ locator: Locator) {
         applyHighlightDecoration(locator: locator)
+        notifyAudioLocatorChanged(locator)
+    }
+
+    private func notifyAudioLocatorChanged(_ locator: Locator) {
+        guard let callback = onAudioLocatorChangedCallback else {
+            return
+        }
+
+        let audioLocator = AudioLocator(
+            href: locator.href.string,
+            type: locator.mediaType.string,
+            title: locator.title,
+            progression: locator.locations.progression.map {
+                KotlinDouble(value: $0)
+            },
+            position: locator.locations.position.map {
+                KotlinInt(value: Int32($0))
+            },
+            totalProgression: locator.locations.totalProgression.map {
+                KotlinDouble(value: $0)
+            },
+            fragment: locator.locations.fragments.first
+        )
+        callback(audioLocator)
     }
 
     private func applyHighlightDecoration(locator: Locator) {
