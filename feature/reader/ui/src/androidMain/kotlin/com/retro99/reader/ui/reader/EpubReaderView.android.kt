@@ -47,11 +47,6 @@ internal actual fun EpubReaderView(
     val readiumPublication = publication.publication
 
     val navigatorController = bookController as? AndroidEpubNavigatorController
-    // Use common command handling logic
-//    HandleNavigatorCommands(
-//        navigator = navigatorController,
-//        commands = commands,
-//    )
 
     // Observe location changes from the navigator and report them back
     ObserveLocationChanges(

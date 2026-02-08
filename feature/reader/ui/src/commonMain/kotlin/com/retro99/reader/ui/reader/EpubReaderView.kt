@@ -30,56 +30,6 @@ internal expect fun EpubReaderView(
 )
 
 /**
- * Common composable that handles command execution for a navigator controller.
- * This should be called by platform implementations when the navigator is ready.
- *
- * @param navigator The navigator controller to execute commands on
- * @param commands Flow of commands from ViewModel
- */
-//@Composable
-//internal fun HandleNavigatorCommands(
-//    navigator: EpubNavigatorController?,
-//    commands: Flow<ReaderCommand>,
-//) {
-//    // Collect and execute navigation commands
-//    LaunchedEffect(navigator) {
-//        navigator?.let { controller ->
-//            commands.collect { command ->
-//                when (command) {
-//                    is ReaderCommand.StartPlayback -> {
-//                        controller.playAudio(command.initialPositionMs)
-//                    }
-//
-//                    is ReaderCommand.PausePlayback -> {
-//                        controller.pauseAudio()
-//                    }
-//
-//                    is ReaderCommand.ResumePlayback -> {
-//                        controller.resumeAudio()
-//                    }
-//
-//                    is ReaderCommand.SeekToAudioPosition -> {
-//                        controller.seekToAudioPosition(command.audioTimestampMs)
-//                    }
-//
-//                    is ReaderCommand.SetPlaybackSpeed -> {
-//                        controller.setPlaybackSpeed(command.speed)
-//                    }
-//
-//                    is ReaderCommand.SkipForward -> {
-//                        controller.skipForward()
-//                    }
-//
-//                    is ReaderCommand.SkipBackward -> {
-//                        controller.skipBackward()
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-
-/**
  * Common composable that observes location changes from the navigator and dispatches intents.
  * Copies the initial position and updates only the location-related fields,
  * preserving the original UUID and createdAt timestamp.
