@@ -23,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -114,6 +115,7 @@ class AndroidEpubNavigatorController internal constructor(
                 progression = locator.locations.progression,
                 position = locator.locations.position,
                 totalProgression = locator.locations.totalProgression,
+                fragments = locator.locations.fragments,
             )
         } ?: flowOf() // or emptyFlow()
     }
@@ -205,6 +207,7 @@ class AndroidEpubNavigatorController internal constructor(
         _mediaOverlayPlayer.flatMapLatest { player ->
             player?.showPermissionRationale ?: flowOf(false)
         }
+    override val currentAudioLocator: StateFlow<LocatorState?> = MutableStateFlow(null)
 
     override fun goToNextPage() {
         navigator.goForward()
@@ -252,9 +255,6 @@ class AndroidEpubNavigatorController internal constructor(
                 quickScanner = quickScanner,
                 mediaPlaybackController = mediaPlaybackController,
                 notificationPermissionHandler = notificationPermissionHandler,
-                onLocatorChanged = { locator ->
-                    controllerScope.launch { applyHighlight(locator) }
-                },
             )
             val playerCreateTime = nowMillis() - playerCreateStart
             logger.i { "⏱️ MediaOverlayPlayer created in ${playerCreateTime}ms" }
@@ -294,9 +294,9 @@ class AndroidEpubNavigatorController internal constructor(
      * Applies a highlight decoration to the given locator and navigates to it.
      * This ensures the currently spoken text is always visible on screen.
      */
-    private suspend fun applyHighlight(locator: Locator) {
+    override suspend fun applyHighlight(locator: LocatorState) {
         val decorableNavigator = navigator as? DecorableNavigator ?: return
-
+        val locator = locator.toAndroidLocator() ?: return
         val decoration = Decoration(
             id = "readaloud-active",
             locator = locator,
@@ -388,6 +388,14 @@ class AndroidEpubNavigatorController internal constructor(
         _mediaOverlayPlayer.value?.dismissPermissionDeniedDialog()
     }
 
+    override fun onBookLocationChanged(locator: LocatorState) {
+//        TODO("Not yet implemented")
+    }
+
+    override suspend fun init(publication: EpubPublication) {
+//        TODO("Not yet implemented")
+    }
+
     /**
      * Executes the play command on the player.
      * Extracted to avoid code duplication between immediate and deferred execution.
@@ -465,6 +473,22 @@ fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
  * Returns null if the URL or mediaType cannot be parsed.
  */
 fun PositionUiModel.toAndroidLocator(): Locator? {
+    val url = Url(href) ?: return null
+    val mediaType = MediaType(type) ?: return null
+
+    return Locator(
+        href = url,
+        mediaType = mediaType,
+        title = title,
+        locations = Locator.Locations(
+            progression = progression,
+            position = position,
+            totalProgression = totalProgression,
+        ),
+    )
+}
+
+fun LocatorState.toAndroidLocator(): Locator? {
     val url = Url(href) ?: return null
     val mediaType = MediaType(type) ?: return null
 

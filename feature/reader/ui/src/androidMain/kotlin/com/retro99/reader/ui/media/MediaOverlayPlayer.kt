@@ -14,6 +14,7 @@ import com.retro99.reader.ui.media.smil.SmilContentProvider
 import com.retro99.reader.ui.media.smil.SmilLoadingManager
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
+import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.playback.AudioFocusManager
 import com.retro99.reader.ui.playback.ForegroundServiceController
@@ -36,7 +37,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
-import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.getOrElse
@@ -70,7 +70,6 @@ class MediaOverlayPlayer(
     private val quickScanner: SmilQuickScanner,
     private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
-    private val onLocatorChanged: ((Locator) -> Unit)? = null,
 ) {
     private val logger = Logger.withTag("MediaOverlayPlayer")
 
@@ -110,7 +109,7 @@ class MediaOverlayPlayer(
     private val foregroundServiceController = ForegroundServiceController(context)
 
     // Locator tracker for position updates and text highlighting
-    private val locatorTracker = LocatorTracker(exoPlayer, playerScope, onLocatorChanged)
+    private val locatorTracker = LocatorTracker(exoPlayer, playerScope)
 
     // Playback state tracker with callbacks for state changes
     private val playbackStateTracker: PlaybackStateTracker by lazy {
@@ -151,7 +150,7 @@ class MediaOverlayPlayer(
     val playbackState: StateFlow<PlaybackState> get() = playbackStateTracker.playbackState
     val currentPosition: StateFlow<Long> get() = locatorTracker.currentPosition
     val totalDuration: StateFlow<Long?> get() = playbackStateTracker.totalDuration
-    val currentLocator: StateFlow<Locator?> get() = locatorTracker.currentLocator
+    val currentLocator: StateFlow<LocatorState?> get() = locatorTracker.currentLocator
 
     // Event to signal that notification permission was denied
     private val _showPermissionDeniedDialog = MutableStateFlow(false)

@@ -44,4 +44,5 @@ interface BookController : AutoCloseable {
      */
     fun goToPosition(position: PositionUiModel)
 
+    suspend fun applyHighlight(locator: LocatorState)
 }
