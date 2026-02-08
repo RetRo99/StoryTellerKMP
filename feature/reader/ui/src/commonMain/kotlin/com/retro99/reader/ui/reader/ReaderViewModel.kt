@@ -65,7 +65,6 @@ class ReaderViewModel(
         initializeReader()
         observeSettingsChanges()
         observeBookLocationChanges()
-        observeAudioPlaybackState()
     }
 
     override fun onIntent(intent: ReaderIntent) {
@@ -202,6 +201,7 @@ class ReaderViewModel(
             .filter { it }
             .onEach { onIntent(ReaderIntent.MediaPlayerReady) }
             .launchIn(viewModelScope)
+        observeAudioPlaybackState()
     }
 
     private fun resolveConflictWithLocal() {
