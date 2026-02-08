@@ -1,14 +1,22 @@
 package com.retro99.reader.ui.navigator
 
+import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
@@ -48,6 +56,13 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
 class AndroidEpubNavigatorController internal constructor() : EpubNavigatorController {
 
     private val _navigator = MutableStateFlow<EpubNavigatorFragment?>(null)
+    private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var pendingPageTurnJob: Job? = null
+
+    /**
+     * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
+     */
+    private var lastPageTurnSentenceId: String? = null
 
     private val navigator: EpubNavigatorFragment
         get() = _navigator.value ?: error("Navigator not initialized")
@@ -101,32 +116,114 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     }
 
     /**
-     * Applies a highlight decoration to the given locator and navigates to it.
-     * This ensures the currently spoken text is always visible on screen.
+     * Applies a highlight decoration to the given locator and handles split sentences.
+     *
+     * For sentences that are split across pages, this method will:
+     * 1. Apply the highlight immediately
+     * 2. Check if the sentence is split (partially visible)
+     * 3. Schedule a page turn after the visible portion has been read
      */
-    override suspend fun applyHighlight(locator: LocatorState) {
+    override suspend fun applyHighlightWithPageTurn(
+        locator: LocatorState,
+        sentenceDurationMs: Long,
+    ) {
         val decorableNavigator = _navigator.value as? DecorableNavigator ?: return
-        val locator = locator.toAndroidLocator() ?: return
+        val androidLocator = locator.toAndroidLocator() ?: return
+        val fragmentId = locator.fragments?.firstOrNull()
+
         val decoration = Decoration(
             id = "readaloud-active",
-            locator = locator,
+            locator = androidLocator,
             style = Decoration.Style.Highlight(
                 tint = READALOUD_HIGHLIGHT_COLOR,
                 isActive = true,
             ),
         )
-
         decorableNavigator.applyDecorations(listOf(decoration), READALOUD_DECORATION_GROUP)
 
-        // Navigate to the locator to ensure the highlighted text is visible on screen
-        // This is especially important when seeking audio - the text should follow
-        navigator.go(locator)
+        // Check visibility and handle page turn if needed
+        if (fragmentId != null) {
+            val visibility = checkSentenceVisibility(fragmentId)
+            logger.d { "Visibility: $visibility" }
+            if (visibility.needsPageTurn && fragmentId != lastPageTurnSentenceId) {
+                // Cancel any pending page turn from a previous sentence
+                pendingPageTurnJob?.cancel()
+
+                // Calculate delay based on visible fraction
+                val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
+                    .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
+
+                logger.d {
+                    "Scheduling page turn for '$fragmentId' - " +
+                            "visible: ${(visibility.visibleFraction * 100).toInt()}%, " +
+                            "delay: ${delayMs}ms"
+                }
+
+                lastPageTurnSentenceId = fragmentId
+                pendingPageTurnJob = controllerScope.launch {
+                    delay(delayMs)
+                    logger.d { "Executing pre-emptive page turn for '$fragmentId'" }
+                    navigator.goForward()
+                }
+            } else if (!visibility.needsPageTurn) {
+                // Sentence is fully visible, cancel any pending page turn
+                pendingPageTurnJob?.cancel()
+                lastPageTurnSentenceId = null
+            }
+        }
+    }
+
+    /**
+     * Checks the visibility of a sentence element on the current page using JavaScript.
+     *
+     * Uses `getClientRects()` to get the bounding rectangles for each line of the sentence.
+     * In paginated EPUB mode, lines that are on the next virtual page will have their
+     * left edge beyond the viewport width.
+     *
+     * A page turn is triggered if:
+     * 1. The sentence is entirely on the next page (all lines off-screen)
+     * 2. Less than 50% of the sentence is visible
+     * 3. The sentence starts in the "awkward buffer" (last 10% of page width)
+     *
+     * @param elementId The ID of the sentence element to check
+     * @return The visibility result including visible fraction and whether page turn is needed
+     */
+    override suspend fun checkSentenceVisibility(elementId: String): SentenceVisibilityResult {
+        val nav = _navigator.value
+            ?: return SentenceVisibilityResult.FULLY_VISIBLE
+
+        val script = SentenceVisibilityChecker.getVisibilityCheckScript(elementId)
+
+        // Execute JS to get the element's geometry relative to the viewport
+        val rawResult = nav.evaluateJavascript(script)
+            ?: return SentenceVisibilityResult.FULLY_VISIBLE
+
+        // Fix the WebView JSON Stringify trap
+        // WebView returns strings as "\"{\\\"key\\\":\\\"val\\\"}\"".
+        // We must strip the outer quotes and unescape.
+        val cleanJson = if (rawResult.startsWith("\"") && rawResult.endsWith("\"")) {
+            rawResult.substring(1, rawResult.length - 1)
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\")
+        } else {
+            rawResult
+        }
+
+        return SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
     }
 
     override fun close() {
+        pendingPageTurnJob?.cancel()
+        controllerScope.cancel()
         _navigator.value = null
     }
 
+    private companion object {
+        private val logger = Logger.withTag("AndroidEpubNavigatorController")
+
+        /** Minimum delay before page turn to avoid jarring transitions */
+        private const val MIN_PAGE_TURN_DELAY_MS = 200L
+    }
 }
 
 /**

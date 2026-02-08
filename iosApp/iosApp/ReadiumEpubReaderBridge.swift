@@ -306,8 +306,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             self?.handlePlaybackStateChanged(state)
         }
 
-        player.onLocatorChanged = { [weak self] locator in
-            self?.handleLocatorChanged(locator)
+        player.onLocatorChanged = { [weak self] locator, sentenceDurationMs in
+            self?.handleLocatorChanged(locator, sentenceDurationMs: sentenceDurationMs)
         }
 
         Task {
@@ -416,6 +416,31 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         applyHighlightDecoration(locator: readiumLocator)
     }
 
+    func evaluateJavaScript(script: String, callback: @escaping (String?) -> Void) {
+        guard let navigator = navigatorViewController else {
+            callback(nil)
+            return
+        }
+
+        // EPUBNavigatorViewController provides evaluateJavaScript which returns Result<Any, Error>
+        Task { @MainActor in
+            let result = await navigator.evaluateJavaScript(script)
+            switch result {
+            case .success(let value):
+                // Convert the result to a string
+                if let stringValue = value as? String {
+                    callback(stringValue)
+                } else {
+                    // For other types, convert to string representation
+                    callback(String(describing: value))
+                }
+            case .failure(let error):
+                print("JavaScript evaluation failed: \(error)")
+                callback(nil)
+            }
+        }
+    }
+
     // MARK: - Private Media Overlay Helpers
 
     private func handlePlaybackStateChanged(_ state: MediaPlaybackState) {
@@ -429,12 +454,12 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         onPlaybackStateChangedCallback?(playbackState)
     }
 
-    private func handleLocatorChanged(_ locator: Locator) {
+    private func handleLocatorChanged(_ locator: Locator, sentenceDurationMs: Int64) {
         applyHighlightDecoration(locator: locator)
-        notifyAudioLocatorChanged(locator)
+        notifyAudioLocatorChanged(locator, sentenceDurationMs: sentenceDurationMs)
     }
 
-    private func notifyAudioLocatorChanged(_ locator: Locator) {
+    private func notifyAudioLocatorChanged(_ locator: Locator, sentenceDurationMs: Int64) {
         guard let callback = onAudioLocatorChangedCallback else {
             return
         }
@@ -452,7 +477,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             totalProgression: locator.locations.totalProgression.map {
                 KotlinDouble(value: $0)
             },
-            fragment: locator.locations.fragments.first
+            fragment: locator.locations.fragments.first,
+            sentenceDurationMs: sentenceDurationMs
         )
         callback(audioLocator)
     }

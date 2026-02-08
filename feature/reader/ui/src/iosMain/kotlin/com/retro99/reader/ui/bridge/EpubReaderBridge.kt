@@ -185,6 +185,17 @@ interface EpubReaderBridge {
      * Applies a highlight for the given audio locator in the navigator.
      */
     fun applyAudioHighlight(locator: AudioLocator)
+
+    /**
+     * Evaluates JavaScript in the navigator's WebView.
+     *
+     * This is used for checking sentence visibility by querying element positions
+     * via getClientRects().
+     *
+     * @param script The JavaScript code to evaluate
+     * @param callback Called with the result string, or null if evaluation failed
+     */
+    fun evaluateJavaScript(script: String, callback: (String?) -> Unit)
 }
 
 /**
@@ -213,6 +224,9 @@ data class PlaybackState(
 /**
  * Audio locator data class for iOS bridge.
  * This is a simple data holder that can be passed from Swift to Kotlin.
+ *
+ * @param sentenceDurationMs The duration of the current sentence in milliseconds.
+ *                           Used for pre-emptive page turn calculations.
  */
 data class AudioLocator(
     val href: String,
@@ -222,6 +236,7 @@ data class AudioLocator(
     val position: Int?,
     val totalProgression: Double?,
     val fragment: String?,
+    val sentenceDurationMs: Long,
 )
 
 /**

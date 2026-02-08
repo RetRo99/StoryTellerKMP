@@ -2,6 +2,7 @@ package com.retro99.reader.ui.audio
 
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
+import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
@@ -36,12 +37,12 @@ class IosAudioController(
     )
     private val _showPermissionDeniedDialog = MutableStateFlow(false)
     private val _playbackState = MutableStateFlow(PlaybackState.STOPPED)
-    private val _currentAudioLocator = MutableStateFlow<LocatorState?>(null)
+    private val _currentAudioLocator = MutableStateFlow<AudioLocatorState?>(null)
 
     // AudioController state observation flows
     override val audioPlaybackState: Flow<AudioPlaybackState> = _audioPlaybackState
     override val playbackState: Flow<PlaybackState> = _playbackState
-    override val currentAudioLocator: StateFlow<LocatorState?> = _currentAudioLocator
+    override val currentAudioLocator: StateFlow<AudioLocatorState?> = _currentAudioLocator
 
     // iOS doesn't require notification permission for audio playback
     override val showPermissionDeniedDialog: Flow<Boolean> = _showPermissionDeniedDialog
@@ -99,7 +100,7 @@ class IosAudioController(
         }
 
         bridge.setOnAudioLocatorChangedCallback { locator ->
-            _currentAudioLocator.value = locator.toLocatorState()
+            _currentAudioLocator.value = locator.toAudioLocatorState()
         }
     }
 
@@ -164,14 +165,17 @@ class IosAudioController(
     }
 }
 
-private fun AudioLocator.toLocatorState(): LocatorState {
-    return LocatorState(
-        href = href,
-        type = type,
-        title = title,
-        progression = progression,
-        position = position,
-        totalProgression = totalProgression,
-        fragments = fragment?.let { listOf(it) },
+private fun AudioLocator.toAudioLocatorState(): AudioLocatorState {
+    return AudioLocatorState(
+        locator = LocatorState(
+            href = href,
+            type = type,
+            title = title,
+            progression = progression,
+            position = position,
+            totalProgression = totalProgression,
+            fragments = fragment?.let { listOf(it) },
+        ),
+        sentenceDurationMs = sentenceDurationMs,
     )
 }

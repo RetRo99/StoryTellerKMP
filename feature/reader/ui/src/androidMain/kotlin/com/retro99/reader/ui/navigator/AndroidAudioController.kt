@@ -7,6 +7,7 @@ import com.retro99.base.nowMillis
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
+import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
@@ -44,7 +45,7 @@ class AndroidAudioController(
     private var currentBookLocation: LocatorState? = null
 
     private val _mediaOverlayPlayer = MutableStateFlow<MediaOverlayPlayer?>(null)
-    private val _currentAudioLocator = MutableStateFlow<LocatorState?>(null)
+    private val _currentAudioLocator = MutableStateFlow<AudioLocatorState?>(null)
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private sealed class PendingMediaCommand {
@@ -57,7 +58,7 @@ class AndroidAudioController(
 
     private var pendingCommand: PendingMediaCommand? = null
 
-    override val currentAudioLocator: StateFlow<LocatorState?> = _currentAudioLocator
+    override val currentAudioLocator: StateFlow<AudioLocatorState?> = _currentAudioLocator
 
     override val audioPlaybackState: Flow<AudioPlaybackState>
         get() = _mediaOverlayPlayer
