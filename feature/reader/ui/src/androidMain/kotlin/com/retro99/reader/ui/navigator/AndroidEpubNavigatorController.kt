@@ -17,6 +17,7 @@ import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.Single
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
@@ -59,37 +61,55 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  * @param smilParser Parser for SMIL media overlay files
  * @param quickScanner Quick scanner for SMIL file indexing
  */
+@Single(binds = [EpubNavigatorControllerNew::class])
 class AndroidEpubNavigatorController internal constructor(
-    private val navigator: EpubNavigatorFragment,
-    private val publication: EpubPublication,
     private val context: Context,
     private val analytics: Analytics,
     private val smilParser: SmilParser,
     private val quickScanner: SmilQuickScanner,
     private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
-) : EpubNavigatorController {
+) : EpubNavigatorController, EpubNavigatorControllerNew {
 
     /**
      * Internal coroutine scope for this controller.
      * Uses SupervisorJob so that failure of one child doesn't cancel siblings.
      * Uses Dispatchers.Main.immediate for UI-related operations.
      */
+
+    private val _navigator = MutableStateFlow<EpubNavigatorFragment?>(null)
+
+    private var publication: EpubPublication? = null
+
+    private val navigator: EpubNavigatorFragment
+        get() = _navigator.value ?: error("Navigator not initialized")
+
+    fun init(
+        publication: EpubPublication,
+        navigator: EpubNavigatorFragment,
+    ) {
+        this.publication = publication
+        _navigator.value = navigator
+        initializeMediaOverlays()
+    }
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     /**
      * Flow of current reading position/locator changes.
      * Converts Readium's Locator to the common LocatorState model.
      */
-    override val currentLocator: Flow<LocatorState> = navigator.currentLocator.map { locator ->
-        LocatorState(
-            href = locator.href.toString(),
-            type = locator.mediaType.toString(),
-            title = locator.title,
-            progression = locator.locations.progression,
-            position = locator.locations.position,
-            totalProgression = locator.locations.totalProgression,
-        )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val currentLocator: Flow<LocatorState> = _navigator.flatMapLatest { navigator ->
+        navigator?.currentLocator?.map { locator ->
+            LocatorState(
+                href = locator.href.toString(),
+                type = locator.mediaType.toString(),
+                title = locator.title,
+                progression = locator.locations.progression,
+                position = locator.locations.position,
+                totalProgression = locator.locations.totalProgression,
+            )
+        } ?: flowOf() // or emptyFlow()
     }
 
     // Media overlay player for ReadAloud books - wrapped in StateFlow for reactive access
@@ -180,11 +200,6 @@ class AndroidEpubNavigatorController internal constructor(
             player?.showPermissionRationale ?: flowOf(false)
         }
 
-    init {
-        // Initialize media overlays automatically if the book supports them
-        initializeMediaOverlays()
-    }
-
     override fun goToNextPage() {
         navigator.goForward()
     }
@@ -214,7 +229,7 @@ class AndroidEpubNavigatorController internal constructor(
      * The initialization is launched in the controller's own scope.
      */
     private fun initializeMediaOverlays() {
-        if (!publication.hasMediaOverlays) {
+        if (publication == null || publication?.hasMediaOverlays != true) {
             return
         }
 
@@ -225,7 +240,7 @@ class AndroidEpubNavigatorController internal constructor(
             val playerCreateStart = nowMillis()
             val player = MediaOverlayPlayer(
                 context = context,
-                publication = publication.publication,
+                publication = publication!!.publication,
                 analytics = analytics,
                 smilParser = smilParser,
                 quickScanner = quickScanner,
@@ -405,11 +420,7 @@ class AndroidEpubNavigatorController internal constructor(
         }
     }
 
-    /**
-     * Releases resources used by the media overlay player.
-     * Should be called when the controller is no longer needed.
-     */
-    fun release() {
+    override fun close() {
         logger.i { "AndroidEpubNavigatorController RELEASE called" }
         val player = _mediaOverlayPlayer.value
         if (player != null) {
