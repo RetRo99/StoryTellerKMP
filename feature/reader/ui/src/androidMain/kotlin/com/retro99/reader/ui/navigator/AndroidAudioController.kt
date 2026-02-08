@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 import org.readium.r2.shared.util.Url
@@ -43,7 +44,7 @@ class AndroidAudioController(
 
     private val _mediaOverlayPlayer = MutableStateFlow<MediaOverlayPlayer?>(null)
     private val _currentAudioLocator = MutableStateFlow<LocatorState?>(null)
-    private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private sealed class PendingMediaCommand {
         data class Play(val initialPositionMs: Long?) : PendingMediaCommand()
@@ -102,6 +103,10 @@ class AndroidAudioController(
     override suspend fun init(
         publication: EpubPublication,
     ) {
+        // Recreate the scope if it was cancelled (e.g., after close() was called)
+        if (!controllerScope.isActive) {
+            controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        }
         this.publication = publication
         initializeMediaOverlays(
             publication = publication,
