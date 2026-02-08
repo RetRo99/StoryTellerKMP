@@ -21,5 +21,6 @@ data class LocatorState(
     val progression: Double?,
     val position: Int?,
     val totalProgression: Double?,
+    val fragments: List<String>?,
 )
 

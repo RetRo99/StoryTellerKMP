@@ -2,12 +2,16 @@ package com.retro99.reader.ui.playback
 
 import androidx.media3.exoplayer.ExoPlayer
 import com.retro99.reader.ui.media.MediaOverlayClip
+import com.retro99.reader.ui.model.LocatorState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.readium.r2.shared.publication.Locator
@@ -34,13 +38,28 @@ private const val SECONDS_TO_MS = 1000.0
 class LocatorTracker(
     private val player: ExoPlayer,
     private val scope: CoroutineScope,
-    private val onLocatorChanged: ((Locator) -> Unit)? = null,
 ) {
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
     private val _currentLocator = MutableStateFlow<Locator?>(null)
-    val currentLocator: StateFlow<Locator?> = _currentLocator.asStateFlow()
+    val currentLocator: StateFlow<LocatorState?> = _currentLocator.asStateFlow()
+        .map { locator ->
+            if (locator == null) return@map null
+            LocatorState(
+                href = locator.href.toString(),
+                type = locator.mediaType.toString(),
+                title = locator.title,
+                progression = locator.locations.progression,
+                position = locator.locations.position,
+                totalProgression = locator.locations.totalProgression,
+                fragments = locator.locations.fragments,
+            )
+        }.stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = null
+        )
 
     private var positionUpdateJob: Job? = null
 
@@ -138,7 +157,6 @@ class LocatorTracker(
             // Only update and notify when the locator changes
             if (_currentLocator.value?.locations?.fragments != locator.locations.fragments) {
                 _currentLocator.value = locator
-                onLocatorChanged?.invoke(locator)
             }
         }
     }

@@ -21,7 +21,9 @@ import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.BookController
+import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.service.EpubPublicationService
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -50,9 +52,10 @@ class ReaderViewModel(
 
     init {
         addCloseable(bookController)
+        addCloseable(audioController)
         initializeReader()
         observeSettingsChanges()
-        observeLocationChanges()
+        observeBookLocationChanges()
     }
 
     override fun onIntent(intent: ReaderIntent) {
@@ -96,11 +99,11 @@ class ReaderViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun observeLocationChanges() {
+    private fun observeBookLocationChanges() {
         bookController.currentLocator
             .onEach { locator ->
                 val basePosition = viewState.value.lastKnownPosition ?: return@onEach
-
+                audioController.onBookLocationChanged(locator)
                 val positionUiModel = basePosition.copy(
                     href = locator.href,
                     type = locator.type,
@@ -141,6 +144,11 @@ class ReaderViewModel(
         )
 
         publication?.let {
+            if (publication.hasMediaOverlays) {
+                initAudio(
+                    publication = publication,
+                )
+            }
             updateState { state ->
                 state.copy(
                     bookUuid = data.bookUuid,
@@ -156,6 +164,13 @@ class ReaderViewModel(
             }
         }
             ?: updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
+    }
+
+    private suspend fun initAudio(publication: EpubPublication) {
+        audioController.init(publication)
+        audioController.currentAudioLocator.filterNotNull().onEach { locator ->
+            bookController.applyHighlight(locator)
+        }.launchIn(viewModelScope)
     }
 
     private fun resolveConflictWithLocal() {

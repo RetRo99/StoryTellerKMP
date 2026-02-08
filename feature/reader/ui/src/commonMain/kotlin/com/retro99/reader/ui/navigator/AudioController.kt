@@ -1,8 +1,11 @@
 package com.retro99.reader.ui.audio
 
 import com.retro99.reader.ui.model.AudioPositionState
+import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
+import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Controller interface for audio playback in ReadAloud books.
@@ -121,4 +124,8 @@ interface AudioController : AutoCloseable {
      * Dismisses the permission denied dialog.
      */
     fun dismissPermissionDeniedDialog()
+
+    fun onBookLocationChanged(locator: LocatorState)
+    suspend fun init(publication: EpubPublication)
+    val currentAudioLocator: StateFlow<LocatorState?>
 }
