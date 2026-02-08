@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.reader
 
-import com.retro99.reader.ui.audio.AudioController
+import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

@@ -4,7 +4,6 @@ import android.content.Context
 import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.nowMillis
-import com.retro99.reader.ui.audio.AudioController
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
