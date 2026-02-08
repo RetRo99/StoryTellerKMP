@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
@@ -59,13 +60,14 @@ class AndroidAudioController(
     override val currentAudioLocator: StateFlow<LocatorState?> = _currentAudioLocator
 
     override val audioPlaybackState: Flow<AudioPlaybackState>
-        get() = _mediaOverlayPlayer.flatMapLatest { player ->
-            player?.let {
+        get() = _mediaOverlayPlayer
+            .filterNotNull()
+            .flatMapLatest { player ->
                 combine(
-                    it.currentPosition,
-                    it.totalDuration,
-                    it.isPlaying,
-                    it.playbackState,
+                    player.currentPosition,
+                    player.totalDuration,
+                    player.isPlaying,
+                    player.playbackState,
                 ) { positionMs, durationMs, isPlaying, playbackState ->
                     AudioPlaybackState(
                         currentPositionMs = positionMs,
@@ -75,16 +77,7 @@ class AndroidAudioController(
                         isPlayerReady = true,
                     )
                 }
-            } ?: flowOf(
-                AudioPlaybackState(
-                    currentPositionMs = 0L,
-                    totalDurationMs = null,
-                    isPlaying = false,
-                    playbackState = PlaybackState.STOPPED,
-                    isPlayerReady = false,
-                )
-            )
-        }
+            }
     override val playbackState: Flow<PlaybackState>
         get() = _mediaOverlayPlayer.flatMapLatest { player ->
             player?.playbackState ?: flowOf(PlaybackState.STOPPED)

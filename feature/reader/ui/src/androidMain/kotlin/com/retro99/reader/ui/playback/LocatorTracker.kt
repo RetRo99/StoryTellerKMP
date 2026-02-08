@@ -39,8 +39,8 @@ class LocatorTracker(
     private val player: ExoPlayer,
     private val scope: CoroutineScope,
 ) {
-    private val _currentPosition = MutableStateFlow(0L)
-    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
+    private val _currentPosition = MutableStateFlow<Long?>(null)
+    val currentPosition: StateFlow<Long?> = _currentPosition
 
     private val _currentLocator = MutableStateFlow<Locator?>(null)
     val currentLocator: StateFlow<LocatorState?> = _currentLocator.asStateFlow()
