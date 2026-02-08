@@ -41,7 +41,7 @@ class ReaderViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
-    @Provided val epubNavigatorControllerNew: EpubNavigatorControllerNew,
+    @Provided val bookController: EpubNavigatorControllerNew,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(
         bookUuid = bookUuid,
@@ -53,7 +53,7 @@ class ReaderViewModel(
     val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
 
     init {
-        addCloseable(epubNavigatorControllerNew)
+        addCloseable(bookController)
         initializeReader()
         observeSettingsChanges()
     }
@@ -85,21 +85,17 @@ class ReaderViewModel(
     }
 
     private fun goToNextPage() {
-        viewModelScope.launch {
-            _commands.emit(ReaderCommand.GoToNextPage)
-        }
+        bookController.goToNextPage()
     }
 
     private fun goToPreviousPage() {
-        viewModelScope.launch {
-            _commands.emit(ReaderCommand.GoToPreviousPage)
-        }
+        bookController.goToPreviousPage()
     }
 
     private fun observeSettingsChanges() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                _commands.emit(ReaderCommand.ApplySettings(settings.toUiModel()))
+                bookController.setSettings(settings.toUiModel())
             }
             .launchIn(viewModelScope)
     }
@@ -151,7 +147,7 @@ class ReaderViewModel(
         val conflict = viewState.value.positionConflict ?: return
         viewModelScope.launch {
             updateState { it.copy(positionConflict = null) }
-            _commands.emit(ReaderCommand.GoToPosition(conflict.localPosition))
+            bookController.goToPosition(conflict.localPosition)
         }
     }
 
@@ -159,7 +155,7 @@ class ReaderViewModel(
         val conflict = viewState.value.positionConflict ?: return
         viewModelScope.launch {
             updateState { it.copy(positionConflict = null) }
-            _commands.emit(ReaderCommand.GoToPosition(conflict.remotePosition))
+            bookController.goToPosition(conflict.remotePosition)
         }
     }
 

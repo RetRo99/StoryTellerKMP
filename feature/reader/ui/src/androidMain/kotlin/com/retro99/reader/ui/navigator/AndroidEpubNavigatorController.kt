@@ -215,7 +215,7 @@ class AndroidEpubNavigatorController internal constructor(
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
-        navigator.submitPreferences(settings.toEpubPreferences())
+        _navigator.value?.submitPreferences(settings.toEpubPreferences())
     }
 
     override fun goToPosition(position: PositionUiModel) {
