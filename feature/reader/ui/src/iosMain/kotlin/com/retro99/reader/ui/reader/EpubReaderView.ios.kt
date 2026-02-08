@@ -19,7 +19,7 @@ import androidx.compose.ui.viewinterop.UIKitViewController
 import co.touchlab.kermit.Logger
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
-import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
+import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -40,7 +40,7 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    bookController: EpubNavigatorControllerNew,
+    bookController: BookController,
     modifier: Modifier,
 ) {
     logger.d { "EpubReaderView composing for bookUuid=$bookUuid" }

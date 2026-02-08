@@ -64,7 +64,7 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  */
 @Single(
     binds = [
-        EpubNavigatorControllerNew::class,
+        BookController::class,
         AudioController::class,
     ]
 )
@@ -75,7 +75,7 @@ class AndroidEpubNavigatorController internal constructor(
     private val quickScanner: SmilQuickScanner,
     private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
-) : EpubNavigatorController, EpubNavigatorControllerNew {
+) : EpubNavigatorController {
 
     /**
      * Internal coroutine scope for this controller.

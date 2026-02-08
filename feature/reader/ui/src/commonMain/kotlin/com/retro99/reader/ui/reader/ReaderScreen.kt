@@ -27,7 +27,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
-import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
+import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
@@ -64,7 +64,7 @@ private fun ReaderScreenContent(
     bookUuid: String,
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    bookController: EpubNavigatorControllerNew,
+    bookController: BookController,
 ) {
     Box(
         modifier = Modifier
@@ -114,7 +114,7 @@ private fun ReaderContent(
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
-    bookController: EpubNavigatorControllerNew,
+    bookController: BookController,
 ) {
     val settings = publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }

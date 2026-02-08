@@ -5,8 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.model.PositionUiModel
+import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.EpubNavigatorController
-import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.publication.EpubPublication
 
 /**
@@ -25,7 +25,7 @@ internal expect fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    bookController: EpubNavigatorControllerNew,
+    bookController: BookController,
     modifier: Modifier = Modifier,
 )
 

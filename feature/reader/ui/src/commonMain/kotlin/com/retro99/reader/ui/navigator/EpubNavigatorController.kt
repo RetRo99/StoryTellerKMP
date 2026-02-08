@@ -19,5 +19,5 @@ import com.retro99.reader.ui.audio.AudioController
  * The View creates this controller after the publication is ready and
  * uses it to execute navigation commands from the ViewModel.
  */
-interface EpubNavigatorController : EpubNavigatorControllerNew, AudioController
+interface EpubNavigatorController : BookController, AudioController
 
