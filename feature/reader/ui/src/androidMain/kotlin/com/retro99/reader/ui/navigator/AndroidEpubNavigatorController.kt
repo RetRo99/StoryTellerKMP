@@ -105,7 +105,7 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
      * This ensures the currently spoken text is always visible on screen.
      */
     override suspend fun applyHighlight(locator: LocatorState) {
-        val decorableNavigator = navigator as? DecorableNavigator ?: return
+        val decorableNavigator = _navigator.value as? DecorableNavigator ?: return
         val locator = locator.toAndroidLocator() ?: return
         val decoration = Decoration(
             id = "readaloud-active",
@@ -124,7 +124,7 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     }
 
     override fun close() {
-
+        _navigator.value = null
     }
 
 }
