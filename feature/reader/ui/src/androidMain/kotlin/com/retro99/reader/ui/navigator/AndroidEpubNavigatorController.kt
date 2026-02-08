@@ -176,6 +176,7 @@ fun LocatorState.toAndroidLocator(): Locator? {
             progression = progression,
             position = position,
             totalProgression = totalProgression,
+            fragments = fragments ?: emptyList(),
         ),
     )
 }
