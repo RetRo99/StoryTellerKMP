@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.flowOf
 import org.koin.core.annotation.Single
 
 /**
- * iOS implementation of [com.retro99.reader.ui.navigator.AudioController].
+ * iOS implementation of [AudioController].
  * Delegates audio playback operations to the [EpubReaderBridge].
  */
 @Single
@@ -40,6 +40,7 @@ class IosAudioController(
 
     // AudioController state observation flows
     override val audioPlaybackState: Flow<AudioPlaybackState> = _audioPlaybackState
+    override val playbackState: Flow<PlaybackState> = _playbackState
     override val currentAudioLocator: StateFlow<LocatorState?> = _currentAudioLocator
 
     // iOS doesn't require notification permission for audio playback
