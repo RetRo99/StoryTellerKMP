@@ -48,13 +48,6 @@ internal actual fun EpubReaderView(
 
     val navigatorController = bookController as? AndroidEpubNavigatorController
 
-    // Observe location changes from the navigator and report them back
-    ObserveLocationChanges(
-        navigator = navigatorController,
-        initialPosition = publication.initialPosition,
-        intentDispatcher = intentDispatcher,
-    )
-
     // Observe audio playback state changes for ReadAloud books
     ObserveAudioPlaybackState(
         navigator = navigatorController,

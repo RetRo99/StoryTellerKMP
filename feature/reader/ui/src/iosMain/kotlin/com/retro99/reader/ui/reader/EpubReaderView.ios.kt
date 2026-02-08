@@ -88,13 +88,6 @@ internal actual fun EpubReaderView(
         }
     }
 
-    // Use common observation logic for location changes
-    ObserveLocationChanges(
-        navigator = navigator,
-        initialPosition = publication.initialPosition,
-        intentDispatcher = intentDispatcher,
-    )
-
     // Use common observation logic for audio playback state
     ObserveAudioPlaybackState(
         navigator = navigator,
