@@ -20,7 +20,7 @@ import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
-import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
+import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.service.EpubPublicationService
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -39,7 +39,7 @@ class ReaderViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
-    @Provided val bookController: EpubNavigatorControllerNew,
+    @Provided val bookController: BookController,
     @Provided val audioController: AudioController,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(

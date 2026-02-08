@@ -17,7 +17,7 @@ import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
-import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
+import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
@@ -35,7 +35,7 @@ internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    bookController: EpubNavigatorControllerNew,
+    bookController: BookController,
     modifier: Modifier,
 ) {
     val context = LocalContext.current

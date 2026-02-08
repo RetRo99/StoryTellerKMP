@@ -5,7 +5,7 @@ import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import kotlinx.coroutines.flow.Flow
 
-interface EpubNavigatorControllerNew : AutoCloseable {
+interface BookController : AutoCloseable {
 
     /**
      * Flow of current reading position/locator changes.
