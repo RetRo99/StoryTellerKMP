@@ -82,13 +82,6 @@ class ReaderViewModel(
             is ReaderIntent.SetPlaybackSpeed -> setPlaybackSpeed(intent.speed)
             is ReaderIntent.SkipForward -> skipForward(intent.milliseconds)
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
-            is ReaderIntent.UpdateAudioPosition -> updateAudioPosition(
-                intent.positionMs,
-                intent.totalDurationMs
-            )
-
-            is ReaderIntent.UpdatePlayingState -> updatePlayingState(intent.isPlaying)
-            ReaderIntent.MediaPlayerReady -> updateState { it.copy(isAudioPlayerReady = true) }
         }
     }
 
@@ -199,7 +192,9 @@ class ReaderViewModel(
             .map { it.isPlayerReady }
             .distinctUntilChanged()
             .filter { it }
-            .onEach { onIntent(ReaderIntent.MediaPlayerReady) }
+            .onEach {
+                updateState { it.copy(isAudioPlayerReady = true) }
+            }
             .launchIn(viewModelScope)
         observeAudioPlaybackState()
     }

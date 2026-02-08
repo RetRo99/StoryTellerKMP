@@ -66,30 +66,5 @@ sealed interface ReaderIntent : BaseIntent {
      * @param milliseconds The amount to skip backward in milliseconds
      */
     data class SkipBackward(val milliseconds: Long = 10_000L) : ReaderIntent
-
-    /**
-     * Update the current audio position reported by the navigator.
-     *
-     * @param positionMs The current audio position in milliseconds
-     * @param totalDurationMs The total duration of the audio in milliseconds
-     */
-    data class UpdateAudioPosition(
-        val positionMs: Long,
-        val totalDurationMs: Long?,
-    ) : ReaderIntent
-
-    /**
-     * Update the playing state reported by the navigator.
-     *
-     * @param isPlaying Whether audio is currently playing
-     */
-    data class UpdatePlayingState(
-        val isPlaying: Boolean,
-    ) : ReaderIntent
-
-    /**
-     * Notify that the media player is ready for playback.
-     */
-    data object MediaPlayerReady : ReaderIntent
 }
 
