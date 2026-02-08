@@ -26,14 +26,5 @@ actual class EpubPublication(
                     it.mediaType?.toString()?.contains("smil") == true ||
                             it.href.toString().endsWith(".smil")
                 }
-
-    /**
-     * Closes the publication and releases resources.
-     * Note: Readium's Publication doesn't require explicit cleanup,
-     * but we provide this for consistency across platforms.
-     */
-    actual fun close() {
-        // No explicit cleanup needed for Readium Publication
-    }
 }
 

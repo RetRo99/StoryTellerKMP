@@ -98,7 +98,6 @@ internal actual fun EpubReaderView(
             // Release media overlay player resources
             navigatorController?.close()
             // Clean up the navigator controller
-            publication.close()
             // Clean up the fragment when the composable is disposed
             val existingFragment = activity.supportFragmentManager
                 .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)

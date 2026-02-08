@@ -24,10 +24,5 @@ expect class EpubPublication {
      * Whether this publication has media overlays (audio narration).
      */
     val hasMediaOverlays: Boolean
-
-    /**
-     * Closes the publication and releases any associated resources.
-     */
-    fun close()
 }
 
