@@ -241,6 +241,7 @@ class AndroidAudioController(
             controllerScope.launch {
                 player.prepareChapterDuration(chapterUrl)
             }
+
         }
     }
 
