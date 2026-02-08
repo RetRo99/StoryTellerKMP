@@ -6,6 +6,7 @@ import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
+import org.koin.core.annotation.Single
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -16,6 +17,7 @@ private val logger = Logger.withTag("IosEpubPublicationService")
  *
  * Uses the [EpubReaderBridgeRegistry] to delegate to the Swift Readium implementation.
  */
+@Single(binds = [EpubPublicationService::class])
 class IosEpubPublicationService : BaseEpubPublicationService() {
 
     /**
