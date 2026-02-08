@@ -8,7 +8,6 @@ import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.publication.EpubPublication
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Platform-specific EPUB reader view.
@@ -25,7 +24,6 @@ import kotlinx.coroutines.flow.Flow
 internal expect fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
-    commands: Flow<ReaderCommand>,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     bookController: EpubNavigatorControllerNew,
     modifier: Modifier = Modifier,
@@ -38,48 +36,48 @@ internal expect fun EpubReaderView(
  * @param navigator The navigator controller to execute commands on
  * @param commands Flow of commands from ViewModel
  */
-@Composable
-internal fun HandleNavigatorCommands(
-    navigator: EpubNavigatorController?,
-    commands: Flow<ReaderCommand>,
-) {
-    // Collect and execute navigation commands
-    LaunchedEffect(navigator) {
-        navigator?.let { controller ->
-            commands.collect { command ->
-                when (command) {
-                    is ReaderCommand.StartPlayback -> {
-                        controller.playAudio(command.initialPositionMs)
-                    }
-
-                    is ReaderCommand.PausePlayback -> {
-                        controller.pauseAudio()
-                    }
-
-                    is ReaderCommand.ResumePlayback -> {
-                        controller.resumeAudio()
-                    }
-
-                    is ReaderCommand.SeekToAudioPosition -> {
-                        controller.seekToAudioPosition(command.audioTimestampMs)
-                    }
-
-                    is ReaderCommand.SetPlaybackSpeed -> {
-                        controller.setPlaybackSpeed(command.speed)
-                    }
-
-                    is ReaderCommand.SkipForward -> {
-                        controller.skipForward()
-                    }
-
-                    is ReaderCommand.SkipBackward -> {
-                        controller.skipBackward()
-                    }
-                }
-            }
-        }
-    }
-}
+//@Composable
+//internal fun HandleNavigatorCommands(
+//    navigator: EpubNavigatorController?,
+//    commands: Flow<ReaderCommand>,
+//) {
+//    // Collect and execute navigation commands
+//    LaunchedEffect(navigator) {
+//        navigator?.let { controller ->
+//            commands.collect { command ->
+//                when (command) {
+//                    is ReaderCommand.StartPlayback -> {
+//                        controller.playAudio(command.initialPositionMs)
+//                    }
+//
+//                    is ReaderCommand.PausePlayback -> {
+//                        controller.pauseAudio()
+//                    }
+//
+//                    is ReaderCommand.ResumePlayback -> {
+//                        controller.resumeAudio()
+//                    }
+//
+//                    is ReaderCommand.SeekToAudioPosition -> {
+//                        controller.seekToAudioPosition(command.audioTimestampMs)
+//                    }
+//
+//                    is ReaderCommand.SetPlaybackSpeed -> {
+//                        controller.setPlaybackSpeed(command.speed)
+//                    }
+//
+//                    is ReaderCommand.SkipForward -> {
+//                        controller.skipForward()
+//                    }
+//
+//                    is ReaderCommand.SkipBackward -> {
+//                        controller.skipBackward()
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 
 /**
  * Common composable that observes location changes from the navigator and dispatches intents.

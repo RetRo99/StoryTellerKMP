@@ -14,6 +14,7 @@ import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.audio.AudioController
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
@@ -21,9 +22,6 @@ import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.service.EpubPublicationService
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -42,15 +40,13 @@ class ReaderViewModel(
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
     @Provided val bookController: EpubNavigatorControllerNew,
+    @Provided val audioController: AudioController,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(
         bookUuid = bookUuid,
         bookType = bookType,
     )
 ) {
-
-    private val _commands = MutableSharedFlow<ReaderCommand>()
-    val commands: SharedFlow<ReaderCommand> = _commands.asSharedFlow()
 
     init {
         addCloseable(bookController)
@@ -221,40 +217,29 @@ class ReaderViewModel(
     private fun togglePlayback() {
         val currentState = viewState.value
         val isCurrentlyPlaying = currentState.isPlaying
-        viewModelScope.launch {
-            if (isCurrentlyPlaying) {
-                _commands.emit(ReaderCommand.PausePlayback)
-                // Note: isPlaying will be updated via UpdatePlayingState when player confirms
+        if (isCurrentlyPlaying) {
+            audioController.pauseAudio()
+        } else {
+            if (!currentState.hasStartedPlayback) {
+                audioController.playAudio(currentState.initialAudioPositionMs)
+                updateState { it.copy(hasStartedPlayback = true) }
             } else {
-                if (!currentState.hasStartedPlayback) {
-                    // First playback - use StartPlayback to prepare the chapter
-                    // Pass initial position if available from saved reading progress
-                    _commands.emit(ReaderCommand.StartPlayback(currentState.initialAudioPositionMs))
-                    // Mark that we've attempted playback (for initial position handling)
-                    // but don't set isPlaying - wait for player confirmation
-                    updateState { it.copy(hasStartedPlayback = true) }
-                } else {
-                    // Already started before - just resume from current position
-                    _commands.emit(ReaderCommand.ResumePlayback)
-                    // Note: isPlaying will be updated via UpdatePlayingState when player confirms
-                }
+                audioController.resumeAudio()
             }
         }
     }
 
     private fun seekTo(audioTimestampMs: Long) {
-        viewModelScope.launch {
-            _commands.emit(ReaderCommand.SeekToAudioPosition(audioTimestampMs))
-            updateState { it.copy(currentAudioPositionMs = audioTimestampMs) }
-        }
+        audioController.seekToAudioPosition(audioTimestampMs)
+        updateState { it.copy(currentAudioPositionMs = audioTimestampMs) }
     }
 
     private fun setPlaybackSpeed(speed: Float) {
+        audioController.setPlaybackSpeed(speed)
+        updateState { it.copy(playbackSpeed = speed) }
+        // Also save the speed to settings
+        val currentSettings = viewState.value.publication?.initialSettings
         viewModelScope.launch {
-            _commands.emit(ReaderCommand.SetPlaybackSpeed(speed))
-            updateState { it.copy(playbackSpeed = speed) }
-            // Also save the speed to settings
-            val currentSettings = viewState.value.publication?.initialSettings
             currentSettings?.let { settings ->
                 saveReaderSettingsUseCase(settings.copy(playbackSpeed = speed).toDomainModel())
             }
@@ -268,9 +253,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipForward(milliseconds: Long) {
-        viewModelScope.launch {
-            _commands.emit(ReaderCommand.SkipForward)
-        }
+        audioController.skipForward()
     }
 
     /**
@@ -280,9 +263,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipBackward(milliseconds: Long) {
-        viewModelScope.launch {
-            _commands.emit(ReaderCommand.SkipBackward)
-        }
+        audioController.skipBackward()
     }
 
     /**

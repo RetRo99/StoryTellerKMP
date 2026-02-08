@@ -22,7 +22,6 @@ import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.util.rememberOpenAppSettings
-import kotlinx.coroutines.flow.Flow
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 
@@ -35,7 +34,6 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
-    commands: Flow<ReaderCommand>,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     bookController: EpubNavigatorControllerNew,
     modifier: Modifier,
@@ -50,10 +48,10 @@ internal actual fun EpubReaderView(
 
     val navigatorController = bookController as? AndroidEpubNavigatorController
     // Use common command handling logic
-    HandleNavigatorCommands(
-        navigator = navigatorController,
-        commands = commands,
-    )
+//    HandleNavigatorCommands(
+//        navigator = navigatorController,
+//        commands = commands,
+//    )
 
     // Observe location changes from the navigator and report them back
     ObserveLocationChanges(
