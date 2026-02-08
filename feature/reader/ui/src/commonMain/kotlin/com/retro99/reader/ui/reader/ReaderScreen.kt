@@ -30,7 +30,6 @@ import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.navigator.EpubNavigatorControllerNew
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -55,7 +54,6 @@ fun ReaderScreen(
             bookUuid = bookUuid,
             viewState = viewState,
             intentDispatcher = intentDispatcher,
-            commands = viewModel.commands,
             bookController = viewModel.bookController,
         )
     }
@@ -66,7 +64,6 @@ private fun ReaderScreenContent(
     bookUuid: String,
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    commands: Flow<ReaderCommand>,
     bookController: EpubNavigatorControllerNew,
 ) {
     Box(
@@ -88,7 +85,6 @@ private fun ReaderScreenContent(
                 playbackSpeed = viewState.playbackSpeed,
                 isAudioPlayerReady = viewState.isAudioPlayerReady,
                 intentDispatcher = intentDispatcher,
-                commands = commands,
                 loader = movableLoader,
                 bookController = bookController,
             )
@@ -116,7 +112,6 @@ private fun ReaderContent(
     totalDurationMs: Long?,
     playbackSpeed: Float,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    commands: Flow<ReaderCommand>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
     bookController: EpubNavigatorControllerNew,
@@ -149,7 +144,6 @@ private fun ReaderContent(
         EpubReaderView(
             bookUuid = bookUuid,
             publication = publication,
-            commands = commands,
             intentDispatcher = intentDispatcher,
             bookController = bookController,
             modifier = Modifier

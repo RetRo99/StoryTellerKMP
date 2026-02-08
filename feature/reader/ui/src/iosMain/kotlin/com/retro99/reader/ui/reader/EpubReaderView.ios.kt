@@ -24,7 +24,6 @@ import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import platform.UIKit.UIViewController
 
 private val logger = Logger.withTag("EpubReaderView.iOS")
@@ -40,7 +39,6 @@ private val logger = Logger.withTag("EpubReaderView.iOS")
 internal actual fun EpubReaderView(
     bookUuid: String,
     publication: EpubPublication,
-    commands: Flow<ReaderCommand>,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     bookController: EpubNavigatorControllerNew,
     modifier: Modifier,
@@ -92,10 +90,10 @@ internal actual fun EpubReaderView(
     }
 
     // Use common command handling logic
-    HandleNavigatorCommands(
-        navigator = publication,
-        commands = commands,
-    )
+//    HandleNavigatorCommands(
+//        navigator = publication,
+//        commands = commands,
+//    )
 
     // Use common observation logic for location changes
     ObserveLocationChanges(

@@ -4,6 +4,7 @@ import android.content.Context
 import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.nowMillis
+import com.retro99.reader.ui.audio.AudioController
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
@@ -61,7 +62,12 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  * @param smilParser Parser for SMIL media overlay files
  * @param quickScanner Quick scanner for SMIL file indexing
  */
-@Single(binds = [EpubNavigatorControllerNew::class])
+@Single(
+    binds = [
+        EpubNavigatorControllerNew::class,
+        AudioController::class,
+    ]
+)
 class AndroidEpubNavigatorController internal constructor(
     private val context: Context,
     private val analytics: Analytics,
