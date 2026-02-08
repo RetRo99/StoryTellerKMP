@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
@@ -115,5 +116,11 @@ interface AudioController : AutoCloseable {
 
     fun onBookLocationChanged(locator: LocatorState)
     suspend fun init(publication: EpubPublication)
-    val currentAudioLocator: StateFlow<LocatorState?>
+
+    /**
+     * Flow of current audio locator with timing information.
+     * Emits whenever the audio playback moves to a new sentence.
+     * Includes sentence duration for pre-emptive page turn calculations.
+     */
+    val currentAudioLocator: StateFlow<AudioLocatorState?>
 }

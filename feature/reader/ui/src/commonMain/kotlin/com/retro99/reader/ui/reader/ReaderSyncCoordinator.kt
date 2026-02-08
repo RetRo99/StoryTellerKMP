@@ -34,8 +34,11 @@ class ReaderSyncCoordinator(
 
         audioToBookJob = audioController.currentAudioLocator
             .filterNotNull()
-            .onEach { locator ->
-                bookController.applyHighlight(locator)
+            .onEach { audioLocator ->
+                bookController.applyHighlightWithPageTurn(
+                    locator = audioLocator.locator,
+                    sentenceDurationMs = audioLocator.sentenceDurationMs,
+                )
             }
             .launchIn(scope)
     }

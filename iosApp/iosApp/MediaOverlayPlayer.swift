@@ -75,7 +75,8 @@ class MediaOverlayPlayer {
     private var prefetchTask: Task<Void, Never>?
 
     var onPlaybackStateChanged: ((MediaPlaybackState) -> Void)?
-    var onLocatorChanged: ((Locator) -> Void)?
+    /// Callback when the current locator changes. Includes the sentence duration in milliseconds.
+    var onLocatorChanged: ((Locator, Int64) -> Void)?
 
     init(publication: Publication) {
         self.publication = publication
@@ -489,7 +490,10 @@ class MediaOverlayPlayer {
             )
         )
 
-        onLocatorChanged?(locator)
+        // Calculate sentence duration in milliseconds
+        let sentenceDurationMs = Int64((clip.endTime - clip.startTime) * 1000)
+
+        onLocatorChanged?(locator, sentenceDurationMs)
     }
 
 

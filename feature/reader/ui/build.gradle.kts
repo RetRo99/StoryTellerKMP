@@ -33,6 +33,7 @@ kotlin {
             implementation(libs.coroutines)
             implementation(libs.datetime)
             implementation(libs.xmlutil.serialization)
+            implementation(libs.serialization)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

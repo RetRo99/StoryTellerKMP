@@ -1,14 +1,24 @@
 package com.retro99.reader.ui.navigator
 
+import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.core.annotation.Single
+import kotlin.coroutines.resume
 
 /**
  * iOS implementation of [BookController].
@@ -24,6 +34,14 @@ class IosBookController(
         extraBufferCapacity = 1,
     )
     override val currentLocator: Flow<LocatorState> = _currentLocator
+
+    private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var pendingPageTurnJob: Job? = null
+
+    /**
+     * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
+     */
+    private var lastPageTurnSentenceId: String? = null
 
     init {
         setupCallbacks()
@@ -70,12 +88,97 @@ class IosBookController(
         )
     }
 
-    override suspend fun applyHighlight(locator: LocatorState) {
+    /**
+     * Applies a highlight decoration to the given locator and handles split sentences.
+     *
+     * For sentences that are split across pages, this method will:
+     * 1. Apply the highlight immediately
+     * 2. Check if the sentence is split (partially visible)
+     * 3. Schedule a page turn after the visible portion has been read
+     */
+    override suspend fun applyHighlightWithPageTurn(
+        locator: LocatorState,
+        sentenceDurationMs: Long,
+    ) {
+        val fragmentId = locator.fragments?.firstOrNull()
+
+        // Apply the highlight decoration immediately
         bridge.applyAudioHighlight(locator.toAudioLocator())
+
+        // Check visibility and handle page turn if needed
+        if (fragmentId != null) {
+            val visibility = checkSentenceVisibility(fragmentId)
+
+            if (visibility.needsPageTurn && fragmentId != lastPageTurnSentenceId) {
+                // Cancel any pending page turn from a previous sentence
+                pendingPageTurnJob?.cancel()
+
+                // Calculate delay based on visible fraction
+                val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
+                    .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
+
+                logger.d {
+                    "Scheduling page turn for '$fragmentId' - " +
+                            "visible: ${(visibility.visibleFraction * 100).toInt()}%, " +
+                            "delay: ${delayMs}ms"
+                }
+
+                lastPageTurnSentenceId = fragmentId
+                pendingPageTurnJob = controllerScope.launch {
+                    delay(delayMs)
+                    logger.d { "Executing pre-emptive page turn for '$fragmentId'" }
+                    bridge.goToNextPage()
+                }
+            } else if (!visibility.needsPageTurn) {
+                // Sentence is fully visible, cancel any pending page turn
+                pendingPageTurnJob?.cancel()
+                lastPageTurnSentenceId = null
+            }
+        }
+    }
+
+    /**
+     * Checks the visibility of a sentence element on the current page using JavaScript.
+     *
+     * Uses `getClientRects()` to get the bounding rectangles for each line of the sentence.
+     * In paginated EPUB mode, lines that are on the next virtual page will have their
+     * left edge beyond the viewport width.
+     *
+     * A page turn is triggered if:
+     * 1. The sentence is entirely on the next page (all lines off-screen)
+     * 2. Less than 50% of the sentence is visible
+     * 3. The sentence starts in the "awkward buffer" (last 10% of page width)
+     *
+     * @param elementId The ID of the sentence element to check
+     * @return The visibility result including visible fraction and whether page turn is needed
+     */
+    override suspend fun checkSentenceVisibility(elementId: String): SentenceVisibilityResult {
+        val script = SentenceVisibilityChecker.getVisibilityCheckScript(elementId)
+
+        val rawResult: String? = suspendCancellableCoroutine { continuation ->
+            bridge.evaluateJavaScript(script) { result ->
+                continuation.resume(result)
+            }
+        }
+
+        if (rawResult == null) {
+            return SentenceVisibilityResult.FULLY_VISIBLE
+        }
+
+        return SentenceVisibilityChecker.parseVisibilityResult(rawResult, elementId)
     }
 
     override fun close() {
+        pendingPageTurnJob?.cancel()
+        controllerScope.cancel()
         bridge.setOnPositionChangedCallback(null)
+    }
+
+    private companion object {
+        private val logger = Logger.withTag("IosBookController")
+
+        /** Minimum delay before page turn to avoid jarring transitions */
+        private const val MIN_PAGE_TURN_DELAY_MS = 200L
     }
 }
 
@@ -88,5 +191,6 @@ private fun LocatorState.toAudioLocator(): AudioLocator {
         position = position,
         totalProgression = totalProgression,
         fragment = fragments?.firstOrNull(),
+        sentenceDurationMs = 0L, // Not used for highlighting, only for audio locator emissions
     )
 }

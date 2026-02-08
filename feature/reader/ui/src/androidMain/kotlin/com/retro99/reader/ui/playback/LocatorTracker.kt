@@ -2,6 +2,7 @@ package com.retro99.reader.ui.playback
 
 import androidx.media3.exoplayer.ExoPlayer
 import com.retro99.reader.ui.media.MediaOverlayClip
+import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.LocatorState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -43,23 +44,42 @@ class LocatorTracker(
     private val _currentPosition = MutableStateFlow<Long?>(null)
     val currentPosition: StateFlow<Long?> = _currentPosition
 
-    private val _currentLocator = MutableStateFlow<Locator?>(null)
-    val currentLocator: StateFlow<LocatorState?> = _currentLocator.asStateFlow()
-        .map { locator ->
-            if (locator == null) return@map null
-            LocatorState(
-                href = locator.href.toString(),
-                type = locator.mediaType.toString(),
-                title = locator.title,
-                progression = locator.locations.progression,
-                position = locator.locations.position,
-                totalProgression = locator.locations.totalProgression,
-                fragments = locator.locations.fragments,
+    /**
+     * Internal state holding both the locator and the current clip for duration calculation.
+     */
+    private data class LocatorWithClip(
+        val locator: Locator,
+        val clip: MediaOverlayClip,
+    )
+
+    private val _currentLocatorWithClip = MutableStateFlow<LocatorWithClip?>(null)
+
+    /**
+     * Flow of current audio locator with timing information.
+     * Includes sentence duration for pre-emptive page turn calculations.
+     */
+    val currentLocator: StateFlow<AudioLocatorState?> = _currentLocatorWithClip.asStateFlow()
+        .map { locatorWithClip ->
+            if (locatorWithClip == null) return@map null
+            val locator = locatorWithClip.locator
+            val clip = locatorWithClip.clip
+            val durationMs = ((clip.endTime - clip.startTime) * SECONDS_TO_MS).toLong()
+            AudioLocatorState(
+                locator = LocatorState(
+                    href = locator.href.toString(),
+                    type = locator.mediaType.toString(),
+                    title = locator.title,
+                    progression = locator.locations.progression,
+                    position = locator.locations.position,
+                    totalProgression = locator.locations.totalProgression,
+                    fragments = locator.locations.fragments,
+                ),
+                sentenceDurationMs = durationMs,
             )
         }.stateIn(
             scope = scope,
             started = SharingStarted.Eagerly,
-            initialValue = null
+            initialValue = null,
         )
 
     private var positionUpdateJob: Job? = null
@@ -156,8 +176,9 @@ class LocatorTracker(
                 ),
             )
             // Only update and notify when the locator changes
-            if (_currentLocator.value?.locations?.fragments != locator.locations.fragments) {
-                _currentLocator.value = locator
+            val currentFragments = _currentLocatorWithClip.value?.locator?.locations?.fragments
+            if (currentFragments != locator.locations.fragments) {
+                _currentLocatorWithClip.value = LocatorWithClip(locator, currentClip)
             }
         }
     }
