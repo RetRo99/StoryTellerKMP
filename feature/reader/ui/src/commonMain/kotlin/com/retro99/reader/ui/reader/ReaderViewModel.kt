@@ -23,8 +23,10 @@ import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.service.EpubPublicationService
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
@@ -50,12 +52,20 @@ class ReaderViewModel(
     )
 ) {
 
+    private val syncCoordinator = ReaderSyncCoordinator(
+        bookController = bookController,
+        audioController = audioController,
+    )
+
     init {
         addCloseable(bookController)
         addCloseable(audioController)
+        addCloseable(syncCoordinator)
+        syncCoordinator.start(viewModelScope)
         initializeReader()
         observeSettingsChanges()
         observeBookLocationChanges()
+        observeAudioPlaybackState()
     }
 
     override fun onIntent(intent: ReaderIntent) {
@@ -103,7 +113,6 @@ class ReaderViewModel(
         bookController.currentLocator
             .onEach { locator ->
                 val basePosition = viewState.value.lastKnownPosition ?: return@onEach
-                audioController.onBookLocationChanged(locator)
                 val positionUiModel = basePosition.copy(
                     href = locator.href,
                     type = locator.type,
@@ -113,6 +122,25 @@ class ReaderViewModel(
                     totalProgression = locator.totalProgression,
                 )
                 updatePosition(positionUiModel)
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeAudioPlaybackState() {
+        audioController.audioPlaybackState
+            .onEach { state ->
+                updateAudioPosition(
+                    positionMs = state.currentPositionMs,
+                    totalDurationMs = state.totalDurationMs,
+                )
+            }
+            .launchIn(viewModelScope)
+
+        audioController.audioPlaybackState
+            .map { it.isPlaying }
+            .distinctUntilChanged()
+            .onEach { isPlaying ->
+                updatePlayingState(isPlaying)
             }
             .launchIn(viewModelScope)
     }
@@ -168,9 +196,12 @@ class ReaderViewModel(
 
     private suspend fun initAudio(publication: EpubPublication) {
         audioController.init(publication)
-        audioController.currentAudioLocator.filterNotNull().onEach { locator ->
-            bookController.applyHighlight(locator)
-        }.launchIn(viewModelScope)
+        audioController.audioPlaybackState
+            .map { it.isPlayerReady }
+            .distinctUntilChanged()
+            .filter { it }
+            .onEach { onIntent(ReaderIntent.MediaPlayerReady) }
+            .launchIn(viewModelScope)
     }
 
     private fun resolveConflictWithLocal() {

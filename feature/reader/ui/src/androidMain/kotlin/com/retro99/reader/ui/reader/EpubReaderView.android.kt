@@ -4,9 +4,6 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -21,7 +18,6 @@ import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
-import com.retro99.reader.ui.util.rememberOpenAppSettings
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 
@@ -55,25 +51,25 @@ internal actual fun EpubReaderView(
     )
 
     // Observe permission denied dialog state
-    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
-        ?.collectAsState(initial = false)
-        ?: remember { mutableStateOf(false) }
-    val showPermissionRationale by navigatorController?.showPermissionRationale
-        ?.collectAsState(initial = false)
-        ?: remember { mutableStateOf(false) }
-    val openAppSettings = rememberOpenAppSettings()
+//    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
+//        ?.collectAsState(initial = false)
+//        ?: remember { mutableStateOf(false) }
+//    val showPermissionRationale by navigatorController?.showPermissionRationale
+//        ?.collectAsState(initial = false)
+//        ?: remember { mutableStateOf(false) }
+//    val openAppSettings = rememberOpenAppSettings()
 
-    ObservePermissionDeniedDialog(
-        navigator = navigatorController,
-        showDialog = showPermissionDeniedDialog,
-        showRationale = showPermissionRationale,
-        onOpenSettings = openAppSettings,
-        onTryAgain = {
-            // User wants to try again - trigger play which will re-request permission
-            navigatorController?.playAudio()
-        },
-        onDismiss = { /* Dialog dismissed without opening settings */ },
-    )
+//    ObservePermissionDeniedDialog(
+//        navigator = navigatorController,
+//        showDialog = showPermissionDeniedDialog,
+//        showRationale = showPermissionRationale,
+//        onOpenSettings = openAppSettings,
+//        onTryAgain = {
+//            // User wants to try again - trigger play which will re-request permission
+//            navigatorController?.playAudio()
+//        },
+//        onDismiss = { /* Dialog dismissed without opening settings */ },
+//    )
 
     val navigatorFactory = remember(readiumPublication) {
         EpubNavigatorFactory(readiumPublication)
@@ -135,7 +131,7 @@ internal actual fun EpubReaderView(
                     as? EpubNavigatorFragment
 
             navigatorFragment?.let {
-                navigatorController?.init(publication, it)
+                navigatorController?.init(it)
             }
         },
     )

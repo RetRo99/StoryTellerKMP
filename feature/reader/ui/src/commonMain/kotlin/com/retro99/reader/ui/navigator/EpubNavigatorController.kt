@@ -1,7 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import com.retro99.reader.ui.audio.AudioController
-
 /**
  * Controller interface for EPUB navigation and settings.
  *
@@ -19,5 +17,5 @@ import com.retro99.reader.ui.audio.AudioController
  * The View creates this controller after the publication is ready and
  * uses it to execute navigation commands from the ViewModel.
  */
-interface EpubNavigatorController : BookController, AudioController
+interface EpubNavigatorController : BookController
 

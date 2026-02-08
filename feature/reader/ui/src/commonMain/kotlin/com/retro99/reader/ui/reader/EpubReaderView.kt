@@ -42,30 +42,30 @@ internal fun ObserveAudioPlaybackState(
 ) {
     // Observe when media player becomes ready
     LaunchedEffect(navigator) {
-        navigator?.isPlayerReady?.collect { isReady ->
-            if (isReady) {
-                intentDispatcher(ReaderIntent.MediaPlayerReady)
-            }
-        }
+//        navigator?.isPlayerReady?.collect { isReady ->
+//            if (isReady) {
+//                intentDispatcher(ReaderIntent.MediaPlayerReady)
+//            }
+//        }
     }
 
     // Observe audio position updates
     LaunchedEffect(navigator) {
-        navigator?.audioPositionState?.collect { state ->
-            intentDispatcher(
-                ReaderIntent.UpdateAudioPosition(
-                    positionMs = state.currentPositionMs,
-                    totalDurationMs = state.totalDurationMs,
-                ),
-            )
-        }
+//        navigator?.audioPositionState?.collect { state ->
+//            intentDispatcher(
+//                ReaderIntent.UpdateAudioPosition(
+//                    positionMs = state.currentPositionMs,
+//                    totalDurationMs = state.totalDurationMs,
+//                ),
+//            )
+//        }
     }
 
     // Observe playing state changes
     LaunchedEffect(navigator) {
-        navigator?.isPlayingState?.collect { isPlaying ->
-            intentDispatcher(ReaderIntent.UpdatePlayingState(isPlaying = isPlaying))
-        }
+//        navigator?.isPlayingState?.collect { isPlaying ->
+//            intentDispatcher(ReaderIntent.UpdatePlayingState(isPlaying = isPlaying))
+//        }
     }
 }
 
@@ -94,15 +94,15 @@ internal fun ObservePermissionDeniedDialog(
             showRationale = showRationale,
             onOpenSettings = {
                 onOpenSettings()
-                navigator?.dismissPermissionDeniedDialog()
+//                navigator?.dismissPermissionDeniedDialog()
             },
             onTryAgain = {
                 onTryAgain()
-                navigator?.dismissPermissionDeniedDialog()
+//                navigator?.dismissPermissionDeniedDialog()
             },
             onDismiss = {
                 onDismiss()
-                navigator?.dismissPermissionDeniedDialog()
+//                navigator?.dismissPermissionDeniedDialog()
             },
         )
     }

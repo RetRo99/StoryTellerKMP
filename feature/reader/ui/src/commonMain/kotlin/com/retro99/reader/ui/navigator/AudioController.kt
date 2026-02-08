@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.audio
 
-import com.retro99.reader.ui.model.AudioPositionState
+import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.publication.EpubPublication
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * This controller is injected into the ViewModel and provides:
  * - Playback control methods (play, pause, resume, seek, etc.)
- * - Unified playback state via [audioUiState]
+ * - Unified playback state via [audioPlaybackState]
  * - Platform-agnostic API for audio playback
  *
  * Platform implementations:
@@ -24,17 +24,10 @@ interface AudioController : AutoCloseable {
     // State observation flows
 
     /**
-     * Flow of audio position updates for ReadAloud books.
-     * Emits on every position change from the media player.
-     * Returns an empty flow if the book doesn't support media overlays.
+     * Unified playback state for ReadAloud books.
+     * Includes position, playing state, playback state, and readiness.
      */
-    val audioPositionState: Flow<AudioPositionState>
-
-    /**
-     * Flow of playing state changes for ReadAloud books.
-     * Returns an empty flow if the book doesn't support media overlays.
-     */
-    val isPlayingState: Flow<Boolean>
+    val audioPlaybackState: Flow<AudioPlaybackState>
 
     /**
      * Flow of playback state changes for ReadAloud books.
@@ -44,11 +37,6 @@ interface AudioController : AutoCloseable {
      */
     val playbackState: Flow<PlaybackState>
 
-    /**
-     * Flow that emits true when the media player is ready.
-     * Returns a flow that emits false if the book doesn't support media overlays.
-     */
-    val isPlayerReady: Flow<Boolean>
 
     /**
      * Flow that emits true when the notification permission was denied
