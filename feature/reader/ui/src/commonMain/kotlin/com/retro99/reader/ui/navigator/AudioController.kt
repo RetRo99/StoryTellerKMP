@@ -1,4 +1,4 @@
-package com.retro99.reader.ui.audio
+package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
