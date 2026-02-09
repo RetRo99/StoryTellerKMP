@@ -426,7 +426,6 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         Task { @MainActor in
             let result = await navigator.evaluateJavaScript(script)
             switch result {
-                x
             case .success(let value):
                 // Convert the result to a string
                 if let stringValue = value as? String {
