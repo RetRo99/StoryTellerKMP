@@ -2,8 +2,9 @@ package com.retro99.home.ui.navigation
 
 import com.retro99.reader.domain.model.BookType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
-sealed interface HomeDestination {
+sealed interface HomeDestination : BottomSheetDestination {
 
     @Serializable
     data object BooksList : HomeDestination
@@ -18,7 +19,9 @@ sealed interface HomeDestination {
     ) : HomeDestination
 
     @Serializable
-    data object Settings : HomeDestination
-
+    data object Settings : HomeDestination {
+        @Transient
+        override val isBottomSheet: Boolean = true
+    }
 }
 
