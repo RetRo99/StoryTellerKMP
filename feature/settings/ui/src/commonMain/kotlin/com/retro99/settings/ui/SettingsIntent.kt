@@ -5,7 +5,8 @@ import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
 
 sealed interface SettingsIntent : BaseIntent {
-    data object OnLogoutClicked : SettingsIntent
+    // Section expansion
+    data class OnSectionToggled(val section: SettingsSection) : SettingsIntent
 
     // Reader settings intents
     data class OnThemeChanged(val theme: ReaderThemeUiModel) : SettingsIntent

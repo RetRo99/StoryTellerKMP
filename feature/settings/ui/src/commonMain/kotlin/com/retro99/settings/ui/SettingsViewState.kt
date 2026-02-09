@@ -7,6 +7,7 @@ import com.retro99.settings.ui.model.ReaderThemeUiModel
 data class SettingsViewState(
     val isLoading: Boolean = false,
     val readerSettings: ReaderSettingsUiModel = ReaderSettingsUiModel(),
+    val expandedSections: Set<SettingsSection> = setOf(SettingsSection.APPEARANCE),
 ) {
     // Convenience accessors for UI
     val theme: ReaderThemeUiModel get() = readerSettings.theme
@@ -18,5 +19,13 @@ data class SettingsViewState(
     val textAlign: ReaderTextAlignUiModel get() = readerSettings.textAlign
     val scrollMode: Boolean? get() = readerSettings.scrollMode
     val publisherStyles: Boolean get() = readerSettings.publisherStyles
+
+    fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
+}
+
+enum class SettingsSection {
+    APPEARANCE,
+    TYPOGRAPHY,
+    LAYOUT,
 }
 
