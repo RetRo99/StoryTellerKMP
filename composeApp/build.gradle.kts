@@ -84,6 +84,9 @@ kotlin {
             implementation(projects.feature.reader.ui)
             implementation(projects.feature.reader.domain)
             implementation(projects.feature.reader.data)
+            implementation(projects.feature.settings.ui)
+            implementation(projects.feature.settings.domain)
+            implementation(projects.feature.settings.data)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

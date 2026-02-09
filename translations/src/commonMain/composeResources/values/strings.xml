@@ -58,4 +58,8 @@
     <string name="notification_permission_try_again">Try Again</string>
     <string name="notification_permission_cancel">Cancel</string>
 
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_logout">Logout</string>
+
 </resources>
