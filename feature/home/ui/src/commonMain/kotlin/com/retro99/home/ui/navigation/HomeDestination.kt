@@ -17,5 +17,8 @@ sealed interface HomeDestination {
         val bookType: BookType,
     ) : HomeDestination
 
+    @Serializable
+    data object Settings : HomeDestination
+
 }
 

@@ -4,9 +4,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,9 +36,12 @@ import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.translations.StringRes
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.settings_icon_content_description
 
 /** Duration in milliseconds before auto-hiding the media controls */
 private const val CONTROLS_AUTO_HIDE_DELAY_MS = 5000L
@@ -41,9 +51,10 @@ fun ReaderScreen(
     bookUuid: String,
     bookType: BookType,
     onClose: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = koinViewModel {
-        parametersOf(bookUuid, bookType, onClose)
+        parametersOf(bookUuid, bookType, onClose, onSettingsClick)
     },
 ) {
     BaseScreen(
@@ -125,7 +136,7 @@ private fun ReaderContent(
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
     LaunchedEffect(areControlsVisible, lastInteractionTime) {
-        if (areControlsVisible && isReadAloud) {
+        if (areControlsVisible) {
             delay(CONTROLS_AUTO_HIDE_DELAY_MS)
             areControlsVisible = false
         }
@@ -171,11 +182,9 @@ private fun ReaderContent(
                         intentDispatcher(ReaderIntent.GoToNextPage)
                     },
                     onMiddleTap = {
-                        if (isReadAloud) {
-                            areControlsVisible = !areControlsVisible
-                            if (areControlsVisible) {
-                                lastInteractionTime = nowMillis()
-                            }
+                        areControlsVisible = !areControlsVisible
+                        if (areControlsVisible) {
+                            lastInteractionTime = nowMillis()
                         }
                     },
                 ),
@@ -221,6 +230,53 @@ private fun ReaderContent(
                     intentDispatcher = intentDispatcher,
                     onInteraction = onControlsInteraction,
                     onSwipeDown = { areControlsVisible = false },
+                )
+            }
+        }
+
+        // Top toolbar with settings icon
+        AnimatedVisibility(
+            visible = areControlsVisible,
+            enter = fadeIn() + slideInVertically { -it },
+            exit = fadeOut() + slideOutVertically { -it },
+            modifier = Modifier.align(Alignment.TopEnd),
+        ) {
+            ReaderToolbar(
+                onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
+                onInteraction = onControlsInteraction,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReaderToolbar(
+    onSettingsClick: () -> Unit,
+    onInteraction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            IconButton(
+                onClick = {
+                    onInteraction()
+                    onSettingsClick()
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(StringRes.settings_icon_content_description),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }

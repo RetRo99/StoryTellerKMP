@@ -61,5 +61,6 @@
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_logout">Logout</string>
+    <string name="settings_icon_content_description">Settings</string>
 
 </resources>

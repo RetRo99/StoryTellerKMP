@@ -38,6 +38,7 @@ class ReaderViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val bookType: BookType,
     @InjectedParam private val onClose: () -> Unit,
+    @InjectedParam private val onSettingsClick: () -> Unit,
     @Provided private val initializeReaderUseCase: InitializeReaderUseCase,
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
@@ -73,6 +74,7 @@ class ReaderViewModel(
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
             ReaderIntent.Close -> close()
+            ReaderIntent.OnSettingsClicked -> onSettingsClick()
             ReaderIntent.UseLocalPosition -> resolveConflictWithLocal()
             ReaderIntent.UseRemotePosition -> resolveConflictWithRemote()
             ReaderIntent.GoToNextPage -> goToNextPage()

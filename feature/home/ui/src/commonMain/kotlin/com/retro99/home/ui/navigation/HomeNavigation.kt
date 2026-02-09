@@ -10,6 +10,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
+import com.retro99.settings.ui.SettingsScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -59,6 +60,19 @@ fun HomeNavigation(
                         bookUuid = destination.bookUuid,
                         bookType = destination.bookType,
                         onClose = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                        onSettingsClick = {
+                            intentDispatcher(
+                                HomeNavigationIntent.NavigateTo(HomeDestination.Settings),
+                            )
+                        },
+                    )
+                }
+
+                entry<HomeDestination.Settings> {
+                    SettingsScreen(
+                        onLogoutSuccess = {
+                            // TODO: Navigate to login screen
+                        },
                     )
                 }
             },
