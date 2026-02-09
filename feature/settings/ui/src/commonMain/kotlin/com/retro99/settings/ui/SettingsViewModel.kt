@@ -58,6 +58,10 @@ class SettingsViewModel(
             is SettingsIntent.OnScrollModeChanged -> updateReaderSetting {
                 it.copy(scrollMode = intent.scrollMode)
             }
+
+            is SettingsIntent.OnPublisherStylesChanged -> updateReaderSetting {
+                it.copy(publisherStyles = intent.publisherStyles)
+            }
         }
     }
 

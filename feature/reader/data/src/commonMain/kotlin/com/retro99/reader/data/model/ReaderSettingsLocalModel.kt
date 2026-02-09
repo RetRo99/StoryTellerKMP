@@ -24,6 +24,8 @@ data class ReaderSettingsLocalModel(
     val scrollMode: Boolean? = null,
     @SerialName("text_align")
     val textAlign: String = "START",
+    @SerialName("publisher_styles")
+    val publisherStyles: Boolean = true,
     @SerialName("playback_speed")
     val playbackSpeed: Float = 1.0f,
     @SerialName("volume")
@@ -48,6 +50,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             ReaderTextAlign.START
         },
+        publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
     )
@@ -63,6 +66,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         marginVertical = marginVertical,
         scrollMode = scrollMode,
         textAlign = textAlign.name,
+        publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
     )

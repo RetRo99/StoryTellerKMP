@@ -1,5 +1,10 @@
 package com.retro99.settings.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +41,8 @@ import resources.translations.settings_line_height
 import resources.translations.settings_logout
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
+import resources.translations.settings_publisher_styles
+import resources.translations.settings_publisher_styles_description
 import resources.translations.settings_reader_section
 import resources.translations.settings_scroll_mode
 import resources.translations.settings_scroll_mode_auto
@@ -123,7 +130,6 @@ private fun ReaderSettingsSection(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             text = stringResource(StringRes.settings_reader_section),
@@ -131,13 +137,17 @@ private fun ReaderSettingsSection(
             color = MaterialTheme.colorScheme.primary,
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Theme Selection
         ThemeSelector(
             selectedTheme = viewState.theme,
             onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Font Size Slider
         SettingsSlider(
@@ -148,14 +158,46 @@ private fun ReaderSettingsSection(
             valueDisplay = { "${(it * 100).toInt()}%" },
         )
 
-        // Line Height Slider
-        SettingsSlider(
-            label = stringResource(StringRes.settings_line_height),
-            value = viewState.lineHeight,
-            valueRange = 1.0f..2.5f,
-            onValueChange = { intentDispatcher(SettingsIntent.OnLineHeightChanged(it)) },
-            valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Publisher Styles Toggle
+        SettingsSwitch(
+            label = stringResource(StringRes.settings_publisher_styles),
+            description = stringResource(StringRes.settings_publisher_styles_description),
+            checked = viewState.publisherStyles,
+            onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
         )
+
+        // Custom styling options - only visible when publisher styles is disabled
+        // Spacing is included inside AnimatedVisibility to animate smoothly
+        AnimatedVisibility(
+            visible = !viewState.publisherStyles,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Line Height Slider
+                SettingsSlider(
+                    label = stringResource(StringRes.settings_line_height),
+                    value = viewState.lineHeight,
+                    valueRange = 1.0f..2.5f,
+                    onValueChange = { intentDispatcher(SettingsIntent.OnLineHeightChanged(it)) },
+                    valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Text Alignment
+                TextAlignSelector(
+                    selectedAlign = viewState.textAlign,
+                    onAlignSelected = { intentDispatcher(SettingsIntent.OnTextAlignChanged(it)) },
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Horizontal Margin Slider
         SettingsSlider(
@@ -168,6 +210,8 @@ private fun ReaderSettingsSection(
             valueDisplay = { "${it.toInt()}dp" },
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Vertical Margin Slider
         SettingsSlider(
             label = stringResource(StringRes.settings_margin_vertical),
@@ -179,11 +223,7 @@ private fun ReaderSettingsSection(
             valueDisplay = { "${it.toInt()}dp" },
         )
 
-        // Text Alignment
-        TextAlignSelector(
-            selectedAlign = viewState.textAlign,
-            onAlignSelected = { intentDispatcher(SettingsIntent.OnTextAlignChanged(it)) },
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Scroll Mode Selector
         ScrollModeSelector(
@@ -191,6 +231,7 @@ private fun ReaderSettingsSection(
             onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
     }
 }
@@ -320,10 +361,10 @@ private fun SettingsSlider(
             )
         }
         Slider(
+            modifier = Modifier.fillMaxWidth(),
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
-            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

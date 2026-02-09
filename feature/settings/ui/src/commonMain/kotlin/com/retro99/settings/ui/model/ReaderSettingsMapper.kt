@@ -13,6 +13,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     marginVertical = marginVertical,
     scrollMode = scrollMode,
     textAlign = textAlign.toUiModel(),
+    publisherStyles = publisherStyles,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -24,6 +25,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     marginVertical = marginVertical,
     scrollMode = scrollMode,
     textAlign = textAlign.toDomainModel(),
+    publisherStyles = publisherStyles,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

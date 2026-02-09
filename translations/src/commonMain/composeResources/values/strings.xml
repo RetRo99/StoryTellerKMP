@@ -87,5 +87,6 @@
     <string name="settings_scroll_mode_auto">Auto</string>
     <string name="settings_scroll_mode_scroll">Scroll</string>
     <string name="settings_scroll_mode_paginated">Paginated</string>
-
+    <string name="settings_publisher_styles">Use Publisher Styles</string>
+    <string name="settings_publisher_styles_description">When enabled, uses the book's original formatting. Disable to customize line height and text alignment.</string>
 </resources>

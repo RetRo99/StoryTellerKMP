@@ -571,6 +571,7 @@ extension EpubReaderSettings {
             fontSize: fontSize,
             lineHeight: Double(lineHeight),
             pageMargins: calculatePageMargins(),
+            publisherStyles: publisherStyles,
             scroll: scrollMode?.boolValue,
             textAlign: textAlignToReadium(),
             theme: themeToReadium()
