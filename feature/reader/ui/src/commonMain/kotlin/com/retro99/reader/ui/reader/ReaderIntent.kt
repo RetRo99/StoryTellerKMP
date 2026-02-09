@@ -13,6 +13,11 @@ sealed interface ReaderIntent : BaseIntent {
     data object Close : ReaderIntent
 
     /**
+     * Navigate to app settings screen.
+     */
+    data object OnSettingsClicked : ReaderIntent
+
+    /**
      * Navigate to the next page.
      */
     data object GoToNextPage : ReaderIntent
