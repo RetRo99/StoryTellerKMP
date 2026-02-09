@@ -98,7 +98,9 @@ class ReaderViewModel(
     private fun observeSettingsChanges() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                bookController.setSettings(settings.toUiModel())
+                val uiSettings = settings.toUiModel()
+                bookController.setSettings(uiSettings)
+                updateState { it.copy(currentSettings = uiSettings) }
             }
             .launchIn(viewModelScope)
     }
