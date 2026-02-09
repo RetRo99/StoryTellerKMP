@@ -25,6 +25,7 @@ fun HomeNavigation(
                 intentDispatcher(HomeNavigationIntent.OnBackClicked)
             },
             modifier = modifier,
+            sceneStrategy = BottomSheetSceneStrategy(),
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
