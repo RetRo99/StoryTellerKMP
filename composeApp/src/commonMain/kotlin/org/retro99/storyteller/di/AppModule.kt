@@ -18,6 +18,9 @@ import com.retro99.preferences.implementation.di.PreferencesModule
 import com.retro99.reader.data.di.ReaderDataModule
 import com.retro99.reader.domain.di.ReaderDomainModule
 import com.retro99.reader.ui.di.ReaderUiModule
+import com.retro99.settings.data.di.SettingsDataModule
+import com.retro99.settings.domain.di.SettingsDomainModule
+import com.retro99.settings.ui.di.SettingsUiModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
@@ -42,6 +45,9 @@ import org.koin.core.annotation.Module
         ReaderDomainModule::class,
         ReaderDataModule::class,
         ReaderUiModule::class,
+        SettingsDomainModule::class,
+        SettingsDataModule::class,
+        SettingsUiModule::class,
     ],
 )
 @Configuration
