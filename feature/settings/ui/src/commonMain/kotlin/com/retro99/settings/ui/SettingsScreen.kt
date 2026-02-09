@@ -1,10 +1,12 @@
 package com.retro99.settings.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,9 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -25,8 +29,10 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
@@ -35,19 +41,19 @@ import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import resources.translations.settings_font_size
 import resources.translations.settings_line_height
-import resources.translations.settings_logout
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
 import resources.translations.settings_publisher_styles
 import resources.translations.settings_publisher_styles_description
-import resources.translations.settings_reader_section
 import resources.translations.settings_scroll_mode
 import resources.translations.settings_scroll_mode_auto
 import resources.translations.settings_scroll_mode_paginated
 import resources.translations.settings_scroll_mode_scroll
+import resources.translations.settings_section_appearance
+import resources.translations.settings_section_layout
+import resources.translations.settings_section_typography
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
 import resources.translations.settings_text_align_end
@@ -62,9 +68,8 @@ import resources.translations.settings_title
 
 @Composable
 fun SettingsScreen(
-    onLogoutSuccess: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = koinViewModel { parametersOf(onLogoutSuccess) },
+    viewModel: SettingsViewModel = koinViewModel(),
 ) {
     BaseScreen(
         modifier = modifier,
@@ -90,149 +95,175 @@ private fun SettingsScreenContent(
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text = stringResource(StringRes.settings_title),
             style = MaterialTheme.typography.headlineMedium,
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Reader Settings Section
-        ReaderSettingsSection(
-            viewState = viewState,
-            intentDispatcher = intentDispatcher,
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Logout Button
-        Button(
-            onClick = { intentDispatcher(SettingsIntent.OnLogoutClicked) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !viewState.isLoading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError,
-            ),
+        // Appearance Section - Theme & Font Size
+        ExpandableSettingsSection(
+            title = stringResource(StringRes.settings_section_appearance),
+            isExpanded = viewState.isSectionExpanded(SettingsSection.APPEARANCE),
+            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.APPEARANCE)) },
         ) {
-            Text(text = stringResource(StringRes.settings_logout))
+            ThemeSelector(
+                selectedTheme = viewState.theme,
+                onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsSlider(
+                label = stringResource(StringRes.settings_font_size),
+                value = viewState.fontSize.toFloat(),
+                valueRange = 0.5f..3.0f,
+                onValueChange = {
+                    intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
+                },
+                valueDisplay = { "${(it * 100).toInt()}%" },
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Typography Section - Publisher Styles, Line Height, Text Alignment
+        ExpandableSettingsSection(
+            title = stringResource(StringRes.settings_section_typography),
+            isExpanded = viewState.isSectionExpanded(SettingsSection.TYPOGRAPHY),
+            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
+        ) {
+            SettingsSwitch(
+                label = stringResource(StringRes.settings_publisher_styles),
+                description = stringResource(StringRes.settings_publisher_styles_description),
+                checked = viewState.publisherStyles,
+                onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
+            )
+
+            AnimatedVisibility(
+                visible = !viewState.publisherStyles,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    SettingsSlider(
+                        label = stringResource(StringRes.settings_line_height),
+                        value = viewState.lineHeight,
+                        valueRange = 1.0f..2.5f,
+                        onValueChange = {
+                            intentDispatcher(SettingsIntent.OnLineHeightChanged(it))
+                        },
+                        valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextAlignSelector(
+                        selectedAlign = viewState.textAlign,
+                        onAlignSelected = {
+                            intentDispatcher(SettingsIntent.OnTextAlignChanged(it))
+                        },
+                    )
+                }
+            }
+        }
+
+        // Layout Section - Margins & Reading Mode
+        ExpandableSettingsSection(
+            title = stringResource(StringRes.settings_section_layout),
+            isExpanded = viewState.isSectionExpanded(SettingsSection.LAYOUT),
+            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
+        ) {
+            SettingsSlider(
+                label = stringResource(StringRes.settings_margin_horizontal),
+                value = viewState.marginHorizontal.toFloat(),
+                valueRange = 0f..48f,
+                onValueChange = {
+                    intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(it.toInt()))
+                },
+                valueDisplay = { "${it.toInt()}dp" },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsSlider(
+                label = stringResource(StringRes.settings_margin_vertical),
+                value = viewState.marginVertical.toFloat(),
+                valueRange = 0f..48f,
+                onValueChange = {
+                    intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
+                },
+                valueDisplay = { "${it.toInt()}dp" },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ScrollModeSelector(
+                selectedMode = viewState.scrollMode,
+                onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+            )
+        }
     }
 }
 
 @Composable
-private fun ReaderSettingsSection(
-    viewState: SettingsViewState,
-    intentDispatcher: IntentDispatcher<SettingsIntent>,
+private fun ExpandableSettingsSection(
+    title: String,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "arrow_rotation",
+    )
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ),
     ) {
-        Text(
-            text = stringResource(StringRes.settings_reader_section),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Theme Selection
-        ThemeSelector(
-            selectedTheme = viewState.theme,
-            onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Font Size Slider
-        SettingsSlider(
-            label = stringResource(StringRes.settings_font_size),
-            value = viewState.fontSize.toFloat(),
-            valueRange = 0.5f..3.0f,
-            onValueChange = { intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble())) },
-            valueDisplay = { "${(it * 100).toInt()}%" },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Publisher Styles Toggle
-        SettingsSwitch(
-            label = stringResource(StringRes.settings_publisher_styles),
-            description = stringResource(StringRes.settings_publisher_styles_description),
-            checked = viewState.publisherStyles,
-            onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
-        )
-
-        // Custom styling options - only visible when publisher styles is disabled
-        // Spacing is included inside AnimatedVisibility to animate smoothly
-        AnimatedVisibility(
-            visible = !viewState.publisherStyles,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut(),
-        ) {
-            Column {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Line Height Slider
-                SettingsSlider(
-                    label = stringResource(StringRes.settings_line_height),
-                    value = viewState.lineHeight,
-                    valueRange = 1.0f..2.5f,
-                    onValueChange = { intentDispatcher(SettingsIntent.OnLineHeightChanged(it)) },
-                    valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggle)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Text Alignment
-                TextAlignSelector(
-                    selectedAlign = viewState.textAlign,
-                    onAlignSelected = { intentDispatcher(SettingsIntent.OnTextAlignChanged(it)) },
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.rotate(rotationAngle),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                ) {
+                    content()
+                }
+            }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Horizontal Margin Slider
-        SettingsSlider(
-            label = stringResource(StringRes.settings_margin_horizontal),
-            value = viewState.marginHorizontal.toFloat(),
-            valueRange = 0f..48f,
-            onValueChange = {
-                intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(it.toInt()))
-            },
-            valueDisplay = { "${it.toInt()}dp" },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Vertical Margin Slider
-        SettingsSlider(
-            label = stringResource(StringRes.settings_margin_vertical),
-            value = viewState.marginVertical.toFloat(),
-            valueRange = 0f..48f,
-            onValueChange = {
-                intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
-            },
-            valueDisplay = { "${it.toInt()}dp" },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Scroll Mode Selector
-        ScrollModeSelector(
-            selectedMode = viewState.scrollMode,
-            onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
     }
 }
 

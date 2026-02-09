@@ -60,11 +60,12 @@
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
-    <string name="settings_logout">Logout</string>
     <string name="settings_icon_content_description">Settings</string>
 
-    <!-- Reader Settings -->
-    <string name="settings_reader_section">Reader Settings</string>
+    <!-- Settings Sections -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_typography">Typography</string>
+    <string name="settings_section_layout">Layout</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>

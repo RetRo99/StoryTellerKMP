@@ -60,11 +60,7 @@ fun HomeNavigation(
                 }
 
                 entry<HomeDestination.Settings> {
-                    SettingsScreen(
-                        onLogoutSuccess = {
-                            // TODO: Navigate to login screen
-                        },
-                    )
+                    SettingsScreen()
                 }
             },
         )
