@@ -192,7 +192,7 @@ private fun SettingsScreenContent(
             SettingsSlider(
                 label = stringResource(StringRes.settings_margin_vertical),
                 value = viewState.marginVertical.toFloat(),
-                valueRange = 0f..48f,
+                valueRange = 0f..64f,
                 onValueChange = {
                     intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
                 },
