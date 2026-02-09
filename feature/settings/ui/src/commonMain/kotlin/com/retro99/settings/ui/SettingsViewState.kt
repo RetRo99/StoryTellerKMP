@@ -17,5 +17,6 @@ data class SettingsViewState(
     val marginVertical: Int get() = readerSettings.marginVertical
     val textAlign: ReaderTextAlignUiModel get() = readerSettings.textAlign
     val scrollMode: Boolean? get() = readerSettings.scrollMode
+    val publisherStyles: Boolean get() = readerSettings.publisherStyles
 }
 

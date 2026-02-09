@@ -242,6 +242,7 @@ fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
         lineHeight = lineHeight.toDouble(),
         pageMargins = calculatePageMargins(),
         textAlign = textAlign.toReadiumTextAlign(),
+        publisherStyles = publisherStyles,
     )
 }
 

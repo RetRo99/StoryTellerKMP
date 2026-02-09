@@ -9,6 +9,8 @@ data class ReaderSettingsUiModel(
     val marginVertical: Int = 16,
     val scrollMode: Boolean? = null,
     val textAlign: ReaderTextAlignUiModel = ReaderTextAlignUiModel.START,
+    // When true, uses publisher's CSS styles. When false, allows custom lineHeight, textAlign, etc.
+    val publisherStyles: Boolean = true,
 )
 
 enum class ReaderThemeUiModel {

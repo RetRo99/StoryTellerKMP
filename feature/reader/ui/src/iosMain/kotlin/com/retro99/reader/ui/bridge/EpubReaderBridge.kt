@@ -18,6 +18,7 @@ data class EpubReaderSettings(
     val marginVertical: Int,
     val scrollMode: Boolean?,
     val textAlign: String,
+    val publisherStyles: Boolean,
     val initialPosition: PositionUiModel?,
 ) {
     companion object {
@@ -34,6 +35,7 @@ data class EpubReaderSettings(
                 marginVertical = settings.marginVertical,
                 scrollMode = settings.scrollMode,
                 textAlign = settings.textAlign.name,
+                publisherStyles = settings.publisherStyles,
                 initialPosition = initialPosition,
             )
         }

@@ -12,6 +12,8 @@ data class ReaderSettingsDomainModel(
     val marginVertical: Int = 16,
     val scrollMode: Boolean? = null,
     val textAlign: ReaderTextAlign = ReaderTextAlign.START,
+    // When true, uses publisher's CSS styles. When false, allows custom lineHeight, textAlign, etc.
+    val publisherStyles: Boolean = true,
     // Media playback settings for ReadAloud books
     val playbackSpeed: Float = 1.0f,
     val volume: Float = 1.0f,

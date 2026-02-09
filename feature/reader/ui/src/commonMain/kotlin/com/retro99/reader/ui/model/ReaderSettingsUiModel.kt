@@ -13,6 +13,8 @@ data class ReaderSettingsUiModel(
     val marginVertical: Int = 16,
     val scrollMode: Boolean? = null,
     val textAlign: ReaderTextAlignUi = ReaderTextAlignUi.START,
+    // When true, uses publisher's CSS styles. When false, allows custom lineHeight, textAlign, etc.
+    val publisherStyles: Boolean = true,
     // Media playback settings for ReadAloud books
     val playbackSpeed: Float = 1.0f,
     val volume: Float = 1.0f,
@@ -41,6 +43,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     marginVertical = marginVertical,
     scrollMode = scrollMode,
     textAlign = textAlign.toUiTextAlign(),
+    publisherStyles = publisherStyles,
     playbackSpeed = playbackSpeed,
     volume = volume,
 )
@@ -54,6 +57,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     marginVertical = marginVertical,
     scrollMode = scrollMode,
     textAlign = textAlign.toDomainTextAlign(),
+    publisherStyles = publisherStyles,
     playbackSpeed = playbackSpeed,
     volume = volume,
 )
