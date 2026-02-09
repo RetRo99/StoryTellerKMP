@@ -22,6 +22,12 @@ sealed interface HomeDestination : BottomSheetDestination {
     data object Settings : HomeDestination {
         @Transient
         override val isBottomSheet: Boolean = true
+
+        @Transient
+        override val bottomSheetConfig: BottomSheetConfig = BottomSheetConfig(
+            skipPartiallyExpanded = false,
+            fillMaxHeight = false,
+        )
     }
 }
 

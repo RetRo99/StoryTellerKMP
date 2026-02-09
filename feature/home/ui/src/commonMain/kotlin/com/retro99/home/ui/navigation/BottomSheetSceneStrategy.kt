@@ -1,5 +1,6 @@
 package com.retro99.home.ui.navigation
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -18,13 +19,38 @@ import androidx.navigation3.ui.NavDisplay
 import com.retro99.home.ui.navigation.BottomSheetSceneStrategy.Companion.bottomSheet
 
 /**
+ * Configuration for bottom sheet behavior and appearance.
+ *
+ * @property skipPartiallyExpanded If true, the bottom sheet will skip the partially expanded state
+ *   and go directly to fully expanded. Default is true.
+ * @property fillMaxHeight If true, the bottom sheet will fill the maximum available height when
+ *   fully expanded. Default is false.
+ */
+data class BottomSheetConfig(
+    val skipPartiallyExpanded: Boolean = true,
+    val fillMaxHeight: Boolean = false,
+)
+
+/**
  * Interface for destinations that can be displayed as a bottom sheet.
  * Implement this interface and override [isBottomSheet] to return `true`
  * for destinations that should be displayed as bottom sheets.
+ *
+ * You can also override [bottomSheetConfig] to customize the bottom sheet behavior.
  */
 interface BottomSheetDestination {
+    /**
+     * Whether this destination should be displayed as a bottom sheet.
+     */
     val isBottomSheet: Boolean
         get() = false
+
+    /**
+     * Configuration for the bottom sheet appearance and behavior.
+     * Override this to customize the bottom sheet.
+     */
+    val bottomSheetConfig: BottomSheetConfig
+        get() = BottomSheetConfig()
 }
 
 /**
@@ -36,16 +62,25 @@ internal class BottomSheetScene<T : Any>(
     override val previousEntries: List<NavEntry<T>>,
     override val overlaidEntries: List<NavEntry<T>>,
     private val entry: NavEntry<T>,
+    private val config: BottomSheetConfig,
     private val onBack: () -> Unit,
 ) : OverlayScene<T> {
 
     override val entries: List<NavEntry<T>> = listOf(entry)
 
     override val content: @Composable (() -> Unit) = {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = config.skipPartiallyExpanded,
+        )
+        val sheetModifier = if (config.fillMaxHeight) {
+            Modifier.fillMaxHeight()
+        } else {
+            Modifier
+        }
         ModalBottomSheet(
             onDismissRequest = onBack,
             sheetState = sheetState,
+            modifier = sheetModifier,
         ) {
             entry.Content()
         }
@@ -81,12 +116,16 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
         val isBottomSheet = lastEntry.metadata[BOTTOM_SHEET_KEY] as? Boolean ?: false
 
         return if (isBottomSheet) {
+            val config = lastEntry.metadata[BOTTOM_SHEET_CONFIG_KEY] as? BottomSheetConfig
+                ?: BottomSheetConfig()
+
             @Suppress("UNCHECKED_CAST")
             BottomSheetScene(
                 key = lastEntry.contentKey as T,
                 previousEntries = entries.dropLast(1),
                 overlaidEntries = entries.dropLast(1),
                 entry = lastEntry,
+                config = config,
                 onBack = onBack,
             )
         } else {
@@ -96,14 +135,19 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
 
     companion object {
         internal const val BOTTOM_SHEET_KEY = "bottomSheet"
+        internal const val BOTTOM_SHEET_CONFIG_KEY = "bottomSheetConfig"
 
         /**
-         * Creates metadata to mark an entry as a bottom sheet destination.
+         * Creates metadata to mark an entry as a bottom sheet destination with the given config.
          *
-         * Add this to the `metadata` parameter of the `entry` function to display
-         * the destination as a modal bottom sheet.
+         * @param config The configuration for the bottom sheet behavior and appearance.
          */
-        fun bottomSheet(): Map<String, Any> = mapOf(BOTTOM_SHEET_KEY to true)
+        fun bottomSheet(
+            config: BottomSheetConfig = BottomSheetConfig(),
+        ): Map<String, Any> = mapOf(
+            BOTTOM_SHEET_KEY to true,
+            BOTTOM_SHEET_CONFIG_KEY to config,
+        )
     }
 }
 
@@ -112,7 +156,8 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
  *
  * This function takes a base entry provider and wraps it to automatically check if the key
  * implements [BottomSheetDestination] with [BottomSheetDestination.isBottomSheet] = true.
- * If so, it creates a new [NavEntry] with the bottom sheet metadata added.
+ * If so, it creates a new [NavEntry] with the bottom sheet metadata added, including any
+ * custom [BottomSheetConfig] defined on the destination.
  *
  * Usage:
  * ```
@@ -133,12 +178,15 @@ fun <T : Any> bottomSheetEntryProvider(
     baseProvider: (key: T) -> NavEntry<T>,
 ): (key: T) -> NavEntry<T> = { key: T ->
     val baseEntry = baseProvider(key)
-    val shouldBeBottomSheet = (key as? BottomSheetDestination)?.isBottomSheet == true
+    val bottomSheetDestination = key as? BottomSheetDestination
 
-    if (shouldBeBottomSheet && baseEntry.metadata[BottomSheetSceneStrategy.BOTTOM_SHEET_KEY] != true) {
+    if (bottomSheetDestination?.isBottomSheet == true &&
+        baseEntry.metadata[BottomSheetSceneStrategy.BOTTOM_SHEET_KEY] != true
+    ) {
+        val config = bottomSheetDestination.bottomSheetConfig
         NavEntry(
             key = key,
-            metadata = baseEntry.metadata + bottomSheet(),
+            metadata = baseEntry.metadata + bottomSheet(config),
             content = { baseEntry.Content() },
         )
     } else {
