@@ -82,7 +82,10 @@
     <string name="settings_text_align_end">End</string>
     <string name="settings_text_align_center">Center</string>
     <string name="settings_text_align_justify">Justify</string>
-    <string name="settings_scroll_mode">Scroll Mode</string>
-    <string name="settings_scroll_mode_description">Scroll instead of paginated reading</string>
+    <string name="settings_scroll_mode">Reading Mode</string>
+    <string name="settings_scroll_mode_description">How content flows when reading</string>
+    <string name="settings_scroll_mode_auto">Auto</string>
+    <string name="settings_scroll_mode_scroll">Scroll</string>
+    <string name="settings_scroll_mode_paginated">Paginated</string>
 
 </resources>

@@ -7,7 +7,7 @@ data class ReaderSettingsUiModel(
     val lineHeight: Float = 1.5f,
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
-    val scrollMode: Boolean = false,
+    val scrollMode: Boolean? = null,
     val textAlign: ReaderTextAlignUiModel = ReaderTextAlignUiModel.START,
 )
 

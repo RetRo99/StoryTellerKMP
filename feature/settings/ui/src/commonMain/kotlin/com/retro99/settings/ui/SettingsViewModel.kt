@@ -56,7 +56,7 @@ class SettingsViewModel(
             }
 
             is SettingsIntent.OnScrollModeChanged -> updateReaderSetting {
-                it.copy(scrollMode = intent.enabled)
+                it.copy(scrollMode = intent.scrollMode)
             }
         }
     }
