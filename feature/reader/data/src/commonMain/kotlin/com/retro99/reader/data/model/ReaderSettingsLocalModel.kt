@@ -1,6 +1,7 @@
 package com.retro99.reader.data.model
 
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -21,6 +22,8 @@ data class ReaderSettingsLocalModel(
     val marginVertical: Int = 16,
     @SerialName("scroll_mode")
     val scrollMode: Boolean? = null,
+    @SerialName("text_align")
+    val textAlign: String = "START",
     @SerialName("playback_speed")
     val playbackSpeed: Float = 1.0f,
     @SerialName("volume")
@@ -40,6 +43,11 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
         scrollMode = scrollMode,
+        textAlign = try {
+            ReaderTextAlign.valueOf(textAlign)
+        } catch (e: IllegalArgumentException) {
+            ReaderTextAlign.START
+        },
         playbackSpeed = playbackSpeed,
         volume = volume,
     )
@@ -54,6 +62,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
         scrollMode = scrollMode,
+        textAlign = textAlign.name,
         playbackSpeed = playbackSpeed,
         volume = volume,
     )

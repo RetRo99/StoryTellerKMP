@@ -63,4 +63,26 @@
     <string name="settings_logout">Logout</string>
     <string name="settings_icon_content_description">Settings</string>
 
+    <!-- Reader Settings -->
+    <string name="settings_reader_section">Reader Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_sepia">Sepia</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_font_size">Font Size</string>
+    <string name="settings_font_family">Font Family</string>
+    <string name="settings_font_family_default">Default</string>
+    <string name="settings_line_height">Line Height</string>
+    <string name="settings_margins">Margins</string>
+    <string name="settings_margin_horizontal">Horizontal Margin</string>
+    <string name="settings_margin_vertical">Vertical Margin</string>
+    <string name="settings_text_align">Text Alignment</string>
+    <string name="settings_text_align_start">Start</string>
+    <string name="settings_text_align_end">End</string>
+    <string name="settings_text_align_center">Center</string>
+    <string name="settings_text_align_justify">Justify</string>
+    <string name="settings_scroll_mode">Scroll Mode</string>
+    <string name="settings_scroll_mode_description">Scroll instead of paginated reading</string>
+
 </resources>
