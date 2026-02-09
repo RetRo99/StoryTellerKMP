@@ -5,6 +5,9 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.settings.domain.usecase.LogoutUseCase
+import com.retro99.settings.ui.model.ReaderSettingsUiModel
+import com.retro99.settings.ui.model.toDomainModel
+import com.retro99.settings.ui.model.toUiModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -61,21 +64,20 @@ class SettingsViewModel(
     private fun observeReaderSettings() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                updateState { it.copy(readerSettings = settings) }
+                updateState { it.copy(readerSettings = settings.toUiModel()) }
             }
             .launchIn(viewModelScope)
     }
 
     private fun updateReaderSetting(
-        update: (com.retro99.reader.domain.model.ReaderSettingsDomainModel) ->
-        com.retro99.reader.domain.model.ReaderSettingsDomainModel,
+        update: (ReaderSettingsUiModel) -> ReaderSettingsUiModel,
     ) {
         val currentSettings = viewState.value.readerSettings
         val newSettings = update(currentSettings)
         updateState { it.copy(readerSettings = newSettings) }
 
         viewModelScope.launch {
-            saveReaderSettingsUseCase(newSettings)
+            saveReaderSettingsUseCase(newSettings.toDomainModel())
         }
     }
 

@@ -25,8 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
-import com.retro99.reader.domain.model.ReaderTextAlign
-import com.retro99.reader.domain.model.ReaderTheme
+import com.retro99.settings.ui.model.ReaderTextAlignUiModel
+import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -197,8 +197,8 @@ private fun ReaderSettingsSection(
 
 @Composable
 private fun ThemeSelector(
-    selectedTheme: ReaderTheme,
-    onThemeSelected: (ReaderTheme) -> Unit,
+    selectedTheme: ReaderThemeUiModel,
+    onThemeSelected: (ReaderThemeUiModel) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -207,13 +207,13 @@ private fun ThemeSelector(
         )
         Spacer(modifier = Modifier.height(8.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ReaderTheme.entries.forEachIndexed { index, theme ->
+            ReaderThemeUiModel.entries.forEachIndexed { index, theme ->
                 SegmentedButton(
                     selected = theme == selectedTheme,
                     onClick = { onThemeSelected(theme) },
                     shape = SegmentedButtonDefaults.itemShape(
                         index = index,
-                        count = ReaderTheme.entries.size,
+                        count = ReaderThemeUiModel.entries.size,
                     ),
                 ) {
                     Text(text = theme.toDisplayString())
@@ -225,8 +225,8 @@ private fun ThemeSelector(
 
 @Composable
 private fun TextAlignSelector(
-    selectedAlign: ReaderTextAlign,
-    onAlignSelected: (ReaderTextAlign) -> Unit,
+    selectedAlign: ReaderTextAlignUiModel,
+    onAlignSelected: (ReaderTextAlignUiModel) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -235,13 +235,13 @@ private fun TextAlignSelector(
         )
         Spacer(modifier = Modifier.height(8.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ReaderTextAlign.entries.forEachIndexed { index, align ->
+            ReaderTextAlignUiModel.entries.forEachIndexed { index, align ->
                 SegmentedButton(
                     selected = align == selectedAlign,
                     onClick = { onAlignSelected(align) },
                     shape = SegmentedButtonDefaults.itemShape(
                         index = index,
-                        count = ReaderTextAlign.entries.size,
+                        count = ReaderTextAlignUiModel.entries.size,
                     ),
                 ) {
                     Text(text = align.toDisplayString())
@@ -315,18 +315,18 @@ private fun SettingsSwitch(
 }
 
 @Composable
-private fun ReaderTheme.toDisplayString(): String = when (this) {
-    ReaderTheme.LIGHT -> stringResource(StringRes.settings_theme_light)
-    ReaderTheme.DARK -> stringResource(StringRes.settings_theme_dark)
-    ReaderTheme.SEPIA -> stringResource(StringRes.settings_theme_sepia)
-    ReaderTheme.SYSTEM -> stringResource(StringRes.settings_theme_system)
+private fun ReaderThemeUiModel.toDisplayString(): String = when (this) {
+    ReaderThemeUiModel.LIGHT -> stringResource(StringRes.settings_theme_light)
+    ReaderThemeUiModel.DARK -> stringResource(StringRes.settings_theme_dark)
+    ReaderThemeUiModel.SEPIA -> stringResource(StringRes.settings_theme_sepia)
+    ReaderThemeUiModel.SYSTEM -> stringResource(StringRes.settings_theme_system)
 }
 
 @Composable
-private fun ReaderTextAlign.toDisplayString(): String = when (this) {
-    ReaderTextAlign.START -> stringResource(StringRes.settings_text_align_start)
-    ReaderTextAlign.END -> stringResource(StringRes.settings_text_align_end)
-    ReaderTextAlign.CENTER -> stringResource(StringRes.settings_text_align_center)
-    ReaderTextAlign.JUSTIFY -> stringResource(StringRes.settings_text_align_justify)
+private fun ReaderTextAlignUiModel.toDisplayString(): String = when (this) {
+    ReaderTextAlignUiModel.START -> stringResource(StringRes.settings_text_align_start)
+    ReaderTextAlignUiModel.END -> stringResource(StringRes.settings_text_align_end)
+    ReaderTextAlignUiModel.CENTER -> stringResource(StringRes.settings_text_align_center)
+    ReaderTextAlignUiModel.JUSTIFY -> stringResource(StringRes.settings_text_align_justify)
 }
 
