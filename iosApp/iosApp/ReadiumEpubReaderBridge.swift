@@ -426,6 +426,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         Task { @MainActor in
             let result = await navigator.evaluateJavaScript(script)
             switch result {
+                x
             case .success(let value):
                 // Convert the result to a string
                 if let stringValue = value as? String {
@@ -612,12 +613,11 @@ extension EpubReaderSettings {
     }
 
     /// Calculates page margins as a factor for Readium.
-    /// Readium's pageMargins is a multiplier (1.0 = default, 2.0 = double margins).
-    /// We convert our dp-based margins to a factor based on a 16dp baseline.
+    /// Readium's pageMargins is a multiplier applied to horizontal margins only.
+    /// We convert our dp-based horizontal margin to a factor based on a 16dp baseline.
+    /// Vertical margins are applied separately via SwiftUI padding on the reader view.
     private func calculatePageMargins() -> Double {
-        // Use the average of horizontal and vertical margins
         // Baseline is 16dp, so 16dp = 1.0 factor
-        let averageMargin = Double(marginHorizontal + marginVertical) / 2.0
-        return min(max(averageMargin / 16.0, 0.0), 4.0)
+        return min(max(Double(marginHorizontal) / 16.0, 0.0), 4.0)
     }
 }

@@ -4,6 +4,7 @@ import com.retro99.base.result.AppError
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 
 data class ReaderViewState(
@@ -14,7 +15,8 @@ data class ReaderViewState(
     val positionConflict: PositionConflictUiModel? = null,
     val isSettingsVisible: Boolean = false,
     val error: AppError? = null,
-    // Book type
+    // Current reader settings (updated when user changes settings)
+    val currentSettings: ReaderSettingsUiModel? = null,
     // Media playback state for ReadAloud books
     val isPlaying: Boolean = false,
     val currentAudioPositionMs: Long = 0L,

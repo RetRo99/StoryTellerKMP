@@ -34,6 +34,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.translations.StringRes
@@ -89,6 +90,7 @@ private fun ReaderScreenContent(
             ReaderContent(
                 bookUuid = bookUuid,
                 publication = viewState.publication,
+                currentSettings = viewState.currentSettings,
                 isReadAloud = viewState.isReadAloud,
                 isPlaying = viewState.isPlaying,
                 currentAudioPositionMs = viewState.currentAudioPositionMs,
@@ -117,6 +119,7 @@ private fun ReaderScreenContent(
 private fun ReaderContent(
     bookUuid: String,
     publication: EpubPublication,
+    currentSettings: ReaderSettingsUiModel?,
     isReadAloud: Boolean,
     isPlaying: Boolean,
     currentAudioPositionMs: Long,
@@ -127,7 +130,7 @@ private fun ReaderContent(
     loader: @Composable (() -> Unit),
     bookController: BookController,
 ) {
-    val settings = publication.initialSettings
+    val settings = currentSettings ?: publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
 
@@ -159,6 +162,7 @@ private fun ReaderContent(
             bookController = bookController,
             modifier = Modifier
                 .fillMaxSize()
+                .padding(vertical = settings.marginVertical.dp)
                 .readerGestures(
                     containerSize = containerSize,
                     onZoomChange = { scale ->
