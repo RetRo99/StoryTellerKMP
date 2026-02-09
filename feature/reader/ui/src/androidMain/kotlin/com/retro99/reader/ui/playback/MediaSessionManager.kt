@@ -78,12 +78,14 @@ class MediaSessionManager(
 
         // Create seek backward button (10 seconds)
         val seekBackwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
+            .setDisplayName("Seek back 10 seconds")
             .setPlayerCommand(Player.COMMAND_SEEK_BACK)
             .setSlots(CommandButton.SLOT_BACK)
             .build()
 
         // Create seek forward button (10 seconds)
         val seekForwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_10)
+            .setDisplayName("Seek forward 10 seconds")
             .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
             .setSlots(CommandButton.SLOT_FORWARD)
             .build()
