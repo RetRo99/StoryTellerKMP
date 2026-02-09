@@ -15,6 +15,6 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnMarginHorizontalChanged(val margin: Int) : SettingsIntent
     data class OnMarginVerticalChanged(val margin: Int) : SettingsIntent
     data class OnTextAlignChanged(val textAlign: ReaderTextAlignUiModel) : SettingsIntent
-    data class OnScrollModeChanged(val enabled: Boolean) : SettingsIntent
+    data class OnScrollModeChanged(val scrollMode: Boolean?) : SettingsIntent
 }
 

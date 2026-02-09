@@ -38,7 +38,9 @@ import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
 import resources.translations.settings_reader_section
 import resources.translations.settings_scroll_mode
-import resources.translations.settings_scroll_mode_description
+import resources.translations.settings_scroll_mode_auto
+import resources.translations.settings_scroll_mode_paginated
+import resources.translations.settings_scroll_mode_scroll
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
 import resources.translations.settings_text_align_end
@@ -141,7 +143,7 @@ private fun ReaderSettingsSection(
         SettingsSlider(
             label = stringResource(StringRes.settings_font_size),
             value = viewState.fontSize.toFloat(),
-            valueRange = 0.5f..2.0f,
+            valueRange = 0.5f..3.0f,
             onValueChange = { intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble())) },
             valueDisplay = { "${(it * 100).toInt()}%" },
         )
@@ -183,12 +185,10 @@ private fun ReaderSettingsSection(
             onAlignSelected = { intentDispatcher(SettingsIntent.OnTextAlignChanged(it)) },
         )
 
-        // Scroll Mode Toggle
-        SettingsSwitch(
-            label = stringResource(StringRes.settings_scroll_mode),
-            description = stringResource(StringRes.settings_scroll_mode_description),
-            checked = viewState.scrollMode,
-            onCheckedChange = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+        // Scroll Mode Selector
+        ScrollModeSelector(
+            selectedMode = viewState.scrollMode,
+            onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
         )
 
         HorizontalDivider()
@@ -249,6 +249,50 @@ private fun TextAlignSelector(
             }
         }
     }
+}
+
+/**
+ * Scroll mode selector with three options:
+ * - Auto (null): Let the publication/reader decide based on EPUB metadata
+ * - Scroll (true): Force continuous scrolling mode
+ * - Paginated (false): Force page-by-page reading
+ */
+@Composable
+private fun ScrollModeSelector(
+    selectedMode: Boolean?,
+    onModeSelected: (Boolean?) -> Unit,
+) {
+    // Options: null = Auto, false = Paginated, true = Scroll
+    val options = listOf<Boolean?>(null, false, true)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_scroll_mode),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = mode == selectedMode,
+                    onClick = { onModeSelected(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = options.size,
+                    ),
+                ) {
+                    Text(text = mode.toScrollModeDisplayString())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Boolean?.toScrollModeDisplayString(): String = when (this) {
+    null -> stringResource(StringRes.settings_scroll_mode_auto)
+    false -> stringResource(StringRes.settings_scroll_mode_paginated)
+    true -> stringResource(StringRes.settings_scroll_mode_scroll)
 }
 
 @Composable

@@ -11,7 +11,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     lineHeight = lineHeight,
     marginHorizontal = marginHorizontal,
     marginVertical = marginVertical,
-    scrollMode = scrollMode ?: false,
+    scrollMode = scrollMode,
     textAlign = textAlign.toUiModel(),
 )
 
