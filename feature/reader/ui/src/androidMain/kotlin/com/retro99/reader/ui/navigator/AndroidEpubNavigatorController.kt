@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.model.ReaderTextAlignUi
+import com.retro99.reader.ui.model.ReaderThemeUi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +24,8 @@ import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
+import org.readium.r2.navigator.preferences.TextAlign
+import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.Url
@@ -228,17 +232,50 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
 
 /**
  * Extension function to convert ReaderSettingsUiModel to EpubPreferences.
- * This is used for initial preferences when creating the navigator.
+ * This is used for initial preferences when creating the navigator and for dynamic updates.
  */
 fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
     return EpubPreferences(
         fontSize = fontSize,
         scroll = scrollMode,
-        // Add more preferences here as needed:
-        // fontFamily = fontFamily,
-        // lineHeight = lineHeight,
-        // etc.
+        theme = theme.toReadiumTheme(),
+        lineHeight = lineHeight.toDouble(),
+        pageMargins = calculatePageMargins(),
+        textAlign = textAlign.toReadiumTextAlign(),
     )
+}
+
+/**
+ * Converts ReaderThemeUi to Readium's Theme.
+ * Note: SYSTEM theme is not directly supported by Readium, so we return null to use default.
+ */
+private fun ReaderThemeUi.toReadiumTheme(): Theme? = when (this) {
+    ReaderThemeUi.LIGHT -> Theme.LIGHT
+    ReaderThemeUi.DARK -> Theme.DARK
+    ReaderThemeUi.SEPIA -> Theme.SEPIA
+    ReaderThemeUi.SYSTEM -> null // Let Readium use its default
+}
+
+/**
+ * Converts ReaderTextAlignUi to Readium's TextAlign.
+ */
+private fun ReaderTextAlignUi.toReadiumTextAlign(): TextAlign = when (this) {
+    ReaderTextAlignUi.START -> TextAlign.START
+    ReaderTextAlignUi.END -> TextAlign.END
+    ReaderTextAlignUi.CENTER -> TextAlign.CENTER
+    ReaderTextAlignUi.JUSTIFY -> TextAlign.JUSTIFY
+}
+
+/**
+ * Calculates page margins as a factor for Readium.
+ * Readium's pageMargins is a multiplier (1.0 = default, 2.0 = double margins).
+ * We convert our dp-based margins to a factor based on a 16dp baseline.
+ */
+private fun ReaderSettingsUiModel.calculatePageMargins(): Double {
+    // Use the average of horizontal and vertical margins
+    // Baseline is 16dp, so 16dp = 1.0 factor
+    val averageMargin = (marginHorizontal + marginVertical) / 2.0
+    return (averageMargin / 16.0).coerceIn(0.0, 4.0)
 }
 
 /**

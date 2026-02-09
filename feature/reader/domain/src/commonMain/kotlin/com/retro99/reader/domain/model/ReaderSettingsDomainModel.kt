@@ -11,6 +11,7 @@ data class ReaderSettingsDomainModel(
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
     val scrollMode: Boolean? = null,
+    val textAlign: ReaderTextAlign = ReaderTextAlign.START,
     // Media playback settings for ReadAloud books
     val playbackSpeed: Float = 1.0f,
     val volume: Float = 1.0f,
@@ -21,5 +22,12 @@ enum class ReaderTheme {
     DARK,
     SEPIA,
     SYSTEM,
+}
+
+enum class ReaderTextAlign {
+    START,
+    END,
+    CENTER,
+    JUSTIFY,
 }
 

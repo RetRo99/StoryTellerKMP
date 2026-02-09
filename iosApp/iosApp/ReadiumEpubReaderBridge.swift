@@ -566,15 +566,57 @@ extension ReadiumEpubReaderBridge: EPUBNavigatorDelegate {
 extension EpubReaderSettings {
     /// Converts reader settings to Readium EPUBPreferences.
     /// This is used both for initial preferences and dynamic updates.
-    /// Add new preference mappings here as needed.
     func toEpubPreferences() -> EPUBPreferences {
         return EPUBPreferences(
             fontSize: fontSize,
-            scroll: scrollMode?.boolValue
-            // Add more preferences here as needed:
-            // fontFamily: fontFamily,
-            // lineHeight: lineHeight,
-            // etc.
+            lineHeight: Double(lineHeight),
+            pageMargins: calculatePageMargins(),
+            scroll: scrollMode?.boolValue,
+            textAlign: textAlignToReadium(),
+            theme: themeToReadium()
         )
+    }
+
+    /// Converts theme string to Readium's Theme enum.
+    /// Note: SYSTEM theme is not directly supported by Readium, so we return nil to use default.
+    private func themeToReadium() -> Theme? {
+        switch theme {
+        case "LIGHT":
+            return .light
+        case "DARK":
+            return .dark
+        case "SEPIA":
+            return .sepia
+        case "SYSTEM":
+            return nil // Let Readium use its default
+        default:
+            return nil
+        }
+    }
+
+    /// Converts textAlign string to Readium's TextAlignment enum.
+    private func textAlignToReadium() -> TextAlignment {
+        switch textAlign {
+        case "START":
+            return .start
+        case "END":
+            return .end
+        case "CENTER":
+            return .center
+        case "JUSTIFY":
+            return .justify
+        default:
+            return .start
+        }
+    }
+
+    /// Calculates page margins as a factor for Readium.
+    /// Readium's pageMargins is a multiplier (1.0 = default, 2.0 = double margins).
+    /// We convert our dp-based margins to a factor based on a 16dp baseline.
+    private func calculatePageMargins() -> Double {
+        // Use the average of horizontal and vertical margins
+        // Baseline is 16dp, so 16dp = 1.0 factor
+        let averageMargin = Double(marginHorizontal + marginVertical) / 2.0
+        return min(max(averageMargin / 16.0, 0.0), 4.0)
     }
 }

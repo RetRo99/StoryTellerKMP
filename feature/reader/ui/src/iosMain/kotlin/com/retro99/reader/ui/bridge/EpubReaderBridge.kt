@@ -12,10 +12,12 @@ import platform.UIKit.UIViewController
 data class EpubReaderSettings(
     val fontSize: Double,
     val fontFamily: String,
+    val theme: String,
     val lineHeight: Float,
     val marginHorizontal: Int,
     val marginVertical: Int,
     val scrollMode: Boolean?,
+    val textAlign: String,
     val initialPosition: PositionUiModel?,
 ) {
     companion object {
@@ -26,10 +28,12 @@ data class EpubReaderSettings(
             return EpubReaderSettings(
                 fontSize = settings.fontSize,
                 fontFamily = settings.fontFamily,
+                theme = settings.theme.name,
                 lineHeight = settings.lineHeight,
                 marginHorizontal = settings.marginHorizontal,
                 marginVertical = settings.marginVertical,
                 scrollMode = settings.scrollMode,
+                textAlign = settings.textAlign.name,
                 initialPosition = initialPosition,
             )
         }
