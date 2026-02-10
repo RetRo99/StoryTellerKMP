@@ -46,7 +46,6 @@ class ReaderViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
-    @Provided val bookController: BookController,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(
         bookUuid = bookUuid,
@@ -56,9 +55,15 @@ class ReaderViewModel(
     private val readerScope: Scope by lazy {
         getKoin().createScope<ReaderScope>(bookUuid).apply {
             val publication = requireNotNull(viewState.value.publication) {
-                "AudioController accessed before publication was opened"
+                "ReaderScope accessed before publication was opened"
             }
             declare(publication)
+        }
+    }
+
+    val bookController: BookController by lazy {
+        readerScope.get<BookController>().also {
+            addCloseable(it)
         }
     }
 
@@ -78,10 +83,7 @@ class ReaderViewModel(
     }
 
     init {
-        addCloseable(bookController)
         initializeReader()
-        observeSettingsChanges()
-        observeBookLocationChanges()
     }
 
     override fun onIntent(intent: ReaderIntent) {
@@ -197,6 +199,9 @@ class ReaderViewModel(
                     lastKnownPosition = position,
                 )
             }
+            // Start observing after publication is ready
+            observeBookLocationChanges()
+            observeSettingsChanges()
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()

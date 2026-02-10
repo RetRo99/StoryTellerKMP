@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -17,14 +18,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 import kotlin.coroutines.resume
 
 /**
  * iOS implementation of [BookController].
  * Delegates navigation and settings operations to the [EpubReaderBridge].
  */
-@Single
+@Scope(ReaderScope::class)
+@Scoped
 class IosBookController(
     private val bridge: EpubReaderBridge,
 ) : BookController {
