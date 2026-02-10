@@ -1,11 +1,14 @@
 package com.retro99.reader.ui.playback
 
 import androidx.media3.exoplayer.ExoPlayer
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayClip
 import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.LocatorState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,6 +19,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.mediatype.MediaType
 
@@ -34,13 +39,13 @@ private const val SECONDS_TO_MS = 1000.0
  * - Emitting locators for text highlighting
  *
  * @param player The ExoPlayer instance to track position from
- * @param scope CoroutineScope for position update job
- * @param onLocatorChanged Optional callback when the locator changes
  */
+@Scope(ReaderScope::class)
+@Scoped
 class LocatorTracker(
     private val player: ExoPlayer,
-    private val scope: CoroutineScope,
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _currentPosition = MutableStateFlow<Long?>(null)
     val currentPosition: StateFlow<Long?> = _currentPosition
 
