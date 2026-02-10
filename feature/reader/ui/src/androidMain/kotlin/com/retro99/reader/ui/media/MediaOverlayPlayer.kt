@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.media
 
-import android.content.Context
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
@@ -16,7 +15,6 @@ import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.playback.AudioFocusManager
 import com.retro99.reader.ui.playback.ForegroundServiceController
 import com.retro99.reader.ui.playback.LocatorTracker
-import com.retro99.reader.ui.playback.MediaPlaybackController
 import com.retro99.reader.ui.playback.MediaSessionManager
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.playback.PermissionDenialState
@@ -56,18 +54,15 @@ private const val SEEK_INCREMENT_MS = 10_000L
  * Audio files are read directly from the EPUB container using Readium's Publication API
  * and provided to ExoPlayer via ByteArrayDataSource.
  *
- * @param context Android context for ExoPlayer
  * @param epubPublication The EpubPublication containing the EPUB (Readium Publication is extracted internally)
  */
 @OptIn(UnstableApi::class)
 @Scope(ReaderScope::class)
 @Scoped
 class MediaOverlayPlayer(
-    private val context: Context,
     epubPublication: EpubPublication,
     private val analytics: Analytics,
     private val smilLoadingManager: SmilLoadingManager,
-    private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
     private val exoPlayer: ExoPlayer,
     private val audioFocusManager: AudioFocusManager,
