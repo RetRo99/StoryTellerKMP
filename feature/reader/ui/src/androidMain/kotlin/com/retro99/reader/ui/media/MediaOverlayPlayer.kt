@@ -73,6 +73,7 @@ class MediaOverlayPlayer(
     private val smilLoadingManager: SmilLoadingManager,
     private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
+    private val exoPlayer: ExoPlayer,
 ) {
     private val publication: Publication = epubPublication.publication
     private val logger = Logger.withTag("MediaOverlayPlayer")
@@ -83,12 +84,6 @@ class MediaOverlayPlayer(
      * Uses Dispatchers.Main for UI-related operations.
      */
     private val playerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
-    private val exoPlayer: ExoPlayer = ExoPlayer.Builder(context)
-        .setSeekBackIncrementMs(SEEK_INCREMENT_MS)
-        .setSeekForwardIncrementMs(SEEK_INCREMENT_MS)
-        .setHandleAudioBecomingNoisy(true)
-        .build()
 
     // Audio focus manager for handling system audio policy
     private val audioFocusManager = AudioFocusManager(context, exoPlayer)
