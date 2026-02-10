@@ -13,7 +13,6 @@ import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.smil.SmilClip
 import com.retro99.reader.ui.media.smil.SmilContentProvider
 import com.retro99.reader.ui.media.smil.SmilLoadingManager
-import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.playback.AudioFocusManager
 import com.retro99.reader.ui.playback.ForegroundServiceController
@@ -92,13 +91,6 @@ class MediaOverlayPlayer(
 
     // Custom DataSource.Factory that reads audio from the EPUB container
     private val dataSourceFactory = PublicationDataSource.Factory(publication)
-
-    // Expose state from trackers
-    val isPlaying: StateFlow<Boolean> get() = playbackStateTracker.isPlaying
-    val playbackState: StateFlow<PlaybackState> get() = playbackStateTracker.playbackState
-    val currentPosition: StateFlow<Long?> get() = locatorTracker.currentPosition
-    val totalDuration: StateFlow<Long?> get() = playbackStateTracker.totalDuration
-    val currentLocator: StateFlow<AudioLocatorState?> get() = locatorTracker.currentLocator
 
     // Event to signal that notification permission was denied
     private val _showPermissionDeniedDialog = MutableStateFlow(false)
