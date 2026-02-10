@@ -13,8 +13,6 @@ import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.smil.SmilClip
 import com.retro99.reader.ui.media.smil.SmilContentProvider
 import com.retro99.reader.ui.media.smil.SmilLoadingManager
-import com.retro99.reader.ui.media.smil.SmilParser
-import com.retro99.reader.ui.media.smil.SmilQuickScanner
 import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.playback.AudioFocusManager
@@ -72,21 +70,12 @@ class MediaOverlayPlayer(
     private val context: Context,
     epubPublication: EpubPublication,
     private val analytics: Analytics,
-    private val smilParser: SmilParser,
-    private val quickScanner: SmilQuickScanner,
+    private val smilLoadingManager: SmilLoadingManager,
     private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
 ) {
     private val publication: Publication = epubPublication.publication
     private val logger = Logger.withTag("MediaOverlayPlayer")
-
-    // Lazy loading manager for SMIL files
-    private val smilLoadingManager = SmilLoadingManager(
-        smilParser = smilParser,
-        quickScanner = quickScanner,
-        analytics = analytics,
-        ioDispatcher = Dispatchers.IO,
-    )
 
     /**
      * Internal coroutine scope for this player.

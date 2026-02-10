@@ -2,15 +2,20 @@ package com.retro99.reader.ui.media.smil
 
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.nowMillis
+import com.retro99.reader.ui.di.ReaderScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Callback interface for platform-specific SMIL file operations.
@@ -64,13 +69,15 @@ interface SmilContentProvider {
  * @param smilParser Full SMIL parser for extracting clips
  * @param quickScanner Fast scanner for building chapter index
  * @param analytics Analytics for error logging
- * @param ioDispatcher Dispatcher for I/O operations
+ * @param ioDispatcher Dispatcher for I/O operations (defaults to Dispatchers.IO)
  */
+@Scope(ReaderScope::class)
+@Scoped
 class SmilLoadingManager(
     private val smilParser: SmilParser,
     private val quickScanner: SmilQuickScanner,
     private val analytics: Analytics,
-    private val ioDispatcher: CoroutineDispatcher,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val index = SmilChapterIndex()
     private val cache = SmilClipCache()
