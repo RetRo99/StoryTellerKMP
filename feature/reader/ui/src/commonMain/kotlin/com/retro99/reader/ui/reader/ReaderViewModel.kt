@@ -14,6 +14,7 @@ import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
@@ -31,9 +32,8 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
-import org.koin.core.component.KoinScopeComponent
-import org.koin.core.component.createScope
 import org.koin.core.scope.Scope
+import org.koin.mp.KoinPlatform.getKoin
 
 @KoinViewModel
 class ReaderViewModel(
@@ -52,10 +52,9 @@ class ReaderViewModel(
         bookUuid = bookUuid,
         bookType = bookType,
     )
-), KoinScopeComponent {
-
-    override val scope: Scope by lazy {
-        createScope(this).apply {
+) {
+    private val readerScope: Scope by lazy {
+        getKoin().createScope<ReaderScope>(bookUuid).apply {
             val publication = requireNotNull(viewState.value.publication) {
                 "AudioController accessed before publication was opened"
             }
@@ -64,7 +63,7 @@ class ReaderViewModel(
     }
 
     private val audioController: AudioController by lazy {
-        scope.get<AudioController>().also {
+        readerScope.get<AudioController>().also {
             addCloseable(it)
         }
     }
@@ -414,6 +413,6 @@ class ReaderViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        scope.close()
+        readerScope.close()
     }
 }
