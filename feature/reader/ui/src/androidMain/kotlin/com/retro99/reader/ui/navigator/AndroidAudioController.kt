@@ -14,6 +14,7 @@ import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.playback.MediaPlaybackController
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,13 +28,14 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.Provided
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.util.Url
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@Factory(binds = [AudioController::class])
+@Scope(ReaderViewModel::class)
+@Scoped(binds = [AudioController::class])
 class AndroidAudioController(
     @Provided private val context: Context,
     @Provided private val analytics: Analytics,
@@ -41,7 +43,7 @@ class AndroidAudioController(
     @Provided private val quickScanner: SmilQuickScanner,
     @Provided private val mediaPlaybackController: MediaPlaybackController,
     @Provided private val notificationPermissionHandler: NotificationPermissionHandler,
-    @InjectedParam private val publication: EpubPublication,
+    @Provided private val publication: EpubPublication,
 ) : AudioController {
 
     private var currentBookLocation: LocatorState? = null
