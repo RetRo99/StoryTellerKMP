@@ -1,6 +1,8 @@
 package com.retro99.reader.ui.navigator
 
-import org.koin.core.annotation.Single
+import com.retro99.reader.ui.di.ReaderScope
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * iOS implementation of [EpubNavigatorController].
@@ -11,7 +13,8 @@ import org.koin.core.annotation.Single
  *
  * @param bookController The controller handling navigation and book settings.
  */
-@Single(binds = [BookController::class])
+@Scope(ReaderScope::class)
+@Scoped(binds = [BookController::class])
 class IosEpubNavigatorController(
     private val bookController: IosBookController,
 ) : EpubNavigatorController,

@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import co.touchlab.kermit.Logger
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -19,7 +20,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
@@ -52,11 +54,8 @@ private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
  * @param smilParser Parser for SMIL media overlay files
  * @param quickScanner Quick scanner for SMIL file indexing
  */
-@Single(
-    binds = [
-        BookController::class,
-    ]
-)
+@Scope(ReaderScope::class)
+@Scoped(binds = [BookController::class])
 class AndroidEpubNavigatorController internal constructor() : EpubNavigatorController {
 
     private val _navigator = MutableStateFlow<EpubNavigatorFragment?>(null)
