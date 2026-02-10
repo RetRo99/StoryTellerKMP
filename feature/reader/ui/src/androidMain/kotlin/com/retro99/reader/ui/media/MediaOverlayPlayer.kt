@@ -77,6 +77,8 @@ class MediaOverlayPlayer(
     private val audioFocusManager: AudioFocusManager,
     private val mediaSessionManager: MediaSessionManager,
     private val foregroundServiceController: ForegroundServiceController,
+    private val locatorTracker: LocatorTracker,
+    private val playbackStateTracker: PlaybackStateTracker,
 ) {
     private val publication: Publication = epubPublication.publication
     private val logger = Logger.withTag("MediaOverlayPlayer")
@@ -87,40 +89,6 @@ class MediaOverlayPlayer(
      * Uses Dispatchers.Main for UI-related operations.
      */
     private val playerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
-    // Locator tracker for position updates and text highlighting
-    private val locatorTracker = LocatorTracker(exoPlayer, playerScope)
-
-    // Playback state tracker with callbacks for state changes
-    private val playbackStateTracker: PlaybackStateTracker by lazy {
-        PlaybackStateTracker(
-            player = exoPlayer,
-            analytics = analytics,
-            onPlaybackEnded = {
-                audioFocusManager.abandonFocus()
-                foregroundServiceController.stopService()
-            },
-            onPlayerReady = { _, pendingPosition ->
-                pendingPosition?.let { positionMs ->
-                    if (positionMs > 0) {
-                        exoPlayer.seekTo(positionMs)
-                    }
-                }
-            },
-            isPlayingChanged = { isPlaying ->
-                if (isPlaying) {
-                    locatorTracker.startPositionUpdates()
-                } else {
-                    locatorTracker.stopPositionUpdates()
-                }
-            },
-            onPlayerError = {
-                // Clean up on ExoPlayer error to prevent zombie notification
-                audioFocusManager.abandonFocus()
-                foregroundServiceController.stopService()
-            },
-        )
-    }
 
     // Custom DataSource.Factory that reads audio from the EPUB container
     private val dataSourceFactory = PublicationDataSource.Factory(publication)

@@ -5,10 +5,13 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PlaybackState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Authoritative source for playback state, with support for optimistic updates
@@ -37,17 +40,18 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * @param player The ExoPlayer instance to track
  * @param analytics Analytics for logging errors
- * @param onPlaybackEnded Callback when playback ends (STATE_ENDED)
- * @param onPlayerReady Callback when player is ready with duration and pending seek position
- * @param onIsPlayingChanged Callback when isPlaying changes (for position updates)
+ * @param audioFocusManager Manager for audio focus (to abandon focus on playback end/error)
+ * @param foregroundServiceController Controller for foreground service (to stop on playback end/error)
+ * @param locatorTracker Tracker for position updates (to start/stop based on playing state)
  */
+@Scope(ReaderScope::class)
+@Scoped
 class PlaybackStateTracker(
     private val player: ExoPlayer,
     private val analytics: Analytics,
-    private val onPlaybackEnded: () -> Unit,
-    private val onPlayerReady: (duration: Long, pendingSeekPosition: Long?) -> Unit,
-    private val isPlayingChanged: (isPlaying: Boolean) -> Unit,
-    private val onPlayerError: () -> Unit,
+    private val audioFocusManager: AudioFocusManager,
+    private val foregroundServiceController: ForegroundServiceController,
+    private val locatorTracker: LocatorTracker,
 ) {
     private val logger = Logger.withTag("PlaybackStateTracker")
 
@@ -66,7 +70,11 @@ class PlaybackStateTracker(
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _isPlaying.value = isPlaying
-            isPlayingChanged(isPlaying)
+            if (isPlaying) {
+                locatorTracker.startPositionUpdates()
+            } else {
+                locatorTracker.stopPositionUpdates()
+            }
         }
 
         override fun onPlaybackStateChanged(playerState: Int) {
@@ -83,7 +91,8 @@ class PlaybackStateTracker(
             when (playerState) {
                 Player.STATE_ENDED -> {
                     _isPlaying.value = false
-                    onPlaybackEnded()
+                    audioFocusManager.abandonFocus()
+                    foregroundServiceController.stopService()
                 }
 
                 Player.STATE_READY -> {
@@ -92,8 +101,12 @@ class PlaybackStateTracker(
                     if (duration > 0) {
                         _totalDuration.value = duration
                     }
-                    // Notify with pending position and clear it
-                    onPlayerReady(duration, pendingInitialPositionMs)
+                    // Handle pending seek position
+                    pendingInitialPositionMs?.let { positionMs ->
+                        if (positionMs > 0) {
+                            player.seekTo(positionMs)
+                        }
+                    }
                     pendingInitialPositionMs = null
 
                     // NOTE: Removed force-play hack that called player.play() when
@@ -112,8 +125,9 @@ class PlaybackStateTracker(
             // Update state to reflect the error so UI can show appropriate feedback
             _playbackState.value = PlaybackState.ERROR
             _isPlaying.value = false
-            // Notify caller to clean up (stop foreground service, abandon focus, etc.)
-            onPlayerError()
+            // Clean up (stop foreground service, abandon focus)
+            audioFocusManager.abandonFocus()
+            foregroundServiceController.stopService()
         }
     }
 
