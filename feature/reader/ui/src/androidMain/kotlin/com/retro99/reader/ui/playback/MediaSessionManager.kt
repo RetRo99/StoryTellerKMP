@@ -1,6 +1,8 @@
 package com.retro99.reader.ui.playback
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -90,15 +92,43 @@ class MediaSessionManager(
             .setSlots(CommandButton.SLOT_FORWARD)
             .build()
 
+        // Create session activity PendingIntent to launch app when notification is tapped
+        val sessionActivityIntent = createSessionActivityIntent()
+
         mediaSession = MediaSession.Builder(context, player)
             .setCallback(MediaSessionCallback())
             .setMediaButtonPreferences(ImmutableList.of(seekBackwardButton, seekForwardButton))
+            .setSessionActivity(sessionActivityIntent)
             .build()
 
         // Register with the controller
         mediaSession?.let { session ->
             controller.registerPlayer(player, session)
         }
+    }
+
+    /**
+     * Creates a PendingIntent that launches the app's main activity when the notification is tapped.
+     * Uses the launcher intent to ensure proper task handling and back stack behavior.
+     */
+    private fun createSessionActivityIntent(): PendingIntent {
+        val packageManager = context.packageManager
+        val launchIntent = packageManager.getLaunchIntentForPackage(context.packageName)
+            ?: Intent().apply {
+                // Fallback: create intent manually if launch intent is not available
+                setPackage(context.packageName)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+
+        // Ensure proper flags for bringing existing task to front
+        launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+
+        return PendingIntent.getActivity(
+            context,
+            0,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     /**
