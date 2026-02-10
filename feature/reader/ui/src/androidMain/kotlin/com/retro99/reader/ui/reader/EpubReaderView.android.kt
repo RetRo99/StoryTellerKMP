@@ -27,7 +27,7 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
  * Android implementation of EPUB reader using Readium's EpubNavigatorFragment.
  */
 @Composable
-internal actual fun EpubReaderView(
+internal actual fun EpubReaderViewInternal(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,

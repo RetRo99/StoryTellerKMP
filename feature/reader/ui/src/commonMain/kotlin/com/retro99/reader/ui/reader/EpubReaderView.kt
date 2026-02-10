@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.reader.ui.di.koinReaderScopeInject
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.EpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
@@ -16,11 +17,34 @@ import com.retro99.reader.ui.publication.EpubPublication
  * @param bookUuid The unique identifier of the book
  * @param publication The opened EPUB publication
  * @param intentDispatcher Dispatcher for sending intents to the ViewModel
- * @param bookController Controller for navigating and controlling the book reader
  * @param modifier The modifier to apply to the view
+ * @param bookController Controller for navigating and controlling the book reader.
+ *                       Defaults to injecting from the ReaderScope.
  */
 @Composable
-internal expect fun EpubReaderView(
+internal fun EpubReaderView(
+    bookUuid: String,
+    publication: EpubPublication,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
+    modifier: Modifier = Modifier,
+    bookController: BookController = koinReaderScopeInject(bookUuid),
+) {
+    EpubReaderViewInternal(
+        bookUuid = bookUuid,
+        publication = publication,
+        intentDispatcher = intentDispatcher,
+        bookController = bookController,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Internal platform-specific EPUB reader view implementation.
+ * On Android, this uses Readium's EpubNavigatorFragment.
+ * On iOS, this uses Readium Swift via bridge.
+ */
+@Composable
+internal expect fun EpubReaderViewInternal(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
