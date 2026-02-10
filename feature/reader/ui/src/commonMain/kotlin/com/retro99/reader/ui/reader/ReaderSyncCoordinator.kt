@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.reader
 
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
 import kotlinx.coroutines.CoroutineScope
@@ -7,6 +8,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Coordinates synchronization between book navigation and audio playback.
@@ -15,6 +18,8 @@ import kotlinx.coroutines.flow.onEach
  * - Book locator changes -> audio chapter preparation
  * - Audio locator changes -> book highlight updates
  */
+@Scope(ReaderScope::class)
+@Scoped
 class ReaderSyncCoordinator(
     private val bookController: BookController,
     private val audioController: AudioController,

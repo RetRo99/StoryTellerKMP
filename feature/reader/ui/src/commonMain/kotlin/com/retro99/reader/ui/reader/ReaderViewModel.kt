@@ -74,10 +74,7 @@ class ReaderViewModel(
     }
 
     private val syncCoordinator: ReaderSyncCoordinator by lazy {
-        ReaderSyncCoordinator(
-            bookController = bookController,
-            audioController = audioController,
-        ).also {
+        readerScope.get<ReaderSyncCoordinator>().also {
             addCloseable(it)
         }
     }
