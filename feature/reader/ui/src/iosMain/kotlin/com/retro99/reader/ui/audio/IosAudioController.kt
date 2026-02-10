@@ -7,20 +7,23 @@ import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.reader.ReaderViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.Provided
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * iOS implementation of [AudioController].
  * Delegates audio playback operations to the bridge from [EpubPublication].
  */
-@Factory(binds = [AudioController::class])
+@Scope(ReaderViewModel::class)
+@Scoped(binds = [AudioController::class])
 class IosAudioController(
-    @InjectedParam private val publication: EpubPublication,
+    @Provided private val publication: EpubPublication,
 ) : AudioController {
 
     private val bridge = publication.bridge

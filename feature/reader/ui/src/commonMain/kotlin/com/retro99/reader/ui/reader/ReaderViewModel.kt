@@ -33,7 +33,6 @@ import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 import org.koin.core.component.KoinScopeComponent
 import org.koin.core.component.createScope
-import org.koin.core.parameter.parametersOf
 import org.koin.core.scope.Scope
 
 @KoinViewModel
@@ -55,13 +54,17 @@ class ReaderViewModel(
     )
 ), KoinScopeComponent {
 
-    override val scope: Scope by lazy { createScope(this) }
+    override val scope: Scope by lazy {
+        createScope(this).apply {
+            val publication = requireNotNull(viewState.value.publication) {
+                "AudioController accessed before publication was opened"
+            }
+            declare(publication)
+        }
+    }
 
     private val audioController: AudioController by lazy {
-        val publication = requireNotNull(viewState.value.publication) {
-            "AudioController accessed before publication was opened"
-        }
-        scope.get<AudioController> { parametersOf(publication) }.also {
+        scope.get<AudioController>().also {
             addCloseable(it)
         }
     }
@@ -294,28 +297,27 @@ class ReaderViewModel(
      * - Any other playback initialization error occurs
      */
     private fun togglePlayback() {
-        val controller = audioController ?: return
         val currentState = viewState.value
         val isCurrentlyPlaying = currentState.isPlaying
         if (isCurrentlyPlaying) {
-            controller.pauseAudio()
+            audioController.pauseAudio()
         } else {
             if (!currentState.hasStartedPlayback) {
-                controller.playAudio(currentState.initialAudioPositionMs)
+                audioController.playAudio(currentState.initialAudioPositionMs)
                 updateState { it.copy(hasStartedPlayback = true) }
             } else {
-                controller.resumeAudio()
+                audioController.resumeAudio()
             }
         }
     }
 
     private fun seekTo(audioTimestampMs: Long) {
-        audioController?.seekToAudioPosition(audioTimestampMs)
+        audioController.seekToAudioPosition(audioTimestampMs)
         updateState { it.copy(currentAudioPositionMs = audioTimestampMs) }
     }
 
     private fun setPlaybackSpeed(speed: Float) {
-        audioController?.setPlaybackSpeed(speed)
+        audioController.setPlaybackSpeed(speed)
         updateState { it.copy(playbackSpeed = speed) }
         // Also save the speed to settings
         val currentSettings = viewState.value.publication?.initialSettings
@@ -333,7 +335,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipForward(milliseconds: Long) {
-        audioController?.skipForward()
+        audioController.skipForward()
     }
 
     /**
@@ -343,7 +345,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipBackward(milliseconds: Long) {
-        audioController?.skipBackward()
+        audioController.skipBackward()
     }
 
     /**
