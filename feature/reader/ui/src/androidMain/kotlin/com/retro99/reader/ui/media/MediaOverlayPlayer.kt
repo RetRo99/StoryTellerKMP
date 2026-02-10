@@ -76,6 +76,7 @@ class MediaOverlayPlayer(
     private val exoPlayer: ExoPlayer,
     private val audioFocusManager: AudioFocusManager,
     private val mediaSessionManager: MediaSessionManager,
+    private val foregroundServiceController: ForegroundServiceController,
 ) {
     private val publication: Publication = epubPublication.publication
     private val logger = Logger.withTag("MediaOverlayPlayer")
@@ -86,9 +87,6 @@ class MediaOverlayPlayer(
      * Uses Dispatchers.Main for UI-related operations.
      */
     private val playerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
-    // Foreground service controller
-    private val foregroundServiceController = ForegroundServiceController(context)
 
     // Locator tracker for position updates and text highlighting
     private val locatorTracker = LocatorTracker(exoPlayer, playerScope)
