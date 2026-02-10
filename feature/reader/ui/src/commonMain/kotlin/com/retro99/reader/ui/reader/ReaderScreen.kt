@@ -34,7 +34,6 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
-import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.translations.StringRes
 import kotlinx.coroutines.delay
@@ -65,7 +64,6 @@ fun ReaderScreen(
             bookUuid = bookUuid,
             viewState = viewState,
             intentDispatcher = intentDispatcher,
-            bookController = viewModel.bookController,
         )
     }
 }
@@ -75,7 +73,6 @@ private fun ReaderScreenContent(
     bookUuid: String,
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    bookController: BookController,
 ) {
     Box(
         modifier = Modifier
@@ -98,7 +95,6 @@ private fun ReaderScreenContent(
                 isAudioPlayerReady = viewState.isAudioPlayerReady,
                 intentDispatcher = intentDispatcher,
                 loader = movableLoader,
-                bookController = bookController,
             )
         } else {
             movableLoader()
@@ -127,7 +123,6 @@ private fun ReaderContent(
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
-    bookController: BookController,
 ) {
     val settings = currentSettings ?: publication.initialSettings
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
@@ -158,7 +153,6 @@ private fun ReaderContent(
             bookUuid = bookUuid,
             publication = publication,
             intentDispatcher = intentDispatcher,
-            bookController = bookController,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(vertical = settings.marginVertical.dp)

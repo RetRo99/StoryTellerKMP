@@ -36,7 +36,7 @@ private val logger = Logger.withTag("EpubReaderView.iOS")
  */
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-internal actual fun EpubReaderView(
+internal actual fun EpubReaderViewInternal(
     bookUuid: String,
     publication: EpubPublication,
     intentDispatcher: IntentDispatcher<ReaderIntent>,

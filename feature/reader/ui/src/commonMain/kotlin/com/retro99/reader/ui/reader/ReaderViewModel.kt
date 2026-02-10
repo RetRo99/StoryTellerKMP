@@ -61,7 +61,7 @@ class ReaderViewModel(
         }
     }
 
-    val bookController: BookController by lazy {
+    private val bookController: BookController by lazy {
         readerScope.get<BookController>().also {
             addCloseable(it)
         }
