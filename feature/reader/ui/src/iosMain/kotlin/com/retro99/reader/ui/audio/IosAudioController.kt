@@ -1,7 +1,6 @@
 package com.retro99.reader.ui.audio
 
 import com.retro99.reader.ui.bridge.AudioLocator
-import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
@@ -12,16 +11,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
 
 /**
  * iOS implementation of [AudioController].
- * Delegates audio playback operations to the [EpubReaderBridge].
+ * Delegates audio playback operations to the bridge from [EpubPublication].
  */
-@Single
+@Factory(binds = [AudioController::class])
 class IosAudioController(
-    private val bridge: EpubReaderBridge,
+    @InjectedParam private val publication: EpubPublication,
 ) : AudioController {
+
+    private val bridge = publication.bridge
 
     private var mediaOverlaysInitialized = false
 
@@ -52,13 +54,10 @@ class IosAudioController(
 
     init {
         setupCallbacks()
+        initializeMediaOverlaysIfNeeded()
     }
 
-    /**
-     * Initializes media overlays for ReadAloud books.
-     * This should be called AFTER the navigator view controller is created.
-     */
-    fun initializeMediaOverlaysIfNeeded() {
+    private fun initializeMediaOverlaysIfNeeded() {
         if (mediaOverlaysInitialized) {
             return
         }
@@ -140,10 +139,6 @@ class IosAudioController(
 
     override fun onBookLocationChanged(locator: LocatorState) {
         // No-op on iOS for now; media overlay player handles its own chapter prep.
-    }
-
-    override suspend fun init(publication: EpubPublication) {
-        initializeMediaOverlaysIfNeeded()
     }
 
     private fun ensureMediaOverlaysInitialized(onReady: () -> Unit) {

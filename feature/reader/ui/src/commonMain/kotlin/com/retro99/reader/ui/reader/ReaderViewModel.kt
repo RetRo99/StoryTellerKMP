@@ -21,7 +21,6 @@ import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
-import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.reader.ui.service.EpubPublicationService
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -32,6 +31,10 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
+import org.koin.core.component.KoinScopeComponent
+import org.koin.core.component.createScope
+import org.koin.core.parameter.parametersOf
+import org.koin.core.scope.Scope
 
 @KoinViewModel
 class ReaderViewModel(
@@ -45,24 +48,35 @@ class ReaderViewModel(
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
     @Provided val bookController: BookController,
-    @Provided val audioController: AudioController,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(
         bookUuid = bookUuid,
         bookType = bookType,
     )
-) {
+), KoinScopeComponent {
 
-    private val syncCoordinator = ReaderSyncCoordinator(
-        bookController = bookController,
-        audioController = audioController,
-    )
+    override val scope: Scope by lazy { createScope(this) }
+
+    private val audioController: AudioController by lazy {
+        val publication = requireNotNull(viewState.value.publication) {
+            "AudioController accessed before publication was opened"
+        }
+        scope.get<AudioController> { parametersOf(publication) }.also {
+            addCloseable(it)
+        }
+    }
+
+    private val syncCoordinator: ReaderSyncCoordinator by lazy {
+        ReaderSyncCoordinator(
+            bookController = bookController,
+            audioController = audioController,
+        ).also {
+            addCloseable(it)
+        }
+    }
 
     init {
         addCloseable(bookController)
-        addCloseable(audioController)
-        addCloseable(syncCoordinator)
-        syncCoordinator.start(viewModelScope)
         initializeReader()
         observeSettingsChanges()
         observeBookLocationChanges()
@@ -168,11 +182,6 @@ class ReaderViewModel(
         )
 
         publication?.let {
-            if (publication.hasMediaOverlays) {
-                initAudio(
-                    publication = publication,
-                )
-            }
             updateState { state ->
                 state.copy(
                     bookUuid = data.bookUuid,
@@ -186,12 +195,18 @@ class ReaderViewModel(
                     lastKnownPosition = position,
                 )
             }
+            // Initialize audio after publication is in state
+            if (publication.hasMediaOverlays) {
+                initAudio()
+            }
         }
             ?: updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
     }
 
-    private suspend fun initAudio(publication: EpubPublication) {
-        audioController.init(publication)
+    private fun initAudio() {
+        // Start sync coordinator (this also triggers lazy initialization of audioController)
+        syncCoordinator.start(viewModelScope)
+
         audioController.audioPlaybackState
             .map { it.isPlayerReady }
             .distinctUntilChanged()
@@ -279,27 +294,28 @@ class ReaderViewModel(
      * - Any other playback initialization error occurs
      */
     private fun togglePlayback() {
+        val controller = audioController ?: return
         val currentState = viewState.value
         val isCurrentlyPlaying = currentState.isPlaying
         if (isCurrentlyPlaying) {
-            audioController.pauseAudio()
+            controller.pauseAudio()
         } else {
             if (!currentState.hasStartedPlayback) {
-                audioController.playAudio(currentState.initialAudioPositionMs)
+                controller.playAudio(currentState.initialAudioPositionMs)
                 updateState { it.copy(hasStartedPlayback = true) }
             } else {
-                audioController.resumeAudio()
+                controller.resumeAudio()
             }
         }
     }
 
     private fun seekTo(audioTimestampMs: Long) {
-        audioController.seekToAudioPosition(audioTimestampMs)
+        audioController?.seekToAudioPosition(audioTimestampMs)
         updateState { it.copy(currentAudioPositionMs = audioTimestampMs) }
     }
 
     private fun setPlaybackSpeed(speed: Float) {
-        audioController.setPlaybackSpeed(speed)
+        audioController?.setPlaybackSpeed(speed)
         updateState { it.copy(playbackSpeed = speed) }
         // Also save the speed to settings
         val currentSettings = viewState.value.publication?.initialSettings
@@ -317,7 +333,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipForward(milliseconds: Long) {
-        audioController.skipForward()
+        audioController?.skipForward()
     }
 
     /**
@@ -327,7 +343,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipBackward(milliseconds: Long) {
-        audioController.skipBackward()
+        audioController?.skipBackward()
     }
 
     /**
@@ -392,5 +408,10 @@ class ReaderViewModel(
             )
             saveReadingProgressUseCase(positionDomainModel)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        scope.close()
     }
 }

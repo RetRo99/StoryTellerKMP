@@ -26,20 +26,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.Provided
 import org.readium.r2.shared.util.Url
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@Single(binds = [AudioController::class])
+@Factory(binds = [AudioController::class])
 class AndroidAudioController(
-    private val context: Context,
-    private val analytics: Analytics,
-    private val smilParser: SmilParser,
-    private val quickScanner: SmilQuickScanner,
-    private val mediaPlaybackController: MediaPlaybackController,
-    private val notificationPermissionHandler: NotificationPermissionHandler,
+    @Provided private val context: Context,
+    @Provided private val analytics: Analytics,
+    @Provided private val smilParser: SmilParser,
+    @Provided private val quickScanner: SmilQuickScanner,
+    @Provided private val mediaPlaybackController: MediaPlaybackController,
+    @Provided private val notificationPermissionHandler: NotificationPermissionHandler,
+    @InjectedParam private val publication: EpubPublication,
 ) : AudioController {
 
     private var currentBookLocation: LocatorState? = null
@@ -92,22 +94,14 @@ class AndroidAudioController(
             player?.showPermissionRationale ?: flowOf(false)
         }
 
-    private lateinit var publication: EpubPublication
-
-    override suspend fun init(
-        publication: EpubPublication,
-    ) {
-        // Recreate the scope if it was cancelled (e.g., after close() was called)
-        if (!controllerScope.isActive) {
-            controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    init {
+        // Initialize media overlays when the controller is created
+        controllerScope.launch {
+            initializeMediaOverlays()
         }
-        this.publication = publication
-        initializeMediaOverlays(
-            publication = publication,
-        )
     }
 
-    private suspend fun initializeMediaOverlays(publication: EpubPublication) {
+    private suspend fun initializeMediaOverlays() {
         if (!publication.hasMediaOverlays) {
             return
         }
