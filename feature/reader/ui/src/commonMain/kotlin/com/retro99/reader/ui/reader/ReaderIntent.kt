@@ -2,6 +2,7 @@ package com.retro99.reader.ui.reader
 
 import com.retro99.base.ui.BaseIntent
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.model.TocItemUiModel
 
 sealed interface ReaderIntent : BaseIntent {
     data class UpdateSettings(
@@ -36,6 +37,20 @@ sealed interface ReaderIntent : BaseIntent {
      * User chose to use the remote position when a conflict was detected.
      */
     data object UseRemotePosition : ReaderIntent
+
+    // Table of Contents intents
+
+    /**
+     * Toggle the table of contents visibility.
+     */
+    data object ToggleToc : ReaderIntent
+
+    /**
+     * Navigate to a specific TOC item.
+     *
+     * @param tocItem The table of contents item to navigate to
+     */
+    data class GoToTocItem(val tocItem: TocItemUiModel) : ReaderIntent
 
     // Media control intents for ReadAloud books
 

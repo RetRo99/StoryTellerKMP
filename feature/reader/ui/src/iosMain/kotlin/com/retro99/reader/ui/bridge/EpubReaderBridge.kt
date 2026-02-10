@@ -202,7 +202,23 @@ interface EpubReaderBridge {
      * @param callback Called with the result string, or null if evaluation failed
      */
     fun evaluateJavaScript(script: String, callback: (String?) -> Unit)
+
+    /**
+     * Gets the table of contents for the current publication.
+     * @return A list of TOC items, or empty list if no publication is open
+     */
+    fun getTableOfContents(): List<TocItem>
 }
+
+/**
+ * Table of contents item data class for iOS bridge.
+ * This is a simple data holder that can be passed from Swift to Kotlin.
+ */
+data class TocItem(
+    val href: String,
+    val title: String,
+    val level: Int,
+)
 
 /**
  * Position locator data class for iOS bridge.

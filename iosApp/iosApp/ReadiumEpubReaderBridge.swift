@@ -277,6 +277,28 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         self.onPositionChangedCallback = callback
     }
 
+    func getTableOfContents() -> [TocItem] {
+        guard let publication = self.publication else {
+            return []
+        }
+
+        var result: [TocItem] = []
+        flattenToc(links: publication.tableOfContents, level: 0, into: &result)
+        return result
+    }
+
+    private func flattenToc(links: [Link], level: Int, into result: inout [TocItem]) {
+        for link in links {
+            let item = TocItem(
+                href: link.href.string,
+                title: link.title ?? link.href.string,
+                level: Int32(level)
+            )
+            result.append(item)
+            flattenToc(links: link.children, level: level + 1, into: &result)
+        }
+    }
+
     // MARK: - Media Overlay Methods
 
     func hasMediaOverlays() -> Bool {
