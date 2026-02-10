@@ -1,13 +1,13 @@
 package com.retro99.reader.ui.audio
 
 import com.retro99.reader.ui.bridge.AudioLocator
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.publication.EpubPublication
-import com.retro99.reader.ui.reader.ReaderViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import org.koin.core.annotation.Scoped
  * iOS implementation of [AudioController].
  * Delegates audio playback operations to the bridge from [EpubPublication].
  */
-@Scope(ReaderViewModel::class)
+@Scope(ReaderScope::class)
 @Scoped(binds = [AudioController::class])
 class IosAudioController(
     @Provided private val publication: EpubPublication,

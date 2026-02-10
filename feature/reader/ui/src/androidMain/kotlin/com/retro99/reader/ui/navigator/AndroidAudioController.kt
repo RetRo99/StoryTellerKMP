@@ -4,6 +4,7 @@ import android.content.Context
 import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.nowMillis
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
@@ -14,7 +15,6 @@ import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.playback.MediaPlaybackController
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.publication.EpubPublication
-import com.retro99.reader.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,7 +33,7 @@ import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.util.Url
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@Scope(ReaderViewModel::class)
+@Scope(ReaderScope::class)
 @Scoped(binds = [AudioController::class])
 class AndroidAudioController(
     private val context: Context,
