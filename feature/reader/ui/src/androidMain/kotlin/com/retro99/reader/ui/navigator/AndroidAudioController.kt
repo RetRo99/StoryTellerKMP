@@ -8,13 +8,14 @@ import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
+import com.retro99.reader.ui.playback.LocatorTracker
+import com.retro99.reader.ui.playback.PlaybackStateTracker
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -27,21 +28,23 @@ import org.readium.r2.shared.util.Url
 class AndroidAudioController(
     private val publication: EpubPublication,
     private val player: MediaOverlayPlayer,
+    private val playbackStateTracker: PlaybackStateTracker,
+    private val locatorTracker: LocatorTracker,
 ) : AudioController {
 
     private var currentBookLocation: LocatorState? = null
 
-    private val _currentAudioLocator = MutableStateFlow<AudioLocatorState?>(null)
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    override val currentAudioLocator: StateFlow<AudioLocatorState?> = _currentAudioLocator
+    override val currentAudioLocator: StateFlow<AudioLocatorState?>
+        get() = locatorTracker.currentLocator
 
     override val audioPlaybackState: Flow<AudioPlaybackState>
         get() = combine(
-            player.currentPosition,
-            player.totalDuration,
-            player.isPlaying,
-            player.playbackState,
+            locatorTracker.currentPosition,
+            playbackStateTracker.totalDuration,
+            playbackStateTracker.isPlaying,
+            playbackStateTracker.playbackState,
         ) { positionMs, durationMs, isPlaying, playbackState ->
             AudioPlaybackState(
                 currentPositionMs = positionMs,
@@ -53,7 +56,7 @@ class AndroidAudioController(
         }
 
     override val playbackState: Flow<PlaybackState>
-        get() = player.playbackState
+        get() = playbackStateTracker.playbackState
 
     override val showPermissionDeniedDialog: Flow<Boolean>
         get() = player.showPermissionDeniedDialog
@@ -64,11 +67,6 @@ class AndroidAudioController(
     init {
         controllerScope.launch {
             initializeMediaOverlays()
-        }
-        controllerScope.launch {
-            player.currentLocator.collect { locator ->
-                _currentAudioLocator.value = locator
-            }
         }
     }
 
