@@ -6,7 +6,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -22,16 +21,18 @@ import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.IosEpubNavigatorController
 import com.retro99.reader.ui.publication.EpubPublication
-import com.retro99.reader.ui.util.rememberOpenAppSettings
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flowOf
 import platform.UIKit.UIViewController
 
 private val logger = Logger.withTag("EpubReaderView.iOS")
 
 /**
  * iOS implementation of EPUB reader using Readium Swift via bridge.
+ *
+ * Note: Audio playback is now managed by the ViewModel via AudioController,
+ * which is created as a Koin Factory with EpubPublication as a parameter.
+ * The AudioController initializes media overlays in its init block.
  */
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -71,11 +72,8 @@ internal actual fun EpubReaderView(
             if (viewController != null) {
                 logger.i { "Successfully created reader view controller on attempt ${attempts + 1}" }
                 readerViewController = viewController
-                // Initialize media overlays now that the navigator exists
-                // This is needed because the Swift MediaOverlayPlayer needs access to
-                // the navigator's current location for proper initialization
-                logger.d { "Initializing media overlays after navigator creation" }
-                navigator?.initializeMediaOverlaysIfNeeded()
+                // Note: Media overlays are now initialized by IosAudioController in its init block
+                // when it's created by the ViewModel after the publication is opened
             } else {
                 attempts++
                 logger.w { "createReaderViewController returned null, attempt $attempts/10" }
@@ -88,30 +86,9 @@ internal actual fun EpubReaderView(
         }
     }
 
-    // Use common observation logic for audio playback state
-    ObserveAudioPlaybackState(
-        navigator = navigator,
-        intentDispatcher = intentDispatcher,
-    )
-
-    // Observe permission denied dialog state (iOS doesn't need this, but included for consistency)
-    val showPermissionDeniedDialog by (navigator?.showPermissionDeniedDialog ?: flowOf(false))
-        .collectAsState(initial = false)
-    val showPermissionRationale by (navigator?.showPermissionRationale ?: flowOf(false))
-        .collectAsState(initial = false)
-    val openAppSettings = rememberOpenAppSettings()
-
-    ObservePermissionDeniedDialog(
-        navigator = navigator,
-        showDialog = showPermissionDeniedDialog,
-        showRationale = showPermissionRationale,
-        onOpenSettings = openAppSettings,
-        onTryAgain = {
-            // User wants to try again - trigger play which will re-request permission
-            navigator?.playAudio()
-        },
-        onDismiss = { /* Dialog dismissed without opening settings */ },
-    )
+    // Note: Audio playback state observation and permission dialogs are now handled
+    // by the ViewModel via the AudioController. iOS doesn't require notification
+    // permission for audio playback, so permission dialogs are not needed here.
 
     DisposableEffect(bookUuid) {
         logger.d { "DisposableEffect started for bookUuid=$bookUuid" }

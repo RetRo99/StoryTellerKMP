@@ -4,7 +4,6 @@ import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
-import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -115,7 +114,6 @@ interface AudioController : AutoCloseable {
     fun dismissPermissionDeniedDialog()
 
     fun onBookLocationChanged(locator: LocatorState)
-    suspend fun init(publication: EpubPublication)
 
     /**
      * Flow of current audio locator with timing information.
