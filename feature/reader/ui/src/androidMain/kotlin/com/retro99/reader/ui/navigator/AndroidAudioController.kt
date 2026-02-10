@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.util.Url
@@ -37,13 +36,13 @@ import org.readium.r2.shared.util.Url
 @Scope(ReaderViewModel::class)
 @Scoped(binds = [AudioController::class])
 class AndroidAudioController(
-    @Provided private val context: Context,
-    @Provided private val analytics: Analytics,
-    @Provided private val smilParser: SmilParser,
-    @Provided private val quickScanner: SmilQuickScanner,
-    @Provided private val mediaPlaybackController: MediaPlaybackController,
-    @Provided private val notificationPermissionHandler: NotificationPermissionHandler,
-    @Provided private val publication: EpubPublication,
+    private val context: Context,
+    private val analytics: Analytics,
+    private val smilParser: SmilParser,
+    private val quickScanner: SmilQuickScanner,
+    private val mediaPlaybackController: MediaPlaybackController,
+    private val notificationPermissionHandler: NotificationPermissionHandler,
+    private val publication: EpubPublication,
 ) : AudioController {
 
     private var currentBookLocation: LocatorState? = null
