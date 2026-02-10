@@ -9,6 +9,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
+import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.smil.SmilClip
 import com.retro99.reader.ui.media.smil.SmilContentProvider
 import com.retro99.reader.ui.media.smil.SmilLoadingManager
@@ -24,6 +25,7 @@ import com.retro99.reader.ui.playback.MediaSessionManager
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.playback.PermissionDenialState
 import com.retro99.reader.ui.playback.PlaybackStateTracker
+import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,6 +39,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.getOrElse
@@ -59,18 +63,21 @@ private const val SEEK_INCREMENT_MS = 10_000L
  * and provided to ExoPlayer via ByteArrayDataSource.
  *
  * @param context Android context for ExoPlayer
- * @param publication The Readium Publication containing the EPUB
+ * @param epubPublication The EpubPublication containing the EPUB (Readium Publication is extracted internally)
  */
 @OptIn(UnstableApi::class)
+@Scope(ReaderScope::class)
+@Scoped
 class MediaOverlayPlayer(
     private val context: Context,
-    private val publication: Publication,
+    epubPublication: EpubPublication,
     private val analytics: Analytics,
     private val smilParser: SmilParser,
     private val quickScanner: SmilQuickScanner,
     private val mediaPlaybackController: MediaPlaybackController,
     private val notificationPermissionHandler: NotificationPermissionHandler,
 ) {
+    private val publication: Publication = epubPublication.publication
     private val logger = Logger.withTag("MediaOverlayPlayer")
 
     // Lazy loading manager for SMIL files
