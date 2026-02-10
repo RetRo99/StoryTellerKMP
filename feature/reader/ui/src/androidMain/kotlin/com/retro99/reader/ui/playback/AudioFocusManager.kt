@@ -11,6 +11,9 @@ import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import com.retro99.reader.ui.di.ReaderScope
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Manages audio focus for the media player.
@@ -34,6 +37,8 @@ import androidx.media3.exoplayer.ExoPlayer
  * Public methods should be called from the main thread.
  */
 @OptIn(UnstableApi::class)
+@Scope(ReaderScope::class)
+@Scoped
 class AudioFocusManager(
     private val context: Context,
     private val player: ExoPlayer,
