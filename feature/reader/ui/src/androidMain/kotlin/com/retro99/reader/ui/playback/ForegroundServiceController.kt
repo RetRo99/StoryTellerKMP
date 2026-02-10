@@ -6,6 +6,9 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.content.ContextCompat
 import co.touchlab.kermit.Logger
+import com.retro99.reader.ui.di.ReaderScope
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Controls the foreground service lifecycle for audio playback.
@@ -16,6 +19,8 @@ import co.touchlab.kermit.Logger
  *
  * @param context Android context for starting/stopping the service
  */
+@Scope(ReaderScope::class)
+@Scoped
 class ForegroundServiceController(
     private val context: Context,
 ) {
