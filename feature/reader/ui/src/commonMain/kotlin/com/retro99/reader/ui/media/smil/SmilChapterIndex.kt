@@ -1,7 +1,10 @@
 package com.retro99.reader.ui.media.smil
 
+import com.retro99.reader.ui.di.ReaderScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Lightweight index mapping chapters to their SMIL files.
@@ -12,6 +15,8 @@ import kotlinx.coroutines.sync.withLock
  *
  * Structure: chapterHref → list of smilHref (some chapters may have multiple SMILs)
  */
+@Scope(ReaderScope::class)
+@Scoped
 class SmilChapterIndex {
 
     private val mutex = Mutex()
