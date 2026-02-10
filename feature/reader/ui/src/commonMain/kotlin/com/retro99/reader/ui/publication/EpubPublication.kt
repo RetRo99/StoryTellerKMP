@@ -2,6 +2,7 @@ package com.retro99.reader.ui.publication
 
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.model.TocItemUiModel
 
 /**
  * Platform-agnostic wrapper for EPUB publication.
@@ -24,5 +25,11 @@ expect class EpubPublication {
      * Whether this publication has media overlays (audio narration).
      */
     val hasMediaOverlays: Boolean
+
+    /**
+     * The table of contents for this publication.
+     * Returns a flat list of TOC entries with level information for indentation.
+     */
+    val tableOfContents: List<TocItemUiModel>
 }
 
