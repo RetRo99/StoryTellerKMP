@@ -75,6 +75,7 @@ class MediaOverlayPlayer(
     private val notificationPermissionHandler: NotificationPermissionHandler,
     private val exoPlayer: ExoPlayer,
     private val audioFocusManager: AudioFocusManager,
+    private val mediaSessionManager: MediaSessionManager,
 ) {
     private val publication: Publication = epubPublication.publication
     private val logger = Logger.withTag("MediaOverlayPlayer")
@@ -85,14 +86,6 @@ class MediaOverlayPlayer(
      * Uses Dispatchers.Main for UI-related operations.
      */
     private val playerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
-    // Media session manager for lockscreen/notification/Bluetooth integration
-    private val mediaSessionManager = MediaSessionManager(
-        context = context,
-        player = exoPlayer,
-        controller = mediaPlaybackController,
-        onUserPausedFromSession = { audioFocusManager.onUserPaused() },
-    )
 
     // Foreground service controller
     private val foregroundServiceController = ForegroundServiceController(context)

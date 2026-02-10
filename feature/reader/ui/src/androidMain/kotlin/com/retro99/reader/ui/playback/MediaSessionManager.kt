@@ -12,6 +12,9 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
+import com.retro99.reader.ui.di.ReaderScope
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Manages MediaSession integration for audio playback.
@@ -24,16 +27,15 @@ import com.google.common.collect.ImmutableList
  *
  * Playback state tracking and foreground service management are handled
  * by [MediaOverlayPlayer] to avoid duplicate listeners and race conditions.
- *
- * @param onUserPausedFromSession Callback invoked when user pauses via notification/lockscreen/Bluetooth.
- *                                 This allows [AudioFocusManager] to know not to auto-resume.
  */
 @OptIn(UnstableApi::class)
+@Scope(ReaderScope::class)
+@Scoped
 class MediaSessionManager(
     private val context: Context,
     private val player: ExoPlayer,
     private val controller: MediaPlaybackController,
-    private val onUserPausedFromSession: (() -> Unit)? = null,
+    private val audioFocusManager: AudioFocusManager,
 ) {
     private var mediaSession: MediaSession? = null
 
@@ -196,7 +198,7 @@ class MediaSessionManager(
                 // Synchronized to prevent TOCTOU race with onIsPlayingChanged.
                 val shouldNotifyPause = synchronized(stateLock) { wasPlaying }
                 if (shouldNotifyPause) {
-                    onUserPausedFromSession?.invoke()
+                    audioFocusManager.onUserPaused()
                 }
             }
             // Allow the command to proceed
