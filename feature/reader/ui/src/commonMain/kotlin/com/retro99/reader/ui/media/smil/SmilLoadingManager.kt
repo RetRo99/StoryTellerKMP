@@ -13,6 +13,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 
@@ -77,10 +78,10 @@ class SmilLoadingManager(
     private val analytics: Analytics,
     private val index: SmilChapterIndex,
     private val cache: SmilClipCache,
+    @Provided private val contentProvider: SmilContentProvider,
 ) {
     private val ioDispatcher = Dispatchers.IO
 
-    private var contentProvider: SmilContentProvider? = null
     private var managerScope: CoroutineScope? = null
     private var prefetchJob: Job? = null
 
@@ -94,13 +95,11 @@ class SmilLoadingManager(
     private val parseTimeoutMs = 5000L
 
     /**
-     * Initializes the manager with a content provider and scope.
+     * Initializes the manager with a coroutine scope for background operations.
      *
-     * @param provider Platform-specific content provider
      * @param scope Coroutine scope for background operations
      */
-    fun initialize(provider: SmilContentProvider, scope: CoroutineScope) {
-        contentProvider = provider
+    fun initialize(scope: CoroutineScope) {
         managerScope = CoroutineScope(scope.coroutineContext + SupervisorJob())
     }
 
@@ -116,11 +115,11 @@ class SmilLoadingManager(
      */
     suspend fun buildInitialIndex(currentChapterHref: String): Long = withContext(ioDispatcher) {
         val startTime = currentTimeMillis()
-        val provider = contentProvider ?: return@withContext 0L
 
         val normalizedCurrent = quickScanner.normalizeChapterHref(currentChapterHref)
-        val readingOrder = provider.getReadingOrder().map { quickScanner.normalizeChapterHref(it) }
-        val allSmilHrefs = provider.getAllSmilHrefs()
+        val readingOrder = contentProvider.getReadingOrder()
+            .map { quickScanner.normalizeChapterHref(it) }
+        val allSmilHrefs = contentProvider.getAllSmilHrefs()
 
         // Find current chapter position in reading order
         val currentIndex = readingOrder.indexOf(normalizedCurrent).takeIf { it >= 0 } ?: 0
@@ -164,11 +163,9 @@ class SmilLoadingManager(
      * @return The normalized chapter href, or null if not found
      */
     private suspend fun scanSmilFile(smilHref: String): String? {
-        val provider = contentProvider ?: return null
-
         return try {
             val content = withTimeoutOrNull(scanTimeoutMs) {
-                provider.readSmilContent(smilHref)
+                contentProvider.readSmilContent(smilHref)
             }
 
             if (content == null) {
@@ -234,8 +231,6 @@ class SmilLoadingManager(
      * Parses all SMIL files for a chapter.
      */
     private suspend fun parseChapterSmilFiles(normalizedChapterHref: String): List<SmilClip> {
-        contentProvider ?: return emptyList()
-
         // Get SMIL files for this chapter from index
         var smilFiles = index.getSmilFilesForChapter(normalizedChapterHref)
 
@@ -262,8 +257,7 @@ class SmilLoadingManager(
      * Fallback scan: searches all unscanned SMIL files for ones referencing this chapter.
      */
     private suspend fun fallbackScanForChapter(normalizedChapterHref: String): List<String> {
-        val provider = contentProvider ?: return emptyList()
-        val allSmilHrefs = provider.getAllSmilHrefs()
+        val allSmilHrefs = contentProvider.getAllSmilHrefs()
         val unscanned = index.getUnscannedSmilFiles(allSmilHrefs)
 
         for (smilHref in unscanned) {
@@ -277,11 +271,9 @@ class SmilLoadingManager(
      * Parses a single SMIL file and returns its clips.
      */
     private suspend fun parseSmilFile(smilHref: String): List<SmilClip> {
-        val provider = contentProvider ?: return emptyList()
-
         return try {
             val content = withTimeoutOrNull(parseTimeoutMs) {
-                provider.readSmilContent(smilHref)
+                contentProvider.readSmilContent(smilHref)
             } ?: return emptyList()
 
             smilParser.parseClips(content)
@@ -302,7 +294,6 @@ class SmilLoadingManager(
      * @param currentChapterHref The current chapter href
      */
     fun prefetchNextChapter(currentChapterHref: String) {
-        val provider = contentProvider ?: return
         val scope = managerScope ?: return
 
         // Cancel any existing prefetch
@@ -311,7 +302,7 @@ class SmilLoadingManager(
         prefetchJob = scope.launch(ioDispatcher) {
             try {
                 val normalized = quickScanner.normalizeChapterHref(currentChapterHref)
-                val readingOrder = provider.getReadingOrder()
+                val readingOrder = contentProvider.getReadingOrder()
                     .map { quickScanner.normalizeChapterHref(it) }
 
                 val currentIndex = readingOrder.indexOf(normalized)
@@ -362,7 +353,6 @@ class SmilLoadingManager(
         prefetchJob = null
         managerScope?.cancel()
         managerScope = null
-        contentProvider = null
         cache.clear()
         index.clear()
     }

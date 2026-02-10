@@ -175,7 +175,7 @@ class MediaOverlayPlayer(
      * @param initialChapterHref The initial chapter href to optimize index building for
      */
     suspend fun initialize(initialChapterHref: String? = null) {
-        smilLoadingManager.initialize(contentProvider, playerScope)
+        smilLoadingManager.initialize(playerScope)
 
         // Build initial index for current chapter and nearby chapters
         val chapterHref = initialChapterHref
