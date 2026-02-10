@@ -17,6 +17,7 @@ import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.model.TocItemUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
@@ -99,6 +100,8 @@ class ReaderViewModel(
             is ReaderIntent.SetPlaybackSpeed -> setPlaybackSpeed(intent.speed)
             is ReaderIntent.SkipForward -> skipForward(intent.milliseconds)
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
+            ReaderIntent.ToggleToc -> toggleToc()
+            is ReaderIntent.GoToTocItem -> goToTocItem(intent.tocItem)
         }
     }
 
@@ -194,6 +197,7 @@ class ReaderViewModel(
                     initialAudioPositionMs = position?.audioTimestampMs,
                     currentAudioPositionMs = position?.audioTimestampMs ?: 0L,
                     lastKnownPosition = position,
+                    tableOfContents = it.tableOfContents,
                 )
             }
             // Start observing after publication is ready
@@ -277,6 +281,15 @@ class ReaderViewModel(
 
     private fun toggleSettings() {
         updateState { it.copy(isSettingsVisible = !it.isSettingsVisible) }
+    }
+
+    private fun toggleToc() {
+        updateState { it.copy(isTocVisible = !it.isTocVisible) }
+    }
+
+    private fun goToTocItem(tocItem: TocItemUiModel) {
+        bookController.goToChapter(tocItem.href)
+        updateState { it.copy(isTocVisible = false) }
     }
 
     private fun close() {

@@ -6,11 +6,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +37,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.model.TocItemUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import com.retro99.translations.StringRes
 import kotlinx.coroutines.delay
@@ -93,6 +97,8 @@ private fun ReaderScreenContent(
                 totalDurationMs = viewState.totalDurationMs,
                 playbackSpeed = viewState.playbackSpeed,
                 isAudioPlayerReady = viewState.isAudioPlayerReady,
+                tableOfContents = viewState.tableOfContents,
+                isTocVisible = viewState.isTocVisible,
                 intentDispatcher = intentDispatcher,
                 loader = movableLoader,
             )
@@ -110,6 +116,7 @@ private fun ReaderScreenContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReaderContent(
     bookUuid: String,
@@ -120,6 +127,8 @@ private fun ReaderContent(
     currentAudioPositionMs: Long,
     totalDurationMs: Long?,
     playbackSpeed: Float,
+    tableOfContents: List<TocItemUiModel>,
+    isTocVisible: Boolean,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
@@ -231,7 +240,7 @@ private fun ReaderContent(
             }
         }
 
-        // Top toolbar with settings icon
+        // Top toolbar with settings and TOC icons
         AnimatedVisibility(
             visible = areControlsVisible,
             enter = fadeIn() + slideInVertically { -it },
@@ -239,8 +248,20 @@ private fun ReaderContent(
             modifier = Modifier.align(Alignment.TopEnd),
         ) {
             ReaderToolbar(
+                onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
                 onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
                 onInteraction = onControlsInteraction,
+            )
+        }
+
+        // Table of Contents bottom sheet
+        if (isTocVisible) {
+            TableOfContentsSheet(
+                tableOfContents = tableOfContents,
+                onTocItemClick = { tocItem ->
+                    intentDispatcher(ReaderIntent.GoToTocItem(tocItem))
+                },
+                onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
             )
         }
     }
@@ -248,6 +269,7 @@ private fun ReaderContent(
 
 @Composable
 private fun ReaderToolbar(
+    onTocClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onInteraction: () -> Unit,
     modifier: Modifier = Modifier,
@@ -262,17 +284,31 @@ private fun ReaderToolbar(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            IconButton(
-                onClick = {
-                    onInteraction()
-                    onSettingsClick()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(StringRes.settings_icon_content_description),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+            Row {
+                IconButton(
+                    onClick = {
+                        onInteraction()
+                        onTocClick()
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Table of Contents",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        onInteraction()
+                        onSettingsClick()
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = stringResource(StringRes.settings_icon_content_description),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
     }

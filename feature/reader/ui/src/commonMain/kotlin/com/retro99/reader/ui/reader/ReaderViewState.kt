@@ -5,6 +5,7 @@ import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
+import com.retro99.reader.ui.model.TocItemUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 
 data class ReaderViewState(
@@ -30,6 +31,9 @@ data class ReaderViewState(
     val lastKnownPosition: PositionUiModel? = null,
     // Whether the media player is ready (for ReadAloud books)
     val isAudioPlayerReady: Boolean = false,
+    // Table of contents
+    val tableOfContents: List<TocItemUiModel> = emptyList(),
+    val isTocVisible: Boolean = false,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.
