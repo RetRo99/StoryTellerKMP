@@ -75,10 +75,10 @@ class SmilLoadingManager(
     private val smilParser: SmilParser,
     private val quickScanner: SmilQuickScanner,
     private val analytics: Analytics,
+    private val index: SmilChapterIndex,
+    private val cache: SmilClipCache,
 ) {
     private val ioDispatcher = Dispatchers.IO
-    private val index = SmilChapterIndex()
-    private val cache = SmilClipCache()
 
     private var contentProvider: SmilContentProvider? = null
     private var managerScope: CoroutineScope? = null

@@ -1,7 +1,10 @@
 package com.retro99.reader.ui.media.smil
 
+import com.retro99.reader.ui.di.ReaderScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 
 /**
  * Represents a cached set of clips for a single chapter.
@@ -23,6 +26,8 @@ data class ChapterClipData(
  * This cache is designed to be shared across the reader session and should
  * be cleared when the reader is closed.
  */
+@Scope(ReaderScope::class)
+@Scoped
 class SmilClipCache {
 
     private val mutex = Mutex()
