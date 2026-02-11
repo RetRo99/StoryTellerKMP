@@ -25,6 +25,10 @@ class DownloadStateHolder {
         emptyMap(),
     )
 
+    // Track cancelled downloads to prevent race conditions where progress updates
+    // arrive after cancellation
+    private val cancelledDownloads = mutableSetOf<DownloadKey>()
+
     fun observeDownloadState(
         bookUuid: String,
         bookType: BookType,
@@ -46,21 +50,35 @@ class DownloadStateHolder {
 
     fun updateProgress(bookUuid: String, bookType: BookType, progress: Float?) {
         val key = DownloadKey(bookUuid, bookType)
+        // Ignore progress updates for cancelled downloads
+        if (cancelledDownloads.contains(key)) return
         updateState(key, DownloadStateDomainModel.Downloading(progress))
     }
 
     fun markCached(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
+        // Ignore if download was cancelled
+        if (cancelledDownloads.contains(key)) {
+            cancelledDownloads.remove(key)
+            return
+        }
         updateState(key, DownloadStateDomainModel.Cached)
     }
 
     fun markFailed(bookUuid: String, bookType: BookType, error: AppError) {
         val key = DownloadKey(bookUuid, bookType)
+        // Ignore if download was cancelled
+        if (cancelledDownloads.contains(key)) {
+            cancelledDownloads.remove(key)
+            return
+        }
         updateState(key, DownloadStateDomainModel.Failed(error))
     }
 
     fun markIdle(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
+        // Mark as cancelled to prevent race conditions with pending progress updates
+        cancelledDownloads.add(key)
         updateState(key, DownloadStateDomainModel.Idle)
     }
 
@@ -70,6 +88,14 @@ class DownloadStateHolder {
         if (currentState is DownloadStateDomainModel.Failed) {
             updateState(key, DownloadStateDomainModel.Idle)
         }
+    }
+
+    /**
+     * Called when starting a new download to clear any previous cancellation state.
+     */
+    fun clearCancelledState(bookUuid: String, bookType: BookType) {
+        val key = DownloadKey(bookUuid, bookType)
+        cancelledDownloads.remove(key)
     }
 
     private fun updateState(key: DownloadKey, state: DownloadStateDomainModel) {

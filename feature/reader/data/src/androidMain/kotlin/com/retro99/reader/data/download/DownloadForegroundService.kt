@@ -3,6 +3,7 @@ package com.retro99.reader.data.download
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -56,7 +57,7 @@ class DownloadForegroundService : Service() {
                 val bookType = BookType.entries.find { it.value == bookTypeValue }
                     ?: return START_NOT_STICKY
 
-                startForegroundWithNotification(bookTitle)
+                startForegroundWithNotification(bookUuid, bookType, bookTitle)
                 startDownload(bookUuid, bookType, filePath, bookTitle)
             }
 
@@ -74,8 +75,17 @@ class DownloadForegroundService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun startForegroundWithNotification(bookTitle: String) {
-        val notification = createNotification(bookTitle, 0)
+    private fun startForegroundWithNotification(
+        bookUuid: String,
+        bookType: BookType,
+        bookTitle: String,
+    ) {
+        val notification = createNotification(
+            bookUuid = bookUuid,
+            bookType = bookType,
+            bookTitle = bookTitle,
+            progress = 0,
+        )
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
@@ -102,6 +112,9 @@ class DownloadForegroundService : Service() {
         // Track the title for this download
         activeDownloadTitles[key] = bookTitle
 
+        // Clear any previous cancellation state before starting new download
+        downloadStateHolder.clearCancelledState(bookUuid, bookType)
+
         val job = serviceScope.launch {
             downloadStateHolder.updateProgress(bookUuid, bookType, null)
 
@@ -116,7 +129,12 @@ class DownloadForegroundService : Service() {
                         null
                     }
                     downloadStateHolder.updateProgress(bookUuid, bookType, progress)
-                    updateNotification(bookTitle, progress)
+                    updateNotification(
+                        bookUuid = bookUuid,
+                        bookType = bookType,
+                        bookTitle = bookTitle,
+                        progress = progress,
+                    )
                 },
             ).onSuccess {
                 logger.i { "Download completed: $bookUuid" }
@@ -155,22 +173,51 @@ class DownloadForegroundService : Service() {
         }
     }
 
-    private fun updateNotification(bookTitle: String, progress: Float?) {
+    private fun updateNotification(
+        bookUuid: String,
+        bookType: BookType,
+        bookTitle: String,
+        progress: Float?,
+    ) {
+        val key = "$bookUuid:${bookType.value}"
+        // Don't update notification if download was cancelled
+        if (!activeJobs.containsKey(key)) return
+
         val notification = createNotification(
-            bookTitle,
-            ((progress ?: 0f) * 100).toInt(),
+            bookUuid = bookUuid,
+            bookType = bookType,
+            bookTitle = bookTitle,
+            progress = ((progress ?: 0f) * 100).toInt(),
         )
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
-    private fun createNotification(bookTitle: String, progress: Int): Notification {
+    private fun createNotification(
+        bookUuid: String,
+        bookType: BookType,
+        bookTitle: String,
+        progress: Int,
+    ): Notification {
+        val cancelIntent = createCancelIntent(this, bookUuid, bookType)
+        val cancelPendingIntent = PendingIntent.getService(
+            this,
+            bookUuid.hashCode(),
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Downloading: $bookTitle")
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setProgress(100, progress, progress == 0)
             .setOngoing(true)
             .setSilent(true)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "Cancel",
+                cancelPendingIntent,
+            )
             .build()
     }
 
