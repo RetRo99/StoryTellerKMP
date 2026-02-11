@@ -17,6 +17,8 @@ data class ReaderSettingsDomainModel(
     // Media playback settings for ReadAloud books
     val playbackSpeed: Float = 1.0f,
     val volume: Float = 1.0f,
+    // Highlight color for ReadAloud text highlighting
+    val highlightColor: HighlightColor = HighlightColor.YELLOW,
 )
 
 enum class ReaderTheme {
@@ -31,5 +33,16 @@ enum class ReaderTextAlign {
     END,
     CENTER,
     JUSTIFY,
+}
+
+/**
+ * Available highlight colors for ReadAloud text highlighting.
+ */
+enum class HighlightColor {
+    YELLOW,
+    GREEN,
+    BLUE,
+    PINK,
+    ORANGE,
 }
 

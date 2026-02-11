@@ -2,6 +2,7 @@ package com.retro99.reader.ui.reader
 
 import com.retro99.base.ui.BaseIntent
 import com.retro99.reader.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 sealed interface ReaderIntent : BaseIntent {
@@ -102,5 +103,12 @@ sealed interface ReaderIntent : BaseIntent {
      * @param milliseconds The amount to skip backward in milliseconds
      */
     data class SkipBackward(val milliseconds: Long = 10_000L) : ReaderIntent
+
+    /**
+     * Set the highlight color for ReadAloud text highlighting.
+     *
+     * @param color The highlight color to use
+     */
+    data class SetHighlightColor(val color: ReadAloudHighlightColor) : ReaderIntent
 }
 

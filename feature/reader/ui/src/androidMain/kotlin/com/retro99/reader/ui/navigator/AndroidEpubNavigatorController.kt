@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.ReaderTextAlignUi
 import com.retro99.reader.ui.model.ReaderThemeUi
@@ -36,9 +37,6 @@ import org.readium.r2.shared.util.mediatype.MediaType
 /** Decoration group name for ReadAloud text highlighting */
 private const val READALOUD_DECORATION_GROUP = "readaloud"
 
-/** Highlight color for the currently spoken text (semi-transparent yellow) */
-private const val READALOUD_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
-
 /**
  * Android implementation of [EpubNavigatorController] using Readium's EpubNavigatorFragment.
  *
@@ -61,6 +59,11 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     private val _navigator = MutableStateFlow<EpubNavigatorFragment?>(null)
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var pendingPageTurnJob: Job? = null
+
+    /**
+     * Current reader settings, used for highlight color.
+     */
+    private var highLightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW
 
     /**
      * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
@@ -110,6 +113,7 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
+        highLightColor = settings.highlightColor
         _navigator.value?.submitPreferences(settings.toEpubPreferences())
     }
 
@@ -137,8 +141,8 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         val decoration = Decoration(
             id = "readaloud-active",
             locator = androidLocator,
-            style = Decoration.Style.Highlight(
-                tint = READALOUD_HIGHLIGHT_COLOR,
+            style = Decoration.Style.Underline(
+                tint = highLightColor.argb,
                 isActive = true,
             ),
         )
