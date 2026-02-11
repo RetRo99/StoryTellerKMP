@@ -11,6 +11,7 @@ sealed interface BookDetailIntent : BaseIntent {
     data object OnReadEbookClicked : BookDetailIntent
     data object OnPlayAudiobookClicked : BookDetailIntent
     data object OnReadReadaloudClicked : BookDetailIntent
+    data class OnDownloadClicked(val bookType: BookType) : BookDetailIntent
     data class OnDeleteCacheClicked(val bookType: BookType) : BookDetailIntent
     data object OnDeleteCacheConfirmed : BookDetailIntent
     data object OnDeleteCacheDismissed : BookDetailIntent

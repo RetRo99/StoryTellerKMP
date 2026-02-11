@@ -48,3 +48,44 @@ internal actual suspend fun writeChannelToFile(channel: ByteReadChannel, destina
     }
 }
 
+/**
+ * iOS implementation of streaming file write with progress reporting.
+ * Reads from the ByteReadChannel in chunks and writes directly to disk.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal actual suspend fun writeChannelToFileWithProgress(
+    channel: ByteReadChannel,
+    destinationPath: String,
+    totalBytes: Long?,
+    onProgress: (bytesWritten: Long, totalBytes: Long?) -> Unit,
+) {
+    val fileManager = NSFileManager.defaultManager
+    if (!fileManager.fileExistsAtPath(destinationPath)) {
+        fileManager.createFileAtPath(destinationPath, contents = null, attributes = null)
+    }
+
+    val fileHandle = NSFileHandle.fileHandleForWritingAtPath(destinationPath)
+        ?: throw IllegalStateException("Could not open file for writing: $destinationPath")
+
+    try {
+        var bytesWritten = 0L
+        val buffer = ByteArray(BUFFER_SIZE)
+        while (!channel.isClosedForRead) {
+            val bytesRead = channel.readAvailable(buffer)
+            if (bytesRead > 0) {
+                buffer.usePinned { pinned ->
+                    val data = NSData.create(
+                        bytes = pinned.addressOf(0),
+                        length = bytesRead.toULong(),
+                    )
+                    fileHandle.writeData(data)
+                }
+                bytesWritten += bytesRead
+                onProgress(bytesWritten, totalBytes)
+            }
+        }
+    } finally {
+        fileHandle.closeFile()
+    }
+}
+

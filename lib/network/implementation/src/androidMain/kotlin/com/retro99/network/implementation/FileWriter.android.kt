@@ -13,14 +13,39 @@ internal actual suspend fun writeChannelToFile(channel: ByteReadChannel, destina
     val file = File(destinationPath)
     file.parentFile?.mkdirs()
 
-    var totalBytesWritten = 0L
     FileOutputStream(file).use { outputStream ->
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         while (!channel.isClosedForRead) {
             val bytesRead = channel.readAvailable(buffer)
             if (bytesRead > 0) {
                 outputStream.write(buffer, 0, bytesRead)
-                totalBytesWritten += bytesRead
+            }
+        }
+    }
+}
+
+/**
+ * Android implementation of streaming file write with progress reporting.
+ * Reads from the ByteReadChannel in chunks and writes directly to disk.
+ */
+internal actual suspend fun writeChannelToFileWithProgress(
+    channel: ByteReadChannel,
+    destinationPath: String,
+    totalBytes: Long?,
+    onProgress: (bytesWritten: Long, totalBytes: Long?) -> Unit,
+) {
+    val file = File(destinationPath)
+    file.parentFile?.mkdirs()
+
+    var bytesWritten = 0L
+    FileOutputStream(file).use { outputStream ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (!channel.isClosedForRead) {
+            val bytesRead = channel.readAvailable(buffer)
+            if (bytesRead > 0) {
+                outputStream.write(buffer, 0, bytesRead)
+                bytesWritten += bytesRead
+                onProgress(bytesWritten, totalBytes)
             }
         }
     }

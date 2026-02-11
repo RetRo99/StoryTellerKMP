@@ -24,6 +24,22 @@ expect class EbookFileDownloader {
     ): AppResult<String>
 
     /**
+     * Downloads an ebook file from the server and saves it locally, reporting progress.
+     *
+     * @param ebookFilePath The file path on the server
+     * @param bookUuid The UUID of the book (used for local file naming)
+     * @param bookType The type of book (determines the download format query)
+     * @param onProgress Callback invoked with bytes downloaded and total bytes (null if unknown)
+     * @return The local file path where the ebook was saved
+     */
+    suspend fun downloadEbookWithProgress(
+        ebookFilePath: String,
+        bookUuid: String,
+        bookType: BookType,
+        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+    ): AppResult<String>
+
+    /**
      * Gets the local file path for a cached ebook.
      *
      * @param bookUuid The UUID of the book

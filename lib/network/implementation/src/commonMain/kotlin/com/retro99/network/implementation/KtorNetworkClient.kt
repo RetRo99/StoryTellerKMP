@@ -21,6 +21,7 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import io.ktor.http.Parameters
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
@@ -146,6 +147,42 @@ class KtorNetworkClient(
                 if (response.status.isSuccess()) {
                     val channel = response.bodyAsChannel()
                     writeChannelToFile(channel, destinationPath)
+                    Ok(destinationPath)
+                } else {
+                    handleHttpError(response)
+                }
+            }
+        } catch (e: Exception) {
+            ensureActive()
+            handleException(e)
+        }
+    }
+
+    override suspend fun downloadFileToPathWithProgress(
+        path: String,
+        destinationPath: String,
+        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit,
+    ): AppResult<String> = withContext(Dispatchers.IO) {
+        try {
+            val url = buildUrl(path, queryBuilder)
+
+            // Use prepareGet for streaming - this doesn't buffer the entire response in memory
+            httpClient.prepareGet(url) {
+                headers(headers)
+            }.execute { response ->
+
+                if (response.status.isSuccess()) {
+                    val channel = response.bodyAsChannel()
+                    // Get Content-Length header for progress calculation
+                    val contentLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+                    writeChannelToFileWithProgress(
+                        channel = channel,
+                        destinationPath = destinationPath,
+                        totalBytes = contentLength,
+                        onProgress = onProgress,
+                    )
                     Ok(destinationPath)
                 } else {
                     handleHttpError(response)

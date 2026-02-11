@@ -11,3 +11,19 @@ import io.ktor.utils.io.ByteReadChannel
  */
 internal expect suspend fun writeChannelToFile(channel: ByteReadChannel, destinationPath: String)
 
+/**
+ * Platform-specific function to write a ByteReadChannel to a file with progress reporting.
+ * This streams the data directly to disk without loading it all into memory.
+ *
+ * @param channel The Ktor ByteReadChannel to read from
+ * @param destinationPath The local file path to write to
+ * @param totalBytes The total size of the file (from Content-Length header), or null if unknown
+ * @param onProgress Callback invoked with bytes written so far and total bytes
+ */
+internal expect suspend fun writeChannelToFileWithProgress(
+    channel: ByteReadChannel,
+    destinationPath: String,
+    totalBytes: Long?,
+    onProgress: (bytesWritten: Long, totalBytes: Long?) -> Unit,
+)
+

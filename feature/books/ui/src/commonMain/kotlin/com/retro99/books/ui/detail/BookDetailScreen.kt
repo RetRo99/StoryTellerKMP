@@ -25,8 +25,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -56,6 +58,7 @@ import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.domain.model.DownloadStateDomainModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -66,6 +69,8 @@ import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
 import resources.translations.books_media_audio
 import resources.translations.books_media_delete
+import resources.translations.books_media_download
+import resources.translations.books_media_downloading
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
 import resources.translations.books_media_ready
@@ -85,9 +90,9 @@ fun BookDetailScreen(
             viewState.isLoading -> LoadingScreen()
             viewState.book != null -> BookDetailScreenContent(
                 book = viewState.book,
-                isEbookCached = viewState.isEbookCached,
-                isAudiobookCached = viewState.isAudiobookCached,
-                isReadaloudCached = viewState.isReadaloudCached,
+                ebookDownloadState = viewState.ebookDownloadState,
+                audiobookDownloadState = viewState.audiobookDownloadState,
+                readaloudDownloadState = viewState.readaloudDownloadState,
                 deleteConfirmationBookType = viewState.deleteConfirmationBookType,
                 intentDispatcher = intentDispatcher,
             )
@@ -99,9 +104,9 @@ fun BookDetailScreen(
 @Composable
 private fun BookDetailScreenContent(
     book: BookUiModel,
-    isEbookCached: Boolean,
-    isAudiobookCached: Boolean,
-    isReadaloudCached: Boolean,
+    ebookDownloadState: DownloadStateDomainModel,
+    audiobookDownloadState: DownloadStateDomainModel,
+    readaloudDownloadState: DownloadStateDomainModel,
     deleteConfirmationBookType: BookType?,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
@@ -146,9 +151,9 @@ private fun BookDetailScreenContent(
 
             MediaActionButtons(
                 book = book,
-                isEbookCached = isEbookCached,
-                isAudiobookCached = isAudiobookCached,
-                isReadaloudCached = isReadaloudCached,
+                ebookDownloadState = ebookDownloadState,
+                audiobookDownloadState = audiobookDownloadState,
+                readaloudDownloadState = readaloudDownloadState,
                 intentDispatcher = intentDispatcher,
             )
 
@@ -255,9 +260,9 @@ private fun BookHeader(
 @Composable
 private fun MediaActionButtons(
     book: BookUiModel,
-    isEbookCached: Boolean,
-    isAudiobookCached: Boolean,
-    isReadaloudCached: Boolean,
+    ebookDownloadState: DownloadStateDomainModel,
+    audiobookDownloadState: DownloadStateDomainModel,
+    readaloudDownloadState: DownloadStateDomainModel,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -269,8 +274,9 @@ private fun MediaActionButtons(
             MediaButton(
                 icon = Icons.AutoMirrored.Outlined.MenuBook,
                 label = stringResource(StringRes.books_media_ebook),
-                isCached = isEbookCached,
-                onClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
+                downloadState = ebookDownloadState,
+                onReadClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
+                onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.EBOOK)) },
                 onDeleteClick = {
                     intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.EBOOK))
                 },
@@ -280,8 +286,9 @@ private fun MediaActionButtons(
 //            MediaButton(
 //                icon = Icons.Outlined.Headphones,
 //                label = stringResource(StringRes.books_media_audio),
-//                isCached = isAudiobookCached,
-//                onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
+//                downloadState = audiobookDownloadState,
+//                onReadClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
+//                onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.AUDIOBOOK)) },
 //                onDeleteClick = {
 //                    intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.AUDIOBOOK))
 //                },
@@ -291,8 +298,9 @@ private fun MediaActionButtons(
             MediaButton(
                 icon = Icons.Outlined.RecordVoiceOver,
                 label = stringResource(StringRes.books_media_readaloud),
-                isCached = isReadaloudCached,
-                onClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
+                downloadState = readaloudDownloadState,
+                onReadClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
+                onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.READALOUD)) },
                 onDeleteClick = {
                     intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.READALOUD))
                 },
@@ -305,13 +313,27 @@ private fun MediaActionButtons(
 private fun MediaButton(
     icon: ImageVector,
     label: String,
-    isCached: Boolean,
-    onClick: () -> Unit,
+    downloadState: DownloadStateDomainModel,
+    onReadClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDownloading = downloadState is DownloadStateDomainModel.Downloading
+    val isCached = downloadState is DownloadStateDomainModel.Cached
+    val isIdle = downloadState is DownloadStateDomainModel.Idle ||
+            downloadState is DownloadStateDomainModel.Failed
+    val downloadProgress = (downloadState as? DownloadStateDomainModel.Downloading)?.progress
+
     ElevatedCard(
-        onClick = onClick,
+        onClick = {
+            when {
+                isCached -> onReadClick()
+                isIdle -> onDownloadClick()
+                // Downloading - do nothing
+            }
+        },
+        enabled = !isDownloading,
         modifier = modifier.width(100.dp),
         shape = RoundedCornerShape(16.dp),
     ) {
@@ -328,12 +350,32 @@ private fun MediaButton(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+                if (isDownloading) {
+                    if (downloadProgress != null) {
+                        // Determinate progress indicator when progress is known
+                        CircularProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f),
+                        )
+                    } else {
+                        // Indeterminate progress indicator when progress is unknown
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -347,37 +389,74 @@ private fun MediaButton(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            if (isCached) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+
+            when {
+                isDownloading -> {
+                    val progressText = if (downloadProgress != null) {
+                        "${(downloadProgress * 100).toInt()}%"
+                    } else {
+                        stringResource(StringRes.books_media_downloading)
+                    }
                     Text(
-                        text = stringResource(StringRes.books_media_ready),
+                        text = progressText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.secondary,
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                isCached -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(StringRes.books_media_ready),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
 
-                Text(
-                    text = stringResource(StringRes.books_media_delete),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable(onClick = onDeleteClick)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(StringRes.books_media_delete),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(onClick = onDeleteClick)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+
+                else -> {
+                    // Idle or Failed - show download option
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Download,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.secondary,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(StringRes.books_media_download),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                }
             }
         }
     }

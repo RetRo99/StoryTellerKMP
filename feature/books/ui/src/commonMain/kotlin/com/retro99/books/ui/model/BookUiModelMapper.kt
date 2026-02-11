@@ -18,6 +18,8 @@ fun BookDomainModel.toUiModel(): BookUiModel = BookUiModel(
     hasAudiobook = audiobook != null,
     hasReadaloud = readaloud != null,
     ebookFilepath = ebook?.filepath,
+    audiobookFilepath = audiobook?.filepath,
+    readaloudFilepath = readaloud?.filepath,
 )
 
 fun SeriesDomainModel.toUiModel(): SeriesUiModel = SeriesUiModel(

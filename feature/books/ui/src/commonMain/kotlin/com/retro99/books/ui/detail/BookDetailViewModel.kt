@@ -7,8 +7,10 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.ui.model.toUiModel
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.domain.model.DownloadStateDomainModel
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
-import com.retro99.reader.domain.usecase.GetMediaCacheStatusUseCase
+import com.retro99.reader.domain.usecase.DownloadMediaUseCase
+import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -22,7 +24,8 @@ class BookDetailViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
-    @Provided private val getMediaCacheStatusUseCase: GetMediaCacheStatusUseCase,
+    @Provided private val downloadMediaUseCase: DownloadMediaUseCase,
+    @Provided private val observeDownloadStateUseCase: ObserveDownloadStateUseCase,
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(),
@@ -30,7 +33,7 @@ class BookDetailViewModel(
 
     init {
         fetchBook()
-        checkMediaCacheStatus()
+        observeDownloadStates()
     }
 
     override fun onIntent(intent: BookDetailIntent) {
@@ -52,15 +55,19 @@ class BookDetailViewModel(
             }
 
             BookDetailIntent.OnReadEbookClicked -> {
-                onNavigateToReader(bookUuid, BookType.EBOOK)
+                handleReadClick(BookType.EBOOK)
             }
 
             BookDetailIntent.OnPlayAudiobookClicked -> {
-                // TODO: Open audiobook player
+                handleReadClick(BookType.AUDIOBOOK)
             }
 
             BookDetailIntent.OnReadReadaloudClicked -> {
-                onNavigateToReader(bookUuid, BookType.READALOUD)
+                handleReadClick(BookType.READALOUD)
+            }
+
+            is BookDetailIntent.OnDownloadClicked -> {
+                startDownload(intent.bookType)
             }
 
             is BookDetailIntent.OnDeleteCacheClicked -> {
@@ -78,6 +85,20 @@ class BookDetailViewModel(
                 updateState { it.copy(deleteConfirmationBookType = null) }
             }
         }
+    }
+
+    private fun handleReadClick(bookType: BookType) {
+        val currentState = viewState.value
+        val downloadState = when (bookType) {
+            BookType.EBOOK -> currentState.ebookDownloadState
+            BookType.AUDIOBOOK -> currentState.audiobookDownloadState
+            BookType.READALOUD -> currentState.readaloudDownloadState
+        }
+
+        if (downloadState is DownloadStateDomainModel.Cached) {
+            onNavigateToReader(bookUuid, bookType)
+        }
+        // If not cached, user should click download first
     }
 
     private fun fetchBook() {
@@ -108,25 +129,43 @@ class BookDetailViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun checkMediaCacheStatus() {
-        viewModelScope.launch {
-            val cacheStatus = getMediaCacheStatusUseCase(bookUuid)
-            updateState {
-                it.copy(
-                    isEbookCached = cacheStatus.isEbookCached,
-                    isAudiobookCached = cacheStatus.isAudiobookCached,
-                    isReadaloudCached = cacheStatus.isReadaloudCached,
-                )
+    private fun observeDownloadStates() {
+        observeDownloadStateUseCase(bookUuid, BookType.EBOOK)
+            .onEach { state ->
+                updateState { it.copy(ebookDownloadState = state) }
             }
+            .launchIn(viewModelScope)
+
+        observeDownloadStateUseCase(bookUuid, BookType.AUDIOBOOK)
+            .onEach { state ->
+                updateState { it.copy(audiobookDownloadState = state) }
+            }
+            .launchIn(viewModelScope)
+
+        observeDownloadStateUseCase(bookUuid, BookType.READALOUD)
+            .onEach { state ->
+                updateState { it.copy(readaloudDownloadState = state) }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun startDownload(bookType: BookType) {
+        val book = viewState.value.book ?: return
+        val filePath = when (bookType) {
+            BookType.EBOOK -> book.ebookFilepath
+            BookType.AUDIOBOOK -> book.audiobookFilepath
+            BookType.READALOUD -> book.readaloudFilepath
+        } ?: return
+
+        viewModelScope.launch {
+            downloadMediaUseCase(bookUuid, bookType, filePath)
         }
     }
 
     private fun deleteMediaCache(bookType: BookType) {
         viewModelScope.launch {
-            val deleted = deleteMediaCacheUseCase(bookUuid, bookType)
-            if (deleted) {
-                checkMediaCacheStatus()
-            }
+            deleteMediaCacheUseCase(bookUuid, bookType)
+            // Download state will be updated via the observer
         }
     }
 }
