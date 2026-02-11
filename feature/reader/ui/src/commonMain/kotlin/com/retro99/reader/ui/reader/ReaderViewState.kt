@@ -2,6 +2,7 @@ package com.retro99.reader.ui.reader
 
 import com.retro99.base.result.AppError
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -36,6 +37,8 @@ data class ReaderViewState(
     val isTocVisible: Boolean = false,
     // TOC navigation undo - stores the position before navigating to a chapter
     val previousTocPosition: PositionUiModel? = null,
+    // Current page within the chapter based on actual viewport display
+    val chapterPageInfo: ChapterPageInfo? = null,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.
