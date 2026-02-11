@@ -51,6 +51,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
@@ -120,6 +121,7 @@ private fun ReaderScreenContent(
                 isTocVisible = viewState.isTocVisible,
                 previousTocPosition = viewState.previousTocPosition,
                 lastKnownPosition = viewState.lastKnownPosition,
+                chapterPageInfo = viewState.chapterPageInfo,
                 intentDispatcher = intentDispatcher,
                 loader = movableLoader,
             )
@@ -152,6 +154,7 @@ private fun ReaderContent(
     isTocVisible: Boolean,
     previousTocPosition: PositionUiModel?,
     lastKnownPosition: PositionUiModel?,
+    chapterPageInfo: ChapterPageInfo?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
@@ -314,7 +317,7 @@ private fun ReaderContent(
         // Reading progress bar - always visible at the bottom
         ReadingProgressBar(
             totalProgression = lastKnownPosition?.totalProgression,
-            currentPosition = lastKnownPosition?.position,
+            chapterPageInfo = chapterPageInfo,
             chapterTitle = lastKnownPosition?.title,
         )
     }
@@ -435,7 +438,7 @@ private fun ChapterNavigationUndoSnackbar(
 @Composable
 private fun ReadingProgressBar(
     totalProgression: Double?,
-    currentPosition: Int?,
+    chapterPageInfo: ChapterPageInfo?,
     chapterTitle: String?,
     modifier: Modifier = Modifier,
 ) {
@@ -475,11 +478,11 @@ private fun ReadingProgressBar(
                     )
                 }
 
-                // Show progress percentage and position
+                // Show progress percentage and page info
                 val progressText = buildString {
                     append("$progressPercent%")
-                    currentPosition?.let { pos ->
-                        append(" • Page $pos")
+                    chapterPageInfo?.let { pageInfo ->
+                        append(" • Page ${pageInfo.currentPage} of ${pageInfo.totalPages}")
                     }
                 }
                 Text(

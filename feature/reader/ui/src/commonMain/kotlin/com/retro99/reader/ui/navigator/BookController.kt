@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -94,4 +95,15 @@ interface BookController : AutoCloseable {
      * @return The visibility result including visible fraction and whether page turn is needed
      */
     suspend fun checkSentenceVisibility(elementId: String): SentenceVisibilityResult
+
+    /**
+     * Gets the current page info within the chapter based on the actual viewport display.
+     *
+     * Unlike the EPUB position (which is based on fixed 1024-character blocks),
+     * this returns the actual displayed page that changes based on font size,
+     * margins, and viewport dimensions.
+     *
+     * @return The current page info, or null if it cannot be determined
+     */
+    suspend fun getChapterPageInfo(): ChapterPageInfo?
 }

@@ -2,6 +2,7 @@ package com.retro99.reader.ui.navigator
 
 import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
+import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
@@ -205,18 +206,34 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         val rawResult = nav.evaluateJavascript(script)
             ?: return SentenceVisibilityResult.FULLY_VISIBLE
 
-        // Fix the WebView JSON Stringify trap
-        // WebView returns strings as "\"{\\\"key\\\":\\\"val\\\"}\"".
-        // We must strip the outer quotes and unescape.
-        val cleanJson = if (rawResult.startsWith("\"") && rawResult.endsWith("\"")) {
+        val cleanJson = cleanWebViewJson(rawResult)
+        return SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
+    }
+
+    override suspend fun getChapterPageInfo(): ChapterPageInfo? {
+        val nav = _navigator.value ?: return null
+
+        val script = ChapterPageCalculator.getPageCalculationScript()
+        val rawResult = nav.evaluateJavascript(script) ?: return null
+
+        val cleanJson = cleanWebViewJson(rawResult)
+        return ChapterPageCalculator.parsePageResult(cleanJson)
+    }
+
+    /**
+     * Cleans JSON returned from WebView's evaluateJavascript.
+     *
+     * WebView returns strings as "\"{\\\"key\\\":\\\"val\\\"}\"".
+     * We must strip the outer quotes and unescape.
+     */
+    private fun cleanWebViewJson(rawResult: String): String {
+        return if (rawResult.startsWith("\"") && rawResult.endsWith("\"")) {
             rawResult.substring(1, rawResult.length - 1)
                 .replace("\\\"", "\"")
                 .replace("\\\\", "\\")
         } else {
             rawResult
         }
-
-        return SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
     }
 
     /**

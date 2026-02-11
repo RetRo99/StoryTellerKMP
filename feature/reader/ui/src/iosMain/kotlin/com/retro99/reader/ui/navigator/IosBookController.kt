@@ -171,6 +171,22 @@ class IosBookController(
         return SentenceVisibilityChecker.parseVisibilityResult(rawResult, elementId)
     }
 
+    override suspend fun getChapterPageInfo(): com.retro99.reader.ui.model.ChapterPageInfo? {
+        val script = ChapterPageCalculator.getPageCalculationScript()
+
+        val rawResult: String? = suspendCancellableCoroutine { continuation ->
+            bridge.evaluateJavaScript(script) { result ->
+                continuation.resume(result)
+            }
+        }
+
+        if (rawResult == null) {
+            return null
+        }
+
+        return ChapterPageCalculator.parsePageResult(rawResult)
+    }
+
     override fun close() {
         pendingPageTurnJob?.cancel()
         controllerScope.cancel()

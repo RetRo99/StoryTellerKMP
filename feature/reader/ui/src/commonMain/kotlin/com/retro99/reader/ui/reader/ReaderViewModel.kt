@@ -139,6 +139,10 @@ class ReaderViewModel(
                     totalProgression = locator.totalProgression,
                 )
                 updatePosition(positionUiModel)
+
+                // Fetch chapter page info for the current viewport
+                val chapterPageInfo = bookController.getChapterPageInfo()
+                updateState { it.copy(chapterPageInfo = chapterPageInfo) }
             }
             .launchIn(viewModelScope)
     }
