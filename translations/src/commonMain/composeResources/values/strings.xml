@@ -43,6 +43,7 @@
     <string name="books_media_delete">Delete</string>
     <string name="books_media_download">Download</string>
     <string name="books_media_downloading">Downloading…</string>
+    <string name="books_media_cancel">Cancel</string>
 
     <!-- Book Detail - Delete Cache Dialog -->
     <string name="books_delete_cache_title">Delete Downloaded Content?</string>

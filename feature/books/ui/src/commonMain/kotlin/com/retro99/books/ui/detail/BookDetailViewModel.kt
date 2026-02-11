@@ -8,6 +8,7 @@ import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.ui.model.toUiModel
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadStateDomainModel
+import com.retro99.reader.domain.usecase.CancelDownloadUseCase
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
 import com.retro99.reader.domain.usecase.DownloadMediaUseCase
 import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
@@ -25,6 +26,7 @@ class BookDetailViewModel(
     @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
     @Provided private val downloadMediaUseCase: DownloadMediaUseCase,
+    @Provided private val cancelDownloadUseCase: CancelDownloadUseCase,
     @Provided private val observeDownloadStateUseCase: ObserveDownloadStateUseCase,
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
@@ -67,7 +69,7 @@ class BookDetailViewModel(
             }
 
             is BookDetailIntent.OnDownloadClicked -> {
-                startDownload(intent.bookType)
+                toggleDownload(intent.bookType)
             }
 
             is BookDetailIntent.OnDeleteCacheClicked -> {
@@ -149,8 +151,21 @@ class BookDetailViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun startDownload(bookType: BookType) {
+    private fun toggleDownload(bookType: BookType) {
         val book = viewState.value.book ?: return
+        val currentState = when (bookType) {
+            BookType.EBOOK -> viewState.value.ebookDownloadState
+            BookType.AUDIOBOOK -> viewState.value.audiobookDownloadState
+            BookType.READALOUD -> viewState.value.readaloudDownloadState
+        }
+
+        // If currently downloading, cancel it
+        if (currentState is DownloadStateDomainModel.Downloading) {
+            cancelDownloadUseCase(bookUuid, bookType)
+            return
+        }
+
+        // Otherwise, start the download
         val filePath = when (bookType) {
             BookType.EBOOK -> book.ebookFilepath
             BookType.AUDIOBOOK -> book.audiobookFilepath
@@ -158,7 +173,7 @@ class BookDetailViewModel(
         } ?: return
 
         viewModelScope.launch {
-            downloadMediaUseCase(bookUuid, bookType, filePath)
+            downloadMediaUseCase(bookUuid, bookType, filePath, book.title)
         }
     }
 

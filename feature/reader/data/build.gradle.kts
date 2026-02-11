@@ -38,6 +38,8 @@ kotlin {
             implementation(libs.readium.shared)
             implementation(libs.readium.streamer)
             implementation(libs.readium.navigator)
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.koin.android)
             api(libs.datetime)
         }
     }
