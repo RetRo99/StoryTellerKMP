@@ -1,6 +1,9 @@
 package com.retro99.books.ui.detail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,17 +17,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
@@ -281,41 +285,73 @@ private fun MediaButton(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.width(100.dp),
+        shape = RoundedCornerShape(16.dp),
     ) {
-        FilledTonalButton(
-            onClick = onClick,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = label)
-            if (isCached) {
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Outlined.DownloadDone,
-                    contentDescription = "Downloaded",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-        if (isCached) {
-            IconButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.size(32.dp),
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Delete,
-                    contentDescription = "Delete cache",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.error,
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            if (isCached) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Ready",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Delete",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(onClick = onDeleteClick)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
         }
