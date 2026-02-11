@@ -1,8 +1,8 @@
 package com.retro99.reader.ui.reader
 
 import com.retro99.base.ui.BaseIntent
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
-import com.retro99.reader.ui.model.TocItemUiModel
 
 sealed interface ReaderIntent : BaseIntent {
     data class UpdateSettings(
@@ -46,11 +46,27 @@ sealed interface ReaderIntent : BaseIntent {
     data object ToggleToc : ReaderIntent
 
     /**
-     * Navigate to a specific TOC item.
+     * Navigate to a specific chapter from the TOC.
      *
-     * @param tocItem The table of contents item to navigate to
+     * @param href The href of the chapter to navigate to
+     * @param currentPosition The current position before navigation (for undo functionality)
      */
-    data class GoToTocItem(val tocItem: TocItemUiModel) : ReaderIntent
+    data class GoToChapter(
+        val href: String,
+        val currentPosition: PositionUiModel?,
+    ) : ReaderIntent
+
+    /**
+     * Undo the last chapter navigation and return to the previous position.
+     *
+     * @param position The position to navigate back to
+     */
+    data class UndoChapterNavigation(val position: PositionUiModel) : ReaderIntent
+
+    /**
+     * Dismiss the chapter navigation undo snackbar.
+     */
+    data object DismissChapterNavigationUndo : ReaderIntent
 
     // Media control intents for ReadAloud books
 

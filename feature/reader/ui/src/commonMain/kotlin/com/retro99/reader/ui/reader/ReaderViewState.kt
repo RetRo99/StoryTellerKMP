@@ -34,6 +34,8 @@ data class ReaderViewState(
     // Table of contents
     val tableOfContents: List<TocItemUiModel> = emptyList(),
     val isTocVisible: Boolean = false,
+    // TOC navigation undo - stores the position before navigating to a chapter
+    val previousTocPosition: PositionUiModel? = null,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.

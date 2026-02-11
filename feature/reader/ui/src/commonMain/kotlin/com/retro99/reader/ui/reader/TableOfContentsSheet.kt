@@ -25,7 +25,7 @@ private const val INDENT_PER_LEVEL_DP = 16
 @Composable
 fun TableOfContentsSheet(
     tableOfContents: List<TocItemUiModel>,
-    onTocItemClick: (TocItemUiModel) -> Unit,
+    onChapterClick: (href: String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -37,7 +37,7 @@ fun TableOfContentsSheet(
     ) {
         TableOfContentsContent(
             tableOfContents = tableOfContents,
-            onTocItemClick = onTocItemClick,
+            onChapterClick = onChapterClick,
         )
     }
 }
@@ -45,7 +45,7 @@ fun TableOfContentsSheet(
 @Composable
 private fun TableOfContentsContent(
     tableOfContents: List<TocItemUiModel>,
-    onTocItemClick: (TocItemUiModel) -> Unit,
+    onChapterClick: (href: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -64,7 +64,7 @@ private fun TableOfContentsContent(
             ) { tocItem ->
                 TocItemRow(
                     tocItem = tocItem,
-                    onClick = { onTocItemClick(tocItem) },
+                    onClick = { onChapterClick(tocItem.href) },
                 )
             }
         }
