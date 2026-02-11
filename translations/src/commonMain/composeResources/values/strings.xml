@@ -79,8 +79,11 @@
 
     <!-- Settings Sections -->
     <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_appearance_description">Theme and font size</string>
     <string name="settings_section_typography">Typography</string>
+    <string name="settings_section_typography_description">Font family, line height, and text alignment</string>
     <string name="settings_section_layout">Layout</string>
+    <string name="settings_section_layout_description">Margins, reading mode, and progress display</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
@@ -130,6 +133,7 @@
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
+    <string name="settings_section_readaloud_description">Text highlighting style and color</string>
     <string name="settings_highlight_color">Highlight Color</string>
     <string name="settings_highlight_style">Highlight Style</string>
     <string name="settings_highlight_style_highlight">Highlight</string>
