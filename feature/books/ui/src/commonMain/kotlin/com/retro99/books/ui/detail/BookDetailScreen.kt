@@ -59,7 +59,7 @@ import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
 import com.retro99.reader.domain.model.BookType
-import com.retro99.reader.domain.model.DownloadStateDomainModel
+import com.retro99.reader.domain.model.DownloadState
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -105,9 +105,9 @@ fun BookDetailScreen(
 @Composable
 private fun BookDetailScreenContent(
     book: BookUiModel,
-    ebookDownloadState: DownloadStateDomainModel,
-    audiobookDownloadState: DownloadStateDomainModel,
-    readaloudDownloadState: DownloadStateDomainModel,
+    ebookDownloadState: DownloadState,
+    audiobookDownloadState: DownloadState,
+    readaloudDownloadState: DownloadState,
     deleteConfirmationBookType: BookType?,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
@@ -261,9 +261,9 @@ private fun BookHeader(
 @Composable
 private fun MediaActionButtons(
     book: BookUiModel,
-    ebookDownloadState: DownloadStateDomainModel,
-    audiobookDownloadState: DownloadStateDomainModel,
-    readaloudDownloadState: DownloadStateDomainModel,
+    ebookDownloadState: DownloadState,
+    audiobookDownloadState: DownloadState,
+    readaloudDownloadState: DownloadState,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -314,17 +314,17 @@ private fun MediaActionButtons(
 private fun MediaButton(
     icon: ImageVector,
     label: String,
-    downloadState: DownloadStateDomainModel,
+    downloadState: DownloadState,
     onReadClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDownloading = downloadState is DownloadStateDomainModel.Downloading
-    val isCached = downloadState is DownloadStateDomainModel.Cached
-    downloadState is DownloadStateDomainModel.Idle ||
-            downloadState is DownloadStateDomainModel.Failed
-    val downloadProgress = (downloadState as? DownloadStateDomainModel.Downloading)?.progress
+    val isDownloading = downloadState is DownloadState.Downloading
+    val isCached = downloadState is DownloadState.Cached
+    downloadState is DownloadState.Idle ||
+            downloadState is DownloadState.Failed
+    val downloadProgress = (downloadState as? DownloadState.Downloading)?.progress
 
     ElevatedCard(
         onClick = {

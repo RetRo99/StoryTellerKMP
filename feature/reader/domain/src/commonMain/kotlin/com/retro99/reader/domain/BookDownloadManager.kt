@@ -2,7 +2,7 @@ package com.retro99.reader.domain
 
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
-import com.retro99.reader.domain.model.DownloadStateDomainModel
+import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -20,14 +20,14 @@ interface BookDownloadManager {
      * @param bookType The type of book (EBOOK, AUDIOBOOK, READALOUD)
      * @return Flow emitting the current download state
      */
-    fun observeDownloadState(bookUuid: String, bookType: BookType): Flow<DownloadStateDomainModel>
+    fun observeDownloadState(bookUuid: String, bookType: BookType): Flow<DownloadState>
 
     /**
      * Observes all active downloads.
      *
      * @return Flow emitting a map of download keys to their states
      */
-    fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>>
+    fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadState>>
 
     /**
      * Starts downloading a book.
@@ -68,7 +68,7 @@ interface BookDownloadManager {
      * @param bookType The type of book
      * @return The current download state
      */
-    fun getDownloadState(bookUuid: String, bookType: BookType): DownloadStateDomainModel
+    fun getDownloadState(bookUuid: String, bookType: BookType): DownloadState
 
     /**
      * Deletes a cached media file and updates the state to Idle.

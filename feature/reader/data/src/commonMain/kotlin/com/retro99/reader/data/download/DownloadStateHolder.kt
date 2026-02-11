@@ -3,7 +3,7 @@ package com.retro99.reader.data.download
 import com.retro99.base.result.AppError
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
-import com.retro99.reader.domain.model.DownloadStateDomainModel
+import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,7 +25,7 @@ import org.koin.core.annotation.Single
 @Single
 class DownloadStateHolder {
 
-    private val downloadStates = MutableStateFlow<Map<DownloadKey, DownloadStateDomainModel>>(
+    private val downloadStates = MutableStateFlow<Map<DownloadKey, DownloadState>>(
         emptyMap(),
     )
 
@@ -39,20 +39,20 @@ class DownloadStateHolder {
     fun observeDownloadState(
         bookUuid: String,
         bookType: BookType,
-    ): Flow<DownloadStateDomainModel> {
+    ): Flow<DownloadState> {
         val key = DownloadKey(bookUuid, bookType)
         return downloadStates
-            .map { states -> states[key] ?: DownloadStateDomainModel.Idle }
+            .map { states -> states[key] ?: DownloadState.Idle }
             .distinctUntilChanged()
     }
 
-    fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>> {
+    fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadState>> {
         return downloadStates
     }
 
-    fun getDownloadState(bookUuid: String, bookType: BookType): DownloadStateDomainModel {
+    fun getDownloadState(bookUuid: String, bookType: BookType): DownloadState {
         val key = DownloadKey(bookUuid, bookType)
-        return downloadStates.value[key] ?: DownloadStateDomainModel.Idle
+        return downloadStates.value[key] ?: DownloadState.Idle
     }
 
     suspend fun updateProgress(bookUuid: String, bookType: BookType, progress: Float?) {
@@ -60,7 +60,7 @@ class DownloadStateHolder {
         // Ignore progress updates for cancelled downloads
         val isCancelled = cancelledMutex.withLock { cancelledDownloads.contains(key) }
         if (isCancelled) return
-        updateState(key, DownloadStateDomainModel.Downloading(progress))
+        updateState(key, DownloadState.Downloading(progress))
     }
 
     suspend fun markCached(bookUuid: String, bookType: BookType) {
@@ -75,7 +75,7 @@ class DownloadStateHolder {
             }
         }
         if (wasCancelled) return
-        updateState(key, DownloadStateDomainModel.Cached)
+        updateState(key, DownloadState.Cached)
     }
 
     suspend fun markFailed(bookUuid: String, bookType: BookType, error: AppError) {
@@ -90,21 +90,21 @@ class DownloadStateHolder {
             }
         }
         if (wasCancelled) return
-        updateState(key, DownloadStateDomainModel.Failed(error))
+        updateState(key, DownloadState.Failed(error))
     }
 
     suspend fun markIdle(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
         // Mark as cancelled to prevent race conditions with pending progress updates
         cancelledMutex.withLock { cancelledDownloads.add(key) }
-        updateState(key, DownloadStateDomainModel.Idle)
+        updateState(key, DownloadState.Idle)
     }
 
     fun clearError(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
         val currentState = downloadStates.value[key]
-        if (currentState is DownloadStateDomainModel.Failed) {
-            updateState(key, DownloadStateDomainModel.Idle)
+        if (currentState is DownloadState.Failed) {
+            updateState(key, DownloadState.Idle)
         }
     }
 
@@ -116,7 +116,7 @@ class DownloadStateHolder {
         cancelledMutex.withLock { cancelledDownloads.remove(key) }
     }
 
-    private fun updateState(key: DownloadKey, state: DownloadStateDomainModel) {
+    private fun updateState(key: DownloadKey, state: DownloadState) {
         downloadStates.update { currentStates ->
             currentStates + (key to state)
         }
