@@ -61,6 +61,10 @@ import resources.translations.settings_highlight_style_underline
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
+import resources.translations.settings_progress_bar
+import resources.translations.settings_progress_bar_always
+import resources.translations.settings_progress_bar_never
+import resources.translations.settings_progress_bar_on_tap
 import resources.translations.settings_publisher_styles
 import resources.translations.settings_publisher_styles_description
 import resources.translations.settings_scroll_mode
@@ -221,6 +225,13 @@ private fun SettingsScreenContent(
             ScrollModeSelector(
                 selectedMode = viewState.scrollMode,
                 onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProgressBarModeSelector(
+                selectedMode = viewState.showProgressBar,
+                onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
             )
         }
 
@@ -531,6 +542,51 @@ private fun Boolean?.toScrollModeDisplayString(): String = when (this) {
     null -> stringResource(StringRes.settings_scroll_mode_auto)
     false -> stringResource(StringRes.settings_scroll_mode_paginated)
     true -> stringResource(StringRes.settings_scroll_mode_scroll)
+}
+
+/**
+ * Selector for progress bar visibility mode.
+ * Options:
+ * - Always (true): Progress bar is always visible
+ * - On Tap (null): Progress bar shows/hides with controls when tapping
+ * - Never (false): Progress bar is never visible
+ */
+@Composable
+private fun ProgressBarModeSelector(
+    selectedMode: Boolean?,
+    onModeSelected: (Boolean?) -> Unit,
+) {
+    // Options: true = Always, null = On Tap, false = Never
+    val options = listOf<Boolean?>(true, null, false)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_progress_bar),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = mode == selectedMode,
+                    onClick = { onModeSelected(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = options.size,
+                    ),
+                ) {
+                    Text(text = mode.toProgressBarModeDisplayString())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Boolean?.toProgressBarModeDisplayString(): String = when (this) {
+    true -> stringResource(StringRes.settings_progress_bar_always)
+    null -> stringResource(StringRes.settings_progress_bar_on_tap)
+    false -> stringResource(StringRes.settings_progress_bar_never)
 }
 
 @Composable

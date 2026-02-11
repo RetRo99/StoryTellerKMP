@@ -314,12 +314,24 @@ private fun ReaderContent(
             )
         }
 
-        // Reading progress bar - always visible at the bottom
-        ReadingProgressBar(
-            totalProgression = lastKnownPosition?.totalProgression,
-            chapterPageInfo = chapterPageInfo,
-            chapterTitle = lastKnownPosition?.title,
-        )
+        // Reading progress bar - visibility based on settings:
+        // true = always visible, null = visible with controls, false = never visible
+        val isProgressBarVisible = when (settings.showProgressBar) {
+            true -> true
+            null -> areControlsVisible
+            false -> false
+        }
+        AnimatedVisibility(
+            visible = isProgressBarVisible,
+            enter = fadeIn() + slideInVertically { it },
+            exit = fadeOut() + slideOutVertically { it },
+        ) {
+            ReadingProgressBar(
+                totalProgression = lastKnownPosition?.totalProgression,
+                chapterPageInfo = chapterPageInfo,
+                chapterTitle = lastKnownPosition?.title,
+            )
+        }
     }
 }
 

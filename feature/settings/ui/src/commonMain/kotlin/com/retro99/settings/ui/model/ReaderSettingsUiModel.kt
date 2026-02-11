@@ -18,6 +18,8 @@ data class ReaderSettingsUiModel(
     val highlightColor: HighlightColor = HighlightColor.YELLOW,
     // Highlight style for ReadAloud text highlighting
     val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
+    // Progress bar visibility: true = always, null = on tap (with controls), false = never
+    val showProgressBar: Boolean? = true,
 )
 
 enum class ReaderThemeUiModel {

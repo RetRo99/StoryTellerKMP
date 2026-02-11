@@ -36,6 +36,9 @@ data class ReaderSettingsLocalModel(
     val highlightColor: String = "YELLOW",
     @SerialName("highlight_style")
     val highlightStyle: String = "HIGHLIGHT",
+    // Progress bar visibility: true = always, null = on tap (with controls), false = never
+    @SerialName("show_progress_bar")
+    val showProgressBar: Boolean? = true,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -69,6 +72,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             HighlightStyle.HIGHLIGHT
         },
+        showProgressBar = showProgressBar,
     )
 }
 
@@ -87,6 +91,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         volume = volume,
         highlightColor = highlightColor.name,
         highlightStyle = highlightStyle.name,
+        showProgressBar = showProgressBar,
     )
 }
 
