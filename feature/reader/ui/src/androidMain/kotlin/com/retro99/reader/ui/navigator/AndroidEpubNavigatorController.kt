@@ -29,6 +29,7 @@ import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
+import org.readium.r2.navigator.preferences.FontFamily
 import org.readium.r2.navigator.preferences.TextAlign
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.shared.publication.Link
@@ -305,6 +306,7 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
 fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
     return EpubPreferences(
         fontSize = fontSize,
+        fontFamily = fontFamily.toReadiumFontFamily(),
         scroll = scrollMode,
         theme = theme.toReadiumTheme(),
         lineHeight = lineHeight.toDouble(),
@@ -312,6 +314,15 @@ fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
         textAlign = textAlign.toReadiumTextAlign(),
         publisherStyles = publisherStyles,
     )
+}
+
+/**
+ * Converts font family string to Readium's FontFamily.
+ * Returns null for "default" to use publisher's font.
+ */
+private fun String.toReadiumFontFamily(): FontFamily? = when (this) {
+    "default" -> null
+    else -> FontFamily(this)
 }
 
 /**

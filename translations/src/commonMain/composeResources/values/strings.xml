@@ -89,6 +89,14 @@
     <string name="settings_font_size">Font Size</string>
     <string name="settings_font_family">Font Family</string>
     <string name="settings_font_family_default">Default</string>
+    <string name="settings_font_family_serif">Serif</string>
+    <string name="settings_font_family_sans_serif">Sans Serif</string>
+    <string name="settings_font_family_cursive">Cursive</string>
+    <string name="settings_font_family_fantasy">Fantasy</string>
+    <string name="settings_font_family_monospace">Monospace</string>
+    <string name="settings_font_family_accessible_dfa">Accessible DfA</string>
+    <string name="settings_font_family_ia_writer_duospace">IA Writer Duospace</string>
+    <string name="settings_font_family_open_dyslexic">OpenDyslexic</string>
     <string name="settings_line_height">Line Height</string>
     <string name="settings_margins">Margins</string>
     <string name="settings_margin_horizontal">Horizontal Margin</string>
