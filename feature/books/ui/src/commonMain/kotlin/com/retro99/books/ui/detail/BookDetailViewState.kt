@@ -7,5 +7,8 @@ data class BookDetailViewState(
     val book: BookUiModel? = null,
     val isLoading: Boolean = true,
     val error: AppError? = null,
+    val isEbookCached: Boolean = false,
+    val isAudiobookCached: Boolean = false,
+    val isReadaloudCached: Boolean = false,
 )
 
