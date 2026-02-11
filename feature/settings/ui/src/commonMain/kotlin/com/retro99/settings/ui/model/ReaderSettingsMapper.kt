@@ -17,6 +17,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     highlightColor = highlightColor,
     highlightStyle = highlightStyle,
     showProgressBar = showProgressBar,
+    chapterProgressDisplayMode = chapterProgressDisplayMode,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -32,6 +33,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     highlightColor = highlightColor,
     highlightStyle = highlightStyle,
     showProgressBar = showProgressBar,
+    chapterProgressDisplayMode = chapterProgressDisplayMode,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

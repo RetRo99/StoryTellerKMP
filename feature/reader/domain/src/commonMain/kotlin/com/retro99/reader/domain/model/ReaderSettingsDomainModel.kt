@@ -23,6 +23,8 @@ data class ReaderSettingsDomainModel(
     val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
     val showProgressBar: Boolean? = true,
+    // Chapter progress display mode: NONE, PERCENTAGE, RELATIVE, or FIXED
+    val chapterProgressDisplayMode: ChapterProgressDisplayMode = ChapterProgressDisplayMode.RELATIVE,
 )
 
 enum class ReaderTheme {
@@ -62,5 +64,22 @@ enum class HighlightStyle {
 
     /** Background highlight with underline */
     HIGHLIGHT_UNDERLINE,
+}
+
+/**
+ * Display mode for chapter progress in the progress bar.
+ */
+enum class ChapterProgressDisplayMode {
+    /** No chapter progress info shown */
+    NONE,
+
+    /** Show chapter progress as percentage (e.g., "50%") */
+    PERCENTAGE,
+
+    /** Show page numbers based on current screen/viewport (changes with font size, margins, etc.) */
+    RELATIVE,
+
+    /** Show page numbers based on publication's fixed position (EPUB position based on 1024-char blocks) */
+    FIXED,
 }
 

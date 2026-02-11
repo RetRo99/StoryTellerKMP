@@ -1,5 +1,6 @@
 package com.retro99.settings.ui.model
 
+import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 
@@ -20,6 +21,8 @@ data class ReaderSettingsUiModel(
     val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
     val showProgressBar: Boolean? = true,
+    // Chapter progress display mode: NONE, PERCENTAGE, RELATIVE, or FIXED
+    val chapterProgressDisplayMode: ChapterProgressDisplayMode = ChapterProgressDisplayMode.RELATIVE,
 )
 
 enum class ReaderThemeUiModel {

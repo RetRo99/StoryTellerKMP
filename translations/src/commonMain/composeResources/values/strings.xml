@@ -117,6 +117,11 @@
     <string name="settings_progress_bar_always">Always</string>
     <string name="settings_progress_bar_on_tap">On Tap</string>
     <string name="settings_progress_bar_never">Never</string>
+    <string name="settings_chapter_progress">Chapter Progress</string>
+    <string name="settings_chapter_progress_none">None</string>
+    <string name="settings_chapter_progress_percentage">%</string>
+    <string name="settings_chapter_progress_relative">Pages</string>
+    <string name="settings_chapter_progress_fixed">Position</string>
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
