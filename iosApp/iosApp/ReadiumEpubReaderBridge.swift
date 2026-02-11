@@ -663,6 +663,7 @@ extension EpubReaderSettings {
     /// This is used both for initial preferences and dynamic updates.
     func toEpubPreferences() -> EPUBPreferences {
         return EPUBPreferences(
+            fontFamily: fontFamilyToReadium(),
             fontSize: fontSize,
             lineHeight: Double(lineHeight),
             pageMargins: calculatePageMargins(),
@@ -671,6 +672,15 @@ extension EpubReaderSettings {
             textAlign: textAlignToReadium(),
             theme: themeToReadium()
         )
+    }
+
+    /// Converts font family string to Readium's FontFamily.
+    /// Returns nil for "default" to use publisher's font.
+    private func fontFamilyToReadium() -> FontFamily? {
+        if fontFamily == "default" {
+            return nil
+        }
+        return FontFamily(fontFamily)
     }
 
     /// Converts theme string to Readium's Theme enum.

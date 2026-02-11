@@ -5,7 +5,7 @@ import com.retro99.reader.domain.model.HighlightStyle
 
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
-    val fontFamily: String = "default",
+    val fontFamily: FontFamilyUiModel = FontFamilyUiModel.DEFAULT,
     val theme: ReaderThemeUiModel = ReaderThemeUiModel.SYSTEM,
     val lineHeight: Float = 1.5f,
     val marginHorizontal: Int = 16,
@@ -34,5 +34,27 @@ enum class ReaderTextAlignUiModel {
     END,
     CENTER,
     JUSTIFY,
+}
+
+/**
+ * Font family options for the reader.
+ * Based on Readium CSS supported fonts.
+ * See https://readium.org/readium-css/docs/CSS10-libre_fonts
+ */
+enum class FontFamilyUiModel(val cssValue: String) {
+    // Default - uses publisher's font or system default
+    DEFAULT("default"),
+
+    // Generic CSS font families
+    SERIF("serif"),
+    SANS_SERIF("sans-serif"),
+    CURSIVE("cursive"),
+    FANTASY("fantasy"),
+    MONOSPACE("monospace"),
+
+    // Accessibility fonts embedded with Readium
+    ACCESSIBLE_DFA("AccessibleDfA"),
+    IA_WRITER_DUOSPACE("IA Writer Duospace"),
+    OPEN_DYSLEXIC("OpenDyslexic"),
 }
 

@@ -6,7 +6,7 @@ import com.retro99.reader.domain.model.ReaderTheme
 
 fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSettingsUiModel(
     fontSize = fontSize,
-    fontFamily = fontFamily,
+    fontFamily = fontFamily.toUiModel(),
     theme = theme.toUiModel(),
     lineHeight = lineHeight,
     marginHorizontal = marginHorizontal,
@@ -21,7 +21,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
     fontSize = fontSize,
-    fontFamily = fontFamily,
+    fontFamily = fontFamily.toDomainModel(),
     theme = theme.toDomainModel(),
     lineHeight = lineHeight,
     marginHorizontal = marginHorizontal,
@@ -62,3 +62,7 @@ fun ReaderTextAlignUiModel.toDomainModel(): ReaderTextAlign = when (this) {
     ReaderTextAlignUiModel.JUSTIFY -> ReaderTextAlign.JUSTIFY
 }
 
+fun String.toUiModel(): FontFamilyUiModel =
+    FontFamilyUiModel.entries.find { it.cssValue == this } ?: FontFamilyUiModel.DEFAULT
+
+fun FontFamilyUiModel.toDomainModel(): String = cssValue

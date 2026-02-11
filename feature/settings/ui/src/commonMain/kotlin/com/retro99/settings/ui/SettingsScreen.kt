@@ -47,11 +47,22 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import resources.translations.settings_font_family
+import resources.translations.settings_font_family_accessible_dfa
+import resources.translations.settings_font_family_cursive
+import resources.translations.settings_font_family_default
+import resources.translations.settings_font_family_fantasy
+import resources.translations.settings_font_family_ia_writer_duospace
+import resources.translations.settings_font_family_monospace
+import resources.translations.settings_font_family_open_dyslexic
+import resources.translations.settings_font_family_sans_serif
+import resources.translations.settings_font_family_serif
 import resources.translations.settings_font_size
 import resources.translations.settings_highlight_color
 import resources.translations.settings_highlight_style
@@ -146,6 +157,15 @@ private fun SettingsScreenContent(
                     intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
                 },
                 valueDisplay = { "${(it * 100).toInt()}%" },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FontFamilySelector(
+                selectedFontFamily = viewState.fontFamily,
+                onFontFamilySelected = {
+                    intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
+                },
             )
         }
 
@@ -470,6 +490,135 @@ private fun ThemeSelector(
             }
         }
     }
+}
+
+@Composable
+private fun FontFamilySelector(
+    selectedFontFamily: FontFamilyUiModel,
+    onFontFamilySelected: (FontFamilyUiModel) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_font_family),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        // Use FlowRow-like layout with FilterChips for better UX with many options
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // First row: Default, Serif, Sans Serif
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.DEFAULT,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.DEFAULT,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.DEFAULT) },
+                    modifier = Modifier.weight(1f),
+                )
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.SERIF,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.SERIF,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.SERIF) },
+                    modifier = Modifier.weight(1f),
+                )
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.SANS_SERIF,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.SANS_SERIF,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.SANS_SERIF) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            // Second row: Cursive, Fantasy, Monospace
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.CURSIVE,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.CURSIVE,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.CURSIVE) },
+                    modifier = Modifier.weight(1f),
+                )
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.FANTASY,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.FANTASY,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.FANTASY) },
+                    modifier = Modifier.weight(1f),
+                )
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.MONOSPACE,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.MONOSPACE,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.MONOSPACE) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            // Third row: Accessibility fonts
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.ACCESSIBLE_DFA,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.ACCESSIBLE_DFA,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.ACCESSIBLE_DFA) },
+                    modifier = Modifier.weight(1f),
+                )
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.IA_WRITER_DUOSPACE,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.IA_WRITER_DUOSPACE,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.IA_WRITER_DUOSPACE) },
+                    modifier = Modifier.weight(1f),
+                )
+                FontFamilyChip(
+                    fontFamily = FontFamilyUiModel.OPEN_DYSLEXIC,
+                    isSelected = selectedFontFamily == FontFamilyUiModel.OPEN_DYSLEXIC,
+                    onClick = { onFontFamilySelected(FontFamilyUiModel.OPEN_DYSLEXIC) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FontFamilyChip(
+    fontFamily: FontFamilyUiModel,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilterChip(
+        selected = isSelected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = fontFamily.toDisplayString(),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
+        },
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun FontFamilyUiModel.toDisplayString(): String = when (this) {
+    FontFamilyUiModel.DEFAULT -> stringResource(StringRes.settings_font_family_default)
+    FontFamilyUiModel.SERIF -> stringResource(StringRes.settings_font_family_serif)
+    FontFamilyUiModel.SANS_SERIF -> stringResource(StringRes.settings_font_family_sans_serif)
+    FontFamilyUiModel.CURSIVE -> stringResource(StringRes.settings_font_family_cursive)
+    FontFamilyUiModel.FANTASY -> stringResource(StringRes.settings_font_family_fantasy)
+    FontFamilyUiModel.MONOSPACE -> stringResource(StringRes.settings_font_family_monospace)
+    FontFamilyUiModel.ACCESSIBLE_DFA -> stringResource(StringRes.settings_font_family_accessible_dfa)
+    FontFamilyUiModel.IA_WRITER_DUOSPACE -> stringResource(
+        StringRes.settings_font_family_ia_writer_duospace,
+    )
+
+    FontFamilyUiModel.OPEN_DYSLEXIC -> stringResource(StringRes.settings_font_family_open_dyslexic)
 }
 
 @Composable
