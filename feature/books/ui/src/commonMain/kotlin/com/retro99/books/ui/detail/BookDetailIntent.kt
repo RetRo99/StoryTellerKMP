@@ -1,6 +1,7 @@
 package com.retro99.books.ui.detail
 
 import com.retro99.base.ui.BaseIntent
+import com.retro99.reader.domain.model.BookType
 
 sealed interface BookDetailIntent : BaseIntent {
     data object OnBackClicked : BookDetailIntent
@@ -10,8 +11,8 @@ sealed interface BookDetailIntent : BaseIntent {
     data object OnReadEbookClicked : BookDetailIntent
     data object OnPlayAudiobookClicked : BookDetailIntent
     data object OnReadReadaloudClicked : BookDetailIntent
-    data object OnDeleteEbookCacheClicked : BookDetailIntent
-    data object OnDeleteAudiobookCacheClicked : BookDetailIntent
-    data object OnDeleteReadaloudCacheClicked : BookDetailIntent
+    data class OnDeleteCacheClicked(val bookType: BookType) : BookDetailIntent
+    data object OnDeleteCacheConfirmed : BookDetailIntent
+    data object OnDeleteCacheDismissed : BookDetailIntent
 }
 
