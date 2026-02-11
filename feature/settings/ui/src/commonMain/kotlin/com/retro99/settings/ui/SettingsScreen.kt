@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.settings.ui.model.FontFamilyUiModel
@@ -53,6 +54,11 @@ import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import resources.translations.settings_chapter_progress
+import resources.translations.settings_chapter_progress_fixed
+import resources.translations.settings_chapter_progress_none
+import resources.translations.settings_chapter_progress_percentage
+import resources.translations.settings_chapter_progress_relative
 import resources.translations.settings_font_family
 import resources.translations.settings_font_family_accessible_dfa
 import resources.translations.settings_font_family_cursive
@@ -252,6 +258,15 @@ private fun SettingsScreenContent(
             ProgressBarModeSelector(
                 selectedMode = viewState.showProgressBar,
                 onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ChapterProgressDisplayModeSelector(
+                selectedMode = viewState.chapterProgressDisplayMode,
+                onModeSelected = {
+                    intentDispatcher(SettingsIntent.OnChapterProgressDisplayModeChanged(it))
+                },
             )
         }
 
@@ -736,6 +751,54 @@ private fun Boolean?.toProgressBarModeDisplayString(): String = when (this) {
     true -> stringResource(StringRes.settings_progress_bar_always)
     null -> stringResource(StringRes.settings_progress_bar_on_tap)
     false -> stringResource(StringRes.settings_progress_bar_never)
+}
+
+/**
+ * Selector for chapter progress display mode.
+ * Options:
+ * - None: No chapter progress info shown
+ * - Percentage: Show chapter progress as percentage
+ * - Pages (Relative): Show page numbers based on viewport
+ * - Position (Fixed): Show EPUB position
+ */
+@Composable
+private fun ChapterProgressDisplayModeSelector(
+    selectedMode: ChapterProgressDisplayMode,
+    onModeSelected: (ChapterProgressDisplayMode) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_chapter_progress),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            ChapterProgressDisplayMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = mode == selectedMode,
+                    onClick = { onModeSelected(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = ChapterProgressDisplayMode.entries.size,
+                    ),
+                ) {
+                    Text(text = mode.toDisplayString())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChapterProgressDisplayMode.toDisplayString(): String = when (this) {
+    ChapterProgressDisplayMode.NONE -> stringResource(StringRes.settings_chapter_progress_none)
+    ChapterProgressDisplayMode.PERCENTAGE ->
+        stringResource(StringRes.settings_chapter_progress_percentage)
+
+    ChapterProgressDisplayMode.RELATIVE ->
+        stringResource(StringRes.settings_chapter_progress_relative)
+
+    ChapterProgressDisplayMode.FIXED -> stringResource(StringRes.settings_chapter_progress_fixed)
 }
 
 @Composable

@@ -1,6 +1,7 @@
 package com.retro99.settings.ui
 
 import com.retro99.base.ui.BaseIntent
+import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.settings.ui.model.FontFamilyUiModel
@@ -22,6 +23,9 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnScrollModeChanged(val scrollMode: Boolean?) : SettingsIntent
     data class OnPublisherStylesChanged(val publisherStyles: Boolean) : SettingsIntent
     data class OnShowProgressBarChanged(val showProgressBar: Boolean?) : SettingsIntent
+    data class OnChapterProgressDisplayModeChanged(
+        val mode: ChapterProgressDisplayMode,
+    ) : SettingsIntent
 
     // ReadAloud settings intents
     data class OnHighlightColorChanged(val color: HighlightColor) : SettingsIntent

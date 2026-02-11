@@ -1,5 +1,6 @@
 package com.retro99.settings.ui
 
+import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.settings.ui.model.FontFamilyUiModel
@@ -23,6 +24,8 @@ data class SettingsViewState(
     val scrollMode: Boolean? get() = readerSettings.scrollMode
     val publisherStyles: Boolean get() = readerSettings.publisherStyles
     val showProgressBar: Boolean? get() = readerSettings.showProgressBar
+    val chapterProgressDisplayMode: ChapterProgressDisplayMode
+        get() = readerSettings.chapterProgressDisplayMode
     val highlightColor: HighlightColor get() = readerSettings.highlightColor
     val highlightStyle: HighlightStyle get() = readerSettings.highlightStyle
 

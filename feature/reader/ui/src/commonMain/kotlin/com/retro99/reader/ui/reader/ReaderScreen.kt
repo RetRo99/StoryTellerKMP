@@ -51,6 +51,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -330,6 +331,9 @@ private fun ReaderContent(
                 totalProgression = lastKnownPosition?.totalProgression,
                 chapterPageInfo = chapterPageInfo,
                 chapterTitle = lastKnownPosition?.title,
+                chapterProgressDisplayMode = settings.chapterProgressDisplayMode,
+                chapterProgression = lastKnownPosition?.progression,
+                fixedPosition = lastKnownPosition?.position,
             )
         }
     }
@@ -452,10 +456,14 @@ private fun ReadingProgressBar(
     totalProgression: Double?,
     chapterPageInfo: ChapterPageInfo?,
     chapterTitle: String?,
+    chapterProgressDisplayMode: ChapterProgressDisplayMode,
+    chapterProgression: Double?,
+    fixedPosition: Int?,
     modifier: Modifier = Modifier,
 ) {
     val progress = totalProgression?.toFloat() ?: 0f
     val progressPercent = (progress * 100).toInt()
+    val chapterProgressPercent = chapterProgression?.let { (it * 100).toInt() }
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -479,10 +487,39 @@ private fun ReadingProgressBar(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                // Show chapter title if available
-                chapterTitle?.let { title ->
+                // Show chapter title with position info based on display mode
+                val chapterText = buildString {
+                    chapterTitle?.let { append(it) }
+                    when (chapterProgressDisplayMode) {
+                        ChapterProgressDisplayMode.NONE -> {
+                            // No chapter progress info shown
+                        }
+
+                        ChapterProgressDisplayMode.PERCENTAGE -> {
+                            chapterProgressPercent?.let { percent ->
+                                if (isNotEmpty()) append(" ")
+                                append("($percent%)")
+                            }
+                        }
+
+                        ChapterProgressDisplayMode.RELATIVE -> {
+                            chapterPageInfo?.let { pageInfo ->
+                                if (isNotEmpty()) append(" ")
+                                append("(${pageInfo.currentPage}/${pageInfo.totalPages})")
+                            }
+                        }
+
+                        ChapterProgressDisplayMode.FIXED -> {
+                            fixedPosition?.let { position ->
+                                if (isNotEmpty()) append(" ")
+                                append("($position)")
+                            }
+                        }
+                    }
+                }
+                if (chapterText.isNotEmpty()) {
                     Text(
-                        text = title,
+                        text = chapterText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
@@ -490,15 +527,9 @@ private fun ReadingProgressBar(
                     )
                 }
 
-                // Show progress percentage and page info
-                val progressText = buildString {
-                    append("$progressPercent%")
-                    chapterPageInfo?.let { pageInfo ->
-                        append(" • Page ${pageInfo.currentPage} of ${pageInfo.totalPages}")
-                    }
-                }
+                // Show total book progress percentage
                 Text(
-                    text = progressText,
+                    text = "$progressPercent%",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
