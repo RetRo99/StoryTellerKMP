@@ -1,11 +1,13 @@
 package com.retro99.reader.ui.reader
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -14,7 +16,9 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.retro99.reader.ui.model.TocItemUiModel
@@ -25,6 +29,7 @@ private const val INDENT_PER_LEVEL_DP = 16
 @Composable
 fun TableOfContentsSheet(
     tableOfContents: List<TocItemUiModel>,
+    currentChapterHref: String?,
     onChapterClick: (href: String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -37,6 +42,7 @@ fun TableOfContentsSheet(
     ) {
         TableOfContentsContent(
             tableOfContents = tableOfContents,
+            currentChapterHref = currentChapterHref,
             onChapterClick = onChapterClick,
         )
     }
@@ -45,9 +51,23 @@ fun TableOfContentsSheet(
 @Composable
 private fun TableOfContentsContent(
     tableOfContents: List<TocItemUiModel>,
+    currentChapterHref: String?,
     onChapterClick: (href: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+
+    // Find the index of the current chapter and scroll to it
+    val currentChapterIndex = tableOfContents.indexOfFirst { tocItem ->
+        currentChapterHref != null && tocItem.href == currentChapterHref
+    }
+
+    LaunchedEffect(currentChapterIndex) {
+        if (currentChapterIndex >= 0) {
+            listState.animateScrollToItem(currentChapterIndex)
+        }
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "Table of Contents",
@@ -56,14 +76,18 @@ private fun TableOfContentsContent(
         )
         HorizontalDivider()
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            items(
+            itemsIndexed(
                 items = tableOfContents,
-                key = { it.href },
-            ) { tocItem ->
+                key = { _, item -> item.href },
+            ) { _, tocItem ->
+                val isCurrentChapter =
+                    currentChapterHref != null && tocItem.href == currentChapterHref
                 TocItemRow(
                     tocItem = tocItem,
+                    isCurrentChapter = isCurrentChapter,
                     onClick = { onChapterClick(tocItem.href) },
                 )
             }
@@ -74,10 +98,23 @@ private fun TableOfContentsContent(
 @Composable
 private fun TocItemRow(
     tocItem: TocItemUiModel,
+    isCurrentChapter: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val startPadding = (16 + tocItem.level * INDENT_PER_LEVEL_DP).dp
+
+    val backgroundColor = if (isCurrentChapter) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    val textColor = when {
+        isCurrentChapter -> MaterialTheme.colorScheme.onPrimaryContainer
+        tocItem.level == 0 -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     Text(
         text = tocItem.title,
@@ -86,15 +123,13 @@ private fun TocItemRow(
         } else {
             MaterialTheme.typography.bodyMedium
         },
-        color = if (tocItem.level == 0) {
-            MaterialTheme.colorScheme.onSurface
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
+        fontWeight = if (isCurrentChapter) FontWeight.Bold else FontWeight.Normal,
+        color = textColor,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
             .fillMaxWidth()
+            .background(backgroundColor)
             .clickable(onClick = onClick)
             .padding(
                 start = startPadding,
