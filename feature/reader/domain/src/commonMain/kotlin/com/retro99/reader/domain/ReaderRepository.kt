@@ -72,5 +72,14 @@ interface ReaderRepository {
      * @param settings The settings to save
      */
     suspend fun saveReaderSettings(settings: ReaderSettingsDomainModel): CompletableResult
+
+    /**
+     * Checks if an ebook file is cached locally.
+     *
+     * @param bookUuid The UUID of the book
+     * @param bookType The type of book (EBOOK, READALOUD, etc.)
+     * @return True if the ebook file exists locally
+     */
+    suspend fun isEbookCached(bookUuid: String, bookType: BookType): Boolean
 }
 

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -70,6 +71,9 @@ fun BookDetailScreen(
             viewState.isLoading -> LoadingScreen()
             viewState.book != null -> BookDetailScreenContent(
                 book = viewState.book,
+                isEbookCached = viewState.isEbookCached,
+                isAudiobookCached = viewState.isAudiobookCached,
+                isReadaloudCached = viewState.isReadaloudCached,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -80,6 +84,9 @@ fun BookDetailScreen(
 @Composable
 private fun BookDetailScreenContent(
     book: BookUiModel,
+    isEbookCached: Boolean,
+    isAudiobookCached: Boolean,
+    isReadaloudCached: Boolean,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -115,6 +122,9 @@ private fun BookDetailScreenContent(
 
             MediaActionButtons(
                 book = book,
+                isEbookCached = isEbookCached,
+                isAudiobookCached = isAudiobookCached,
+                isReadaloudCached = isReadaloudCached,
                 intentDispatcher = intentDispatcher,
             )
 
@@ -221,6 +231,9 @@ private fun BookHeader(
 @Composable
 private fun MediaActionButtons(
     book: BookUiModel,
+    isEbookCached: Boolean,
+    isAudiobookCached: Boolean,
+    isReadaloudCached: Boolean,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -232,6 +245,7 @@ private fun MediaActionButtons(
             MediaButton(
                 icon = Icons.AutoMirrored.Outlined.MenuBook,
                 label = stringResource(StringRes.books_media_ebook),
+                isCached = isEbookCached,
                 onClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
             )
         }
@@ -239,6 +253,7 @@ private fun MediaActionButtons(
 //            MediaButton(
 //                icon = Icons.Outlined.Headphones,
 //                label = stringResource(StringRes.books_media_audio),
+//                isCached = isAudiobookCached,
 //                onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
 //            )
 //        }
@@ -246,6 +261,7 @@ private fun MediaActionButtons(
             MediaButton(
                 icon = Icons.Outlined.RecordVoiceOver,
                 label = stringResource(StringRes.books_media_readaloud),
+                isCached = isReadaloudCached,
                 onClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
             )
         }
@@ -256,6 +272,7 @@ private fun MediaActionButtons(
 private fun MediaButton(
     icon: ImageVector,
     label: String,
+    isCached: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -270,6 +287,15 @@ private fun MediaButton(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = label)
+        if (isCached) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                imageVector = Icons.Outlined.DownloadDone,
+                contentDescription = "Downloaded",
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 

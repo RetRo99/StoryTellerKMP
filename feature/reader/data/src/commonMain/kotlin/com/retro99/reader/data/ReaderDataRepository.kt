@@ -118,6 +118,10 @@ internal class ReaderDataRepository(
         }
     }
 
+    override suspend fun isEbookCached(bookUuid: String, bookType: BookType): Boolean {
+        return localSource.isEbookCached(bookUuid, bookType)
+    }
+
     private fun logError(error: AppError, message: String) {
         val throwable = when (error) {
             is AppError.NetworkError -> error.throwable
