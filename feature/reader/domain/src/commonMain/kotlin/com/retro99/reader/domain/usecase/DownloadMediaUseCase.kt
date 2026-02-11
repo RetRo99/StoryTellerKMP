@@ -19,9 +19,15 @@ class DownloadMediaUseCase(
      * @param bookUuid The UUID of the book
      * @param bookType The type of media to download (EBOOK, AUDIOBOOK, READALOUD)
      * @param filePath The file path on the server
+     * @param bookTitle The title of the book (used for notification display)
      */
-    suspend operator fun invoke(bookUuid: String, bookType: BookType, filePath: String) {
-        downloadManager.startDownload(bookUuid, bookType, filePath)
+    suspend operator fun invoke(
+        bookUuid: String,
+        bookType: BookType,
+        filePath: String,
+        bookTitle: String,
+    ) {
+        downloadManager.startDownload(bookUuid, bookType, filePath, bookTitle)
     }
 }
 

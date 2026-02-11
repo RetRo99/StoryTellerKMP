@@ -36,8 +36,14 @@ interface BookDownloadManager {
      * @param bookUuid The UUID of the book
      * @param bookType The type of book (EBOOK, AUDIOBOOK, READALOUD)
      * @param filePath The file path on the server
+     * @param bookTitle The title of the book (used for notification display)
      */
-    suspend fun startDownload(bookUuid: String, bookType: BookType, filePath: String)
+    suspend fun startDownload(
+        bookUuid: String,
+        bookType: BookType,
+        filePath: String,
+        bookTitle: String,
+    )
 
     /**
      * Cancels an ongoing download.

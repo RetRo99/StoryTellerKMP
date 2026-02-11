@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.RecordVoiceOver
@@ -68,9 +69,9 @@ import resources.translations.books_delete_cache_confirm
 import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
 import resources.translations.books_media_audio
+import resources.translations.books_media_cancel
 import resources.translations.books_media_delete
 import resources.translations.books_media_download
-import resources.translations.books_media_downloading
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
 import resources.translations.books_media_ready
@@ -321,7 +322,7 @@ private fun MediaButton(
 ) {
     val isDownloading = downloadState is DownloadStateDomainModel.Downloading
     val isCached = downloadState is DownloadStateDomainModel.Cached
-    val isIdle = downloadState is DownloadStateDomainModel.Idle ||
+    downloadState is DownloadStateDomainModel.Idle ||
             downloadState is DownloadStateDomainModel.Failed
     val downloadProgress = (downloadState as? DownloadStateDomainModel.Downloading)?.progress
 
@@ -329,11 +330,9 @@ private fun MediaButton(
         onClick = {
             when {
                 isCached -> onReadClick()
-                isIdle -> onDownloadClick()
-                // Downloading - do nothing
+                else -> onDownloadClick() // Handles both idle (start) and downloading (cancel)
             }
         },
-        enabled = !isDownloading,
         modifier = modifier.width(100.dp),
         shape = RoundedCornerShape(16.dp),
     ) {
@@ -351,21 +350,33 @@ private fun MediaButton(
                 contentAlignment = Alignment.Center,
             ) {
                 if (isDownloading) {
-                    if (downloadProgress != null) {
-                        // Determinate progress indicator when progress is known
-                        CircularProgressIndicator(
-                            progress = { downloadProgress },
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f),
-                        )
-                    } else {
-                        // Indeterminate progress indicator when progress is unknown
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    // Show progress indicator around a close icon
+                    Box(contentAlignment = Alignment.Center) {
+                        if (downloadProgress != null) {
+                            // Determinate progress indicator when progress is known
+                            CircularProgressIndicator(
+                                progress = { downloadProgress },
+                                modifier = Modifier.size(36.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                    alpha = 0.3f,
+                                ),
+                            )
+                        } else {
+                            // Indeterminate progress indicator when progress is unknown
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(36.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                        // Close icon in the center to indicate tap to cancel
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(StringRes.books_media_cancel),
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 } else {
@@ -393,16 +404,32 @@ private fun MediaButton(
 
             when {
                 isDownloading -> {
-                    val progressText = if (downloadProgress != null) {
-                        "${(downloadProgress * 100).toInt()}%"
-                    } else {
-                        stringResource(StringRes.books_media_downloading)
+                    // Show progress percentage
+                    if (downloadProgress != null) {
+                        Text(
+                            text = "${(downloadProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
                     }
-                    Text(
-                        text = progressText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
+                    // Show cancel hint
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = stringResource(StringRes.books_media_cancel),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
 
                 isCached -> {
