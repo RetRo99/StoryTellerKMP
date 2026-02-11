@@ -13,8 +13,11 @@ import platform.Foundation.create
 import platform.Foundation.fileHandleForWritingAtPath
 import platform.Foundation.writeData
 
-private const val BUFFER_SIZE = 64 * 1024 // 64KB buffer for faster downloads
-private const val PROGRESS_UPDATE_THRESHOLD = 256 * 1024L // Update progress every 256KB
+// 256KB buffer - optimized for performance (fewer operations = less CPU overhead)
+private const val BUFFER_SIZE = 256 * 1024
+
+// Update progress every 1MB - reduces callback overhead significantly
+private const val PROGRESS_UPDATE_THRESHOLD = 1024 * 1024L
 
 /**
  * iOS implementation of streaming file write.

@@ -2,27 +2,35 @@ package com.retro99.network.implementation
 
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
-import java.io.BufferedOutputStream
 import java.io.File
-import java.io.FileOutputStream
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
 
-private const val DOWNLOAD_BUFFER_SIZE = 64 * 1024 // 64KB buffer for faster downloads
-private const val PROGRESS_UPDATE_THRESHOLD = 256 * 1024L // Update progress every 256KB
+// 256KB buffer - optimized for low-powered e-ink devices (fewer operations = less CPU)
+private const val DOWNLOAD_BUFFER_SIZE = 256 * 1024
+
+// Update progress every 1MB - e-ink screens refresh slowly, no need for frequent updates
+private const val PROGRESS_UPDATE_THRESHOLD = 1024 * 1024L
 
 /**
  * Android implementation of streaming file write.
- * Reads from the ByteReadChannel in chunks and writes directly to disk.
+ * Uses FileChannel for direct I/O, minimizing CPU overhead on low-powered e-ink devices.
  */
 internal actual suspend fun writeChannelToFile(channel: ByteReadChannel, destinationPath: String) {
     val file = File(destinationPath)
     file.parentFile?.mkdirs()
 
-    BufferedOutputStream(FileOutputStream(file), DOWNLOAD_BUFFER_SIZE).use { outputStream ->
-        val buffer = ByteArray(DOWNLOAD_BUFFER_SIZE)
-        while (!channel.isClosedForRead) {
-            val bytesRead = channel.readAvailable(buffer)
-            if (bytesRead > 0) {
-                outputStream.write(buffer, 0, bytesRead)
+    RandomAccessFile(file, "rw").use { raf ->
+        raf.channel.use { fileChannel ->
+            val buffer = ByteArray(DOWNLOAD_BUFFER_SIZE)
+            val byteBuffer = ByteBuffer.wrap(buffer)
+            while (!channel.isClosedForRead) {
+                val bytesRead = channel.readAvailable(buffer)
+                if (bytesRead > 0) {
+                    byteBuffer.clear()
+                    byteBuffer.limit(bytesRead)
+                    fileChannel.write(byteBuffer)
+                }
             }
         }
     }
@@ -30,8 +38,8 @@ internal actual suspend fun writeChannelToFile(channel: ByteReadChannel, destina
 
 /**
  * Android implementation of streaming file write with progress reporting.
- * Reads from the ByteReadChannel in chunks and writes directly to disk.
- * Progress is throttled to reduce callback overhead.
+ * Uses FileChannel for direct I/O, minimizing CPU overhead on low-powered e-ink devices.
+ * Progress is heavily throttled since e-ink screens refresh slowly.
  */
 internal actual suspend fun writeChannelToFileWithProgress(
     channel: ByteReadChannel,
@@ -44,24 +52,30 @@ internal actual suspend fun writeChannelToFileWithProgress(
 
     var bytesWritten = 0L
     var lastProgressUpdate = 0L
-    BufferedOutputStream(FileOutputStream(file), DOWNLOAD_BUFFER_SIZE).use { outputStream ->
-        val buffer = ByteArray(DOWNLOAD_BUFFER_SIZE)
-        while (!channel.isClosedForRead) {
-            val bytesRead = channel.readAvailable(buffer)
-            if (bytesRead > 0) {
-                outputStream.write(buffer, 0, bytesRead)
-                bytesWritten += bytesRead
 
-                // Throttle progress updates to reduce overhead
-                if (bytesWritten - lastProgressUpdate >= PROGRESS_UPDATE_THRESHOLD) {
-                    onProgress(bytesWritten, totalBytes)
-                    lastProgressUpdate = bytesWritten
+    RandomAccessFile(file, "rw").use { raf ->
+        raf.channel.use { fileChannel ->
+            val buffer = ByteArray(DOWNLOAD_BUFFER_SIZE)
+            val byteBuffer = ByteBuffer.wrap(buffer)
+            while (!channel.isClosedForRead) {
+                val bytesRead = channel.readAvailable(buffer)
+                if (bytesRead > 0) {
+                    byteBuffer.clear()
+                    byteBuffer.limit(bytesRead)
+                    fileChannel.write(byteBuffer)
+                    bytesWritten += bytesRead
+
+                    // Throttle progress updates - e-ink doesn't need frequent refreshes
+                    if (bytesWritten - lastProgressUpdate >= PROGRESS_UPDATE_THRESHOLD) {
+                        onProgress(bytesWritten, totalBytes)
+                        lastProgressUpdate = bytesWritten
+                    }
                 }
             }
-        }
-        // Final progress update to ensure 100% is reported
-        if (bytesWritten != lastProgressUpdate) {
-            onProgress(bytesWritten, totalBytes)
+            // Final progress update to ensure 100% is reported
+            if (bytesWritten != lastProgressUpdate) {
+                onProgress(bytesWritten, totalBytes)
+            }
         }
     }
 }
