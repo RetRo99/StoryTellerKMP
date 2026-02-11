@@ -89,6 +89,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var onMediaPlayerReadyCallback: (() -> Void)?
     private var currentHighlightId: String?
     private var currentChapterHref: RelativeURL?
+    private var currentHighlightColor: UIColor = .yellow
 
     // Readium 3.x infrastructure
     private lazy var httpClient: HTTPClient = DefaultHTTPClient()
@@ -248,8 +249,26 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
+            currentHighlightColor = highlightColorFromString(settings.highlightColor)
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
+        }
+    }
+
+    private func highlightColorFromString(_ colorName: String) -> UIColor {
+        switch colorName.uppercased() {
+        case "YELLOW":
+            return UIColor.yellow.withAlphaComponent(0.5)
+        case "GREEN":
+            return UIColor.systemGreen.withAlphaComponent(0.5)
+        case "BLUE":
+            return UIColor.systemBlue.withAlphaComponent(0.5)
+        case "PINK":
+            return UIColor.systemPink.withAlphaComponent(0.5)
+        case "ORANGE":
+            return UIColor.orange.withAlphaComponent(0.5)
+        default:
+            return UIColor.yellow.withAlphaComponent(0.5)
         }
     }
 
@@ -525,7 +544,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         let decoration = Decoration(
             id: "media-overlay-highlight",
             locator: locator,
-            style: .highlight(tint: .yellow, isActive: true)
+            style: .highlight(tint: currentHighlightColor, isActive: true)
         )
 
         // Apply decoration using Readium's Decoration API

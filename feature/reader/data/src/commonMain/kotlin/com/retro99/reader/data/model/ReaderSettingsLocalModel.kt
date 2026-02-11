@@ -1,5 +1,6 @@
 package com.retro99.reader.data.model
 
+import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
@@ -30,6 +31,8 @@ data class ReaderSettingsLocalModel(
     val playbackSpeed: Float = 1.0f,
     @SerialName("volume")
     val volume: Float = 1.0f,
+    @SerialName("highlight_color")
+    val highlightColor: String = "YELLOW",
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -53,6 +56,11 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
+        highlightColor = try {
+            HighlightColor.valueOf(highlightColor)
+        } catch (e: IllegalArgumentException) {
+            HighlightColor.YELLOW
+        },
     )
 }
 
@@ -69,6 +77,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
+        highlightColor = highlightColor.name,
     )
 }
 

@@ -3,6 +3,7 @@ package com.retro99.reader.ui.model
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
@@ -21,6 +22,8 @@ data class ReaderSettingsUiModel(
     // Media playback settings for ReadAloud books
     val playbackSpeed: Float = 1.0f,
     val volume: Float = 1.0f,
+    // Highlight color for ReadAloud text highlighting
+    val highlightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW,
 )
 
 enum class ReaderThemeUi {
@@ -37,6 +40,18 @@ enum class ReaderTextAlignUi {
     JUSTIFY,
 }
 
+/**
+ * Available highlight colors for ReadAloud text highlighting.
+ * Each color has an associated ARGB value for rendering.
+ */
+enum class ReadAloudHighlightColor(val argb: Int) {
+    YELLOW(0x80FFEB3B.toInt()),
+    GREEN(0x8081C784.toInt()),
+    BLUE(0x8064B5F6.toInt()),
+    PINK(0x80F48FB1.toInt()),
+    ORANGE(0x80FFB74D.toInt()),
+}
+
 fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSettingsUiModel(
     fontSize = fontSize,
     fontFamily = fontFamily,
@@ -49,6 +64,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     publisherStyles = publisherStyles,
     playbackSpeed = playbackSpeed,
     volume = volume,
+    highlightColor = highlightColor.toUiHighlightColor(),
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -63,6 +79,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     publisherStyles = publisherStyles,
     playbackSpeed = playbackSpeed,
     volume = volume,
+    highlightColor = highlightColor.toDomainHighlightColor(),
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {
@@ -91,6 +108,22 @@ private fun ReaderTextAlignUi.toDomainTextAlign(): ReaderTextAlign = when (this)
     ReaderTextAlignUi.END -> ReaderTextAlign.END
     ReaderTextAlignUi.CENTER -> ReaderTextAlign.CENTER
     ReaderTextAlignUi.JUSTIFY -> ReaderTextAlign.JUSTIFY
+}
+
+private fun HighlightColor.toUiHighlightColor(): ReadAloudHighlightColor = when (this) {
+    HighlightColor.YELLOW -> ReadAloudHighlightColor.YELLOW
+    HighlightColor.GREEN -> ReadAloudHighlightColor.GREEN
+    HighlightColor.BLUE -> ReadAloudHighlightColor.BLUE
+    HighlightColor.PINK -> ReadAloudHighlightColor.PINK
+    HighlightColor.ORANGE -> ReadAloudHighlightColor.ORANGE
+}
+
+private fun ReadAloudHighlightColor.toDomainHighlightColor(): HighlightColor = when (this) {
+    ReadAloudHighlightColor.YELLOW -> HighlightColor.YELLOW
+    ReadAloudHighlightColor.GREEN -> HighlightColor.GREEN
+    ReadAloudHighlightColor.BLUE -> HighlightColor.BLUE
+    ReadAloudHighlightColor.PINK -> HighlightColor.PINK
+    ReadAloudHighlightColor.ORANGE -> HighlightColor.ORANGE
 }
 
 // Theme background colors matching Readium CSS

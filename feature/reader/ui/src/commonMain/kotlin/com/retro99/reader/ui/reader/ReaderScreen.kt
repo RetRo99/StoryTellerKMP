@@ -254,6 +254,7 @@ private fun ReaderContent(
                     currentPositionMs = currentAudioPositionMs,
                     totalDurationMs = totalDurationMs,
                     playbackSpeed = playbackSpeed,
+                    highlightColor = settings.highlightColor,
                     intentDispatcher = intentDispatcher,
                     onInteraction = onControlsInteraction,
                     onSwipeDown = { areControlsVisible = false },
