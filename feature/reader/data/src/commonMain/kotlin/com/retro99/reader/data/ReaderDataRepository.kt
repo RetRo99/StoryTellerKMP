@@ -34,16 +34,22 @@ internal class ReaderDataRepository(
         ebookFilePath: String,
         bookType: BookType,
     ): AppResult<String> {
-        // Check if ebook is already cached for this specific book type
+        // Return cached path if available.
+        // Downloads are handled by BookDownloadManager which provides progress tracking
+        // and background download support. This method should only be called after
+        // the download is complete (i.e., when DownloadState is Cached).
         val cachedPath = localSource.getCachedEbookPath(bookUuid, bookType)
 
         return if (cachedPath != null) {
             Ok(cachedPath)
         } else {
-            // Download the ebook
-            remoteSource.downloadEbook(ebookFilePath, bookUuid, bookType)
-        }.onFailure { error ->
-            logError(error, "Failed to prepare ebook: bookUuid=$bookUuid, bookType=$bookType")
+            com.github.michaelbull.result.Err(
+                AppError.UnknownError(
+                    IllegalStateException(
+                        "Ebook not cached. Use BookDownloadManager to download first."
+                    )
+                )
+            )
         }
     }
 
