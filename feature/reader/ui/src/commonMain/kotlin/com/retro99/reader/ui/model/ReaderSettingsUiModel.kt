@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.retro99.reader.domain.model.HighlightColor
+import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
@@ -24,6 +25,8 @@ data class ReaderSettingsUiModel(
     val volume: Float = 1.0f,
     // Highlight color for ReadAloud text highlighting
     val highlightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW,
+    // Highlight style for ReadAloud text highlighting
+    val highlightStyle: ReadAloudHighlightStyle = ReadAloudHighlightStyle.HIGHLIGHT,
 )
 
 enum class ReaderThemeUi {
@@ -52,6 +55,20 @@ enum class ReadAloudHighlightColor(val argb: Int) {
     ORANGE(0x80FFB74D.toInt()),
 }
 
+/**
+ * Available highlight styles for ReadAloud text highlighting.
+ */
+enum class ReadAloudHighlightStyle {
+    /** Background highlight only */
+    HIGHLIGHT,
+
+    /** Background highlight with underline */
+    HIGHLIGHT_UNDERLINE,
+
+    /** Underline only (no background highlight) */
+    UNDERLINE,
+}
+
 fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSettingsUiModel(
     fontSize = fontSize,
     fontFamily = fontFamily,
@@ -65,6 +82,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     playbackSpeed = playbackSpeed,
     volume = volume,
     highlightColor = highlightColor.toUiHighlightColor(),
+    highlightStyle = highlightStyle.toUiHighlightStyle(),
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -80,6 +98,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     playbackSpeed = playbackSpeed,
     volume = volume,
     highlightColor = highlightColor.toDomainHighlightColor(),
+    highlightStyle = highlightStyle.toDomainHighlightStyle(),
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {
@@ -124,6 +143,18 @@ private fun ReadAloudHighlightColor.toDomainHighlightColor(): HighlightColor = w
     ReadAloudHighlightColor.BLUE -> HighlightColor.BLUE
     ReadAloudHighlightColor.PINK -> HighlightColor.PINK
     ReadAloudHighlightColor.ORANGE -> HighlightColor.ORANGE
+}
+
+private fun HighlightStyle.toUiHighlightStyle(): ReadAloudHighlightStyle = when (this) {
+    HighlightStyle.HIGHLIGHT -> ReadAloudHighlightStyle.HIGHLIGHT
+    HighlightStyle.HIGHLIGHT_UNDERLINE -> ReadAloudHighlightStyle.HIGHLIGHT_UNDERLINE
+    HighlightStyle.UNDERLINE -> ReadAloudHighlightStyle.UNDERLINE
+}
+
+private fun ReadAloudHighlightStyle.toDomainHighlightStyle(): HighlightStyle = when (this) {
+    ReadAloudHighlightStyle.HIGHLIGHT -> HighlightStyle.HIGHLIGHT
+    ReadAloudHighlightStyle.HIGHLIGHT_UNDERLINE -> HighlightStyle.HIGHLIGHT_UNDERLINE
+    ReadAloudHighlightStyle.UNDERLINE -> HighlightStyle.UNDERLINE
 }
 
 // Theme background colors matching Readium CSS

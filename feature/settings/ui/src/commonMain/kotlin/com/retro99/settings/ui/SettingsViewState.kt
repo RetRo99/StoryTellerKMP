@@ -1,6 +1,7 @@
 package com.retro99.settings.ui
 
 import com.retro99.reader.domain.model.HighlightColor
+import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.settings.ui.model.ReaderSettingsUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
@@ -21,6 +22,7 @@ data class SettingsViewState(
     val scrollMode: Boolean? get() = readerSettings.scrollMode
     val publisherStyles: Boolean get() = readerSettings.publisherStyles
     val highlightColor: HighlightColor get() = readerSettings.highlightColor
+    val highlightStyle: HighlightStyle get() = readerSettings.highlightStyle
 
     fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
 }

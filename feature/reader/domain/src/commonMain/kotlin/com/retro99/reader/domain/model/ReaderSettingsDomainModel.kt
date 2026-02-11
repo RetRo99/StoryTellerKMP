@@ -19,6 +19,8 @@ data class ReaderSettingsDomainModel(
     val volume: Float = 1.0f,
     // Highlight color for ReadAloud text highlighting
     val highlightColor: HighlightColor = HighlightColor.YELLOW,
+    // Highlight style for ReadAloud text highlighting
+    val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
 )
 
 enum class ReaderTheme {
@@ -44,5 +46,19 @@ enum class HighlightColor {
     BLUE,
     PINK,
     ORANGE,
+}
+
+/**
+ * Available highlight styles for ReadAloud text highlighting.
+ */
+enum class HighlightStyle {
+    /** Background highlight only */
+    HIGHLIGHT,
+
+    /** Underline only (no background highlight) */
+    UNDERLINE,
+
+    /** Background highlight with underline */
+    HIGHLIGHT_UNDERLINE,
 }
 

@@ -5,6 +5,7 @@ import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
+import com.retro99.reader.ui.model.ReadAloudHighlightStyle
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.ReaderTextAlignUi
 import com.retro99.reader.ui.model.ReaderThemeUi
@@ -66,6 +67,11 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     private var highLightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW
 
     /**
+     * Current highlight style setting.
+     */
+    private var highlightStyle: ReadAloudHighlightStyle = ReadAloudHighlightStyle.HIGHLIGHT
+
+    /**
      * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
      */
     private var lastPageTurnSentenceId: String? = null
@@ -114,6 +120,7 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
         highLightColor = settings.highlightColor
+        highlightStyle = settings.highlightStyle
         _navigator.value?.submitPreferences(settings.toEpubPreferences())
     }
 
@@ -138,15 +145,8 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         val androidLocator = locator.toAndroidLocator() ?: return
         val fragmentId = locator.fragments?.firstOrNull()
 
-        val decoration = Decoration(
-            id = "readaloud-active",
-            locator = androidLocator,
-            style = Decoration.Style.Highlight(
-                tint = highLightColor.argb,
-                isActive = false,
-            ),
-        )
-        decorableNavigator.applyDecorations(listOf(decoration), READALOUD_DECORATION_GROUP)
+        val decorations = createDecorations(androidLocator)
+        decorableNavigator.applyDecorations(decorations, READALOUD_DECORATION_GROUP)
 
         // Check visibility and handle page turn if needed
         if (fragmentId != null) {
@@ -217,6 +217,54 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         }
 
         return SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
+    }
+
+    /**
+     * Creates decorations based on the current highlight style setting.
+     */
+    private fun createDecorations(locator: Locator): List<Decoration> {
+        return when (highlightStyle) {
+            ReadAloudHighlightStyle.HIGHLIGHT -> listOf(
+                Decoration(
+                    id = "readaloud-highlight",
+                    locator = locator,
+                    style = Decoration.Style.Highlight(
+                        tint = highLightColor.argb,
+                        isActive = false,
+                    ),
+                ),
+            )
+
+            ReadAloudHighlightStyle.UNDERLINE -> listOf(
+                Decoration(
+                    id = "readaloud-underline",
+                    locator = locator,
+                    style = Decoration.Style.Underline(
+                        tint = highLightColor.argb,
+                        isActive = false,
+                    ),
+                ),
+            )
+
+            ReadAloudHighlightStyle.HIGHLIGHT_UNDERLINE -> listOf(
+                Decoration(
+                    id = "readaloud-highlight",
+                    locator = locator,
+                    style = Decoration.Style.Highlight(
+                        tint = highLightColor.argb,
+                        isActive = false,
+                    ),
+                ),
+                Decoration(
+                    id = "readaloud-underline",
+                    locator = locator,
+                    style = Decoration.Style.Underline(
+                        tint = highLightColor.argb,
+                        isActive = false,
+                    ),
+                ),
+            )
+        }
     }
 
     override fun close() {

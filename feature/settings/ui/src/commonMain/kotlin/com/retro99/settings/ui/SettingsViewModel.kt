@@ -62,6 +62,10 @@ class SettingsViewModel(
             is SettingsIntent.OnHighlightColorChanged -> updateReaderSetting {
                 it.copy(highlightColor = intent.color)
             }
+
+            is SettingsIntent.OnHighlightStyleChanged -> updateReaderSetting {
+                it.copy(highlightStyle = intent.style)
+            }
         }
     }
 
