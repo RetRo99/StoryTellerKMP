@@ -7,7 +7,7 @@ import com.retro99.reader.data.source.EbookFileDownloader
 import com.retro99.reader.domain.BookDownloadManager
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
-import com.retro99.reader.domain.model.DownloadStateDomainModel
+import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,12 +54,12 @@ actual class BookDownloadManagerImpl(
     override fun observeDownloadState(
         bookUuid: String,
         bookType: BookType,
-    ): Flow<DownloadStateDomainModel> {
+    ): Flow<DownloadState> {
         return downloadStateHolder.observeDownloadState(bookUuid, bookType)
             .map { state -> resolveState(state, bookUuid, bookType) }
     }
 
-    override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>> {
+    override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadState>> {
         return downloadStateHolder.observeAllDownloads()
     }
 
@@ -79,7 +79,7 @@ actual class BookDownloadManagerImpl(
 
         // Check if already downloading
         val currentState = downloadStateHolder.getDownloadState(bookUuid, bookType)
-        if (currentState is DownloadStateDomainModel.Downloading) {
+        if (currentState is DownloadState.Downloading) {
             return
         }
 
@@ -132,7 +132,7 @@ actual class BookDownloadManagerImpl(
         downloadStateHolder.clearError(bookUuid, bookType)
     }
 
-    override fun getDownloadState(bookUuid: String, bookType: BookType): DownloadStateDomainModel {
+    override fun getDownloadState(bookUuid: String, bookType: BookType): DownloadState {
         val state = downloadStateHolder.getDownloadState(bookUuid, bookType)
         return resolveState(state, bookUuid, bookType)
     }
@@ -142,14 +142,14 @@ actual class BookDownloadManagerImpl(
      * when the state is Idle.
      */
     private fun resolveState(
-        state: DownloadStateDomainModel,
+        state: DownloadState,
         bookUuid: String,
         bookType: BookType,
-    ): DownloadStateDomainModel {
-        return if (state is DownloadStateDomainModel.Idle &&
+    ): DownloadState {
+        return if (state is DownloadState.Idle &&
             fileDownloader.isEbookCached(bookUuid, bookType)
         ) {
-            DownloadStateDomainModel.Cached
+            DownloadState.Cached
         } else {
             state
         }
