@@ -25,6 +25,10 @@ data class ReaderSettingsDomainModel(
     val showProgressBar: Boolean? = true,
     // Chapter progress display mode: NONE, PERCENTAGE, RELATIVE, or FIXED
     val chapterProgressDisplayMode: ChapterProgressDisplayMode = ChapterProgressDisplayMode.RELATIVE,
+    // Whether to show total book progress
+    val showTotalProgress: Boolean = true,
+    // Progress indicator mode: NONE, CHAPTER, or BOOK
+    val progressIndicatorMode: ProgressIndicatorMode = ProgressIndicatorMode.CHAPTER,
 )
 
 enum class ReaderTheme {
@@ -83,3 +87,16 @@ enum class ChapterProgressDisplayMode {
     FIXED,
 }
 
+/**
+ * Progress indicator mode for the reader.
+ */
+enum class ProgressIndicatorMode {
+    /** No progress indicator shown */
+    NONE,
+
+    /** Show chapter progress indicator */
+    CHAPTER,
+
+    /** Show book (total) progress indicator */
+    BOOK,
+}

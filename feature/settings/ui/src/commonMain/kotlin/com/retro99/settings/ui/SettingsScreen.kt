@@ -48,6 +48,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
@@ -82,6 +83,10 @@ import resources.translations.settings_progress_bar
 import resources.translations.settings_progress_bar_always
 import resources.translations.settings_progress_bar_never
 import resources.translations.settings_progress_bar_on_tap
+import resources.translations.settings_progress_indicator
+import resources.translations.settings_progress_indicator_book
+import resources.translations.settings_progress_indicator_chapter
+import resources.translations.settings_progress_indicator_none
 import resources.translations.settings_publisher_styles
 import resources.translations.settings_publisher_styles_description
 import resources.translations.settings_scroll_mode
@@ -92,6 +97,7 @@ import resources.translations.settings_section_appearance
 import resources.translations.settings_section_layout
 import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_typography
+import resources.translations.settings_show_total_progress
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
 import resources.translations.settings_text_align_end
@@ -266,6 +272,22 @@ private fun SettingsScreenContent(
                 selectedMode = viewState.chapterProgressDisplayMode,
                 onModeSelected = {
                     intentDispatcher(SettingsIntent.OnChapterProgressDisplayModeChanged(it))
+                },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ShowTotalProgressSwitch(
+                isEnabled = viewState.showTotalProgress,
+                onToggle = { intentDispatcher(SettingsIntent.OnShowTotalProgressChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProgressIndicatorModeSelector(
+                selectedMode = viewState.progressIndicatorMode,
+                onModeSelected = {
+                    intentDispatcher(SettingsIntent.OnProgressIndicatorModeChanged(it))
                 },
             )
         }
@@ -799,6 +821,72 @@ private fun ChapterProgressDisplayMode.toDisplayString(): String = when (this) {
         stringResource(StringRes.settings_chapter_progress_relative)
 
     ChapterProgressDisplayMode.FIXED -> stringResource(StringRes.settings_chapter_progress_fixed)
+}
+
+/**
+ * Switch to toggle total progress display.
+ */
+@Composable
+private fun ShowTotalProgressSwitch(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(StringRes.settings_show_total_progress),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Switch(
+            checked = isEnabled,
+            onCheckedChange = onToggle,
+        )
+    }
+}
+
+/**
+ * Selector for progress indicator mode.
+ * Options:
+ * - None: No progress indicator shown
+ * - Chapter: Show chapter progress indicator
+ * - Book: Show book (total) progress indicator
+ */
+@Composable
+private fun ProgressIndicatorModeSelector(
+    selectedMode: ProgressIndicatorMode,
+    onModeSelected: (ProgressIndicatorMode) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_progress_indicator),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            ProgressIndicatorMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = mode == selectedMode,
+                    onClick = { onModeSelected(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = ProgressIndicatorMode.entries.size,
+                    ),
+                ) {
+                    Text(text = mode.toDisplayString())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressIndicatorMode.toDisplayString(): String = when (this) {
+    ProgressIndicatorMode.NONE -> stringResource(StringRes.settings_progress_indicator_none)
+    ProgressIndicatorMode.CHAPTER -> stringResource(StringRes.settings_progress_indicator_chapter)
+    ProgressIndicatorMode.BOOK -> stringResource(StringRes.settings_progress_indicator_book)
 }
 
 @Composable

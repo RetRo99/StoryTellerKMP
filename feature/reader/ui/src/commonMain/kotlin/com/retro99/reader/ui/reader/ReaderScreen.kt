@@ -52,6 +52,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
+import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -334,6 +335,8 @@ private fun ReaderContent(
                 chapterProgressDisplayMode = settings.chapterProgressDisplayMode,
                 chapterProgression = lastKnownPosition?.progression,
                 fixedPosition = lastKnownPosition?.position,
+                showTotalProgress = settings.showTotalProgress,
+                progressIndicatorMode = settings.progressIndicatorMode,
             )
         }
     }
@@ -459,10 +462,13 @@ private fun ReadingProgressBar(
     chapterProgressDisplayMode: ChapterProgressDisplayMode,
     chapterProgression: Double?,
     fixedPosition: Int?,
+    showTotalProgress: Boolean,
+    progressIndicatorMode: ProgressIndicatorMode,
     modifier: Modifier = Modifier,
 ) {
-    val progress = totalProgression?.toFloat() ?: 0f
-    val progressPercent = (progress * 100).toInt()
+    val totalProgress = totalProgression?.toFloat() ?: 0f
+    val totalProgressPercent = (totalProgress * 100).toInt()
+    val chapterProgress = chapterProgression?.toFloat() ?: 0f
     val chapterProgressPercent = chapterProgression?.let { (it * 100).toInt() }
 
     Surface(
@@ -475,13 +481,30 @@ private fun ReadingProgressBar(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth(),
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-            )
+            // Show progress indicator based on mode
+            when (progressIndicatorMode) {
+                ProgressIndicatorMode.NONE -> {
+                    // No progress indicator shown
+                }
 
-            Spacer(modifier = Modifier.height(4.dp))
+                ProgressIndicatorMode.CHAPTER -> {
+                    LinearProgressIndicator(
+                        progress = { chapterProgress },
+                        modifier = Modifier.fillMaxWidth(),
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                ProgressIndicatorMode.BOOK -> {
+                    LinearProgressIndicator(
+                        progress = { totalProgress },
+                        modifier = Modifier.fillMaxWidth(),
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -527,12 +550,14 @@ private fun ReadingProgressBar(
                     )
                 }
 
-                // Show total book progress percentage
-                Text(
-                    text = "$progressPercent%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // Show total book progress percentage if enabled
+                if (showTotalProgress) {
+                    Text(
+                        text = "$totalProgressPercent%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
