@@ -25,6 +25,7 @@ import org.koin.core.annotation.Provided
 class BookDetailViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
+    @InjectedParam private val onBack: () -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
     @Provided private val downloadMediaUseCase: DownloadMediaUseCase,
     @Provided private val cancelDownloadUseCase: CancelDownloadUseCase,
@@ -42,7 +43,7 @@ class BookDetailViewModel(
     override fun onIntent(intent: BookDetailIntent) {
         when (intent) {
             BookDetailIntent.OnBackClicked -> {
-                // Navigation is handled by the parent navigation component
+                onBack()
             }
 
             BookDetailIntent.OnRetryClicked -> {
