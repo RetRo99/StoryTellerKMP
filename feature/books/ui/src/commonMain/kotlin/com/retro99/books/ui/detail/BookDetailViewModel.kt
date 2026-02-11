@@ -63,16 +63,19 @@ class BookDetailViewModel(
                 onNavigateToReader(bookUuid, BookType.READALOUD)
             }
 
-            BookDetailIntent.OnDeleteEbookCacheClicked -> {
-                deleteMediaCache(BookType.EBOOK)
+            is BookDetailIntent.OnDeleteCacheClicked -> {
+                updateState { it.copy(deleteConfirmationBookType = intent.bookType) }
             }
 
-            BookDetailIntent.OnDeleteAudiobookCacheClicked -> {
-                deleteMediaCache(BookType.AUDIOBOOK)
+            BookDetailIntent.OnDeleteCacheConfirmed -> {
+                viewState.value.deleteConfirmationBookType?.let { bookType ->
+                    deleteMediaCache(bookType)
+                }
+                updateState { it.copy(deleteConfirmationBookType = null) }
             }
 
-            BookDetailIntent.OnDeleteReadaloudCacheClicked -> {
-                deleteMediaCache(BookType.READALOUD)
+            BookDetailIntent.OnDeleteCacheDismissed -> {
+                updateState { it.copy(deleteConfirmationBookType = null) }
             }
         }
     }

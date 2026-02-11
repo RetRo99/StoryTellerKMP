@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -58,8 +60,15 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.books_delete_cache_cancel
+import resources.translations.books_delete_cache_confirm
+import resources.translations.books_delete_cache_message
+import resources.translations.books_delete_cache_title
+import resources.translations.books_media_audio
+import resources.translations.books_media_delete
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
+import resources.translations.books_media_ready
 
 @Composable
 fun BookDetailScreen(
@@ -79,6 +88,7 @@ fun BookDetailScreen(
                 isEbookCached = viewState.isEbookCached,
                 isAudiobookCached = viewState.isAudiobookCached,
                 isReadaloudCached = viewState.isReadaloudCached,
+                deleteConfirmationBookType = viewState.deleteConfirmationBookType,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -92,9 +102,18 @@ private fun BookDetailScreenContent(
     isEbookCached: Boolean,
     isAudiobookCached: Boolean,
     isReadaloudCached: Boolean,
+    deleteConfirmationBookType: BookType?,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
+    deleteConfirmationBookType?.let { bookType ->
+        DeleteCacheConfirmationDialog(
+            bookType = bookType,
+            onConfirm = { intentDispatcher(BookDetailIntent.OnDeleteCacheConfirmed) },
+            onDismiss = { intentDispatcher(BookDetailIntent.OnDeleteCacheDismissed) },
+        )
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -252,7 +271,9 @@ private fun MediaActionButtons(
                 label = stringResource(StringRes.books_media_ebook),
                 isCached = isEbookCached,
                 onClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
-                onDeleteClick = { intentDispatcher(BookDetailIntent.OnDeleteEbookCacheClicked) },
+                onDeleteClick = {
+                    intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.EBOOK))
+                },
             )
         }
 //        if (book.hasAudiobook) {
@@ -261,7 +282,9 @@ private fun MediaActionButtons(
 //                label = stringResource(StringRes.books_media_audio),
 //                isCached = isAudiobookCached,
 //                onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
-//                onDeleteClick = { intentDispatcher(BookDetailIntent.OnDeleteAudiobookCacheClicked) },
+//                onDeleteClick = {
+//                    intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.AUDIOBOOK))
+//                },
 //            )
 //        }
         if (book.hasReadaloud) {
@@ -270,7 +293,9 @@ private fun MediaActionButtons(
                 label = stringResource(StringRes.books_media_readaloud),
                 isCached = isReadaloudCached,
                 onClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
-                onDeleteClick = { intentDispatcher(BookDetailIntent.OnDeleteReadaloudCacheClicked) },
+                onDeleteClick = {
+                    intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.READALOUD))
+                },
             )
         }
     }
@@ -336,7 +361,7 @@ private fun MediaButton(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Ready",
+                        text = stringResource(StringRes.books_media_ready),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -345,7 +370,7 @@ private fun MediaButton(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Delete",
+                    text = stringResource(StringRes.books_media_delete),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier
@@ -441,4 +466,48 @@ private fun SeriesSection(
             )
         }
     }
+}
+
+@Composable
+private fun DeleteCacheConfirmationDialog(
+    bookType: BookType,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val mediaTypeName = when (bookType) {
+        BookType.EBOOK -> stringResource(StringRes.books_media_ebook)
+        BookType.AUDIOBOOK -> stringResource(StringRes.books_media_audio)
+        BookType.READALOUD -> stringResource(StringRes.books_media_readaloud)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+        title = {
+            Text(
+                text = stringResource(StringRes.books_delete_cache_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(StringRes.books_delete_cache_message, mediaTypeName),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text = stringResource(StringRes.books_delete_cache_confirm),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(StringRes.books_delete_cache_cancel))
+            }
+        },
+    )
 }

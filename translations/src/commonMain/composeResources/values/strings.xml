@@ -39,6 +39,14 @@
     <string name="books_media_ebook">eBook</string>
     <string name="books_media_audio">Audio</string>
     <string name="books_media_readaloud">ReadALoud</string>
+    <string name="books_media_ready">Ready</string>
+    <string name="books_media_delete">Delete</string>
+
+    <!-- Book Detail - Delete Cache Dialog -->
+    <string name="books_delete_cache_title">Delete Downloaded Content?</string>
+    <string name="books_delete_cache_message">Are you sure you want to delete the downloaded %1$s? You can download it again later.</string>
+    <string name="books_delete_cache_confirm">Delete</string>
+    <string name="books_delete_cache_cancel">Cancel</string>
 
     <!-- Reader TOC Navigation -->
     <string name="reader_toc_jumped_to_chapter">Jumped to chapter</string>
