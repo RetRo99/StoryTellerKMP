@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -53,7 +52,6 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
 
@@ -237,13 +235,13 @@ private fun MediaActionButtons(
                 onClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
             )
         }
-        if (book.hasAudiobook) {
-            MediaButton(
-                icon = Icons.Outlined.Headphones,
-                label = stringResource(StringRes.books_media_audio),
-                onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
-            )
-        }
+//        if (book.hasAudiobook) {
+//            MediaButton(
+//                icon = Icons.Outlined.Headphones,
+//                label = stringResource(StringRes.books_media_audio),
+//                onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
+//            )
+//        }
         if (book.hasReadaloud) {
             MediaButton(
                 icon = Icons.Outlined.RecordVoiceOver,
