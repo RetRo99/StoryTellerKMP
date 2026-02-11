@@ -16,7 +16,7 @@ class DeleteMediaCacheUseCase(
      * @param bookType The type of media to delete (EBOOK, AUDIOBOOK, READALOUD)
      * @return True if the file was deleted successfully
      */
-    operator fun invoke(bookUuid: String, bookType: BookType): Boolean {
+    suspend operator fun invoke(bookUuid: String, bookType: BookType): Boolean {
         return downloadManager.deleteCache(bookUuid, bookType)
     }
 }

@@ -38,7 +38,7 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
-        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {
         val localFile = File(ebooksDir, getFileName(bookUuid, bookType))
 

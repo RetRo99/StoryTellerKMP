@@ -29,14 +29,14 @@ expect class EbookFileDownloader {
      * @param ebookFilePath The file path on the server
      * @param bookUuid The UUID of the book (used for local file naming)
      * @param bookType The type of book (determines the download format query)
-     * @param onProgress Callback invoked with bytes downloaded and total bytes (null if unknown)
+     * @param onProgress Suspend callback invoked with bytes downloaded and total bytes (null if unknown)
      * @return The local file path where the ebook was saved
      */
     suspend fun downloadEbookWithProgress(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
-        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String>
 
     /**

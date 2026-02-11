@@ -161,7 +161,7 @@ class KtorNetworkClient(
     override suspend fun downloadFileToPathWithProgress(
         path: String,
         destinationPath: String,
-        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {

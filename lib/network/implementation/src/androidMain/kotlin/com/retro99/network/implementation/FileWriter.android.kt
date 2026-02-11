@@ -32,7 +32,7 @@ internal actual suspend fun writeChannelToFileWithProgress(
     channel: ByteReadChannel,
     destinationPath: String,
     totalBytes: Long?,
-    onProgress: (bytesWritten: Long, totalBytes: Long?) -> Unit,
+    onProgress: suspend (bytesWritten: Long, totalBytes: Long?) -> Unit,
 ) {
     val file = File(destinationPath)
     file.parentFile?.mkdirs()
