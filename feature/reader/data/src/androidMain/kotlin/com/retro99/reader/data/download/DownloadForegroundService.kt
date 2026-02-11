@@ -139,6 +139,8 @@ class DownloadForegroundService : Service() {
         activeJobs[key]?.cancel()
         activeJobs.remove(key)
         activeDownloadTitles.remove(key)
+        // Delete partial file to ensure isEbookCached returns false
+        fileDownloader.deleteEbookCache(bookUuid, bookType)
         downloadStateHolder.markIdle(bookUuid, bookType)
         stopSelfIfNoActiveDownloads()
     }
@@ -146,6 +148,9 @@ class DownloadForegroundService : Service() {
     private fun stopSelfIfNoActiveDownloads() {
         if (activeJobs.isEmpty()) {
             stopForeground(STOP_FOREGROUND_REMOVE)
+            // Explicitly cancel the notification to ensure it's removed
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.cancel(NOTIFICATION_ID)
             stopSelf()
         }
     }

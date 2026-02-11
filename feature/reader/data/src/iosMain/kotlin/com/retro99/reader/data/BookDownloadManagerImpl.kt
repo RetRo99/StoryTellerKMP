@@ -117,6 +117,8 @@ actual class BookDownloadManagerImpl(
         val key = DownloadKey(bookUuid, bookType)
         activeJobs[key]?.cancel()
         activeJobs.remove(key)
+        // Delete partial file to ensure isEbookCached returns false
+        fileDownloader.deleteEbookCache(bookUuid, bookType)
         updateState(key, DownloadStateDomainModel.Idle)
     }
 
@@ -139,6 +141,15 @@ actual class BookDownloadManagerImpl(
         } else {
             DownloadStateDomainModel.Idle
         }
+    }
+
+    override fun deleteCache(bookUuid: String, bookType: BookType): Boolean {
+        val key = DownloadKey(bookUuid, bookType)
+        val deleted = fileDownloader.deleteEbookCache(bookUuid, bookType)
+        if (deleted) {
+            updateState(key, DownloadStateDomainModel.Idle)
+        }
+        return deleted
     }
 
     private fun updateState(key: DownloadKey, state: DownloadStateDomainModel) {

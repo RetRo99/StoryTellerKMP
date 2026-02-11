@@ -69,5 +69,14 @@ interface BookDownloadManager {
      * @return The current download state
      */
     fun getDownloadState(bookUuid: String, bookType: BookType): DownloadStateDomainModel
+
+    /**
+     * Deletes a cached media file and updates the state to Idle.
+     *
+     * @param bookUuid The UUID of the book
+     * @param bookType The type of book
+     * @return True if the file was deleted successfully
+     */
+    fun deleteCache(bookUuid: String, bookType: BookType): Boolean
 }
 
