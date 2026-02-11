@@ -92,6 +92,9 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var navigatorViewController: EPUBNavigatorViewController?
     private var onPositionChangedCallback: ((PositionLocator) -> Void)?
 
+    // Cached table of contents (populated when publication is opened)
+    private var tableOfContentsCache: [TocItem] = []
+
     // Media overlay support
     private var mediaOverlayPlayer: MediaOverlayPlayer?
     private var onPlaybackStateChangedCallback: ((PlaybackState) -> Void)?
@@ -150,6 +153,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 switch publicationResult {
                 case .success(let publication):
                     self.publication = publication
+                    // Cache the table of contents
+                    await self.cacheTableOfContents(publication: publication)
                     onSuccess()
                 case .failure(let error):
                     onError("Failed to open publication: \(error)")
@@ -171,6 +176,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
         navigatorViewController = nil
         publication = nil
+        tableOfContentsCache = []
     }
 
     func createReaderViewController(settings: EpubReaderSettings) -> UIViewController? {
@@ -322,20 +328,24 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     }
 
     func getTableOfContents() -> [TocItem] {
-        guard let publication = self.publication else {
-            return []
-        }
+        return tableOfContentsCache
+    }
 
+    private func cacheTableOfContents(publication: Publication) async {
         var result: [TocItem] = []
-        flattenToc(links: publication.tableOfContents, level: 0, into: &result)
-        return result
+        let tocResult = await publication.tableOfContents()
+        if case .success(let links) = tocResult {
+            flattenToc(links: links, level: 0, into: &result)
+        }
+        tableOfContentsCache = result
     }
 
     private func flattenToc(links: [Link], level: Int, into result: inout [TocItem]) {
         for link in links {
+            let hrefString = link.href.description
             let item = TocItem(
-                href: link.href.string,
-                title: link.title ?? link.href.string,
+                href: hrefString,
+                title: link.title ?? hrefString,
                 level: Int32(level)
             )
             result.append(item)
@@ -680,7 +690,7 @@ extension EpubReaderSettings {
         if fontFamily == "default" {
             return nil
         }
-        return FontFamily(fontFamily)
+        return FontFamily(rawValue: fontFamily)
     }
 
     /// Converts theme string to Readium's Theme enum.
