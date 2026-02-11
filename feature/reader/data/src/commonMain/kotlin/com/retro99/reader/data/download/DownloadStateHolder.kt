@@ -9,16 +9,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Single
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Singleton that holds download state across the app.
  *
- * This is separate from the service so that:
- * 1. State survives service restarts
- * 2. ViewModels can observe state without binding to the service
+ * This is separate from platform-specific download mechanisms so that:
+ * 1. State survives service/process restarts
+ * 2. ViewModels can observe state without binding to platform services
  * 3. State can be checked synchronously
+ * 4. State management is shared between Android and iOS
  */
 @Single
 class DownloadStateHolder {
@@ -27,11 +29,12 @@ class DownloadStateHolder {
         emptyMap(),
     )
 
-    // Track cancelled downloads to prevent race conditions where progress updates
-    // arrive after cancellation. Using thread-safe set since this is accessed from
-    // multiple coroutines (service scope, main thread).
-    private val cancelledDownloads: MutableSet<DownloadKey> =
-        ConcurrentHashMap.newKeySet()
+    /**
+     * Track cancelled downloads to prevent race conditions where progress updates
+     * arrive after cancellation. Protected by [cancelledMutex] for thread-safe access.
+     */
+    private val cancelledDownloads = mutableSetOf<DownloadKey>()
+    private val cancelledMutex = Mutex()
 
     fun observeDownloadState(
         bookUuid: String,
@@ -52,37 +55,48 @@ class DownloadStateHolder {
         return downloadStates.value[key] ?: DownloadStateDomainModel.Idle
     }
 
-    fun updateProgress(bookUuid: String, bookType: BookType, progress: Float?) {
+    suspend fun updateProgress(bookUuid: String, bookType: BookType, progress: Float?) {
         val key = DownloadKey(bookUuid, bookType)
         // Ignore progress updates for cancelled downloads
-        if (cancelledDownloads.contains(key)) return
+        val isCancelled = cancelledMutex.withLock { cancelledDownloads.contains(key) }
+        if (isCancelled) return
         updateState(key, DownloadStateDomainModel.Downloading(progress))
     }
 
-    fun markCached(bookUuid: String, bookType: BookType) {
+    suspend fun markCached(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
         // Ignore if download was cancelled
-        if (cancelledDownloads.contains(key)) {
-            cancelledDownloads.remove(key)
-            return
+        val wasCancelled = cancelledMutex.withLock {
+            if (cancelledDownloads.contains(key)) {
+                cancelledDownloads.remove(key)
+                true
+            } else {
+                false
+            }
         }
+        if (wasCancelled) return
         updateState(key, DownloadStateDomainModel.Cached)
     }
 
-    fun markFailed(bookUuid: String, bookType: BookType, error: AppError) {
+    suspend fun markFailed(bookUuid: String, bookType: BookType, error: AppError) {
         val key = DownloadKey(bookUuid, bookType)
         // Ignore if download was cancelled
-        if (cancelledDownloads.contains(key)) {
-            cancelledDownloads.remove(key)
-            return
+        val wasCancelled = cancelledMutex.withLock {
+            if (cancelledDownloads.contains(key)) {
+                cancelledDownloads.remove(key)
+                true
+            } else {
+                false
+            }
         }
+        if (wasCancelled) return
         updateState(key, DownloadStateDomainModel.Failed(error))
     }
 
-    fun markIdle(bookUuid: String, bookType: BookType) {
+    suspend fun markIdle(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
         // Mark as cancelled to prevent race conditions with pending progress updates
-        cancelledDownloads.add(key)
+        cancelledMutex.withLock { cancelledDownloads.add(key) }
         updateState(key, DownloadStateDomainModel.Idle)
     }
 
@@ -97,9 +111,9 @@ class DownloadStateHolder {
     /**
      * Called when starting a new download to clear any previous cancellation state.
      */
-    fun clearCancelledState(bookUuid: String, bookType: BookType) {
+    suspend fun clearCancelledState(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
-        cancelledDownloads.remove(key)
+        cancelledMutex.withLock { cancelledDownloads.remove(key) }
     }
 
     private fun updateState(key: DownloadKey, state: DownloadStateDomainModel) {

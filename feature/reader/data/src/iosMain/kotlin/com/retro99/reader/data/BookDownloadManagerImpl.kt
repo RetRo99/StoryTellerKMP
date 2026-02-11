@@ -2,6 +2,7 @@ package com.retro99.reader.data
 
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.reader.data.download.DownloadStateHolder
 import com.retro99.reader.data.source.EbookFileDownloader
 import com.retro99.reader.domain.BookDownloadManager
 import com.retro99.reader.domain.model.BookType
@@ -12,10 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,12 +27,15 @@ import org.koin.core.annotation.Single
  * iOS has better background handling for network requests, so downloads
  * can continue when the app is backgrounded.
  *
+ * State is held in [DownloadStateHolder] which is shared with Android implementation.
+ *
  * TODO: For full background download support that survives app termination,
  * enhance to use URLSession with background configuration.
  */
 @Single(binds = [BookDownloadManager::class])
 actual class BookDownloadManagerImpl(
     @Provided private val fileDownloader: EbookFileDownloader,
+    @Provided private val downloadStateHolder: DownloadStateHolder,
 ) : BookDownloadManager {
 
     /**
@@ -42,13 +43,6 @@ actual class BookDownloadManagerImpl(
      * Uses SupervisorJob so one failed download doesn't cancel others.
      */
     private val downloadScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
-    /**
-     * Holds the current state of all downloads.
-     */
-    private val downloadStates = MutableStateFlow<Map<DownloadKey, DownloadStateDomainModel>>(
-        emptyMap(),
-    )
 
     /**
      * Tracks active download jobs so they can be cancelled.
@@ -61,14 +55,12 @@ actual class BookDownloadManagerImpl(
         bookUuid: String,
         bookType: BookType,
     ): Flow<DownloadStateDomainModel> {
-        val key = DownloadKey(bookUuid, bookType)
-        return downloadStates
-            .map { states -> states[key] ?: getInitialState(bookUuid, bookType) }
-            .distinctUntilChanged()
+        return downloadStateHolder.observeDownloadState(bookUuid, bookType)
+            .map { state -> resolveState(state, bookUuid, bookType) }
     }
 
     override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>> {
-        return downloadStates
+        return downloadStateHolder.observeAllDownloads()
     }
 
     override suspend fun startDownload(
@@ -81,18 +73,21 @@ actual class BookDownloadManagerImpl(
 
         // Check if already cached
         if (fileDownloader.isEbookCached(bookUuid, bookType)) {
-            updateState(key, DownloadStateDomainModel.Cached)
+            downloadStateHolder.markCached(bookUuid, bookType)
             return
         }
 
         // Check if already downloading
-        val currentState = downloadStates.value[key]
+        val currentState = downloadStateHolder.getDownloadState(bookUuid, bookType)
         if (currentState is DownloadStateDomainModel.Downloading) {
             return
         }
 
+        // Clear any previous cancellation state before starting new download
+        downloadStateHolder.clearCancelledState(bookUuid, bookType)
+
         // Start download
-        updateState(key, DownloadStateDomainModel.Downloading(progress = null))
+        downloadStateHolder.updateProgress(bookUuid, bookType, null)
 
         val job = downloadScope.launch {
             fileDownloader.downloadEbookWithProgress(
@@ -105,12 +100,12 @@ actual class BookDownloadManagerImpl(
                     } else {
                         null
                     }
-                    updateState(key, DownloadStateDomainModel.Downloading(progress = progress))
+                    downloadStateHolder.updateProgress(bookUuid, bookType, progress)
                 },
             ).onSuccess {
-                updateState(key, DownloadStateDomainModel.Cached)
+                downloadStateHolder.markCached(bookUuid, bookType)
             }.onFailure { error ->
-                updateState(key, DownloadStateDomainModel.Failed(error))
+                downloadStateHolder.markFailed(bookUuid, bookType, error)
             }
             activeJobsMutex.withLock {
                 activeJobs.remove(key)
@@ -130,43 +125,42 @@ actual class BookDownloadManagerImpl(
         }
         // Delete partial file to ensure isEbookCached returns false
         fileDownloader.deleteEbookCache(bookUuid, bookType)
-        updateState(key, DownloadStateDomainModel.Idle)
+        downloadStateHolder.markIdle(bookUuid, bookType)
     }
 
     override fun clearError(bookUuid: String, bookType: BookType) {
-        val key = DownloadKey(bookUuid, bookType)
-        val currentState = downloadStates.value[key]
-        if (currentState is DownloadStateDomainModel.Failed) {
-            updateState(key, DownloadStateDomainModel.Idle)
-        }
+        downloadStateHolder.clearError(bookUuid, bookType)
     }
 
     override fun getDownloadState(bookUuid: String, bookType: BookType): DownloadStateDomainModel {
-        val key = DownloadKey(bookUuid, bookType)
-        return downloadStates.value[key] ?: getInitialState(bookUuid, bookType)
+        val state = downloadStateHolder.getDownloadState(bookUuid, bookType)
+        return resolveState(state, bookUuid, bookType)
     }
 
-    private fun getInitialState(bookUuid: String, bookType: BookType): DownloadStateDomainModel {
-        return if (fileDownloader.isEbookCached(bookUuid, bookType)) {
+    /**
+     * Resolves the actual download state by checking if the file is cached
+     * when the state is Idle.
+     */
+    private fun resolveState(
+        state: DownloadStateDomainModel,
+        bookUuid: String,
+        bookType: BookType,
+    ): DownloadStateDomainModel {
+        return if (state is DownloadStateDomainModel.Idle &&
+            fileDownloader.isEbookCached(bookUuid, bookType)
+        ) {
             DownloadStateDomainModel.Cached
         } else {
-            DownloadStateDomainModel.Idle
+            state
         }
     }
 
-    override fun deleteCache(bookUuid: String, bookType: BookType): Boolean {
-        val key = DownloadKey(bookUuid, bookType)
+    override suspend fun deleteCache(bookUuid: String, bookType: BookType): Boolean {
         val deleted = fileDownloader.deleteEbookCache(bookUuid, bookType)
         if (deleted) {
-            updateState(key, DownloadStateDomainModel.Idle)
+            downloadStateHolder.markIdle(bookUuid, bookType)
         }
         return deleted
-    }
-
-    private fun updateState(key: DownloadKey, state: DownloadStateDomainModel) {
-        downloadStates.update { currentStates ->
-            currentStates + (key to state)
-        }
     }
 }
 

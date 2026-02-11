@@ -66,7 +66,7 @@ interface NetworkClient {
      *
      * @param path The API path to download from
      * @param destinationPath The local file path to write the downloaded content to
-     * @param onProgress Callback invoked with bytes downloaded and total bytes (null if unknown)
+     * @param onProgress Suspend callback invoked with bytes downloaded and total bytes (null if unknown)
      * @param queryBuilder Optional query parameters
      * @param headers Optional headers
      * @return AppResult with the destination path on success, or an error
@@ -74,7 +74,7 @@ interface NetworkClient {
     suspend fun downloadFileToPathWithProgress(
         path: String,
         destinationPath: String,
-        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
         queryBuilder: QueryParamsScope.() -> Unit = {},
         headers: HeadersBuilder.() -> Unit = {},
     ): AppResult<String>

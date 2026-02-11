@@ -77,6 +77,6 @@ interface BookDownloadManager {
      * @param bookType The type of book
      * @return True if the file was deleted successfully
      */
-    fun deleteCache(bookUuid: String, bookType: BookType): Boolean
+    suspend fun deleteCache(bookUuid: String, bookType: BookType): Boolean
 }
 

@@ -104,7 +104,7 @@ actual class BookDownloadManagerImpl(
         }
     }
 
-    override fun deleteCache(bookUuid: String, bookType: BookType): Boolean {
+    override suspend fun deleteCache(bookUuid: String, bookType: BookType): Boolean {
         val deleted = fileDownloader.deleteEbookCache(bookUuid, bookType)
         if (deleted) {
             downloadStateHolder.markIdle(bookUuid, bookType)

@@ -57,7 +57,7 @@ internal actual suspend fun writeChannelToFileWithProgress(
     channel: ByteReadChannel,
     destinationPath: String,
     totalBytes: Long?,
-    onProgress: (bytesWritten: Long, totalBytes: Long?) -> Unit,
+    onProgress: suspend (bytesWritten: Long, totalBytes: Long?) -> Unit,
 ) {
     val fileManager = NSFileManager.defaultManager
     if (!fileManager.fileExistsAtPath(destinationPath)) {

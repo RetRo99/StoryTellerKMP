@@ -112,10 +112,10 @@ class DownloadForegroundService : Service() {
         // Track the title for this download
         activeDownloadTitles[key] = bookTitle
 
-        // Clear any previous cancellation state before starting new download
-        downloadStateHolder.clearCancelledState(bookUuid, bookType)
-
         val job = serviceScope.launch {
+            // Clear any previous cancellation state before starting new download
+            downloadStateHolder.clearCancelledState(bookUuid, bookType)
+
             downloadStateHolder.updateProgress(bookUuid, bookType, null)
 
             fileDownloader.downloadEbookWithProgress(
@@ -159,7 +159,9 @@ class DownloadForegroundService : Service() {
         activeDownloadTitles.remove(key)
         // Delete partial file to ensure isEbookCached returns false
         fileDownloader.deleteEbookCache(bookUuid, bookType)
-        downloadStateHolder.markIdle(bookUuid, bookType)
+        serviceScope.launch {
+            downloadStateHolder.markIdle(bookUuid, bookType)
+        }
         stopSelfIfNoActiveDownloads()
     }
 
