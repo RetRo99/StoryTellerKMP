@@ -122,6 +122,10 @@ internal class ReaderDataRepository(
         return localSource.isEbookCached(bookUuid, bookType)
     }
 
+    override suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
+        return localSource.deleteEbookCache(bookUuid, bookType)
+    }
+
     private fun logError(error: AppError, message: String) {
         val throwable = when (error) {
             is AppError.NetworkError -> error.throwable

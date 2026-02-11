@@ -66,6 +66,16 @@ actual class EbookFileDownloader(
         )
     }
 
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
+        val path = "$ebooksDir/${getFileName(bookUuid, bookType)}"
+        return if (NSFileManager.defaultManager.fileExistsAtPath(path)) {
+            NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+        } else {
+            true
+        }
+    }
+
     private fun getFileName(bookUuid: String, bookType: BookType): String {
         return "${bookUuid}_${bookType.value}.epub"
     }

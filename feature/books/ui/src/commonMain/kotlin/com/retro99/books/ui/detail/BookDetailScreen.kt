@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -247,6 +248,7 @@ private fun MediaActionButtons(
                 label = stringResource(StringRes.books_media_ebook),
                 isCached = isEbookCached,
                 onClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
+                onDeleteClick = { intentDispatcher(BookDetailIntent.OnDeleteEbookCacheClicked) },
             )
         }
 //        if (book.hasAudiobook) {
@@ -255,6 +257,7 @@ private fun MediaActionButtons(
 //                label = stringResource(StringRes.books_media_audio),
 //                isCached = isAudiobookCached,
 //                onClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
+//                onDeleteClick = { intentDispatcher(BookDetailIntent.OnDeleteAudiobookCacheClicked) },
 //            )
 //        }
         if (book.hasReadaloud) {
@@ -263,6 +266,7 @@ private fun MediaActionButtons(
                 label = stringResource(StringRes.books_media_readaloud),
                 isCached = isReadaloudCached,
                 onClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
+                onDeleteClick = { intentDispatcher(BookDetailIntent.OnDeleteReadaloudCacheClicked) },
             )
         }
     }
@@ -274,27 +278,46 @@ private fun MediaButton(
     label: String,
     isCached: Boolean,
     onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FilledTonalButton(
-        onClick = onClick,
+    Row(
         modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = label)
-        if (isCached) {
-            Spacer(modifier = Modifier.width(4.dp))
+        FilledTonalButton(
+            onClick = onClick,
+        ) {
             Icon(
-                imageVector = Icons.Outlined.DownloadDone,
-                contentDescription = "Downloaded",
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
             )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = label)
+            if (isCached) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Outlined.DownloadDone,
+                    contentDescription = "Downloaded",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        if (isCached) {
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = "Delete cache",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         }
     }
 }

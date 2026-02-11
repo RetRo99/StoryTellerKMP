@@ -81,5 +81,14 @@ interface ReaderRepository {
      * @return True if the ebook file exists locally
      */
     suspend fun isEbookCached(bookUuid: String, bookType: BookType): Boolean
+
+    /**
+     * Deletes a cached ebook file.
+     *
+     * @param bookUuid The UUID of the book
+     * @param bookType The type of book (EBOOK, READALOUD, etc.)
+     * @return True if the file was deleted successfully
+     */
+    suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean
 }
 
