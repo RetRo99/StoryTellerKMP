@@ -12,6 +12,7 @@ import com.retro99.reader.domain.usecase.CancelDownloadUseCase
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
 import com.retro99.reader.domain.usecase.DownloadMediaUseCase
 import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -132,21 +133,21 @@ class BookDetailViewModel(
     }
 
     private fun observeDownloadStates() {
-        observeDownloadStateUseCase(bookUuid, BookType.EBOOK)
-            .onEach { state ->
-                updateState { it.copy(ebookDownloadState = state) }
-            }
-            .launchIn(viewModelScope)
-
-        observeDownloadStateUseCase(bookUuid, BookType.AUDIOBOOK)
-            .onEach { state ->
-                updateState { it.copy(audiobookDownloadState = state) }
-            }
-            .launchIn(viewModelScope)
-
-        observeDownloadStateUseCase(bookUuid, BookType.READALOUD)
-            .onEach { state ->
-                updateState { it.copy(readaloudDownloadState = state) }
+        combine(
+            observeDownloadStateUseCase(bookUuid, BookType.EBOOK),
+            observeDownloadStateUseCase(bookUuid, BookType.AUDIOBOOK),
+            observeDownloadStateUseCase(bookUuid, BookType.READALOUD),
+        ) { ebookState, audiobookState, readaloudState ->
+            Triple(ebookState, audiobookState, readaloudState)
+        }
+            .onEach { (ebookState, audiobookState, readaloudState) ->
+                updateState {
+                    it.copy(
+                        ebookDownloadState = ebookState,
+                        audiobookDownloadState = audiobookState,
+                        readaloudDownloadState = readaloudState,
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -161,7 +162,9 @@ class BookDetailViewModel(
 
         // If currently downloading, cancel it
         if (currentState is DownloadStateDomainModel.Downloading) {
-            cancelDownloadUseCase(bookUuid, bookType)
+            viewModelScope.launch {
+                cancelDownloadUseCase(bookUuid, bookType)
+            }
             return
         }
 

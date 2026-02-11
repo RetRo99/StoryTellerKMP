@@ -32,16 +32,7 @@ actual class BookDownloadManagerImpl(
         bookType: BookType,
     ): Flow<DownloadStateDomainModel> {
         return downloadStateHolder.observeDownloadState(bookUuid, bookType)
-            .map { state ->
-                // If state is Idle, check if file is actually cached
-                if (state is DownloadStateDomainModel.Idle &&
-                    fileDownloader.isEbookCached(bookUuid, bookType)
-                ) {
-                    DownloadStateDomainModel.Cached
-                } else {
-                    state
-                }
-            }
+            .map { state -> resolveState(state, bookUuid, bookType) }
     }
 
     override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>> {
@@ -77,7 +68,7 @@ actual class BookDownloadManagerImpl(
         context.startForegroundService(intent)
     }
 
-    override fun cancelDownload(bookUuid: String, bookType: BookType) {
+    override suspend fun cancelDownload(bookUuid: String, bookType: BookType) {
         val intent = DownloadForegroundService.createCancelIntent(
             context = context,
             bookUuid = bookUuid,
@@ -92,7 +83,18 @@ actual class BookDownloadManagerImpl(
 
     override fun getDownloadState(bookUuid: String, bookType: BookType): DownloadStateDomainModel {
         val state = downloadStateHolder.getDownloadState(bookUuid, bookType)
-        // If state is Idle, check if file is actually cached
+        return resolveState(state, bookUuid, bookType)
+    }
+
+    /**
+     * Resolves the actual download state by checking if the file is cached
+     * when the state is Idle.
+     */
+    private fun resolveState(
+        state: DownloadStateDomainModel,
+        bookUuid: String,
+        bookType: BookType,
+    ): DownloadStateDomainModel {
         return if (state is DownloadStateDomainModel.Idle &&
             fileDownloader.isEbookCached(bookUuid, bookType)
         ) {

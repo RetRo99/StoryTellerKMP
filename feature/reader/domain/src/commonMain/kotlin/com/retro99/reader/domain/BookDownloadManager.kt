@@ -51,7 +51,7 @@ interface BookDownloadManager {
      * @param bookUuid The UUID of the book
      * @param bookType The type of book
      */
-    fun cancelDownload(bookUuid: String, bookType: BookType)
+    suspend fun cancelDownload(bookUuid: String, bookType: BookType)
 
     /**
      * Clears the error state for a failed download, resetting it to Idle.

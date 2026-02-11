@@ -13,9 +13,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -49,17 +52,19 @@ actual class BookDownloadManagerImpl(
 
     /**
      * Tracks active download jobs so they can be cancelled.
+     * Protected by [activeJobsMutex] for thread-safe access.
      */
     private val activeJobs = mutableMapOf<DownloadKey, Job>()
+    private val activeJobsMutex = Mutex()
 
     override fun observeDownloadState(
         bookUuid: String,
         bookType: BookType,
     ): Flow<DownloadStateDomainModel> {
         val key = DownloadKey(bookUuid, bookType)
-        return downloadStates.map { states ->
-            states[key] ?: getInitialState(bookUuid, bookType)
-        }
+        return downloadStates
+            .map { states -> states[key] ?: getInitialState(bookUuid, bookType) }
+            .distinctUntilChanged()
     }
 
     override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>> {
@@ -107,16 +112,22 @@ actual class BookDownloadManagerImpl(
             }.onFailure { error ->
                 updateState(key, DownloadStateDomainModel.Failed(error))
             }
-            activeJobs.remove(key)
+            activeJobsMutex.withLock {
+                activeJobs.remove(key)
+            }
         }
 
-        activeJobs[key] = job
+        activeJobsMutex.withLock {
+            activeJobs[key] = job
+        }
     }
 
-    override fun cancelDownload(bookUuid: String, bookType: BookType) {
+    override suspend fun cancelDownload(bookUuid: String, bookType: BookType) {
         val key = DownloadKey(bookUuid, bookType)
-        activeJobs[key]?.cancel()
-        activeJobs.remove(key)
+        activeJobsMutex.withLock {
+            activeJobs[key]?.cancel()
+            activeJobs.remove(key)
+        }
         // Delete partial file to ensure isEbookCached returns false
         fileDownloader.deleteEbookCache(bookUuid, bookType)
         updateState(key, DownloadStateDomainModel.Idle)
