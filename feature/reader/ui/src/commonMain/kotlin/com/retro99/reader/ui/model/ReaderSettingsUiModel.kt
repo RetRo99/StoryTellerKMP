@@ -27,6 +27,8 @@ data class ReaderSettingsUiModel(
     val highlightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW,
     // Highlight style for ReadAloud text highlighting
     val highlightStyle: ReadAloudHighlightStyle = ReadAloudHighlightStyle.HIGHLIGHT,
+    // Progress bar visibility: true = always, null = on tap (with controls), false = never
+    val showProgressBar: Boolean? = true,
 )
 
 enum class ReaderThemeUi {
@@ -83,6 +85,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     volume = volume,
     highlightColor = highlightColor.toUiHighlightColor(),
     highlightStyle = highlightStyle.toUiHighlightStyle(),
+    showProgressBar = showProgressBar,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -99,6 +102,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     volume = volume,
     highlightColor = highlightColor.toDomainHighlightColor(),
     highlightStyle = highlightStyle.toDomainHighlightStyle(),
+    showProgressBar = showProgressBar,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {

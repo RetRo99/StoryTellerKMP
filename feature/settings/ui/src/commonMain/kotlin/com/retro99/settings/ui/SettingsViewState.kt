@@ -21,6 +21,7 @@ data class SettingsViewState(
     val textAlign: ReaderTextAlignUiModel get() = readerSettings.textAlign
     val scrollMode: Boolean? get() = readerSettings.scrollMode
     val publisherStyles: Boolean get() = readerSettings.publisherStyles
+    val showProgressBar: Boolean? get() = readerSettings.showProgressBar
     val highlightColor: HighlightColor get() = readerSettings.highlightColor
     val highlightStyle: HighlightStyle get() = readerSettings.highlightStyle
 

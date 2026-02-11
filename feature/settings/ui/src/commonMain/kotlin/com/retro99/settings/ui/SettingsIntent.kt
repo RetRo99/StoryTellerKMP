@@ -20,6 +20,7 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnTextAlignChanged(val textAlign: ReaderTextAlignUiModel) : SettingsIntent
     data class OnScrollModeChanged(val scrollMode: Boolean?) : SettingsIntent
     data class OnPublisherStylesChanged(val publisherStyles: Boolean) : SettingsIntent
+    data class OnShowProgressBarChanged(val showProgressBar: Boolean?) : SettingsIntent
 
     // ReadAloud settings intents
     data class OnHighlightColorChanged(val color: HighlightColor) : SettingsIntent
