@@ -122,6 +122,11 @@
     <string name="settings_chapter_progress_percentage">%</string>
     <string name="settings_chapter_progress_relative">Pages</string>
     <string name="settings_chapter_progress_fixed">Position</string>
+    <string name="settings_show_total_progress">Show Total Progress</string>
+    <string name="settings_progress_indicator">Progress Indicator</string>
+    <string name="settings_progress_indicator_none">None</string>
+    <string name="settings_progress_indicator_chapter">Chapter</string>
+    <string name="settings_progress_indicator_book">Book</string>
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>

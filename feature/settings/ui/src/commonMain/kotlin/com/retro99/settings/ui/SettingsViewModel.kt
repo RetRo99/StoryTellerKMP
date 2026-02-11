@@ -67,6 +67,14 @@ class SettingsViewModel(
                 it.copy(chapterProgressDisplayMode = intent.mode)
             }
 
+            is SettingsIntent.OnShowTotalProgressChanged -> updateReaderSetting {
+                it.copy(showTotalProgress = intent.showTotalProgress)
+            }
+
+            is SettingsIntent.OnProgressIndicatorModeChanged -> updateReaderSetting {
+                it.copy(progressIndicatorMode = intent.mode)
+            }
+
             is SettingsIntent.OnHighlightColorChanged -> updateReaderSetting {
                 it.copy(highlightColor = intent.color)
             }

@@ -3,6 +3,7 @@ package com.retro99.reader.data.model
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
@@ -43,6 +44,12 @@ data class ReaderSettingsLocalModel(
     // Chapter progress display mode: NONE, PERCENTAGE, RELATIVE, or FIXED
     @SerialName("chapter_progress_display_mode")
     val chapterProgressDisplayMode: String = "RELATIVE",
+    // Whether to show total book progress
+    @SerialName("show_total_progress")
+    val showTotalProgress: Boolean = true,
+    // Progress indicator mode: NONE, CHAPTER, or BOOK
+    @SerialName("progress_indicator_mode")
+    val progressIndicatorMode: String = "CHAPTER",
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -82,6 +89,12 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             ChapterProgressDisplayMode.RELATIVE
         },
+        showTotalProgress = showTotalProgress,
+        progressIndicatorMode = try {
+            ProgressIndicatorMode.valueOf(progressIndicatorMode)
+        } catch (e: IllegalArgumentException) {
+            ProgressIndicatorMode.CHAPTER
+        },
     )
 }
 
@@ -102,6 +115,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         highlightStyle = highlightStyle.name,
         showProgressBar = showProgressBar,
         chapterProgressDisplayMode = chapterProgressDisplayMode.name,
+        showTotalProgress = showTotalProgress,
+        progressIndicatorMode = progressIndicatorMode.name,
     )
 }
-
