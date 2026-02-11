@@ -43,6 +43,7 @@ fun HomeNavigation(
                                 ),
                             )
                         },
+                        onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
                     )
                 }
 

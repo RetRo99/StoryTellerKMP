@@ -80,8 +80,11 @@ import resources.translations.books_media_ready
 fun BookDetailScreen(
     bookUuid: String,
     onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: BookDetailViewModel = koinViewModel { parametersOf(bookUuid, onNavigateToReader) },
+    viewModel: BookDetailViewModel = koinViewModel {
+        parametersOf(bookUuid, onNavigateToReader, onBack)
+    },
 ) {
     BaseScreen(
         modifier = modifier,

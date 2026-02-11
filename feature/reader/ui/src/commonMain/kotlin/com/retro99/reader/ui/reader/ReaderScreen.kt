@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -268,6 +269,7 @@ private fun ReaderContent(
             modifier = Modifier.align(Alignment.TopEnd),
         ) {
             ReaderToolbar(
+                onCloseClick = { intentDispatcher(ReaderIntent.Close) },
                 onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
                 onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
                 onInteraction = onControlsInteraction,
@@ -301,6 +303,7 @@ private fun ReaderContent(
 
 @Composable
 private fun ReaderToolbar(
+    onCloseClick: () -> Unit,
     onTocClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onInteraction: () -> Unit,
@@ -314,9 +317,26 @@ private fun ReaderToolbar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp),
-            contentAlignment = Alignment.CenterEnd,
         ) {
-            Row {
+            // Back button on the left
+            IconButton(
+                onClick = {
+                    onInteraction()
+                    onCloseClick()
+                },
+                modifier = Modifier.align(Alignment.CenterStart),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Close",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+
+            // TOC and Settings buttons on the right
+            Row(
+                modifier = Modifier.align(Alignment.CenterEnd),
+            ) {
                 IconButton(
                     onClick = {
                         onInteraction()
