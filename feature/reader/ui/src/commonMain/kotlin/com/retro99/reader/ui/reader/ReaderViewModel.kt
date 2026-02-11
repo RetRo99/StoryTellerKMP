@@ -52,12 +52,12 @@ class ReaderViewModel(
         bookType = bookType,
     )
 ) {
+
     private val readerScope: Scope by lazy {
         getKoin().createScope<ReaderScope>(bookUuid).apply {
-            val publication = requireNotNull(viewState.value.publication) {
-                "ReaderScope accessed before publication was opened"
+            viewState.value.publication?.let {
+                declare(it)
             }
-            declare(publication)
         }
     }
 
@@ -443,8 +443,6 @@ class ReaderViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        runCatching {
-            readerScope.close()
-        }
+        readerScope.close()
     }
 }
