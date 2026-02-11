@@ -141,9 +141,9 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         val decoration = Decoration(
             id = "readaloud-active",
             locator = androidLocator,
-            style = Decoration.Style.Underline(
+            style = Decoration.Style.Highlight(
                 tint = highLightColor.argb,
-                isActive = true,
+                isActive = false,
             ),
         )
         decorableNavigator.applyDecorations(listOf(decoration), READALOUD_DECORATION_GROUP)

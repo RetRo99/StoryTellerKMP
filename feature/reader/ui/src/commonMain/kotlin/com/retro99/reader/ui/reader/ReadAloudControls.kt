@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -37,12 +37,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.IntentDispatcher
-import com.retro99.reader.ui.model.ReadAloudHighlightColor
 
 /**
  * Media controls overlay for ReadAloud books.
@@ -64,7 +62,6 @@ internal fun ReadAloudControls(
     currentPositionMs: Long,
     totalDurationMs: Long?,
     playbackSpeed: Float,
-    highlightColor: ReadAloudHighlightColor,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     onInteraction: () -> Unit = {},
     onSwipeDown: () -> Unit = {},
@@ -114,7 +111,7 @@ internal fun ReadAloudControls(
                 onInteraction = onInteraction,
             ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
             Spacer(modifier = Modifier.height(8.dp))
-            PlaybackControlsRow(isPlaying, playbackSpeed, highlightColor, interactingDispatcher)
+            PlaybackControlsRow(isPlaying, playbackSpeed, interactingDispatcher)
         }
     }
 }
@@ -123,7 +120,6 @@ internal fun ReadAloudControls(
 private fun PlaybackControlsRow(
     isPlaying: Boolean,
     playbackSpeed: Float,
-    highlightColor: ReadAloudHighlightColor,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
     Row(
@@ -150,9 +146,7 @@ private fun PlaybackControlsRow(
         IconButton(onClick = { intentDispatcher(ReaderIntent.SkipForward()) }) {
             Icon(Icons.Default.Forward10, "Skip forward", Modifier.size(32.dp))
         }
-        HighlightColorButton(highlightColor) {
-            intentDispatcher(ReaderIntent.SetHighlightColor(it))
-        }
+        Spacer(modifier = Modifier.width(48.dp))
     }
 }
 
@@ -193,42 +187,6 @@ private fun PlaybackSpeedButton(currentSpeed: Float, onSpeedSelected: (Float) ->
                 DropdownMenuItem(
                     text = { Text("${speed}x") },
                     onClick = { onSpeedSelected(speed); expanded = false },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HighlightColorButton(
-    currentColor: ReadAloudHighlightColor,
-    onColorSelected: (ReadAloudHighlightColor) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { expanded = true }) {
-        Icon(
-            imageVector = Icons.Default.FormatColorFill,
-            contentDescription = "Highlight color",
-            modifier = Modifier.size(24.dp),
-            tint = Color(currentColor.argb),
-        )
-        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-            ReadAloudHighlightColor.entries.forEach { color ->
-                DropdownMenuItem(
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Spacer(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .background(Color(color.argb), CircleShape),
-                            )
-                            Text(color.name.lowercase().replaceFirstChar { it.uppercase() })
-                        }
-                    },
-                    onClick = { onColorSelected(color); expanded = false },
                 )
             }
         }

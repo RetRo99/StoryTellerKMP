@@ -58,6 +58,10 @@ class SettingsViewModel(
             is SettingsIntent.OnPublisherStylesChanged -> updateReaderSetting {
                 it.copy(publisherStyles = intent.publisherStyles)
             }
+
+            is SettingsIntent.OnHighlightColorChanged -> updateReaderSetting {
+                it.copy(highlightColor = intent.color)
+            }
         }
     }
 
