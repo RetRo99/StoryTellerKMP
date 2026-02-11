@@ -311,7 +311,7 @@ private fun ReaderToolbar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+        color = MaterialTheme.colorScheme.surface,
     ) {
         Box(
             modifier = Modifier
