@@ -105,4 +105,8 @@
     <string name="settings_scroll_mode_paginated">Paginated</string>
     <string name="settings_publisher_styles">Use Publisher Styles</string>
     <string name="settings_publisher_styles_description">When enabled, uses the book's original formatting. Disable to customize line height and text alignment.</string>
+
+    <!-- ReadAloud Settings -->
+    <string name="settings_section_readaloud">Read Aloud</string>
+    <string name="settings_highlight_color">Highlight Color</string>
 </resources>

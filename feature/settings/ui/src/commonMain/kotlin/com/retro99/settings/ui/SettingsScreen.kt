@@ -6,17 +6,23 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,16 +38,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.settings_font_size
+import resources.translations.settings_highlight_color
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
@@ -53,6 +63,7 @@ import resources.translations.settings_scroll_mode_paginated
 import resources.translations.settings_scroll_mode_scroll
 import resources.translations.settings_section_appearance
 import resources.translations.settings_section_layout
+import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_typography
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
@@ -206,7 +217,91 @@ private fun SettingsScreenContent(
                 onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
             )
         }
+
+        // ReadAloud Section - Highlight Color
+        ExpandableSettingsSection(
+            title = stringResource(StringRes.settings_section_readaloud),
+            isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
+            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
+        ) {
+            HighlightColorSelector(
+                selectedColor = viewState.highlightColor,
+                onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+            )
+        }
     }
+}
+
+@Composable
+private fun HighlightColorSelector(
+    selectedColor: HighlightColor,
+    onColorSelected: (HighlightColor) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_highlight_color),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            HighlightColor.entries.forEach { color ->
+                HighlightColorSwatch(
+                    color = color,
+                    isSelected = color == selectedColor,
+                    onClick = { onColorSelected(color) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HighlightColorSwatch(
+    color: HighlightColor,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val swatchColor = Color(color.toArgb())
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(swatchColor)
+            .border(
+                width = if (isSelected) 3.dp else 1.dp,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.outline
+                },
+                shape = CircleShape,
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Returns the ARGB color value for the highlight color.
+ */
+private fun HighlightColor.toArgb(): Int = when (this) {
+    HighlightColor.YELLOW -> 0x80FFEB3B.toInt()
+    HighlightColor.GREEN -> 0x8081C784.toInt()
+    HighlightColor.BLUE -> 0x8064B5F6.toInt()
+    HighlightColor.PINK -> 0x80F48FB1.toInt()
+    HighlightColor.ORANGE -> 0x80FFB74D.toInt()
 }
 
 @Composable
