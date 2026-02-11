@@ -13,7 +13,8 @@ import platform.Foundation.create
 import platform.Foundation.fileHandleForWritingAtPath
 import platform.Foundation.writeData
 
-private const val BUFFER_SIZE = 8 * 1024 // 8KB buffer
+private const val BUFFER_SIZE = 64 * 1024 // 64KB buffer for faster downloads
+private const val PROGRESS_UPDATE_THRESHOLD = 256 * 1024L // Update progress every 256KB
 
 /**
  * iOS implementation of streaming file write.
@@ -51,6 +52,7 @@ internal actual suspend fun writeChannelToFile(channel: ByteReadChannel, destina
 /**
  * iOS implementation of streaming file write with progress reporting.
  * Reads from the ByteReadChannel in chunks and writes directly to disk.
+ * Progress is throttled to reduce callback overhead.
  */
 @OptIn(ExperimentalForeignApi::class)
 internal actual suspend fun writeChannelToFileWithProgress(
@@ -69,6 +71,7 @@ internal actual suspend fun writeChannelToFileWithProgress(
 
     try {
         var bytesWritten = 0L
+        var lastProgressUpdate = 0L
         val buffer = ByteArray(BUFFER_SIZE)
         while (!channel.isClosedForRead) {
             val bytesRead = channel.readAvailable(buffer)
@@ -81,8 +84,17 @@ internal actual suspend fun writeChannelToFileWithProgress(
                     fileHandle.writeData(data)
                 }
                 bytesWritten += bytesRead
-                onProgress(bytesWritten, totalBytes)
+
+                // Throttle progress updates to reduce overhead
+                if (bytesWritten - lastProgressUpdate >= PROGRESS_UPDATE_THRESHOLD) {
+                    onProgress(bytesWritten, totalBytes)
+                    lastProgressUpdate = bytesWritten
+                }
             }
+        }
+        // Final progress update to ensure 100% is reported
+        if (bytesWritten != lastProgressUpdate) {
+            onProgress(bytesWritten, totalBytes)
         }
     } finally {
         fileHandle.closeFile()
