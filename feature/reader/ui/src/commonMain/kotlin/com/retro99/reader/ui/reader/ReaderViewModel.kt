@@ -8,6 +8,7 @@ import com.retro99.base.nowMillis
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderInitializationData
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
@@ -24,6 +25,7 @@ import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.service.EpubPublicationService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
@@ -122,6 +124,11 @@ class ReaderViewModel(
                 val uiSettings = settings.toUiModel()
                 bookController.setSettings(uiSettings)
                 updateState { it.copy(currentSettings = uiSettings) }
+                // Refresh chapter page info after settings change (layout may have changed)
+                // Only needed when using RELATIVE display mode (viewport-based page numbers)
+                if (uiSettings.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
+                    refreshChapterPageInfo()
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -141,10 +148,27 @@ class ReaderViewModel(
                 updatePosition(positionUiModel)
 
                 // Fetch chapter page info for the current viewport
-                val chapterPageInfo = bookController.getChapterPageInfo()
-                updateState { it.copy(chapterPageInfo = chapterPageInfo) }
+                // Only needed when using RELATIVE display mode (viewport-based page numbers)
+                val currentSettings = viewState.value.currentSettings
+                if (currentSettings?.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
+                    val chapterPageInfo = bookController.getChapterPageInfo()
+                    updateState { it.copy(chapterPageInfo = chapterPageInfo) }
+                }
             }
             .launchIn(viewModelScope)
+    }
+
+    /**
+     * Refreshes the chapter page info after a delay to allow the WebView to re-layout.
+     * This is called after settings changes (font size, margins, etc.) and on initial load.
+     */
+    private fun refreshChapterPageInfo() {
+        viewModelScope.launch {
+            // Delay to allow WebView to re-layout after settings change
+            delay(CHAPTER_PAGE_INFO_REFRESH_DELAY_MS)
+            val chapterPageInfo = bookController.getChapterPageInfo()
+            updateState { it.copy(chapterPageInfo = chapterPageInfo) }
+        }
     }
 
     private fun observeAudioPlaybackState() {
@@ -210,6 +234,11 @@ class ReaderViewModel(
             // Start observing after publication is ready
             observeBookLocationChanges()
             observeSettingsChanges()
+            // Fetch initial chapter page info after WebView renders
+            // Only needed when using RELATIVE display mode (viewport-based page numbers)
+            if (settings.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
+                refreshChapterPageInfo()
+            }
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()
@@ -459,5 +488,10 @@ class ReaderViewModel(
     override fun onCleared() {
         super.onCleared()
         readerScope.close()
+    }
+
+    private companion object {
+        /** Delay before refreshing chapter page info to allow WebView to re-layout */
+        private const val CHAPTER_PAGE_INFO_REFRESH_DELAY_MS = 300L
     }
 }
