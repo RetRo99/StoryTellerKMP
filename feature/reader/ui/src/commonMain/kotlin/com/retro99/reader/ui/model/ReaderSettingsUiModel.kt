@@ -1,5 +1,8 @@
 package com.retro99.reader.ui.model
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
@@ -90,3 +93,27 @@ private fun ReaderTextAlignUi.toDomainTextAlign(): ReaderTextAlign = when (this)
     ReaderTextAlignUi.JUSTIFY -> ReaderTextAlign.JUSTIFY
 }
 
+// Theme background colors matching Readium CSS
+// https://github.com/readium/readium-css/blob/master/css/src/modules/ReadiumCSS-day_mode.css
+private val LightBackgroundColor = Color(0xFFFFFFFF)
+
+// https://github.com/readium/readium-css/blob/master/css/src/modules/ReadiumCSS-night_mode.css
+private val DarkBackgroundColor = Color(0xFF000000)
+
+// https://github.com/readium/readium-css/blob/master/css/src/modules/ReadiumCSS-sepia_mode.css
+private val SepiaBackgroundColor = Color(0xFFFAF4E8)
+
+/**
+ * Returns the background color for the reader based on the current theme.
+ * For SYSTEM theme, it uses the system's dark/light mode setting.
+ */
+@Composable
+fun ReaderThemeUi.backgroundColor(): Color {
+    val isSystemDark = isSystemInDarkTheme()
+    return when (this) {
+        ReaderThemeUi.LIGHT -> LightBackgroundColor
+        ReaderThemeUi.DARK -> DarkBackgroundColor
+        ReaderThemeUi.SEPIA -> SepiaBackgroundColor
+        ReaderThemeUi.SYSTEM -> if (isSystemDark) DarkBackgroundColor else LightBackgroundColor
+    }
+}
