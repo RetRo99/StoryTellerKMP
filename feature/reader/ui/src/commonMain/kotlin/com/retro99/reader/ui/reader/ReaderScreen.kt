@@ -273,6 +273,7 @@ private fun ReaderContent(
         if (isTocVisible) {
             TableOfContentsSheet(
                 tableOfContents = tableOfContents,
+                currentChapterHref = lastKnownPosition?.href,
                 onChapterClick = { href ->
                     intentDispatcher(ReaderIntent.GoToChapter(href, lastKnownPosition))
                 },
