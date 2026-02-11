@@ -443,6 +443,8 @@ class ReaderViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        readerScope.close()
+        runCatching {
+            readerScope.close()
+        }
     }
 }
