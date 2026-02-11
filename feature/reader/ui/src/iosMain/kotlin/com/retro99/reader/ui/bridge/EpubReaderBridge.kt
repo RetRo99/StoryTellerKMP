@@ -20,6 +20,7 @@ data class EpubReaderSettings(
     val textAlign: String,
     val publisherStyles: Boolean,
     val highlightColor: String,
+    val highlightStyle: String,
     val initialPosition: PositionUiModel?,
 ) {
     companion object {
@@ -38,6 +39,7 @@ data class EpubReaderSettings(
                 textAlign = settings.textAlign.name,
                 publisherStyles = settings.publisherStyles,
                 highlightColor = settings.highlightColor.name,
+                highlightStyle = settings.highlightStyle.name,
                 initialPosition = initialPosition,
             )
         }

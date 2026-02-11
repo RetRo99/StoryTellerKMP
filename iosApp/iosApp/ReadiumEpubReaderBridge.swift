@@ -7,6 +7,16 @@ import ReadiumStreamer
 import ReadiumNavigator
 import ReadiumAdapterGCDWebServer
 
+/// Available highlight styles for ReadAloud text highlighting.
+enum HighlightStyle {
+    /// Background highlight only
+    case highlight
+    /// Background highlight with underline
+    case highlightUnderline
+    /// Underline only (no background highlight)
+    case underline
+}
+
 /// Container view controller that properly handles layout for the EPUB navigator.
 /// This ensures the child view controller's view always fills the container bounds,
 /// which is necessary for proper integration with Compose Multiplatform's UIKitViewController.
@@ -90,6 +100,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var currentHighlightId: String?
     private var currentChapterHref: RelativeURL?
     private var currentHighlightColor: UIColor = .yellow
+    private var currentHighlightStyle: HighlightStyle = .highlight
 
     // Readium 3.x infrastructure
     private lazy var httpClient: HTTPClient = DefaultHTTPClient()
@@ -250,6 +261,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
             currentHighlightColor = highlightColorFromString(settings.highlightColor)
+            currentHighlightStyle = highlightStyleFromString(settings.highlightStyle)
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
         }
@@ -269,6 +281,19 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             return UIColor.orange.withAlphaComponent(0.5)
         default:
             return UIColor.yellow.withAlphaComponent(0.5)
+        }
+    }
+
+    private func highlightStyleFromString(_ styleName: String) -> HighlightStyle {
+        switch styleName.uppercased() {
+        case "HIGHLIGHT":
+            return .highlight
+        case "HIGHLIGHT_UNDERLINE":
+            return .highlightUnderline
+        case "UNDERLINE":
+            return .underline
+        default:
+            return .highlight
         }
     }
 
@@ -539,22 +564,51 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
         currentHighlightId = fragmentId
 
-        // Create decoration for the current text fragment
-        // Decoration.Id is a String typealias, group is also a String
-        let decoration = Decoration(
-            id: "media-overlay-highlight",
-            locator: locator,
-            style: .highlight(tint: currentHighlightColor, isActive: true)
-        )
+        // Create decorations based on the current highlight style
+        let decorations = createDecorations(for: locator)
 
         // Apply decoration using Readium's Decoration API
         // EPUBNavigatorViewController conforms to DecorableNavigator
-        navigator.apply(decorations: [decoration], in: "media-overlay")
+        navigator.apply(decorations: decorations, in: "media-overlay")
 
         // Navigate to the locator to ensure the highlighted text is visible on screen
         // This is especially important when seeking audio - the text should follow
         Task {
             _ = await navigator.go(to: locator, options: .init(animated: false))
+        }
+    }
+
+    private func createDecorations(for locator: Locator) -> [Decoration] {
+        switch currentHighlightStyle {
+        case .highlight:
+            return [
+                Decoration(
+                    id: "media-overlay-highlight",
+                    locator: locator,
+                    style: .highlight(tint: currentHighlightColor, isActive: true)
+                )
+            ]
+        case .underline:
+            return [
+                Decoration(
+                    id: "media-overlay-underline",
+                    locator: locator,
+                    style: .underline(tint: currentHighlightColor, isActive: true)
+                )
+            ]
+        case .highlightUnderline:
+            return [
+                Decoration(
+                    id: "media-overlay-highlight",
+                    locator: locator,
+                    style: .highlight(tint: currentHighlightColor, isActive: true)
+                ),
+                Decoration(
+                    id: "media-overlay-underline",
+                    locator: locator,
+                    style: .underline(tint: currentHighlightColor, isActive: true)
+                )
+            ]
         }
     }
 }

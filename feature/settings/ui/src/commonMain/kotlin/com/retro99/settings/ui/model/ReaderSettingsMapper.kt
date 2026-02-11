@@ -15,6 +15,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     textAlign = textAlign.toUiModel(),
     publisherStyles = publisherStyles,
     highlightColor = highlightColor,
+    highlightStyle = highlightStyle,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -28,6 +29,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     textAlign = textAlign.toDomainModel(),
     publisherStyles = publisherStyles,
     highlightColor = highlightColor,
+    highlightStyle = highlightStyle,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

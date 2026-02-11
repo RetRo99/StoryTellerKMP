@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.HighlightColor
+import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.translations.StringRes
@@ -52,6 +54,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.settings_font_size
 import resources.translations.settings_highlight_color
+import resources.translations.settings_highlight_style
+import resources.translations.settings_highlight_style_highlight
+import resources.translations.settings_highlight_style_highlight_underline
+import resources.translations.settings_highlight_style_underline
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
@@ -218,16 +224,24 @@ private fun SettingsScreenContent(
             )
         }
 
-        // ReadAloud Section - Highlight Color
+        // ReadAloud Section - Highlight Style and Color
         ExpandableSettingsSection(
             title = stringResource(StringRes.settings_section_readaloud),
             isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
             onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
         ) {
-            HighlightColorSelector(
-                selectedColor = viewState.highlightColor,
-                onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+            HighlightStyleSelector(
+                selectedStyle = viewState.highlightStyle,
+                onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
             )
+            // Only show color selector when highlight is enabled (not underline-only)
+            if (viewState.highlightStyle != HighlightStyle.UNDERLINE) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HighlightColorSelector(
+                    selectedColor = viewState.highlightColor,
+                    onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+                )
+            }
         }
     }
 }
@@ -302,6 +316,63 @@ private fun HighlightColor.toArgb(): Int = when (this) {
     HighlightColor.BLUE -> 0x8064B5F6.toInt()
     HighlightColor.PINK -> 0x80F48FB1.toInt()
     HighlightColor.ORANGE -> 0x80FFB74D.toInt()
+}
+
+@Composable
+private fun HighlightStyleSelector(
+    selectedStyle: HighlightStyle,
+    onStyleSelected: (HighlightStyle) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_highlight_style),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            HighlightStyle.entries.forEach { style ->
+                HighlightStyleChip(
+                    style = style,
+                    isSelected = style == selectedStyle,
+                    onClick = { onStyleSelected(style) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HighlightStyleChip(
+    style: HighlightStyle,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = when (style) {
+        HighlightStyle.HIGHLIGHT -> stringResource(StringRes.settings_highlight_style_highlight)
+        HighlightStyle.HIGHLIGHT_UNDERLINE -> stringResource(
+            StringRes.settings_highlight_style_highlight_underline,
+        )
+
+        HighlightStyle.UNDERLINE -> stringResource(StringRes.settings_highlight_style_underline)
+    }
+
+    FilterChip(
+        selected = isSelected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
+        },
+        modifier = modifier,
+    )
 }
 
 @Composable

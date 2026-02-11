@@ -1,6 +1,7 @@
 package com.retro99.settings.ui.model
 
 import com.retro99.reader.domain.model.HighlightColor
+import com.retro99.reader.domain.model.HighlightStyle
 
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
@@ -15,6 +16,8 @@ data class ReaderSettingsUiModel(
     val publisherStyles: Boolean = true,
     // Highlight color for ReadAloud text highlighting
     val highlightColor: HighlightColor = HighlightColor.YELLOW,
+    // Highlight style for ReadAloud text highlighting
+    val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
 )
 
 enum class ReaderThemeUiModel {

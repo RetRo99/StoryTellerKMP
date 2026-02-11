@@ -109,4 +109,8 @@
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
     <string name="settings_highlight_color">Highlight Color</string>
+    <string name="settings_highlight_style">Highlight Style</string>
+    <string name="settings_highlight_style_highlight">Highlight</string>
+    <string name="settings_highlight_style_highlight_underline">Both</string>
+    <string name="settings_highlight_style_underline">Underline</string>
 </resources>
