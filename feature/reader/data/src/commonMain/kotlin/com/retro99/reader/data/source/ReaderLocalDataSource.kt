@@ -71,6 +71,10 @@ class ReaderLocalDataSource(
         return fileDownloader.getCachedEbookPath(bookUuid, bookType)
     }
 
+    override suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
+        return fileDownloader.deleteEbookCache(bookUuid, bookType)
+    }
+
     private fun loadReaderSettings(): ReaderSettingsLocalModel {
         return preferences.getObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
             ?: ReaderSettingsLocalModel()

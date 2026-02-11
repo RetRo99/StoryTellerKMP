@@ -7,6 +7,7 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.ui.model.toUiModel
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
 import com.retro99.reader.domain.usecase.GetMediaCacheStatusUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -22,6 +23,7 @@ class BookDetailViewModel(
     @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
     @Provided private val getMediaCacheStatusUseCase: GetMediaCacheStatusUseCase,
+    @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(),
 ) {
@@ -59,6 +61,18 @@ class BookDetailViewModel(
 
             BookDetailIntent.OnReadReadaloudClicked -> {
                 onNavigateToReader(bookUuid, BookType.READALOUD)
+            }
+
+            BookDetailIntent.OnDeleteEbookCacheClicked -> {
+                deleteMediaCache(BookType.EBOOK)
+            }
+
+            BookDetailIntent.OnDeleteAudiobookCacheClicked -> {
+                deleteMediaCache(BookType.AUDIOBOOK)
+            }
+
+            BookDetailIntent.OnDeleteReadaloudCacheClicked -> {
+                deleteMediaCache(BookType.READALOUD)
             }
         }
     }
@@ -100,6 +114,15 @@ class BookDetailViewModel(
                     isAudiobookCached = cacheStatus.isAudiobookCached,
                     isReadaloudCached = cacheStatus.isReadaloudCached,
                 )
+            }
+        }
+    }
+
+    private fun deleteMediaCache(bookType: BookType) {
+        viewModelScope.launch {
+            val deleted = deleteMediaCacheUseCase(bookUuid, bookType)
+            if (deleted) {
+                checkMediaCacheStatus()
             }
         }
     }

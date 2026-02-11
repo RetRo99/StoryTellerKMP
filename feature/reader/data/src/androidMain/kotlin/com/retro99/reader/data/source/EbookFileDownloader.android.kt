@@ -43,6 +43,11 @@ actual class EbookFileDownloader(
         return File(ebooksDir, getFileName(bookUuid, bookType)).exists()
     }
 
+    actual fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
+        val file = File(ebooksDir, getFileName(bookUuid, bookType))
+        return if (file.exists()) file.delete() else true
+    }
+
     private fun getFileName(bookUuid: String, bookType: BookType): String {
         return "${bookUuid}_${bookType.value}.epub"
     }

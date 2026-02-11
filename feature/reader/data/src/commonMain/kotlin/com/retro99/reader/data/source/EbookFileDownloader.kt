@@ -40,5 +40,14 @@ expect class EbookFileDownloader {
      * @return True if the file exists locally
      */
     fun isEbookCached(bookUuid: String, bookType: BookType): Boolean
+
+    /**
+     * Deletes a cached ebook file.
+     *
+     * @param bookUuid The UUID of the book
+     * @param bookType The type of book
+     * @return True if the file was deleted successfully
+     */
+    fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean
 }
 

@@ -62,5 +62,14 @@ interface ReaderLocalSource {
      * @return The local file path or null if not cached
      */
     suspend fun getCachedEbookPath(bookUuid: String, bookType: BookType): String?
+
+    /**
+     * Deletes a cached ebook file.
+     *
+     * @param bookUuid The UUID of the book
+     * @param bookType The type of book
+     * @return True if the file was deleted successfully
+     */
+    suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean
 }
 
