@@ -94,9 +94,13 @@ import resources.translations.settings_scroll_mode_auto
 import resources.translations.settings_scroll_mode_paginated
 import resources.translations.settings_scroll_mode_scroll
 import resources.translations.settings_section_appearance
+import resources.translations.settings_section_appearance_description
 import resources.translations.settings_section_layout
+import resources.translations.settings_section_layout_description
 import resources.translations.settings_section_readaloud
+import resources.translations.settings_section_readaloud_description
 import resources.translations.settings_section_typography
+import resources.translations.settings_section_typography_description
 import resources.translations.settings_show_total_progress
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
@@ -151,6 +155,7 @@ private fun SettingsScreenContent(
         // Appearance Section - Theme & Font Size
         ExpandableSettingsSection(
             title = stringResource(StringRes.settings_section_appearance),
+            description = stringResource(StringRes.settings_section_appearance_description),
             isExpanded = viewState.isSectionExpanded(SettingsSection.APPEARANCE),
             onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.APPEARANCE)) },
         ) {
@@ -184,6 +189,7 @@ private fun SettingsScreenContent(
         // Typography Section - Publisher Styles, Line Height, Text Alignment
         ExpandableSettingsSection(
             title = stringResource(StringRes.settings_section_typography),
+            description = stringResource(StringRes.settings_section_typography_description),
             isExpanded = viewState.isSectionExpanded(SettingsSection.TYPOGRAPHY),
             onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
         ) {
@@ -227,6 +233,7 @@ private fun SettingsScreenContent(
         // Layout Section - Margins & Reading Mode
         ExpandableSettingsSection(
             title = stringResource(StringRes.settings_section_layout),
+            description = stringResource(StringRes.settings_section_layout_description),
             isExpanded = viewState.isSectionExpanded(SettingsSection.LAYOUT),
             onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
         ) {
@@ -295,6 +302,7 @@ private fun SettingsScreenContent(
         // ReadAloud Section - Highlight Style and Color
         ExpandableSettingsSection(
             title = stringResource(StringRes.settings_section_readaloud),
+            description = stringResource(StringRes.settings_section_readaloud_description),
             isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
             onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
         ) {
@@ -446,6 +454,7 @@ private fun HighlightStyleChip(
 @Composable
 private fun ExpandableSettingsSection(
     title: String,
+    description: String,
     isExpanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
@@ -471,11 +480,18 @@ private fun ExpandableSettingsSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    )
+                }
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,

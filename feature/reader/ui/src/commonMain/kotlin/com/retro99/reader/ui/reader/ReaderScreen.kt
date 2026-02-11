@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -506,56 +505,56 @@ private fun ReadingProgressBar(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                // Show chapter title with position info based on display mode
-                val chapterText = buildString {
-                    chapterTitle?.let { append(it) }
-                    when (chapterProgressDisplayMode) {
-                        ChapterProgressDisplayMode.NONE -> {
-                            // No chapter progress info shown
-                        }
+            // Show chapter title with position info based on display mode
+            val chapterText = buildString {
+                chapterTitle?.let { append(it) }
+                when (chapterProgressDisplayMode) {
+                    ChapterProgressDisplayMode.NONE -> {
+                        // No chapter progress info shown
+                    }
 
-                        ChapterProgressDisplayMode.PERCENTAGE -> {
-                            chapterProgressPercent?.let { percent ->
-                                if (isNotEmpty()) append(" ")
-                                append("($percent%)")
-                            }
+                    ChapterProgressDisplayMode.PERCENTAGE -> {
+                        chapterProgressPercent?.let { percent ->
+                            if (isNotEmpty()) append(" ")
+                            append("($percent%)")
                         }
+                    }
 
-                        ChapterProgressDisplayMode.RELATIVE -> {
-                            chapterPageInfo?.let { pageInfo ->
-                                if (isNotEmpty()) append(" ")
-                                append("(${pageInfo.currentPage}/${pageInfo.totalPages})")
-                            }
+                    ChapterProgressDisplayMode.RELATIVE -> {
+                        chapterPageInfo?.let { pageInfo ->
+                            if (isNotEmpty()) append(" ")
+                            append("(${pageInfo.currentPage}/${pageInfo.totalPages})")
                         }
+                    }
 
-                        ChapterProgressDisplayMode.FIXED -> {
-                            fixedPosition?.let { position ->
-                                if (isNotEmpty()) append(" ")
-                                append("($position)")
-                            }
+                    ChapterProgressDisplayMode.FIXED -> {
+                        fixedPosition?.let { position ->
+                            if (isNotEmpty()) append(" ")
+                            append("($position)")
                         }
                     }
                 }
+            }
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                // Centered chapter title
                 if (chapterText.isNotEmpty()) {
                     Text(
                         text = chapterText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
                         maxLines = 1,
+                        modifier = Modifier.align(Alignment.Center),
                     )
                 }
 
-                // Show total book progress percentage if enabled
+                // Show total book progress percentage if enabled (aligned to end)
                 if (showTotalProgress) {
                     Text(
                         text = "$totalProgressPercent%",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.CenterEnd),
                     )
                 }
             }
