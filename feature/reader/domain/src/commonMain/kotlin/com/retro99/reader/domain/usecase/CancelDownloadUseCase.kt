@@ -18,7 +18,7 @@ class CancelDownloadUseCase(
      * @param bookUuid The UUID of the book
      * @param bookType The type of media to cancel (EBOOK, AUDIOBOOK, READALOUD)
      */
-    operator fun invoke(bookUuid: String, bookType: BookType) {
+    suspend operator fun invoke(bookUuid: String, bookType: BookType) {
         downloadManager.cancelDownload(bookUuid, bookType)
     }
 }

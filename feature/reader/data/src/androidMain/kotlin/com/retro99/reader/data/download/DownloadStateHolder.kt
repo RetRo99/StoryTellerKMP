@@ -6,9 +6,11 @@ import com.retro99.reader.domain.model.DownloadKey
 import com.retro99.reader.domain.model.DownloadStateDomainModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import org.koin.core.annotation.Single
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Singleton that holds download state across the app.
@@ -26,17 +28,19 @@ class DownloadStateHolder {
     )
 
     // Track cancelled downloads to prevent race conditions where progress updates
-    // arrive after cancellation
-    private val cancelledDownloads = mutableSetOf<DownloadKey>()
+    // arrive after cancellation. Using thread-safe set since this is accessed from
+    // multiple coroutines (service scope, main thread).
+    private val cancelledDownloads: MutableSet<DownloadKey> =
+        ConcurrentHashMap.newKeySet()
 
     fun observeDownloadState(
         bookUuid: String,
         bookType: BookType,
     ): Flow<DownloadStateDomainModel> {
         val key = DownloadKey(bookUuid, bookType)
-        return downloadStates.map { states ->
-            states[key] ?: DownloadStateDomainModel.Idle
-        }
+        return downloadStates
+            .map { states -> states[key] ?: DownloadStateDomainModel.Idle }
+            .distinctUntilChanged()
     }
 
     fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadStateDomainModel>> {
