@@ -6,10 +6,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,6 +22,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
@@ -173,130 +178,144 @@ private fun ReaderContent(
 
     val backgroundColor = settings.theme.backgroundColor()
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
-            .onSizeChanged { containerSize = it },
+            .background(backgroundColor),
     ) {
-        EpubReaderView(
-            bookUuid = bookUuid,
-            publication = publication,
-            intentDispatcher = intentDispatcher,
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = settings.marginVertical.dp)
-                .readerGestures(
-                    containerSize = containerSize,
-                    onZoomChange = { scale ->
-                        isZooming = true
-                        tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)
-                        onControlsInteraction()
-                    },
-                    onZoomEnd = { finalScale ->
-                        val newFontSize = (settings.fontSize * finalScale).coerceIn(0.5, 3.0)
-                        intentDispatcher(
-                            ReaderIntent.UpdateSettings(
-                                settings.copy(fontSize = newFontSize)
+                .weight(1f)
+                .fillMaxWidth()
+                .onSizeChanged { containerSize = it },
+        ) {
+            EpubReaderView(
+                bookUuid = bookUuid,
+                publication = publication,
+                intentDispatcher = intentDispatcher,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = settings.marginVertical.dp)
+                    .readerGestures(
+                        containerSize = containerSize,
+                        onZoomChange = { scale ->
+                            isZooming = true
+                            tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)
+                            onControlsInteraction()
+                        },
+                        onZoomEnd = { finalScale ->
+                            val newFontSize = (settings.fontSize * finalScale).coerceIn(0.5, 3.0)
+                            intentDispatcher(
+                                ReaderIntent.UpdateSettings(
+                                    settings.copy(fontSize = newFontSize)
+                                )
                             )
-                        )
-                        isZooming = false
-                    },
-                    onLeftTap = {
-                        intentDispatcher(ReaderIntent.GoToPreviousPage)
-                    },
-                    onRightTap = {
-                        intentDispatcher(ReaderIntent.GoToNextPage)
-                    },
-                    onMiddleTap = {
-                        areControlsVisible = !areControlsVisible
-                        if (areControlsVisible) {
-                            lastInteractionTime = nowMillis()
-                        }
-                    },
-                ),
-        )
+                            isZooming = false
+                        },
+                        onLeftTap = {
+                            intentDispatcher(ReaderIntent.GoToPreviousPage)
+                        },
+                        onRightTap = {
+                            intentDispatcher(ReaderIntent.GoToNextPage)
+                        },
+                        onMiddleTap = {
+                            areControlsVisible = !areControlsVisible
+                            if (areControlsVisible) {
+                                lastInteractionTime = nowMillis()
+                            }
+                        },
+                    ),
+            )
 
-        // Loading overlay for ReadAloud books while audio player initializes
-        if (isReadAloud && !isAudioPlayerReady) {
-            loader()
-        }
+            // Loading overlay for ReadAloud books while audio player initializes
+            if (isReadAloud && !isAudioPlayerReady) {
+                loader()
+            }
 
-        // Visual Overlay (Shows only while pinching)
-        if (isZooming) {
-            Box(
-                modifier = Modifier.align(Alignment.Center),
-                contentAlignment = Alignment.Center,
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.padding(16.dp),
+            // Visual Overlay (Shows only while pinching)
+            if (isZooming) {
+                Box(
+                    modifier = Modifier.align(Alignment.Center),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = "${(tempScale * 100).toInt()}%",
-                        style = MaterialTheme.typography.headlineLarge,
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                        shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.padding(16.dp),
+                    ) {
+                        Text(
+                            text = "${(tempScale * 100).toInt()}%",
+                            style = MaterialTheme.typography.headlineLarge,
+                            modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                }
+            }
+
+            // ReadAloud audio controls
+            if (isReadAloud && isAudioPlayerReady) {
+                this@Column.AnimatedVisibility(
+                    visible = areControlsVisible,
+                    enter = fadeIn() + slideInVertically { it },
+                    exit = fadeOut() + slideOutVertically { it },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    ReadAloudControls(
+                        isPlaying = isPlaying,
+                        currentPositionMs = currentAudioPositionMs,
+                        totalDurationMs = totalDurationMs,
+                        playbackSpeed = playbackSpeed,
+                        intentDispatcher = intentDispatcher,
+                        onInteraction = onControlsInteraction,
+                        onSwipeDown = { areControlsVisible = false },
                     )
                 }
             }
-        }
 
-        if (isReadAloud && isAudioPlayerReady) {
-            AnimatedVisibility(
+            // Top toolbar with settings and TOC icons
+            this@Column.AnimatedVisibility(
                 visible = areControlsVisible,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut(),
-                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = fadeIn() + slideInVertically { -it },
+                exit = fadeOut() + slideOutVertically { -it },
+                modifier = Modifier.align(Alignment.TopEnd),
             ) {
-                ReadAloudControls(
-                    isPlaying = isPlaying,
-                    currentPositionMs = currentAudioPositionMs,
-                    totalDurationMs = totalDurationMs,
-                    playbackSpeed = playbackSpeed,
-                    intentDispatcher = intentDispatcher,
+                ReaderToolbar(
+                    onCloseClick = { intentDispatcher(ReaderIntent.Close) },
+                    onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
+                    onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
                     onInteraction = onControlsInteraction,
-                    onSwipeDown = { areControlsVisible = false },
                 )
             }
-        }
 
-        // Top toolbar with settings and TOC icons
-        AnimatedVisibility(
-            visible = areControlsVisible,
-            enter = fadeIn() + slideInVertically { -it },
-            exit = fadeOut() + slideOutVertically { -it },
-            modifier = Modifier.align(Alignment.TopEnd),
-        ) {
-            ReaderToolbar(
-                onCloseClick = { intentDispatcher(ReaderIntent.Close) },
-                onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
-                onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
-                onInteraction = onControlsInteraction,
-            )
-        }
+            // Table of Contents bottom sheet
+            if (isTocVisible) {
+                TableOfContentsSheet(
+                    tableOfContents = tableOfContents,
+                    currentChapterHref = lastKnownPosition?.href,
+                    onChapterClick = { href ->
+                        intentDispatcher(ReaderIntent.GoToChapter(href, lastKnownPosition))
+                    },
+                    onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
+                )
+            }
 
-        // Table of Contents bottom sheet
-        if (isTocVisible) {
-            TableOfContentsSheet(
-                tableOfContents = tableOfContents,
-                currentChapterHref = lastKnownPosition?.href,
-                onChapterClick = { href ->
-                    intentDispatcher(ReaderIntent.GoToChapter(href, lastKnownPosition))
+            ChapterNavigationUndoSnackbar(
+                previousTocPosition = previousTocPosition,
+                onUndo = { position ->
+                    intentDispatcher(ReaderIntent.UndoChapterNavigation(position))
                 },
-                onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
+                onDismiss = {
+                    intentDispatcher(ReaderIntent.DismissChapterNavigationUndo)
+                },
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
 
-        ChapterNavigationUndoSnackbar(
-            previousTocPosition = previousTocPosition,
-            onUndo = { position ->
-                intentDispatcher(ReaderIntent.UndoChapterNavigation(position))
-            },
-            onDismiss = {
-                intentDispatcher(ReaderIntent.DismissChapterNavigationUndo)
-            },
-            modifier = Modifier.align(Alignment.BottomCenter),
+        // Reading progress bar - always visible at the bottom
+        ReadingProgressBar(
+            totalProgression = lastKnownPosition?.totalProgression,
+            currentPosition = lastKnownPosition?.position,
+            chapterTitle = lastKnownPosition?.title,
         )
     }
 }
@@ -409,6 +428,66 @@ private fun ChapterNavigationUndoSnackbar(
             backgroundContent = {},
         ) {
             Snackbar(snackbarData = snackbarData)
+        }
+    }
+}
+
+@Composable
+private fun ReadingProgressBar(
+    totalProgression: Double?,
+    currentPosition: Int?,
+    chapterTitle: String?,
+    modifier: Modifier = Modifier,
+) {
+    val progress = totalProgression?.toFloat() ?: 0f
+    val progressPercent = (progress * 100).toInt()
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        shadowElevation = 4.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                // Show chapter title if available
+                chapterTitle?.let { title ->
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                    )
+                }
+
+                // Show progress percentage and position
+                val progressText = buildString {
+                    append("$progressPercent%")
+                    currentPosition?.let { pos ->
+                        append(" • Page $pos")
+                    }
+                }
+                Text(
+                    text = progressText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
