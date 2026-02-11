@@ -17,7 +17,6 @@ import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
-import com.retro99.reader.ui.model.TocItemUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
@@ -101,7 +100,9 @@ class ReaderViewModel(
             is ReaderIntent.SkipForward -> skipForward(intent.milliseconds)
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
             ReaderIntent.ToggleToc -> toggleToc()
-            is ReaderIntent.GoToTocItem -> goToTocItem(intent.tocItem)
+            is ReaderIntent.GoToChapter -> goToChapter(intent.href, intent.currentPosition)
+            is ReaderIntent.UndoChapterNavigation -> undoChapterNavigation(intent.position)
+            ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
         }
     }
 
@@ -287,9 +288,23 @@ class ReaderViewModel(
         updateState { it.copy(isTocVisible = !it.isTocVisible) }
     }
 
-    private fun goToTocItem(tocItem: TocItemUiModel) {
-        bookController.goToChapter(tocItem.href)
-        updateState { it.copy(isTocVisible = false) }
+    private fun goToChapter(href: String, currentPosition: PositionUiModel?) {
+        bookController.goToChapter(href)
+        updateState {
+            it.copy(
+                isTocVisible = false,
+                previousTocPosition = currentPosition,
+            )
+        }
+    }
+
+    private fun undoChapterNavigation(position: PositionUiModel) {
+        bookController.goToPosition(position)
+        updateState { it.copy(previousTocPosition = null) }
+    }
+
+    private fun dismissChapterNavigationUndo() {
+        updateState { it.copy(previousTocPosition = null) }
     }
 
     private fun close() {

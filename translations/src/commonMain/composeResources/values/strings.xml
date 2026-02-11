@@ -40,6 +40,10 @@
     <string name="books_media_audio">Audio</string>
     <string name="books_media_readaloud">ReadALoud</string>
 
+    <!-- Reader TOC Navigation -->
+    <string name="reader_toc_jumped_to_chapter">Jumped to chapter</string>
+    <string name="reader_toc_undo">Undo</string>
+
     <!-- Reader Position Conflict Dialog -->
     <string name="reader_conflict_title">Reading Position Conflict</string>
     <string name="reader_conflict_message">Your reading position differs between this device and the server. Which position would you like to use?</string>

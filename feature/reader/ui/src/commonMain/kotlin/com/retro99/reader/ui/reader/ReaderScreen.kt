@@ -17,8 +17,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +44,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
+import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
 import com.retro99.reader.ui.publication.EpubPublication
@@ -44,6 +53,8 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.reader_toc_jumped_to_chapter
+import resources.translations.reader_toc_undo
 import resources.translations.settings_icon_content_description
 
 /** Duration in milliseconds before auto-hiding the media controls */
@@ -99,6 +110,8 @@ private fun ReaderScreenContent(
                 isAudioPlayerReady = viewState.isAudioPlayerReady,
                 tableOfContents = viewState.tableOfContents,
                 isTocVisible = viewState.isTocVisible,
+                previousTocPosition = viewState.previousTocPosition,
+                lastKnownPosition = viewState.lastKnownPosition,
                 intentDispatcher = intentDispatcher,
                 loader = movableLoader,
             )
@@ -129,6 +142,8 @@ private fun ReaderContent(
     playbackSpeed: Float,
     tableOfContents: List<TocItemUiModel>,
     isTocVisible: Boolean,
+    previousTocPosition: PositionUiModel?,
+    lastKnownPosition: PositionUiModel?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
@@ -258,12 +273,23 @@ private fun ReaderContent(
         if (isTocVisible) {
             TableOfContentsSheet(
                 tableOfContents = tableOfContents,
-                onTocItemClick = { tocItem ->
-                    intentDispatcher(ReaderIntent.GoToTocItem(tocItem))
+                onChapterClick = { href ->
+                    intentDispatcher(ReaderIntent.GoToChapter(href, lastKnownPosition))
                 },
                 onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
             )
         }
+
+        ChapterNavigationUndoSnackbar(
+            previousTocPosition = previousTocPosition,
+            onUndo = { position ->
+                intentDispatcher(ReaderIntent.UndoChapterNavigation(position))
+            },
+            onDismiss = {
+                intentDispatcher(ReaderIntent.DismissChapterNavigationUndo)
+            },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
@@ -314,3 +340,49 @@ private fun ReaderToolbar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChapterNavigationUndoSnackbar(
+    previousTocPosition: PositionUiModel?,
+    onUndo: (PositionUiModel) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val jumpedToChapterMessage = stringResource(StringRes.reader_toc_jumped_to_chapter)
+    val undoLabel = stringResource(StringRes.reader_toc_undo)
+
+    LaunchedEffect(previousTocPosition) {
+        if (previousTocPosition != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = jumpedToChapterMessage,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short,
+            )
+            when (result) {
+                SnackbarResult.ActionPerformed -> onUndo(previousTocPosition)
+                SnackbarResult.Dismissed -> onDismiss()
+            }
+        } else {
+            snackbarHostState.currentSnackbarData?.dismiss()
+        }
+    }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier,
+    ) { snackbarData ->
+        val dismissState = rememberSwipeToDismissBoxState()
+        LaunchedEffect(dismissState.currentValue) {
+            if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) {
+                snackbarData.dismiss()
+            }
+        }
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {},
+        ) {
+            Snackbar(snackbarData = snackbarData)
+        }
+    }
+}
