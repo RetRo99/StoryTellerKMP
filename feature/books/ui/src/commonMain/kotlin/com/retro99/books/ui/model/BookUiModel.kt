@@ -18,6 +18,8 @@ data class BookUiModel(
     val hasAudiobook: Boolean,
     val hasReadaloud: Boolean,
     val ebookFilepath: String?,
+    val audiobookFilepath: String?,
+    val readaloudFilepath: String?,
 )
 
 @Serializable

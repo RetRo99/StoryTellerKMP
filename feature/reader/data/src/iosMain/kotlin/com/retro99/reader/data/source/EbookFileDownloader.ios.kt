@@ -53,6 +53,23 @@ actual class EbookFileDownloader(
         )
     }
 
+    actual suspend fun downloadEbookWithProgress(
+        ebookFilePath: String,
+        bookUuid: String,
+        bookType: BookType,
+        onProgress: (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+    ): AppResult<String> = withContext(Dispatchers.IO) {
+        val localPath = "$ebooksDir/${getFileName(bookUuid, bookType)}"
+
+        // Use streaming download with progress reporting
+        networkClient.downloadFileToPathWithProgress(
+            path = "/api/v2/books/$bookUuid/files",
+            destinationPath = localPath,
+            onProgress = onProgress,
+            queryBuilder = { "format" to bookType.value },
+        )
+    }
+
     @OptIn(ExperimentalForeignApi::class)
     actual fun getCachedEbookPath(bookUuid: String, bookType: BookType): String? {
         val path = "$ebooksDir/${getFileName(bookUuid, bookType)}"
