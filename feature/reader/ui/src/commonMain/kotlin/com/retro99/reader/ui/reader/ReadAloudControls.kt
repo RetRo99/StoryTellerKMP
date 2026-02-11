@@ -99,7 +99,7 @@ internal fun ReadAloudControls(
                     }
                 },
             ),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
     ) {
         Column(
