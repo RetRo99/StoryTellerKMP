@@ -109,6 +109,15 @@ interface AudioController : AutoCloseable {
     fun skipBackward()
 
     /**
+     * Starts audio playback from a specific text fragment (sentence).
+     * Used when user double-taps on a sentence to start playback from that point.
+     *
+     * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
+     * @param chapterHref Optional chapter href. If null, uses the current chapter.
+     */
+    fun playFromFragment(fragmentId: String, chapterHref: String? = null)
+
+    /**
      * Dismisses the permission denied dialog.
      */
     fun dismissPermissionDeniedDialog()

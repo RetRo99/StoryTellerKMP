@@ -38,6 +38,12 @@ class IosBookController(
     )
     override val currentLocator: Flow<LocatorState> = _currentLocator
 
+    /**
+     * Flow for emitting double-tap events on sentence elements.
+     */
+    private val _sentenceDoubleTapEvents = MutableSharedFlow<SentenceDoubleTapEvent>()
+    override val sentenceDoubleTapEvents: Flow<SentenceDoubleTapEvent> = _sentenceDoubleTapEvents
+
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingPageTurnJob: Job? = null
 
@@ -48,6 +54,7 @@ class IosBookController(
 
     init {
         setupCallbacks()
+        injectDoubleTapDetectionScript()
     }
 
     private fun setupCallbacks() {
@@ -63,6 +70,31 @@ class IosBookController(
                     fragments = null,
                 ),
             )
+        }
+
+        // Set up callback for double-tap events from JavaScript
+        bridge.setOnSentenceDoubleTapCallback { fragmentId ->
+            val currentHref = _currentLocator.replayCache.firstOrNull()?.href
+            controllerScope.launch {
+                _sentenceDoubleTapEvents.emit(
+                    SentenceDoubleTapEvent(
+                        fragmentId = fragmentId,
+                        chapterHref = currentHref,
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Injects the double-tap detection JavaScript into the navigator's WebView.
+     */
+    private fun injectDoubleTapDetectionScript() {
+        controllerScope.launch {
+            // Wait a bit for the WebView to be ready
+            delay(500)
+            val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
+            bridge.evaluateJavaScript(script) { _ -> }
         }
     }
 
@@ -191,6 +223,7 @@ class IosBookController(
         pendingPageTurnJob?.cancel()
         controllerScope.cancel()
         bridge.setOnPositionChangedCallback(null)
+        bridge.setOnSentenceDoubleTapCallback(null)
     }
 
     private companion object {

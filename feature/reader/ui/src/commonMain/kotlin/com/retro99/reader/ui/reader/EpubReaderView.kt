@@ -53,6 +53,31 @@ internal expect fun EpubReaderViewInternal(
 )
 
 /**
+ * Common composable that observes double-tap events on sentence elements.
+ * When a double-tap is detected, dispatches a PlayFromFragment intent to start
+ * audio playback from that sentence.
+ *
+ * @param bookController The book controller to observe for double-tap events
+ * @param intentDispatcher Dispatcher for sending intents to the ViewModel
+ */
+@Composable
+internal fun ObserveSentenceDoubleTapEvents(
+    bookController: BookController?,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
+) {
+    LaunchedEffect(bookController) {
+        bookController?.sentenceDoubleTapEvents?.collect { event ->
+            intentDispatcher(
+                ReaderIntent.PlayFromFragment(
+                    fragmentId = event.fragmentId,
+                    chapterHref = event.chapterHref,
+                )
+            )
+        }
+    }
+}
+
+/**
  * Common composable that observes audio playback state changes from the navigator.
  * This is used for ReadAloud books to track audio position and playing state.
  *

@@ -156,6 +156,10 @@ class ReaderViewModel(
             is ReaderIntent.UndoChapterNavigation -> undoChapterNavigation(intent.position)
             ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
             is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.color)
+            is ReaderIntent.PlayFromFragment -> playFromFragment(
+                intent.fragmentId,
+                intent.chapterHref
+            )
         }
     }
 
@@ -448,6 +452,16 @@ class ReaderViewModel(
         viewModelScope.launch {
             saveReaderSettingsUseCase(updatedSettings.toDomainModel())
         }
+    }
+
+    /**
+     * Starts audio playback from a specific text fragment (sentence).
+     * Used when user double-taps on a sentence to start playback from that point.
+     */
+    private fun playFromFragment(fragmentId: String, chapterHref: String?) {
+        if (!viewState.value.isReadAloud) return
+        audioController.playFromFragment(fragmentId, chapterHref)
+        updateState { it.copy(hasStartedPlayback = true) }
     }
 
     /**

@@ -123,6 +123,17 @@ class AndroidAudioController(
         player.seekBackward()
     }
 
+    override fun playFromFragment(fragmentId: String, chapterHref: String?) {
+        logger.i { "🎵 playFromFragment() called - fragmentId=$fragmentId, chapterHref=$chapterHref" }
+        val href = chapterHref?.let { Url(it) } ?: currentBookLocation?.href?.let { Url(it) }
+        player.play(
+            chapterHref = href,
+            initialFragmentId = fragmentId,
+            initialProgression = null,
+            initialPositionMs = null,
+        )
+    }
+
     override fun dismissPermissionDeniedDialog() {
         player.dismissPermissionDeniedDialog()
     }
