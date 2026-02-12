@@ -19,7 +19,7 @@ fun initKoin(
     additionalModules: List<Module> = emptyList(),
     platformConfiguration: KoinApplication.() -> Unit = {},
 ): KoinApplication {
-    return startKoin<StoryTellerKoinApp> {
+    return startKoin<ParrotKoinApp> {
         platformConfiguration()
         modules(additionalModules)
         analytics()
