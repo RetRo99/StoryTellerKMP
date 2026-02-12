@@ -143,6 +143,19 @@ class LocatorTracker(
     }
 
     /**
+     * Updates the current position to match a given text fragment ID.
+     *
+     * This is used when the user navigates while audio is not playing, so the seek bar
+     * reflects where playback would start. The position is emitted through [currentPosition].
+     *
+     * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
+     */
+    fun updatePositionForFragment(fragmentId: String) {
+        val positionMs = findPositionForFragment(fragmentId) ?: return
+        _currentPosition.value = positionMs
+    }
+
+    /**
      * Finds the audio position in milliseconds for a given text progression.
      * Uses the progression to estimate which clip corresponds to that position in the text.
      *

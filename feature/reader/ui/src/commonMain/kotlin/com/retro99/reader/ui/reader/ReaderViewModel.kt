@@ -201,12 +201,8 @@ class ReaderViewModel(
                 )
                 updatePosition(positionUiModel)
 
-                // Reset playback state when user manually navigates while audio is not playing.
-                // This ensures the next play starts from the current text position, not the
-                // last saved audio position. When audio IS playing, the audio controller drives
-                // navigation, so we don't reset (audio position remains authoritative).
-                // We also clear initialAudioPositionMs so playAudio(null) is called, which
-                // tells the audio controller to start from the current book location.
+                // When audio is not playing and user navigates, reset playback state
+                // so next play starts from the current visible text position
                 if (!currentState.isPlaying && currentState.hasStartedPlayback) {
                     updateState {
                         it.copy(

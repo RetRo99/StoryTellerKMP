@@ -47,6 +47,12 @@ data class SentenceDoubleTapEvent(
 interface BookController : AutoCloseable {
 
     /**
+     * Whether this book has media overlays (ReadAloud capability).
+     * Used to determine if audio-related features should be enabled.
+     */
+    val hasMediaOverlays: Boolean
+
+    /**
      * Flow of current reading position/locator changes.
      * Emits whenever the user navigates to a new position.
      */
