@@ -189,7 +189,8 @@ class ReaderViewModel(
     private fun observeBookLocationChanges() {
         bookController.currentLocator
             .onEach { locator ->
-                val basePosition = viewState.value.lastKnownPosition ?: return@onEach
+                val currentState = viewState.value
+                val basePosition = currentState.lastKnownPosition ?: return@onEach
                 val positionUiModel = basePosition.copy(
                     href = locator.href,
                     type = locator.type,
@@ -200,9 +201,24 @@ class ReaderViewModel(
                 )
                 updatePosition(positionUiModel)
 
+                // Reset playback state when user manually navigates while audio is not playing.
+                // This ensures the next play starts from the current text position, not the
+                // last saved audio position. When audio IS playing, the audio controller drives
+                // navigation, so we don't reset (audio position remains authoritative).
+                // We also clear initialAudioPositionMs so playAudio(null) is called, which
+                // tells the audio controller to start from the current book location.
+                if (!currentState.isPlaying && currentState.hasStartedPlayback) {
+                    updateState {
+                        it.copy(
+                            hasStartedPlayback = false,
+                            initialAudioPositionMs = null,
+                        )
+                    }
+                }
+
                 // Fetch chapter page info for the current viewport
                 // Only needed when using RELATIVE display mode (viewport-based page numbers)
-                val currentSettings = viewState.value.currentSettings
+                val currentSettings = currentState.currentSettings
                 if (currentSettings?.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
                     val chapterPageInfo = bookController.getChapterPageInfo()
                     updateState { it.copy(chapterPageInfo = chapterPageInfo) }
@@ -420,11 +436,43 @@ class ReaderViewModel(
             audioController.pauseAudio()
         } else {
             if (!currentState.hasStartedPlayback) {
-                audioController.playAudio(currentState.initialAudioPositionMs)
-                updateState { it.copy(hasStartedPlayback = true) }
+                startPlaybackFromCurrentPosition(currentState.initialAudioPositionMs)
             } else {
                 audioController.resumeAudio()
             }
+        }
+    }
+
+    /**
+     * Starts audio playback from the current position.
+     *
+     * If an explicit audio position is provided, uses that position.
+     * Otherwise, queries the WebView to find the first visible sentence and starts
+     * playback from that sentence for precise audio-text synchronization.
+     *
+     * This is called when:
+     * 1. First play with saved position: uses initialAudioPositionMs
+     * 2. Play after manual navigation: queries visible sentence for precise positioning
+     *
+     * @param initialAudioPositionMs Optional saved audio position in milliseconds
+     */
+    private fun startPlaybackFromCurrentPosition(initialAudioPositionMs: Long?) {
+        viewModelScope.launch {
+            if (initialAudioPositionMs != null) {
+                // Use the saved audio position
+                audioController.playAudio(initialAudioPositionMs)
+            } else {
+                // Query the visible sentence for precise positioning
+                val visibleSentenceId = bookController.getVisibleSentenceId()
+                if (visibleSentenceId != null) {
+                    // Start from the visible sentence for precise sync
+                    audioController.playFromFragment(visibleSentenceId, chapterHref = null)
+                } else {
+                    // Fallback to progression-based positioning
+                    audioController.playAudio(null)
+                }
+            }
+            updateState { it.copy(hasStartedPlayback = true) }
         }
     }
 
