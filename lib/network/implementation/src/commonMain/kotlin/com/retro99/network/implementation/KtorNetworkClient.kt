@@ -2,6 +2,7 @@ package com.retro99.network.implementation
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import io.ktor.client.HttpClient
@@ -44,6 +45,7 @@ import retro99.network.api.QueryParamsScope
 class KtorNetworkClient(
     @Provided private val httpClient: HttpClient,
     @Provided private val baseUrlProvider: BaseUrlProvider,
+    @Provided private val analytics: Analytics,
 ) : NetworkClient {
 
     override suspend fun <T> getWithTypeInfo(
@@ -249,6 +251,7 @@ class KtorNetworkClient(
         return try {
             Ok(response.body(typeInfo))
         } catch (e: Exception) {
+            analytics.logException(e, "Failed to parse response for type: ${typeInfo.type}")
             Err(
                 AppError.ApiError(
                     code = 0,
@@ -260,7 +263,8 @@ class KtorNetworkClient(
 
     private suspend fun handleHttpError(response: HttpResponse): AppResult<Nothing> {
         val errorBody = response.bodyAsText()
-        return when (val errorCode = response.status.value) {
+        val errorCode = response.status.value
+        val error = when (errorCode) {
             in 400..499 -> handleClientError(errorCode, errorBody)
             in 500..599 -> Err(
                 AppError.ApiError(
@@ -276,6 +280,12 @@ class KtorNetworkClient(
                 )
             )
         }
+        // Log HTTP errors for debugging
+        analytics.logException(
+            Exception("HTTP $errorCode: $errorBody"),
+            "HTTP error on request"
+        )
+        return error
     }
 
     private fun handleClientError(errorCode: Int, errorBody: String): AppResult<Nothing> {
@@ -304,6 +314,7 @@ class KtorNetworkClient(
     }
 
     private fun handleException(e: Exception): AppResult<Nothing> {
+        analytics.logException(e, "Network request exception")
         return when (e) {
             is IOException,
             is ConnectTimeoutException,
