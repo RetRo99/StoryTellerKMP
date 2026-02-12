@@ -3,6 +3,7 @@ package com.retro99.reader.data.model
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
@@ -50,6 +51,9 @@ data class ReaderSettingsLocalModel(
     // Progress indicator mode: NONE, CHAPTER, or BOOK
     @SerialName("progress_indicator_mode")
     val progressIndicatorMode: String = "CHAPTER",
+    // Progress bar position: TOP or BOTTOM
+    @SerialName("progress_bar_position")
+    val progressBarPosition: String = "BOTTOM",
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -95,6 +99,11 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             ProgressIndicatorMode.CHAPTER
         },
+        progressBarPosition = try {
+            ProgressBarPosition.valueOf(progressBarPosition)
+        } catch (e: IllegalArgumentException) {
+            ProgressBarPosition.BOTTOM
+        },
     )
 }
 
@@ -117,5 +126,6 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         chapterProgressDisplayMode = chapterProgressDisplayMode.name,
         showTotalProgress = showTotalProgress,
         progressIndicatorMode = progressIndicatorMode.name,
+        progressBarPosition = progressBarPosition.name,
     )
 }

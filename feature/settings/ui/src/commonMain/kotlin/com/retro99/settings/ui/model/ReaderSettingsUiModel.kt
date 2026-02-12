@@ -3,6 +3,7 @@ package com.retro99.settings.ui.model
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 
 data class ReaderSettingsUiModel(
@@ -28,6 +29,8 @@ data class ReaderSettingsUiModel(
     val showTotalProgress: Boolean = true,
     // Progress indicator mode: NONE, CHAPTER, or BOOK
     val progressIndicatorMode: ProgressIndicatorMode = ProgressIndicatorMode.CHAPTER,
+    // Progress bar position: TOP or BOTTOM
+    val progressBarPosition: ProgressBarPosition = ProgressBarPosition.BOTTOM,
 )
 
 enum class ReaderThemeUiModel {

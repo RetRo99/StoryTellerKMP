@@ -48,6 +48,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
@@ -83,6 +84,9 @@ import resources.translations.settings_progress_bar
 import resources.translations.settings_progress_bar_always
 import resources.translations.settings_progress_bar_never
 import resources.translations.settings_progress_bar_on_tap
+import resources.translations.settings_progress_bar_position
+import resources.translations.settings_progress_bar_position_bottom
+import resources.translations.settings_progress_bar_position_top
 import resources.translations.settings_progress_indicator
 import resources.translations.settings_progress_indicator_book
 import resources.translations.settings_progress_indicator_chapter
@@ -271,6 +275,15 @@ private fun SettingsScreenContent(
             ProgressBarModeSelector(
                 selectedMode = viewState.showProgressBar,
                 onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProgressBarPositionSelector(
+                selectedPosition = viewState.progressBarPosition,
+                onPositionSelected = {
+                    intentDispatcher(SettingsIntent.OnProgressBarPositionChanged(it))
+                },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -789,6 +802,46 @@ private fun Boolean?.toProgressBarModeDisplayString(): String = when (this) {
     true -> stringResource(StringRes.settings_progress_bar_always)
     null -> stringResource(StringRes.settings_progress_bar_on_tap)
     false -> stringResource(StringRes.settings_progress_bar_never)
+}
+
+/**
+ * Selector for progress bar position.
+ * Options:
+ * - Top: Progress bar at the top, overlaid with toolbar when visible
+ * - Bottom: Progress bar at the bottom (default)
+ */
+@Composable
+private fun ProgressBarPositionSelector(
+    selectedPosition: ProgressBarPosition,
+    onPositionSelected: (ProgressBarPosition) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_progress_bar_position),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            ProgressBarPosition.entries.forEachIndexed { index, position ->
+                SegmentedButton(
+                    selected = position == selectedPosition,
+                    onClick = { onPositionSelected(position) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = ProgressBarPosition.entries.size,
+                    ),
+                ) {
+                    Text(text = position.toDisplayString())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressBarPosition.toDisplayString(): String = when (this) {
+    ProgressBarPosition.TOP -> stringResource(StringRes.settings_progress_bar_position_top)
+    ProgressBarPosition.BOTTOM -> stringResource(StringRes.settings_progress_bar_position_bottom)
 }
 
 /**
