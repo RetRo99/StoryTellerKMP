@@ -13,7 +13,7 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
 import com.retro99.base.ui.IntentDispatcher
-import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
+import com.retro99.reader.ui.navigator.AndroidBookController
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.DoubleTapJsInterface
 import com.retro99.reader.ui.navigator.toAndroidLocator
@@ -43,7 +43,7 @@ internal actual fun EpubReaderViewInternal(
 
     val readiumPublication = publication.publication
 
-    val navigatorController = bookController as? AndroidEpubNavigatorController
+    val navigatorController = bookController as? AndroidBookController
 
     // Observe permission denied dialog state
 //    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
