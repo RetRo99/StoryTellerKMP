@@ -307,7 +307,6 @@ class MediaOverlayPlayer(
         val chapterDurationMs = chapterClips.maxOfOrNull { (it.endTime * SECONDS_TO_MS).toLong() }
         if (chapterDurationMs != null && chapterDurationMs > 0) {
             playbackStateTracker.setTotalDuration(chapterDurationMs)
-            locatorTracker.resetCurrentPosition()
         }
 
         // Prefetch next chapter in background

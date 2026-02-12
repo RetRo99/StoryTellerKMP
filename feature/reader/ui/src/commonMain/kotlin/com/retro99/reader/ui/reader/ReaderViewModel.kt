@@ -224,6 +224,7 @@ class ReaderViewModel(
     private fun observeAudioPlaybackState() {
         audioController.audioPlaybackState
             .onEach { state ->
+                println("čič123 observeAudioPlaybackState: $state")
                 updateAudioPosition(
                     positionMs = state.currentPositionMs,
                     totalDurationMs = state.totalDurationMs,
