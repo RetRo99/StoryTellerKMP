@@ -45,18 +45,6 @@ internal actual fun EpubReaderViewInternal(
 
     val navigatorController = bookController as? AndroidEpubNavigatorController
 
-    // Observe audio playback state changes for ReadAloud books
-    ObserveAudioPlaybackState(
-        navigator = navigatorController,
-        intentDispatcher = intentDispatcher,
-    )
-
-    // Observe double-tap events on sentences for ReadAloud playback
-    ObserveSentenceDoubleTapEvents(
-        bookController = bookController,
-        intentDispatcher = intentDispatcher,
-    )
-
     // Observe permission denied dialog state
 //    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
 //        ?.collectAsState(initial = false)

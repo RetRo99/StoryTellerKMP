@@ -17,6 +17,7 @@ import org.koin.core.annotation.Scoped
  * Keeps the ViewModel focused on UI state by centralizing cross-controller wiring:
  * - Book locator changes -> audio chapter preparation
  * - Audio locator changes -> book highlight updates
+ * - Sentence double-tap events -> audio playback from fragment
  */
 @Scope(ReaderScope::class)
 @Scoped
@@ -27,6 +28,7 @@ class ReaderSyncCoordinator(
 
     private var bookToAudioJob: Job? = null
     private var audioToBookJob: Job? = null
+    private var doubleTapToAudioJob: Job? = null
 
     fun start(scope: CoroutineScope) {
         if (bookToAudioJob != null || audioToBookJob != null) return
@@ -51,6 +53,13 @@ class ReaderSyncCoordinator(
                 )
             }
             .launchIn(scope)
+
+        // Handle double-tap events on sentences to start audio playback
+        doubleTapToAudioJob = bookController.sentenceDoubleTapEvents
+            .onEach { event ->
+                audioController.playFromFragment(event.fragmentId, event.chapterHref)
+            }
+            .launchIn(scope)
     }
 
     /**
@@ -67,7 +76,9 @@ class ReaderSyncCoordinator(
     override fun close() {
         bookToAudioJob?.cancel()
         audioToBookJob?.cancel()
+        doubleTapToAudioJob?.cancel()
         bookToAudioJob = null
         audioToBookJob = null
+        doubleTapToAudioJob = null
     }
 }
