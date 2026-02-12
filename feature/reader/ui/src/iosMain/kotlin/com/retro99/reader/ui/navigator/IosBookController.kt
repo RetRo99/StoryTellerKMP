@@ -27,7 +27,7 @@ import kotlin.coroutines.resume
  * Delegates navigation and settings operations to the [EpubReaderBridge].
  */
 @Scope(ReaderScope::class)
-@Scoped
+@Scoped(binds = [BookController::class])
 class IosBookController(
     private val bridge: EpubReaderBridge,
 ) : BookController {
