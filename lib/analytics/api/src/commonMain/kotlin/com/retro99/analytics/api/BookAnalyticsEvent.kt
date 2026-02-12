@@ -85,6 +85,22 @@ sealed interface BookAnalyticsEvent : AnalyticsEvent {
             "book_type" to bookType,
         )
     }
+
+    /**
+     * Tracks when user adds or removes a book from favorites.
+     */
+    data class FavoriteToggled(
+        val bookUuid: String,
+        val isFavorite: Boolean,
+        val source: String,
+    ) : BookAnalyticsEvent {
+        override val name: String = "favorite_toggled"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "is_favorite" to isFavorite,
+            "source" to source,
+        )
+    }
 }
 
 /**

@@ -111,6 +111,15 @@ class BookDetailViewModel(
     }
 
     private fun toggleFavorite() {
+        val currentIsFavorite = viewState.value.isFavorite
+        // Log the new state (opposite of current)
+        analytics.logEvent(
+            BookAnalyticsEvent.FavoriteToggled(
+                bookUuid = bookUuid,
+                isFavorite = !currentIsFavorite,
+                source = "detail",
+            )
+        )
         viewModelScope.launch {
             toggleFavoriteUseCase(bookUuid)
         }

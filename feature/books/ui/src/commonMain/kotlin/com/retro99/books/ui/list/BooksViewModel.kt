@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
@@ -42,6 +43,15 @@ class BooksViewModel(
     }
 
     private fun toggleFavorite(bookUuid: String) {
+        val currentIsFavorite = viewState.value.favoriteBookUuids.contains(bookUuid)
+        // Log the new state (opposite of current)
+        analytics.logEvent(
+            BookAnalyticsEvent.FavoriteToggled(
+                bookUuid = bookUuid,
+                isFavorite = !currentIsFavorite,
+                source = "list",
+            )
+        )
         viewModelScope.launch {
             toggleFavoriteUseCase(bookUuid)
         }
