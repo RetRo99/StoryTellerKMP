@@ -3,11 +3,11 @@ package com.retro99.home.ui.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CollectionsBookmark
-import androidx.compose.material.icons.filled.Person
+// import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.StringResource
-import resources.translations.home_tab_authors
+// import resources.translations.home_tab_authors
 import resources.translations.home_tab_books
 import resources.translations.home_tab_series
 
@@ -36,11 +36,11 @@ enum class HomeTab(
         labelRes = StringRes.home_tab_series,
         startDestination = HomeDestination.SeriesList,
     ),
-    Authors(
-        icon = Icons.Filled.Person,
-        labelRes = StringRes.home_tab_authors,
-        startDestination = HomeDestination.AuthorsList,
-    ),
+//    Authors(
+//        icon = Icons.Filled.Person,
+//        labelRes = StringRes.home_tab_authors,
+//        startDestination = HomeDestination.AuthorsList,
+//    ),
     ;
 
     companion object {
