@@ -33,6 +33,9 @@ class IosBookController(
     private val bridge: EpubReaderBridge,
 ) : BookController {
 
+    override val hasMediaOverlays: Boolean
+        get() = bridge.hasMediaOverlays()
+
     private val _currentLocator = MutableSharedFlow<LocatorState>(
         replay = 1,
         extraBufferCapacity = 1,

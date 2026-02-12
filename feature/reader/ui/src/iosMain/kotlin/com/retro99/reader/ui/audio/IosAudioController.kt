@@ -142,6 +142,13 @@ class IosAudioController(
         }
     }
 
+    override fun updatePositionForFragment(fragmentId: String) {
+        // Only update position when not playing - when playing, the position
+        // is driven by the audio playback itself
+        if (_audioPlaybackState.value.isPlaying) return
+        bridge.updatePositionForFragment(fragmentId)
+    }
+
     override fun dismissPermissionDeniedDialog() {
         _showPermissionDeniedDialog.value = false
     }

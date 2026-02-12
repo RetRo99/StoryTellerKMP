@@ -133,7 +133,7 @@ class MediaOverlayPlayer {
     /// Finds the audio position in milliseconds for a given text fragment ID.
     /// - Parameter fragmentId: The fragment ID to find (e.g., "chapter44.xhtml-sentence50")
     /// - Returns: The start time in milliseconds, or nil if not found
-    private func findPositionForFragment(fragmentId: String?) -> Int64? {
+    func findPositionForFragment(fragmentId: String?) -> Int64? {
         guard let fragmentId = fragmentId else {
             return nil
         }

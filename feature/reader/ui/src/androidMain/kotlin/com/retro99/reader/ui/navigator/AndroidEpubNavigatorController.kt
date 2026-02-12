@@ -98,7 +98,8 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
      * Whether this book has media overlays (ReadAloud capability).
      * Used to determine if double-tap detection should be enabled.
      */
-    private var hasMediaOverlays: Boolean = false
+    override var hasMediaOverlays: Boolean = false
+        private set
 
     private val navigator: EpubNavigatorFragment
         get() = _navigator.value ?: error("Navigator not initialized")

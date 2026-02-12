@@ -134,6 +134,13 @@ class AndroidAudioController(
         )
     }
 
+    override fun updatePositionForFragment(fragmentId: String) {
+        // Only update position when not playing - when playing, the position
+        // is driven by the audio playback itself
+        if (playbackStateTracker.isPlaying.value) return
+        locatorTracker.updatePositionForFragment(fragmentId)
+    }
+
     override fun dismissPermissionDeniedDialog() {
         player.dismissPermissionDeniedDialog()
     }

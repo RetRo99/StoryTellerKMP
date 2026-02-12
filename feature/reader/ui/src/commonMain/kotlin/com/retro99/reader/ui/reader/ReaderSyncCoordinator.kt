@@ -34,6 +34,11 @@ class ReaderSyncCoordinator(
         bookToAudioJob = bookController.currentLocator
             .onEach { locator ->
                 audioController.onBookLocationChanged(locator)
+                // Update seek bar position when user navigates (only for ReadAloud books)
+                // AudioController will check if playing and ignore if so
+                if (bookController.hasMediaOverlays) {
+                    updateSeekBarForVisibleSentence()
+                }
             }
             .launchIn(scope)
 
@@ -46,6 +51,17 @@ class ReaderSyncCoordinator(
                 )
             }
             .launchIn(scope)
+    }
+
+    /**
+     * Updates the seek bar position to reflect the first visible sentence.
+     *
+     * Called when the book location changes. The audio controller will check
+     * if audio is playing and only update the position if not playing.
+     */
+    private suspend fun updateSeekBarForVisibleSentence() {
+        val visibleSentenceId = bookController.getVisibleSentenceId() ?: return
+        audioController.updatePositionForFragment(visibleSentenceId)
     }
 
     override fun close() {

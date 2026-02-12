@@ -455,6 +455,46 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         mediaOverlayPlayer?.skipBackward()
     }
 
+    func playFromFragment(fragmentId: String, chapterHref: String?) {
+        guard let player = mediaOverlayPlayer else {
+            return
+        }
+
+        let relativeHref: RelativeURL?
+        if let href = chapterHref {
+            relativeHref = RelativeURL(string: href)
+        } else if let currentHref = navigatorViewController?.currentLocation?.href.relativeURL {
+            relativeHref = currentHref
+        } else {
+            relativeHref = nil
+        }
+
+        player.play(
+            chapterHref: relativeHref,
+            initialFragmentId: fragmentId,
+            initialProgression: nil,
+            initialPositionMs: nil
+        )
+    }
+
+    func updatePositionForFragment(fragmentId: String) {
+        guard let player = mediaOverlayPlayer else {
+            return
+        }
+
+        if let positionMs = player.findPositionForFragment(fragmentId: fragmentId) {
+            // Emit the position through the playback state callback
+            let state = PlaybackState(
+                isPlaying: false,
+                currentPositionMs: positionMs,
+                durationMs: player.currentChapterDurationMs.map {
+                    KotlinLong(value: $0)
+                }
+            )
+            onPlaybackStateChangedCallback?(state)
+        }
+    }
+
     func setOnPlaybackStateChangedCallback(callback: ((PlaybackState) -> Void)?) {
         self.onPlaybackStateChangedCallback = callback
     }

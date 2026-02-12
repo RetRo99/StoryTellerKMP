@@ -192,6 +192,17 @@ interface EpubReaderBridge {
     fun playFromFragment(fragmentId: String, chapterHref: String? = null)
 
     /**
+     * Updates the audio position to match a given text fragment ID without starting playback.
+     *
+     * This is used when the user navigates while audio is not playing, so the seek bar
+     * reflects where playback would start. The position is emitted through the playback
+     * state callback.
+     *
+     * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
+     */
+    fun updatePositionForFragment(fragmentId: String)
+
+    /**
      * Sets a callback to be invoked when the audio playback state changes.
      * @param callback The callback with isPlaying state and current position in ms
      */
