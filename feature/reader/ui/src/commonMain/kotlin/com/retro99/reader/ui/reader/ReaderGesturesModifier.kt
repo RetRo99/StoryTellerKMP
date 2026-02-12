@@ -8,6 +8,15 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.IntSize
+import com.retro99.base.nowMillis
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
+
+/** Timeout in milliseconds to wait for a second tap before treating as single tap */
+private const val DOUBLE_TAP_TIMEOUT_MS = 300L
 
 /**
  * Modifier that handles common reader gestures:
@@ -17,6 +26,9 @@ import androidx.compose.ui.unit.IntSize
  * - Tap in middle third of screen (e.g., toggle controls)
  *
  * @param containerSize The size of the container for calculating tap regions
+ * @param consumeDoubleTaps If true, double-taps on left/right regions are not passed through
+ *                          (tap callbacks are still fired). If false, double-taps are allowed
+ *                          to pass through to underlying views (e.g., WebView for ReadAloud).
  * @param onZoomChange Callback during zoom gesture with relative scale (1.0 = no change)
  * @param onZoomEnd Callback when zoom gesture ends with final relative scale
  * @param onLeftTap Callback when user taps left third of screen
@@ -25,13 +37,18 @@ import androidx.compose.ui.unit.IntSize
  */
 internal fun Modifier.readerGestures(
     containerSize: IntSize,
+    consumeDoubleTaps: Boolean = true,
     onZoomChange: (scale: Double) -> Unit,
     onZoomEnd: (finalScale: Double) -> Unit,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onMiddleTap: () -> Unit,
-): Modifier = this.pointerInput(containerSize) {
+): Modifier = this.pointerInput(containerSize, consumeDoubleTaps) {
     val touchSlop = viewConfiguration.touchSlop
+    var lastTapTimeMs = 0L
+    var pendingTapJob: Job? = null
+    val scope = CoroutineScope(coroutineContext)
+
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
         val downPosition = down.position
@@ -85,12 +102,40 @@ internal fun Modifier.readerGestures(
             val tapX = down.position.x
             val leftThird = containerSize.width / 3f
             val rightThird = containerSize.width * 2f / 3f
+            val currentTimeMs = nowMillis()
 
-            down.consume()
-            when {
-                tapX < leftThird -> onLeftTap()
-                tapX > rightThird -> onRightTap()
-                else -> onMiddleTap()
+            val tapAction: () -> Unit = when {
+                tapX < leftThird -> onLeftTap
+                tapX > rightThird -> onRightTap
+                else -> onMiddleTap
+            }
+
+            val isMiddleTap = tapX >= leftThird && tapX <= rightThird
+
+            if (consumeDoubleTaps || isMiddleTap) {
+                // Original behavior: fire tap immediately
+                down.consume()
+                tapAction()
+            } else {
+                // For ReadAloud: detect double-tap and don't fire left/right taps
+                val timeSinceLastTap = currentTimeMs - lastTapTimeMs
+                val isDoubleTap = timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS
+
+                if (isDoubleTap) {
+                    // This is a double-tap - cancel pending job and don't fire
+                    pendingTapJob?.cancel()
+                    pendingTapJob = null
+                    lastTapTimeMs = 0L
+                    // Don't consume - let it pass through to WebView
+                } else {
+                    // Might be first tap of double-tap, schedule with delay
+                    lastTapTimeMs = currentTimeMs
+                    pendingTapJob?.cancel()
+                    pendingTapJob = scope.launch {
+                        delay(DOUBLE_TAP_TIMEOUT_MS)
+                        tapAction()
+                    }
+                }
             }
         }
     }
