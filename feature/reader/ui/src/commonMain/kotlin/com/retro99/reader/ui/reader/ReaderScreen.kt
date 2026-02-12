@@ -220,6 +220,7 @@ private fun ReaderContent(
                     .padding(vertical = settings.marginVertical.dp)
                     .readerGestures(
                         containerSize = containerSize,
+                        consumeDoubleTaps = !isReadAloud,
                         onZoomChange = { scale ->
                             isZooming = true
                             tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)

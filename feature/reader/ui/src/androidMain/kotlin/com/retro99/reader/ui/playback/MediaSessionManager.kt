@@ -196,7 +196,7 @@ class MediaSessionManager(
      *
      * @param bookTitle The title of the book
      * @param chapterTitle Optional chapter title
-     * @param coverArtwork Optional cover image as PNG byte array for notification display
+     * @param coverArtwork Optional cover image as PNG byte array. Pass null to keep existing.
      */
     fun updateMetadata(
         bookTitle: String,
@@ -205,7 +205,10 @@ class MediaSessionManager(
     ) {
         this.bookTitle = bookTitle
         this.chapterTitle = chapterTitle
-        this.coverArtwork = coverArtwork
+        // Only update cover artwork if explicitly provided (non-null)
+        if (coverArtwork != null) {
+            this.coverArtwork = coverArtwork
+        }
     }
 
     /**
