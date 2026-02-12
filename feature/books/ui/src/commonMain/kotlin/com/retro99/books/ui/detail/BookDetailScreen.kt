@@ -54,6 +54,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
@@ -529,10 +532,15 @@ private fun DescriptionSection(
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Markdown(
+            content = description,
+            colors = markdownColor(
+                text = MaterialTheme.colorScheme.onSurfaceVariant,
+
+                ),
+            typography = markdownTypography(
+                text = MaterialTheme.typography.bodyMedium,
+            )
         )
     }
 }

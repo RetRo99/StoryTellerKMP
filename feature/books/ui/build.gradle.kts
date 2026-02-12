@@ -34,6 +34,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.navigation3.ui)
             implementation(libs.navigation3.viewmodel)
+            implementation(libs.markdown)
             implementation(projects.base)
             implementation(projects.baseUi)
             implementation(projects.translations)
