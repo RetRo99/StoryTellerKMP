@@ -49,9 +49,28 @@ class LocatorTracker(
     private val initialAudioPosition: InitialAudioPosition,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    /**
+     * Current position in milliseconds.
+     * This is kept in sync with ExoPlayer - any position change also seeks ExoPlayer.
+     */
     private val _currentPosition = MutableStateFlow(initialAudioPosition.positionMs ?: 0L)
 
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
+
+    init {
+        // Seek ExoPlayer to initial position if provided
+        initialAudioPosition.positionMs?.let { player.seekTo(it) }
+    }
+
+    /**
+     * Sets the current position and seeks ExoPlayer to match.
+     * Use this instead of directly setting _currentPosition to keep them in sync.
+     */
+    private fun setPosition(positionMs: Long) {
+        _currentPosition.value = positionMs
+        player.seekTo(positionMs)
+    }
 
     /**
      * Internal state holding both the locator and the current clip for duration calculation.
@@ -150,13 +169,14 @@ class LocatorTracker(
      * Updates the current position to match a given text fragment ID.
      *
      * This is used when the user navigates while audio is not playing, so the seek bar
-     * reflects where playback would start. The position is emitted through [currentPosition].
+     * reflects where playback would start. Also seeks ExoPlayer so playback starts
+     * from the correct position.
      *
      * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
      */
     fun updatePositionForFragment(fragmentId: String) {
         val positionMs = findPositionForFragment(fragmentId) ?: return
-        _currentPosition.value = positionMs
+        setPosition(positionMs)
     }
 
     /**
@@ -251,10 +271,5 @@ class LocatorTracker(
         currentChapterClips = emptyList()
     }
 
-    fun resetCurrentPosition() {
-        _currentPosition.update {
-            0
-        }
-    }
 }
 
