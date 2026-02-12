@@ -262,6 +262,7 @@ class ReaderViewModel(
 
         val publication = publicationService.openPublication(
             filePath = data.localEbookPath,
+            bookUuid = data.bookUuid,
             initialSettings = settings,
             bookType = bookType,
             initialPosition = position,

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -13,6 +14,8 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
+import com.retro99.base.deeplink.DeepLinkUriBuilder
+import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.di.ReaderScope
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -43,6 +46,10 @@ class MediaSessionManager(
     private var bookTitle: String = "Reading Aloud"
     private var chapterTitle: String? = null
     private var coverArtwork: ByteArray? = null
+
+    // Book identification for deep link navigation
+    private var bookUuid: String? = null
+    private var bookType: BookType? = null
 
     /**
      * Tracks the last known playing state.
@@ -112,27 +119,72 @@ class MediaSessionManager(
     }
 
     /**
-     * Creates a PendingIntent that launches the app's main activity when the notification is tapped.
-     * Uses the launcher intent to ensure proper task handling and back stack behavior.
+     * Creates a PendingIntent that launches the app when the notification is tapped.
+     *
+     * If book information is available, creates a deep link URI that navigates
+     * directly to the reader screen. Otherwise, falls back to the launcher intent.
      */
     private fun createSessionActivityIntent(): PendingIntent {
-        val packageManager = context.packageManager
-        val launchIntent = packageManager.getLaunchIntentForPackage(context.packageName)
-            ?: Intent().apply {
-                // Fallback: create intent manually if launch intent is not available
+        val uuid = bookUuid
+        val type = bookType
+
+        val intent = if (uuid != null && type != null) {
+            // Create deep link intent to navigate directly to reader
+            val deepLinkUri = DeepLinkUriBuilder.buildReaderUri(uuid, type.value)
+            Intent(Intent.ACTION_VIEW, deepLinkUri.toUri()).apply {
                 setPackage(context.packageName)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
+        } else {
+            // Fallback to launcher intent if book info not available
+            val packageManager = context.packageManager
+            packageManager.getLaunchIntentForPackage(context.packageName)
+                ?: Intent().apply {
+                    setPackage(context.packageName)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+        }
 
         // Ensure proper flags for bringing existing task to front
-        launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         return PendingIntent.getActivity(
             context,
             0,
-            launchIntent,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+    }
+
+    /**
+     * Sets the book identification for deep link navigation.
+     *
+     * This information is used to create a deep link URI when the notification is tapped,
+     * allowing the app to navigate directly to the reader screen for this book.
+     *
+     * Should be called before [initialize] or the session activity will need to be updated
+     * by calling [updateSessionActivity].
+     *
+     * @param bookUuid The unique identifier of the book
+     * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
+     */
+    fun setBookInfo(bookUuid: String, bookType: BookType) {
+        this.bookUuid = bookUuid
+        this.bookType = bookType
+        // Update the session activity if the session is already initialized
+        updateSessionActivity()
+    }
+
+    /**
+     * Updates the session activity PendingIntent with the current book information.
+     * This should be called after book info changes to ensure notification clicks
+     * navigate to the correct book.
+     */
+    private fun updateSessionActivity() {
+        mediaSession?.let { session ->
+            val newIntent = createSessionActivityIntent()
+            session.setSessionActivity(newIntent)
+        }
     }
 
     /**

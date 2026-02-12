@@ -44,6 +44,7 @@ class AndroidEpubPublicationService(
 
     override suspend fun openPublication(
         filePath: String,
+        bookUuid: String,
         initialSettings: ReaderSettingsUiModel,
         bookType: BookType,
         initialPosition: PositionUiModel?,
@@ -77,7 +78,13 @@ class AndroidEpubPublicationService(
 
                 publication = openedPublication
                 setReady()
-                EpubPublication(openedPublication, initialSettings, bookType, initialPosition)
+                EpubPublication(
+                    openedPublication,
+                    bookUuid,
+                    initialSettings,
+                    bookType,
+                    initialPosition
+                )
             } catch (e: Exception) {
                 setError("Error opening ebook: ${e.message}")
                 null

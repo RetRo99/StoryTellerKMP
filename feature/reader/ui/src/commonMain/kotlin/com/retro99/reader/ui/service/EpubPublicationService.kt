@@ -29,6 +29,7 @@ interface EpubPublicationService {
      * Opens an EPUB publication from the given file path.
      *
      * @param filePath The local file path to the EPUB file
+     * @param bookUuid The unique identifier of the book
      * @param initialSettings The initial reader settings to apply when opening the publication
      * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
      * @param initialPosition The initial position to restore reading position, or null to start from beginning
@@ -36,6 +37,7 @@ interface EpubPublicationService {
      */
     suspend fun openPublication(
         filePath: String,
+        bookUuid: String,
         initialSettings: ReaderSettingsUiModel,
         bookType: BookType = BookType.EBOOK,
         initialPosition: PositionUiModel? = null,
