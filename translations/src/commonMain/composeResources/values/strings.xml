@@ -34,6 +34,11 @@
     <string name="home_logged_in_message">You are now logged in.</string>
     <string name="home_logout_button">Logout</string>
 
+    <!-- Home Bottom Navigation -->
+    <string name="home_tab_books">Books</string>
+    <string name="home_tab_series">Series</string>
+    <string name="home_tab_authors">Authors</string>
+
     <!-- Books List Screen -->
     <string name="books_series_with_position">%1$s #%2$s</string>
     <string name="books_media_ebook">eBook</string>

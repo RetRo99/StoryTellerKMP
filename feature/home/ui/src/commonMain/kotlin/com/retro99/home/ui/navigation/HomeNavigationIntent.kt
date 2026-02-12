@@ -5,5 +5,6 @@ import com.retro99.base.ui.BaseIntent
 sealed interface HomeNavigationIntent : BaseIntent {
     data object OnBackClicked : HomeNavigationIntent
     data class NavigateTo(val destination: HomeDestination) : HomeNavigationIntent
+    data class SwitchTab(val tab: HomeTab) : HomeNavigationIntent
 }
 

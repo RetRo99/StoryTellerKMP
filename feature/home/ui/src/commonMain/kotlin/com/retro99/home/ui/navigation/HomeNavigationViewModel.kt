@@ -30,13 +30,19 @@ class HomeNavigationViewModel(
     private fun handleDeepLinkDestination(destination: DeepLinkDestination) {
         when (destination) {
             is DeepLinkDestination.Reader -> {
-                // Navigate to reader, replacing any existing reader in the stack
+                // Navigate to reader in the Books tab, replacing any existing reader
                 // This ensures we don't stack multiple reader screens
                 updateState { state ->
-                    val newBackStack = state.backStack
+                    val booksTab = HomeTab.Books
+                    val currentBooksStack = state.backStacks[booksTab]
+                        ?: listOf(booksTab.startDestination)
+                    val newBooksStack = currentBooksStack
                         .filterNot { it is HomeDestination.Reader }
                         .plus(HomeDestination.Reader(destination.bookUuid, destination.bookType))
-                    state.copy(backStack = newBackStack)
+                    state.copy(
+                        currentTab = booksTab,
+                        backStacks = state.backStacks + (booksTab to newBooksStack),
+                    )
                 }
             }
         }
@@ -44,17 +50,44 @@ class HomeNavigationViewModel(
 
     override fun onIntent(intent: HomeNavigationIntent) {
         when (intent) {
-            HomeNavigationIntent.OnBackClicked -> {
-                updateState { state ->
-                    state.copy(backStack = state.backStack.dropLast(1))
-                }
-            }
+            HomeNavigationIntent.OnBackClicked -> handleBackClicked()
+            is HomeNavigationIntent.NavigateTo -> handleNavigateTo(intent.destination)
+            is HomeNavigationIntent.SwitchTab -> handleSwitchTab(intent.tab)
+        }
+    }
 
-            is HomeNavigationIntent.NavigateTo -> {
-                updateState { state ->
-                    state.copy(backStack = state.backStack + intent.destination)
-                }
+    private fun handleBackClicked() {
+        updateState { state ->
+            val currentStack = state.currentBackStack
+            if (currentStack.size > 1) {
+                // Pop the current tab's back stack
+                val newStack = currentStack.dropLast(1)
+                state.copy(
+                    backStacks = state.backStacks + (state.currentTab to newStack),
+                )
+            } else if (state.currentTab != HomeTab.DEFAULT) {
+                // If at the root of a non-default tab, switch to the default tab
+                state.copy(currentTab = HomeTab.DEFAULT)
+            } else {
+                // At the root of the default tab, do nothing (or let the system handle it)
+                state
             }
+        }
+    }
+
+    private fun handleNavigateTo(destination: HomeDestination) {
+        updateState { state ->
+            val currentStack = state.currentBackStack
+            val newStack = currentStack + destination
+            state.copy(
+                backStacks = state.backStacks + (state.currentTab to newStack),
+            )
+        }
+    }
+
+    private fun handleSwitchTab(tab: HomeTab) {
+        updateState { state ->
+            state.copy(currentTab = tab)
         }
     }
 }
