@@ -1,11 +1,13 @@
 package org.retro99.storyteller.android
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.fragment.app.FragmentActivity
+import com.retro99.home.ui.deeplink.DeepLinkHandler
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import org.koin.android.ext.android.inject
 import org.retro99.storyteller.App
@@ -13,6 +15,7 @@ import org.retro99.storyteller.App
 class MainActivity : FragmentActivity() {
 
     private val notificationPermissionHandler: NotificationPermissionHandler by inject()
+    private val deepLinkHandler: DeepLinkHandler by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -23,6 +26,26 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             App()
+        }
+
+        // Handle deep link if activity was started with one
+        handleDeepLinkIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Handle deep link when activity is already running (singleTask launch mode)
+        handleDeepLinkIntent(intent)
+    }
+
+    /**
+     * Handles deep link intents from notification clicks or external links.
+     * Extracts the URI data and passes it to the DeepLinkHandler for navigation.
+     */
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        val uri = intent?.data?.toString()
+        if (uri != null) {
+            deepLinkHandler.handleDeepLink(uri)
         }
     }
 

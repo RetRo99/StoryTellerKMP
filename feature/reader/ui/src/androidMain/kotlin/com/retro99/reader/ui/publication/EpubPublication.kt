@@ -16,6 +16,7 @@ import java.io.ByteArrayOutputStream
  */
 actual class EpubPublication(
     internal val publication: Publication,
+    actual val bookUuid: String,
     actual val initialSettings: ReaderSettingsUiModel,
     actual val bookType: BookType = BookType.EBOOK,
     val initialPosition: PositionUiModel? = null,

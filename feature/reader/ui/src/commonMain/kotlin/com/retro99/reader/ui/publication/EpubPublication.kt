@@ -12,6 +12,12 @@ import com.retro99.reader.ui.model.TocItemUiModel
  */
 expect class EpubPublication {
     /**
+     * The unique identifier of the book.
+     * Used for deep link navigation from audio notifications.
+     */
+    val bookUuid: String
+
+    /**
      * The initial settings that were used to open this publication.
      */
     val initialSettings: ReaderSettingsUiModel

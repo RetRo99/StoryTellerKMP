@@ -117,6 +117,9 @@ class MediaOverlayPlayer(
         // Initialize media session for system integration
         mediaSessionManager.initialize()
 
+        // Set book info for deep link navigation from notification
+        mediaSessionManager.setBookInfo(epubPublication.bookUuid, epubPublication.bookType)
+
         // Set initial book title from publication metadata
         bookTitle = publication.metadata.title ?: "Reading Aloud"
         mediaSessionManager.updateMetadata(bookTitle)

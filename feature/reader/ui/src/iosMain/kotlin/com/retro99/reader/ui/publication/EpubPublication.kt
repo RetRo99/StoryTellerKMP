@@ -12,6 +12,7 @@ import com.retro99.reader.ui.model.TocItemUiModel
  */
 actual class EpubPublication(
     internal val bridge: EpubReaderBridge,
+    actual val bookUuid: String,
     actual val initialSettings: ReaderSettingsUiModel,
     actual val bookType: BookType = BookType.EBOOK,
     internal val initialPosition: PositionUiModel?,
