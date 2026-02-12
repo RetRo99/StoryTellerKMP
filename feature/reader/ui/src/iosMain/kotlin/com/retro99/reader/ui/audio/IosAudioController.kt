@@ -136,6 +136,12 @@ class IosAudioController(
         bridge.skipBackward()
     }
 
+    override fun playFromFragment(fragmentId: String, chapterHref: String?) {
+        ensureMediaOverlaysInitialized {
+            bridge.playFromFragment(fragmentId, chapterHref)
+        }
+    }
+
     override fun dismissPermissionDeniedDialog() {
         _showPermissionDeniedDialog.value = false
     }

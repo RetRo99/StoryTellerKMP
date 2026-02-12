@@ -33,6 +33,17 @@ data class SentenceVisibilityResult(
     }
 }
 
+/**
+ * Data class representing a double-tap event on a sentence element.
+ *
+ * @property fragmentId The ID of the tapped element (e.g., "chapter44.xhtml-sentence50")
+ * @property chapterHref The href of the current chapter, if available
+ */
+data class SentenceDoubleTapEvent(
+    val fragmentId: String,
+    val chapterHref: String? = null,
+)
+
 interface BookController : AutoCloseable {
 
     /**
@@ -40,6 +51,13 @@ interface BookController : AutoCloseable {
      * Emits whenever the user navigates to a new position.
      */
     val currentLocator: Flow<LocatorState>
+
+    /**
+     * Flow of double-tap events on sentence elements.
+     * Emits when the user double-taps on a sentence in the EPUB content.
+     * Used to start audio playback from a specific sentence in ReadAloud books.
+     */
+    val sentenceDoubleTapEvents: Flow<SentenceDoubleTapEvent>
 
     /**
      * Navigates to the next page.

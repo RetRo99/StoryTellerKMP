@@ -110,5 +110,17 @@ sealed interface ReaderIntent : BaseIntent {
      * @param color The highlight color to use
      */
     data class SetHighlightColor(val color: ReadAloudHighlightColor) : ReaderIntent
+
+    /**
+     * Start audio playback from a specific text fragment (sentence).
+     * Used when user double-taps on a sentence to start playback from that point.
+     *
+     * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
+     * @param chapterHref Optional chapter href. If null, uses the current chapter.
+     */
+    data class PlayFromFragment(
+        val fragmentId: String,
+        val chapterHref: String? = null,
+    ) : ReaderIntent
 }
 

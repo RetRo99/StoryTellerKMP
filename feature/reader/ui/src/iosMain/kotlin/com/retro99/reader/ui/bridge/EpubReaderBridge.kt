@@ -118,6 +118,15 @@ interface EpubReaderBridge {
      */
     fun setOnPositionChangedCallback(callback: ((PositionLocator) -> Unit)?)
 
+    /**
+     * Sets a callback to be invoked when the user double-taps on a sentence element.
+     * Used to start audio playback from a specific sentence in ReadAloud books.
+     *
+     * @param callback The callback with the fragment ID of the double-tapped element,
+     *                 or null to clear the callback
+     */
+    fun setOnSentenceDoubleTapCallback(callback: ((String) -> Unit)?)
+
     // Media playback methods for ReadAloud books
 
     /**
@@ -172,6 +181,15 @@ interface EpubReaderBridge {
      * Uses the player's authoritative position.
      */
     fun skipBackward()
+
+    /**
+     * Starts audio playback from a specific text fragment (sentence).
+     * Used when user double-taps on a sentence to start playback from that point.
+     *
+     * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
+     * @param chapterHref Optional chapter href. If null, uses the current chapter.
+     */
+    fun playFromFragment(fragmentId: String, chapterHref: String? = null)
 
     /**
      * Sets a callback to be invoked when the audio playback state changes.

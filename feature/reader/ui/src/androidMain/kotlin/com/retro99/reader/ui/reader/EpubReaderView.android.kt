@@ -15,6 +15,7 @@ import androidx.fragment.app.commitNow
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.navigator.AndroidEpubNavigatorController
 import com.retro99.reader.ui.navigator.BookController
+import com.retro99.reader.ui.navigator.DoubleTapJsInterface
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.EpubPublication
@@ -50,6 +51,12 @@ internal actual fun EpubReaderViewInternal(
         intentDispatcher = intentDispatcher,
     )
 
+    // Observe double-tap events on sentences for ReadAloud playback
+    ObserveSentenceDoubleTapEvents(
+        bookController = bookController,
+        intentDispatcher = intentDispatcher,
+    )
+
     // Observe permission denied dialog state
 //    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
 //        ?.collectAsState(initial = false)
@@ -73,6 +80,18 @@ internal actual fun EpubReaderViewInternal(
 
     val navigatorFactory = remember(readiumPublication) {
         EpubNavigatorFactory(readiumPublication)
+    }
+
+    // Create navigator configuration with JavaScript interface for double-tap detection
+    val navigatorConfiguration = remember(navigatorController) {
+        EpubNavigatorFragment.Configuration {
+            // Register JavaScript interface for double-tap detection on sentences
+            navigatorController?.let { controller ->
+                registerJavascriptInterface("SentenceDoubleTap") { _ ->
+                    DoubleTapJsInterface(controller::onSentenceDoubleTap)
+                }
+            }
+        }
     }
 
     val containerId = remember { View.generateViewId() }
@@ -111,6 +130,7 @@ internal actual fun EpubReaderViewInternal(
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = initialLocator,
                     initialPreferences = publication.initialSettings.toEpubPreferences(),
+                    configuration = navigatorConfiguration,
                 )
 
                 // Use commitNow to make the transaction synchronous

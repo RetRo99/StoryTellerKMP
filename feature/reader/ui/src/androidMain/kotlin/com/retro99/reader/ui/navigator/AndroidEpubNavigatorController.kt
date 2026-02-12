@@ -18,7 +18,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -78,6 +80,18 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
      */
     private var lastPageTurnSentenceId: String? = null
 
+    /**
+     * Channel for emitting double-tap events on sentence elements.
+     */
+    private val _sentenceDoubleTapEvents = MutableSharedFlow<SentenceDoubleTapEvent>()
+
+    /**
+     * Flow of double-tap events on sentence elements.
+     * Emits when the user double-taps on a sentence in the EPUB content.
+     */
+    override val sentenceDoubleTapEvents: Flow<SentenceDoubleTapEvent> =
+        _sentenceDoubleTapEvents.asSharedFlow()
+
     private val navigator: EpubNavigatorFragment
         get() = _navigator.value ?: error("Navigator not initialized")
 
@@ -85,6 +99,38 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         navigator: EpubNavigatorFragment,
     ) {
         _navigator.value = navigator
+        // Inject double-tap detection script after navigator is initialized
+        injectDoubleTapDetectionScript()
+    }
+
+    /**
+     * Injects the double-tap detection JavaScript into the navigator's WebView.
+     * This script listens for double-click events and calls back to native code.
+     */
+    private fun injectDoubleTapDetectionScript() {
+        controllerScope.launch {
+            // Wait a bit for the WebView to be ready
+            delay(500)
+            val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
+            _navigator.value?.evaluateJavascript(script)
+        }
+    }
+
+    /**
+     * Called from JavaScript when a sentence is double-tapped.
+     * This method is invoked via the JavaScript interface.
+     */
+    fun onSentenceDoubleTap(fragmentId: String) {
+        logger.d { "Double-tap detected on fragment: $fragmentId" }
+        val currentHref = _navigator.value?.currentLocator?.value?.href?.toString()
+        controllerScope.launch {
+            _sentenceDoubleTapEvents.emit(
+                SentenceDoubleTapEvent(
+                    fragmentId = fragmentId,
+                    chapterHref = currentHref,
+                )
+            )
+        }
     }
 
     /**
