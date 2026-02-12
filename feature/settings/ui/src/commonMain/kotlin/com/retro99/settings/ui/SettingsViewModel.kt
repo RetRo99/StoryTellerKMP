@@ -90,6 +90,10 @@ class SettingsViewModel(
             is SettingsIntent.OnFullscreenModeChanged -> updateReaderSetting {
                 it.copy(fullscreenMode = intent.fullscreenMode)
             }
+
+            is SettingsIntent.OnShowCurrentTimeChanged -> updateReaderSetting {
+                it.copy(showCurrentTime = intent.showCurrentTime)
+            }
         }
     }
 

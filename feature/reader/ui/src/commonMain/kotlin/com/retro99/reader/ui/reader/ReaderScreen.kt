@@ -575,12 +575,15 @@ private fun ReadingProgressBar(
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Current time on the left (formatted according to user's locale)
-                Text(
-                    text = currentTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterStart),
-                )
+                // Only shown when showCurrentTime setting is enabled (currentTime is non-empty)
+                if (currentTime.isNotEmpty()) {
+                    Text(
+                        text = currentTime,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.CenterStart),
+                    )
+                }
 
                 // Centered chapter title
                 if (chapterText.isNotEmpty()) {

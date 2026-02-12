@@ -54,6 +54,9 @@ data class ReaderSettingsLocalModel(
     // Progress bar position: TOP or BOTTOM
     @SerialName("progress_bar_position")
     val progressBarPosition: String = "BOTTOM",
+    // Whether to show current time in the progress bar
+    @SerialName("show_current_time")
+    val showCurrentTime: Boolean = true,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -104,6 +107,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             ProgressBarPosition.BOTTOM
         },
+        showCurrentTime = showCurrentTime,
     )
 }
 
@@ -127,5 +131,6 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         showTotalProgress = showTotalProgress,
         progressIndicatorMode = progressIndicatorMode.name,
         progressBarPosition = progressBarPosition.name,
+        showCurrentTime = showCurrentTime,
     )
 }
