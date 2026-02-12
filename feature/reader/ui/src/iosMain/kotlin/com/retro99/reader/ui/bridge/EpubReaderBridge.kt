@@ -221,6 +221,14 @@ interface EpubReaderBridge {
     fun setOnMediaPlayerReadyCallback(callback: (() -> Unit)?)
 
     /**
+     * Sets a callback to be invoked when the current chapter's audio playback completes.
+     * Used to trigger auto-play of the next chapter.
+     *
+     * @param callback The callback with the href of the completed chapter, or null to clear
+     */
+    fun setOnChapterAudioCompletedCallback(callback: ((String) -> Unit)?)
+
+    /**
      * Applies a highlight for the given audio locator in the navigator.
      */
     fun applyAudioHighlight(locator: AudioLocator)

@@ -154,4 +154,13 @@ interface AudioController : AutoCloseable {
      * Includes sentence duration for pre-emptive page turn calculations.
      */
     val currentAudioLocator: StateFlow<AudioLocatorState?>
+
+    /**
+     * Flow that emits when the current chapter's audio playback completes.
+     * Used to trigger auto-play of the next chapter.
+     *
+     * Emits the href of the completed chapter when audio reaches the end.
+     * Does not emit if playback was manually stopped or paused.
+     */
+    val chapterAudioCompleted: Flow<String>
 }
