@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.ReaderAnalyticsEvent
 import com.retro99.base.formatCurrentTime
 import com.retro99.base.now
 import com.retro99.base.nowMillis
@@ -90,6 +91,12 @@ class ReaderViewModel(
 
     /** Job for the time update coroutine, cancelled when showCurrentTime is disabled */
     private var timeUpdateJob: Job? = null
+
+    /** Timestamp when the book was opened, used for calculating reading duration */
+    private var bookOpenedTimestamp: Long = 0L
+
+    /** Tracks the previous playing state to detect play/pause transitions */
+    private var wasPlaying: Boolean = false
 
     init {
         initializeReader()
@@ -265,6 +272,15 @@ class ReaderViewModel(
         )
 
         publication?.let {
+            // Track book opened event
+            bookOpenedTimestamp = nowMillis()
+            analytics.logEvent(
+                ReaderAnalyticsEvent.BookOpened(
+                    bookUuid = data.bookUuid,
+                    bookType = bookType.name,
+                )
+            )
+
             updateState { state ->
                 state.copy(
                     bookUuid = data.bookUuid,
@@ -374,11 +390,19 @@ class ReaderViewModel(
     }
 
     private fun toggleSettings() {
-        updateState { it.copy(isSettingsVisible = !it.isSettingsVisible) }
+        val willBeVisible = !viewState.value.isSettingsVisible
+        if (willBeVisible) {
+            analytics.logEvent(ReaderAnalyticsEvent.SettingsOpened(bookUuid = bookUuid))
+        }
+        updateState { it.copy(isSettingsVisible = willBeVisible) }
     }
 
     private fun toggleToc() {
-        updateState { it.copy(isTocVisible = !it.isTocVisible) }
+        val willBeVisible = !viewState.value.isTocVisible
+        if (willBeVisible) {
+            analytics.logEvent(ReaderAnalyticsEvent.TocOpened(bookUuid = bookUuid))
+        }
+        updateState { it.copy(isTocVisible = willBeVisible) }
     }
 
     private fun goToChapter(href: String, currentPosition: PositionUiModel?) {
@@ -405,6 +429,25 @@ class ReaderViewModel(
             if (viewState.value.isReadAloud) {
                 saveCurrentAudioPositionSync()
             }
+
+            // Track book closed event with reading duration and progress
+            val currentState = viewState.value
+            val readingDurationMs = if (bookOpenedTimestamp > 0) {
+                nowMillis() - bookOpenedTimestamp
+            } else {
+                0L
+            }
+            val progressPercent = currentState.lastKnownPosition?.totalProgression
+                ?.let { (it * 100).toInt() } ?: 0
+
+            analytics.logEvent(
+                ReaderAnalyticsEvent.BookClosed(
+                    bookUuid = bookUuid,
+                    readingDurationMs = readingDurationMs,
+                    progressPercent = progressPercent,
+                )
+            )
+
             onClose()
         }
     }
@@ -429,6 +472,12 @@ class ReaderViewModel(
     }
 
     private fun setPlaybackSpeed(speed: Float) {
+        analytics.logEvent(
+            ReaderAnalyticsEvent.PlaybackSpeedChanged(
+                bookUuid = bookUuid,
+                newSpeed = speed,
+            )
+        )
         audioController.setPlaybackSpeed(speed)
         updateState { it.copy(playbackSpeed = speed) }
         // Also save the speed to settings
@@ -489,6 +538,12 @@ class ReaderViewModel(
      * Called when the audio controller reports playback state changes.
      */
     private fun updatePlayingState(isPlaying: Boolean) {
+        // Track when playback starts (feature usage)
+        if (isPlaying && !wasPlaying) {
+            analytics.logEvent(ReaderAnalyticsEvent.PlaybackStarted(bookUuid = bookUuid))
+        }
+        wasPlaying = isPlaying
+
         updateState { it.copy(isPlaying = isPlaying) }
         if (!isPlaying) {
             saveCurrentAudioPosition()
