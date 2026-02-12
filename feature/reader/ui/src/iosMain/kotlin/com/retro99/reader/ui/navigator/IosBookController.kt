@@ -229,6 +229,22 @@ class IosBookController(
         return ChapterPageCalculator.parsePageResult(rawResult)
     }
 
+    override suspend fun getVisibleSentenceId(): String? {
+        val script = VisibleSentenceDetector.getScript()
+
+        val rawResult: String? = suspendCancellableCoroutine { continuation ->
+            bridge.evaluateJavaScript(script) { result ->
+                continuation.resume(result)
+            }
+        }
+
+        if (rawResult == null) {
+            return null
+        }
+
+        return VisibleSentenceDetector.parseResult(rawResult)
+    }
+
     override fun close() {
         pendingPageTurnJob?.cancel()
         // Note: No need to call getRemoveDoubleTapDetectorScript() here.

@@ -124,4 +124,17 @@ interface BookController : AutoCloseable {
      * @return The current page info, or null if it cannot be determined
      */
     suspend fun getChapterPageInfo(): ChapterPageInfo?
+
+    /**
+     * Gets the ID of the first visible sentence element in the current viewport.
+     *
+     * This is used for precise audio positioning when the user manually navigates
+     * to a different page/chapter. By finding the first visible sentence, we can
+     * start audio playback from the exact position the user is viewing.
+     *
+     * Sentence elements are identified by having IDs (e.g., "chapter44.xhtml-sentence50").
+     *
+     * @return The element ID of the first visible sentence, or null if not found
+     */
+    suspend fun getVisibleSentenceId(): String?
 }

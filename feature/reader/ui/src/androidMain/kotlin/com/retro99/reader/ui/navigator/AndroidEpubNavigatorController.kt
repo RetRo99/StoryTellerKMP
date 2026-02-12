@@ -285,6 +285,16 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
         return ChapterPageCalculator.parsePageResult(cleanJson)
     }
 
+    override suspend fun getVisibleSentenceId(): String? {
+        val nav = _navigator.value ?: return null
+
+        val script = VisibleSentenceDetector.getScript()
+        val rawResult = nav.evaluateJavascript(script) ?: return null
+
+        val cleanJson = cleanWebViewJson(rawResult)
+        return VisibleSentenceDetector.parseResult(cleanJson)
+    }
+
     /**
      * Cleans JSON returned from WebView's evaluateJavascript.
      *
