@@ -82,16 +82,17 @@ sealed interface ReaderAnalyticsEvent : AnalyticsEvent {
     }
 
     /**
-     * Tracks when playback speed is changed - helps understand if speed control is used.
+     * Tracks when a reader setting is changed - helps understand user preferences
+     * so we can set better defaults.
      */
-    data class PlaybackSpeedChanged(
-        val bookUuid: String,
-        val newSpeed: Float,
+    data class SettingChanged(
+        val settingName: String,
+        val newValue: String,
     ) : ReaderAnalyticsEvent {
-        override val name: String = "playback_speed_changed"
+        override val name: String = "setting_changed"
         override val parameters: Map<String, Any> = mapOf(
-            "book_uuid" to bookUuid,
-            "new_speed" to newSpeed,
+            "setting_name" to settingName,
+            "new_value" to newValue,
         )
     }
 }
