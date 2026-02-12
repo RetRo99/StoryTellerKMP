@@ -41,6 +41,7 @@ room = "2.8.4"
 ksp = "2.3.5"
 sqlite = "2.6.2"
 sqldelight = "2.0.2"
+multiplatformMarkdown = "0.39.2"
 
 
 [libraries]
@@ -108,6 +109,9 @@ kotzilla-sdk-compose = { group = "io.kotzilla", name = "kotzilla-sdk-compose", v
 
 # Multiplatform Settings
 multiplatformSettings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
+
+# Markdown
+markdown = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdown" }
 
 # Android Security
 androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0-alpha06" }
