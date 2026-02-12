@@ -320,9 +320,19 @@ class ReaderViewModel(
 
     private fun resolveConflictWithRemote() {
         val conflict = viewState.value.positionConflict ?: return
+        val currentState = viewState.value
         viewModelScope.launch {
-            updateState { it.copy(positionConflict = null) }
+            updateState {
+                it.copy(
+                    positionConflict = null,
+                    currentAudioPositionMs = conflict.remotePosition.audioTimestampMs ?: 0L,
+                )
+            }
             bookController.goToPosition(conflict.remotePosition)
+            // Also update the audio position if this is a ReadAloud book
+            if (currentState.isReadAloud) {
+                audioController.setInitialAudioPosition(conflict.remotePosition.audioTimestampMs)
+            }
         }
     }
 

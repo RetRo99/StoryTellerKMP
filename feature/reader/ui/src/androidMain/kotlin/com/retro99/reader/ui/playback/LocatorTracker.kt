@@ -73,6 +73,17 @@ class LocatorTracker(
     }
 
     /**
+     * Sets the initial audio position.
+     * Used when the user resolves a position conflict by choosing the remote position.
+     * Updates the current position and seeks ExoPlayer to match.
+     *
+     * @param positionMs The audio position in milliseconds
+     */
+    fun setInitialPosition(positionMs: Long) {
+        setPosition(positionMs)
+    }
+
+    /**
      * Internal state holding both the locator and the current clip for duration calculation.
      */
     private data class LocatorWithClip(

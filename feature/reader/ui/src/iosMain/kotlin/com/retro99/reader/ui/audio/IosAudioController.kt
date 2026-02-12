@@ -158,6 +158,15 @@ class IosAudioController(
         initialPositionMs = null
     }
 
+    override fun setInitialAudioPosition(positionMs: Long?) {
+        initialPositionMs = positionMs
+        hasStartedPlayback = false
+        // Also update the playback state flow so the seek bar reflects the new position
+        _audioPlaybackState.value = _audioPlaybackState.value.copy(
+            currentPositionMs = positionMs,
+        )
+    }
+
     override fun pauseAudio() {
         bridge.pauseAudio()
     }

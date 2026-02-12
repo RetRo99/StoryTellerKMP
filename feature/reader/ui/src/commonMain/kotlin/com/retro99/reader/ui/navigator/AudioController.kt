@@ -92,6 +92,17 @@ interface AudioController : AutoCloseable {
     fun resetPlaybackState()
 
     /**
+     * Sets the initial audio position for playback.
+     * Used when the user resolves a position conflict by choosing the remote position,
+     * so the audio starts from the remote position's timestamp instead of the local one.
+     *
+     * This also resets the playback state so the next play starts from this position.
+     *
+     * @param positionMs The audio position in milliseconds, or null to clear the initial position
+     */
+    fun setInitialAudioPosition(positionMs: Long?)
+
+    /**
      * Pauses audio playback.
      */
     fun pauseAudio()
