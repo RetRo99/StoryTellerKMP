@@ -57,6 +57,34 @@ sealed interface BookAnalyticsEvent : AnalyticsEvent {
             "book_uuid" to bookUuid,
         )
     }
+
+    /**
+     * Tracks when user clicks read/play button - helps understand format preferences.
+     */
+    data class ReadButtonClicked(
+        val bookUuid: String,
+        val bookType: String,
+    ) : BookAnalyticsEvent {
+        override val name: String = "read_button_clicked"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "book_type" to bookType,
+        )
+    }
+
+    /**
+     * Tracks when user deletes cached media - helps understand storage management behavior.
+     */
+    data class BookCacheDeleted(
+        val bookUuid: String,
+        val bookType: String,
+    ) : BookAnalyticsEvent {
+        override val name: String = "book_cache_deleted"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "book_type" to bookType,
+        )
+    }
 }
 
 /**
