@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -81,9 +82,10 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     private var lastPageTurnSentenceId: String? = null
 
     /**
-     * Channel for emitting double-tap events on sentence elements.
+     * SharedFlow for emitting double-tap events on sentence elements.
+     * Uses replay=1 to ensure late subscribers receive the most recent event.
      */
-    private val _sentenceDoubleTapEvents = MutableSharedFlow<SentenceDoubleTapEvent>()
+    private val _sentenceDoubleTapEvents = MutableSharedFlow<SentenceDoubleTapEvent>(replay = 1)
 
     /**
      * Flow of double-tap events on sentence elements.
@@ -92,38 +94,54 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
     override val sentenceDoubleTapEvents: Flow<SentenceDoubleTapEvent> =
         _sentenceDoubleTapEvents.asSharedFlow()
 
+    /**
+     * Whether this book has media overlays (ReadAloud capability).
+     * Used to determine if double-tap detection should be enabled.
+     */
+    private var hasMediaOverlays: Boolean = false
+
     private val navigator: EpubNavigatorFragment
         get() = _navigator.value ?: error("Navigator not initialized")
 
     fun init(
         navigator: EpubNavigatorFragment,
+        hasMediaOverlays: Boolean = false,
     ) {
         _navigator.value = navigator
-        // Inject double-tap detection script after navigator is initialized
-        injectDoubleTapDetectionScript()
+        this.hasMediaOverlays = hasMediaOverlays
+        // Only inject double-tap detection script for ReadAloud books
+        if (hasMediaOverlays) {
+            injectDoubleTapDetectionScript()
+        }
     }
 
     /**
      * Injects the double-tap detection JavaScript into the navigator's WebView.
      * This script listens for double-click events and calls back to native code.
+     *
+     * Waits for the first locator emission to ensure the WebView is ready,
+     * rather than using an arbitrary delay.
      */
     private fun injectDoubleTapDetectionScript() {
         controllerScope.launch {
-            // Wait a bit for the WebView to be ready
-            delay(500)
+            // Wait for the first locator emission - this indicates the WebView is ready
+            currentLocator.first()
             val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
             _navigator.value?.evaluateJavascript(script)
+            logger.d { "Double-tap detection script injected" }
         }
     }
 
     /**
      * Called from JavaScript when a sentence is double-tapped.
-     * This method is invoked via the JavaScript interface.
+     * This method is invoked via the JavaScript interface from a background thread.
+     * We launch a coroutine on Main dispatcher to safely access navigator state.
      */
     fun onSentenceDoubleTap(fragmentId: String) {
         logger.d { "Double-tap detected on fragment: $fragmentId" }
-        val currentHref = _navigator.value?.currentLocator?.value?.href?.toString()
         controllerScope.launch {
+            // Access navigator state on Main thread for thread safety
+            val currentHref = _navigator.value?.currentLocator?.value?.href?.toString()
             _sentenceDoubleTapEvents.emit(
                 SentenceDoubleTapEvent(
                     fragmentId = fragmentId,
@@ -333,6 +351,9 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
 
     override fun close() {
         pendingPageTurnJob?.cancel()
+        // Note: No need to call getRemoveDoubleTapDetectorScript() here.
+        // The WebView and its JavaScript context will be destroyed when the
+        // fragment is removed, so the event listener will be cleaned up automatically.
         controllerScope.cancel()
         _navigator.value = null
     }

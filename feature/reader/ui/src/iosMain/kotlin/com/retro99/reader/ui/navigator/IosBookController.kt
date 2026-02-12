@@ -16,6 +16,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.core.annotation.Scope
@@ -39,9 +40,10 @@ class IosBookController(
     override val currentLocator: Flow<LocatorState> = _currentLocator
 
     /**
-     * Flow for emitting double-tap events on sentence elements.
+     * SharedFlow for emitting double-tap events on sentence elements.
+     * Uses replay=1 to ensure late subscribers receive the most recent event.
      */
-    private val _sentenceDoubleTapEvents = MutableSharedFlow<SentenceDoubleTapEvent>()
+    private val _sentenceDoubleTapEvents = MutableSharedFlow<SentenceDoubleTapEvent>(replay = 1)
     override val sentenceDoubleTapEvents: Flow<SentenceDoubleTapEvent> = _sentenceDoubleTapEvents
 
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -54,7 +56,10 @@ class IosBookController(
 
     init {
         setupCallbacks()
-        injectDoubleTapDetectionScript()
+        // Only inject double-tap detection script for ReadAloud books
+        if (bridge.hasMediaOverlays()) {
+            injectDoubleTapDetectionScript()
+        }
     }
 
     private fun setupCallbacks() {
@@ -88,13 +93,18 @@ class IosBookController(
 
     /**
      * Injects the double-tap detection JavaScript into the navigator's WebView.
+     *
+     * Waits for the first locator emission to ensure the WebView is ready,
+     * rather than using an arbitrary delay.
      */
     private fun injectDoubleTapDetectionScript() {
         controllerScope.launch {
-            // Wait a bit for the WebView to be ready
-            delay(500)
+            // Wait for the first locator emission - this indicates the WebView is ready
+            currentLocator.first()
             val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
-            bridge.evaluateJavaScript(script) { _ -> }
+            bridge.evaluateJavaScript(script) { _ ->
+                logger.d { "Double-tap detection script injected" }
+            }
         }
     }
 
@@ -221,6 +231,9 @@ class IosBookController(
 
     override fun close() {
         pendingPageTurnJob?.cancel()
+        // Note: No need to call getRemoveDoubleTapDetectorScript() here.
+        // The WebView and its JavaScript context will be destroyed when the
+        // navigator is closed, so the event listener will be cleaned up automatically.
         controllerScope.cancel()
         bridge.setOnPositionChangedCallback(null)
         bridge.setOnSentenceDoubleTapCallback(null)
