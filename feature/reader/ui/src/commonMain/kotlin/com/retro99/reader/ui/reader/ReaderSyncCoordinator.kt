@@ -42,8 +42,8 @@ class ReaderSyncCoordinator(
                     // so next play starts from the current visible text position.
                     // AudioController checks if playing internally and ignores if so.
                     audioController.resetPlaybackState()
-                    // Update seek bar position to reflect the visible sentence
-                    updateSeekBarForVisibleSentence()
+                    // Update visible sentence and seek bar position
+                    updateVisibleSentence()
                 }
             }
             .launchIn(scope)
@@ -67,14 +67,18 @@ class ReaderSyncCoordinator(
     }
 
     /**
-     * Updates the seek bar position to reflect the first visible sentence.
+     * Updates the audio controller with the current visible sentence.
      *
-     * Called when the book location changes. The audio controller will check
-     * if audio is playing and only update the position if not playing.
+     * Called when the book location changes. This:
+     * 1. Notifies the audio controller of the visible sentence for future playback
+     * 2. Updates the seek bar position (only if not playing)
      */
-    private suspend fun updateSeekBarForVisibleSentence() {
-        val visibleSentenceId = bookController.getVisibleSentenceId() ?: return
-        audioController.updatePositionForFragment(visibleSentenceId)
+    private suspend fun updateVisibleSentence() {
+        val visibleSentenceId = bookController.getVisibleSentenceId()
+        audioController.setVisibleSentenceId(visibleSentenceId)
+        if (visibleSentenceId != null) {
+            audioController.updatePositionForFragment(visibleSentenceId)
+        }
     }
 
     override fun close() {

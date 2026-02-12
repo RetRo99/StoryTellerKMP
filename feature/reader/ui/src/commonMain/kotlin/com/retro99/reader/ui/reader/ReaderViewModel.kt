@@ -407,14 +407,12 @@ class ReaderViewModel(
      * The AudioController handles all the logic internally:
      * - Whether to start fresh (with positioning) or resume
      * - Permission checks, audio focus, foreground service
-     * - Querying visible sentence for precise positioning
+     * - Uses the visible sentence set by ReaderSyncCoordinator for precise positioning
      *
      * The UI will update when the player reports its actual state.
      */
     private fun togglePlayback() {
-        viewModelScope.launch {
-            audioController.togglePlayback { bookController.getVisibleSentenceId() }
-        }
+        audioController.togglePlayback()
     }
 
     private fun seekTo(audioTimestampMs: Long) {

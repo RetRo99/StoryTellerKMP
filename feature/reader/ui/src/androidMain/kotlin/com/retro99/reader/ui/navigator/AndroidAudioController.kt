@@ -48,6 +48,12 @@ class AndroidAudioController(
      */
     private var initialPositionMs: Long? = null
 
+    /**
+     * Currently visible sentence ID, updated by the sync coordinator.
+     * Used for precise positioning when starting playback.
+     */
+    private var currentVisibleSentenceId: String? = null
+
     override val currentAudioLocator: StateFlow<AudioLocatorState?>
         get() = locatorTracker.currentLocator
 
@@ -106,17 +112,21 @@ class AndroidAudioController(
         logger.i { "⏱️ MediaOverlay initialization COMPLETE - TOTAL: ${totalTime}ms" }
     }
 
-    override suspend fun togglePlayback(getVisibleSentenceId: suspend () -> String?) {
+    override fun togglePlayback() {
         val isCurrentlyPlaying = playbackStateTracker.isPlaying.value
         if (isCurrentlyPlaying) {
             player.pause()
         } else {
             if (!hasStartedPlayback) {
-                startPlaybackFromCurrentPosition(getVisibleSentenceId)
+                startPlaybackFromCurrentPosition()
             } else {
                 player.resume()
             }
         }
+    }
+
+    override fun setVisibleSentenceId(sentenceId: String?) {
+        currentVisibleSentenceId = sentenceId
     }
 
     override fun setInitialPosition(positionMs: Long?) {
@@ -136,17 +146,15 @@ class AndroidAudioController(
 
     /**
      * Starts playback from the current position.
-     * Uses saved position if available, otherwise queries visible sentence.
+     * Uses saved position if available, otherwise uses the cached visible sentence.
      */
-    private suspend fun startPlaybackFromCurrentPosition(
-        getVisibleSentenceId: suspend () -> String?,
-    ) {
+    private fun startPlaybackFromCurrentPosition() {
         val savedPosition = initialPositionMs
         if (savedPosition != null) {
             logger.i { "🎵 Starting playback from saved position: ${savedPosition}ms" }
             executePlayCommand(savedPosition)
         } else {
-            val visibleSentenceId = getVisibleSentenceId()
+            val visibleSentenceId = currentVisibleSentenceId
             if (visibleSentenceId != null) {
                 logger.i { "🎵 Starting playback from visible sentence: $visibleSentenceId" }
                 playFromFragment(visibleSentenceId, chapterHref = null)
