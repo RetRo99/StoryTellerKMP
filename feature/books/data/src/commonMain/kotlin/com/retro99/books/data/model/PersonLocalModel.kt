@@ -32,3 +32,13 @@ fun PersonDomainModel.toLocal(): PersonLocalModel {
     )
 }
 
+fun PersonEntity.toLocalModel(): PersonLocalModel {
+    return PersonLocalModel(
+        uuid = uuid,
+        name = name,
+        fileAs = fileAs,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+}
+

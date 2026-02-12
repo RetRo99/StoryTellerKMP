@@ -90,7 +90,11 @@ fun HomeNavigation(
                     }
 
                     entry<HomeDestination.AuthorsList> {
-                        AuthorsListScreen()
+                        AuthorsListScreen(
+                            onNavigateToAuthorDetail = { author ->
+                                // TODO: Navigate to author detail when implemented
+                            },
+                        )
                     }
 
                     entry<HomeDestination.BookDetail> { destination ->

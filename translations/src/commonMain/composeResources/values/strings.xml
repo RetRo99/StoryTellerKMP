@@ -46,6 +46,10 @@
     <string name="series_book_count">%1$d books</string>
     <string name="series_book_count_single">1 book</string>
 
+    <!-- Authors List Screen -->
+    <string name="authors_empty_title">No Authors Found</string>
+    <string name="authors_empty_subtitle">Authors will appear here once available</string>
+
     <!-- Series Detail Screen -->
     <string name="series_detail_position">Book #%1$d</string>
 
