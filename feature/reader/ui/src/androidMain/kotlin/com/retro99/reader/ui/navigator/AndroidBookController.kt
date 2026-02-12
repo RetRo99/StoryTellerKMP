@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -78,6 +79,14 @@ class AndroidBookController internal constructor() : BookController {
      * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
      */
     private var lastPageTurnSentenceId: String? = null
+
+    /**
+     * Cancels any pending page turn and resets the tracking state.
+     */
+    private fun cancelPendingPageTurn() {
+        pendingPageTurnJob?.cancel()
+        lastPageTurnSentenceId = null
+    }
 
     /**
      * SharedFlow for emitting double-tap events on sentence elements.
@@ -165,6 +174,8 @@ class AndroidBookController internal constructor() : BookController {
                 fragments = locator.locations.fragments,
             )
         } ?: flowOf() // or emptyFlow()
+    }.onEach {
+        cancelPendingPageTurn()
     }
 
     override fun goToNextPage() {
@@ -196,9 +207,10 @@ class AndroidBookController internal constructor() : BookController {
      * Applies a highlight decoration to the given locator and handles split sentences.
      *
      * For sentences that are split across pages, this method will:
-     * 1. Apply the highlight immediately
-     * 2. Check if the sentence is split (partially visible)
-     * 3. Schedule a page turn after the visible portion has been read
+     * 1. Navigate to the locator (ensuring the sentence is visible)
+     * 2. Apply the highlight decoration
+     * 3. Check if the sentence spans pages (partially visible)
+     * 4. Schedule a page turn after the visible portion has been read
      */
     override suspend fun applyHighlightWithPageTurn(
         locator: LocatorState,
@@ -208,16 +220,20 @@ class AndroidBookController internal constructor() : BookController {
         val androidLocator = locator.toAndroidLocator() ?: return
         val fragmentId = locator.fragments?.firstOrNull()
 
+        // First navigate to the locator to ensure the sentence is visible
+        navigator.go(androidLocator)
+
+        // Apply highlight decorations
         val decorations = createDecorations(androidLocator)
         decorableNavigator.applyDecorations(decorations, READALOUD_DECORATION_GROUP)
 
-        // Check visibility and handle page turn if needed
+        // Cancel any pending page turn from a previous sentence
+        cancelPendingPageTurn()
+
+        // Check visibility and schedule page turn if sentence spans pages
         if (fragmentId != null) {
             val visibility = checkSentenceVisibility(fragmentId)
-            if (visibility.needsPageTurn && fragmentId != lastPageTurnSentenceId) {
-                // Cancel any pending page turn from a previous sentence
-                pendingPageTurnJob?.cancel()
-
+            if (visibility.needsPageTurn) {
                 // Calculate delay based on visible fraction
                 val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
                     .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
@@ -227,10 +243,6 @@ class AndroidBookController internal constructor() : BookController {
                     delay(delayMs)
                     navigator.goForward()
                 }
-            } else if (!visibility.needsPageTurn) {
-                // Sentence is fully visible, cancel any pending page turn
-                pendingPageTurnJob?.cancel()
-                lastPageTurnSentenceId = null
             }
         }
     }
