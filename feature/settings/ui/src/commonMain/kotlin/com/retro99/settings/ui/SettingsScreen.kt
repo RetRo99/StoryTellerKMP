@@ -72,6 +72,8 @@ import resources.translations.settings_font_family_open_dyslexic
 import resources.translations.settings_font_family_sans_serif
 import resources.translations.settings_font_family_serif
 import resources.translations.settings_font_size
+import resources.translations.settings_fullscreen_mode
+import resources.translations.settings_fullscreen_mode_description
 import resources.translations.settings_highlight_color
 import resources.translations.settings_highlight_style
 import resources.translations.settings_highlight_style_highlight
@@ -309,6 +311,13 @@ private fun SettingsScreenContent(
                 onModeSelected = {
                     intentDispatcher(SettingsIntent.OnProgressIndicatorModeChanged(it))
                 },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FullscreenModeSwitch(
+                isEnabled = viewState.fullscreenMode,
+                onToggle = { intentDispatcher(SettingsIntent.OnFullscreenModeChanged(it)) },
             )
         }
 
@@ -912,6 +921,37 @@ private fun ShowTotalProgressSwitch(
         Switch(
             checked = isEnabled,
             onCheckedChange = onToggle,
+        )
+    }
+}
+
+/**
+ * Switch to toggle fullscreen mode (hide status bar while reading).
+ */
+@Composable
+private fun FullscreenModeSwitch(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_fullscreen_mode),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onToggle,
+            )
+        }
+        Text(
+            text = stringResource(StringRes.settings_fullscreen_mode_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

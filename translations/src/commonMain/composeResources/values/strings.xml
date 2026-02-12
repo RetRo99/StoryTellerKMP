@@ -133,6 +133,8 @@
     <string name="settings_progress_bar_position">Progress Bar Position</string>
     <string name="settings_progress_bar_position_top">Top</string>
     <string name="settings_progress_bar_position_bottom">Bottom</string>
+    <string name="settings_fullscreen_mode">Fullscreen Mode</string>
+    <string name="settings_fullscreen_mode_description">Hide status bar while reading</string>
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>

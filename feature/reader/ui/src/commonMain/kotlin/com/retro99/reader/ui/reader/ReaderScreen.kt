@@ -100,6 +100,11 @@ private fun ReaderScreenContent(
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
+    // Hide system bars (status bar, navigation bar) for immersive reading when enabled
+    if (viewState.currentSettings?.fullscreenMode == true) {
+        HideSystemBars()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize(),
