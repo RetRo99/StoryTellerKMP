@@ -21,6 +21,7 @@ import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
+import com.retro99.reader.ui.model.toPositionUiModel
 import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.AudioController
@@ -185,14 +186,9 @@ class ReaderViewModel(
         bookController.currentLocator
             .onEach { locator ->
                 val currentState = viewState.value
-                val basePosition = currentState.lastKnownPosition ?: return@onEach
-                val positionUiModel = basePosition.copy(
-                    href = locator.href,
-                    type = locator.type,
-                    title = locator.title,
-                    progression = locator.progression,
-                    position = locator.position,
-                    totalProgression = locator.totalProgression,
+                val positionUiModel = locator.toPositionUiModel(
+                    basePosition = currentState.lastKnownPosition,
+                    createdAt = now().toString(),
                 )
                 updatePosition(positionUiModel)
 
