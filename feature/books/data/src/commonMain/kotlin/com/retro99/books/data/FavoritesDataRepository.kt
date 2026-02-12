@@ -4,6 +4,7 @@ import com.retro99.base.result.CompletableResult
 import com.retro99.books.data.source.FavoritesLocalSource
 import com.retro99.books.domain.FavoritesRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -26,6 +27,10 @@ internal class FavoritesDataRepository(
 
     override suspend fun isFavorite(bookUuid: String): Boolean {
         return localSource.isFavorite(bookUuid)
+    }
+
+    override fun observeAllFavoriteUuids(): Flow<Set<String>> {
+        return localSource.observeAllFavorites().map { it.toSet() }
     }
 }
 

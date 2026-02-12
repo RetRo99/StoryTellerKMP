@@ -32,5 +32,9 @@ internal class FavoritesRoomDataSource(
     override fun observeFavorite(bookUuid: String): Flow<Boolean> {
         return favoritesDatabase.observeFavorite(bookUuid)
     }
+
+    override fun observeAllFavorites(): Flow<List<String>> {
+        return favoritesDatabase.observeAllFavorites()
+    }
 }
 

@@ -27,6 +27,10 @@ internal class FavoritesDatabaseImpl(
         return sqlDelightDao.getAllFavorites()
     }
 
+    override fun observeAllFavorites(): Flow<List<String>> {
+        return sqlDelightDao.observeAllFavorites()
+    }
+
     override suspend fun deleteAllFavorites() {
         sqlDelightDao.deleteAllFavorites()
     }

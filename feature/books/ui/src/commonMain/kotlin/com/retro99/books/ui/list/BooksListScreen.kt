@@ -15,11 +15,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
@@ -87,8 +90,12 @@ private fun BooksListScreenContent(
             ) { book ->
                 BookItem(
                     book = book,
+                    isFavorite = book.uuid in viewState.favoriteBookUuids,
                     onClick = {
                         intentDispatcher(BooksListIntent.OnBookClicked(book))
+                    },
+                    onFavoriteClick = {
+                        intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
                     },
                 )
             }
@@ -99,7 +106,9 @@ private fun BooksListScreenContent(
 @Composable
 private fun BookItem(
     book: BookUiModel,
+    isFavorite: Boolean,
     onClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ElevatedCard(
@@ -195,6 +204,24 @@ private fun BookItem(
                         )
                     }
                 }
+            }
+
+            IconButton(
+                onClick = onFavoriteClick,
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) {
+                        Icons.Filled.Favorite
+                    } else {
+                        Icons.Outlined.FavoriteBorder
+                    },
+                    contentDescription = null,
+                    tint = if (isFavorite) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
             }
         }
     }
