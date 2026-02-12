@@ -106,5 +106,17 @@ sealed interface NavigationAnalyticsEvent : AnalyticsEvent {
             "screen_class" to screenClass,
         )
     }
+
+    /**
+     * Tracks when user switches between tabs - helps understand which sections are most used.
+     */
+    data class TabSwitched(
+        val tabName: String,
+    ) : NavigationAnalyticsEvent {
+        override val name: String = "tab_switched"
+        override val parameters: Map<String, Any> = mapOf(
+            "tab_name" to tabName,
+        )
+    }
 }
 
