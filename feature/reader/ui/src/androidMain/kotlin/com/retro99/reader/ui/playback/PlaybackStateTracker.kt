@@ -103,8 +103,9 @@ class PlaybackStateTracker(
                 Player.STATE_ENDED -> {
                     logger.i { "Chapter audio completed naturally" }
                     _isPlaying.value = false
-                    audioFocusManager.abandonFocus()
-                    foregroundServiceController.stopService()
+                    // Don't abandon audio focus or stop service here - we may be
+                    // auto-playing the next chapter. The service will be stopped
+                    // when the user explicitly pauses or the reader is closed.
                     // Emit chapter completion event for auto-play next chapter
                     _chapterAudioCompleted.tryEmit(Unit)
                 }

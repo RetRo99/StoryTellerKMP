@@ -476,7 +476,8 @@ class MediaOverlayPlayer {
         let completionThreshold: Int64 = 200
         if currentPositionMs >= duration - completionThreshold {
             hasNotifiedChapterCompletion = true
-            pause()
+            // Don't pause here - we may be auto-playing the next chapter.
+            // The coordinator will handle starting the next chapter seamlessly.
             onChapterAudioCompleted?(chapterHref)
         }
     }
