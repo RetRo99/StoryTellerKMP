@@ -4,7 +4,21 @@ import com.retro99.reader.domain.model.BookType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
-sealed interface HomeDestination : BottomSheetDestination {
+/**
+ * Interface for destinations that control bottom navigation bar visibility.
+ * Implement this interface and override [showBottomBar] to return `false`
+ * for full-screen destinations like readers.
+ */
+interface BottomBarDestination {
+    /**
+     * Whether the bottom navigation bar should be visible when this destination is displayed.
+     * Default is `true`.
+     */
+    val showBottomBar: Boolean
+        get() = true
+}
+
+sealed interface HomeDestination : BottomSheetDestination, BottomBarDestination {
 
     @Serializable
     data object BooksList : HomeDestination
@@ -28,7 +42,10 @@ sealed interface HomeDestination : BottomSheetDestination {
     data class Reader(
         val bookUuid: String,
         val bookType: BookType,
-    ) : HomeDestination
+    ) : HomeDestination {
+        @Transient
+        override val showBottomBar: Boolean = false
+    }
 
     @Serializable
     data object Settings : HomeDestination {

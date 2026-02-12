@@ -26,15 +26,20 @@ fun HomeNavigation(
     viewModel: HomeNavigationViewModel = koinViewModel(),
 ) {
     BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
+        val currentDestination = state.currentBackStack.lastOrNull()
+        val showBottomBar = (currentDestination as? BottomBarDestination)?.showBottomBar != false
+
         Scaffold(
             modifier = modifier,
             bottomBar = {
-                HomeBottomNavigationBar(
-                    currentTab = state.currentTab,
-                    onTabSelected = { tab ->
-                        intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
-                    },
-                )
+                if (showBottomBar) {
+                    HomeBottomNavigationBar(
+                        currentTab = state.currentTab,
+                        onTabSelected = { tab ->
+                            intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
+                        },
+                    )
+                }
             },
         ) { paddingValues ->
             BottomSheetNavDisplay(
