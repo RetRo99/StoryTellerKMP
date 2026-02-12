@@ -3,6 +3,8 @@ package com.retro99.books.ui.list
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
 import com.retro99.books.ui.model.BookUiModel
@@ -18,6 +20,7 @@ import org.koin.core.annotation.Provided
 class BooksViewModel(
     @InjectedParam private val onNavigateToBookDetail: (book: BookUiModel) -> Unit,
     @Provided private val getBooksUseCase: GetBooksUseCase,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
     init {
@@ -49,6 +52,7 @@ class BooksViewModel(
                         }
                     }
                     .onFailure { error ->
+                        error.log(analytics, "BooksViewModel: Failed to load books")
                         updateState {
                             it.copy(
                                 isLoading = false,

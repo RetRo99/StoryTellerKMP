@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.media.smil
 
+import co.touchlab.kermit.Logger
 import org.koin.core.annotation.Single
 
 /**
@@ -29,6 +30,8 @@ class SmilClockParser {
             } else {
                 parseMetricFormat(trimmed)
             }
+        }.onFailure { e ->
+            Logger.w(TAG, e) { "Failed to parse SMIL clock value: '$value'" }
         }.getOrNull()
     }
 
@@ -74,6 +77,7 @@ class SmilClockParser {
     }
 
     private companion object {
+        private const val TAG = "SmilClockParser"
         const val SECONDS_PER_MINUTE = 60.0
         const val SECONDS_PER_HOUR = 3600.0
         const val MS_PER_SECOND = 1000.0

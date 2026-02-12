@@ -3,6 +3,8 @@ package com.retro99.books.ui.authors.detail
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksByAuthorUseCase
 import com.retro99.books.ui.model.BookUiModel
@@ -21,6 +23,7 @@ class AuthorDetailViewModel(
     @InjectedParam private val onNavigateToBookDetail: (book: BookUiModel) -> Unit,
     @InjectedParam private val onBack: () -> Unit,
     @Provided private val getBooksByAuthorUseCase: GetBooksByAuthorUseCase,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<AuthorDetailViewState, AuthorDetailIntent>(
     AuthorDetailViewState(
         authorUuid = authorUuid,
@@ -58,6 +61,10 @@ class AuthorDetailViewModel(
                         }
                     }
                     .onFailure { error ->
+                        error.log(
+                            analytics,
+                            "AuthorDetailViewModel: Failed to load books for author"
+                        )
                         updateState {
                             it.copy(
                                 isLoading = false,

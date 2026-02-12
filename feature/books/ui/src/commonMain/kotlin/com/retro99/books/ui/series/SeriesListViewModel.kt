@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.coroutines.coroutineBinding
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
 import com.retro99.books.domain.usecase.GetSeriesUseCase
@@ -22,6 +24,7 @@ class SeriesListViewModel(
     @InjectedParam private val onNavigateToSeriesDetail: (series: SeriesListUiModel) -> Unit,
     @Provided private val getSeriesUseCase: GetSeriesUseCase,
     @Provided private val getBooksUseCase: GetBooksUseCase,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<SeriesListViewState, SeriesListIntent>(SeriesListViewState()) {
 
     init {
@@ -62,6 +65,7 @@ class SeriesListViewModel(
                         }
                     }
                     .onFailure { error ->
+                        error.log(analytics, "SeriesListViewModel: Failed to load series")
                         updateState {
                             it.copy(
                                 isLoading = false,

@@ -4,6 +4,8 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.login.domain.usecase.LoginUseCase
 import kotlinx.coroutines.flow.launchIn
@@ -16,6 +18,7 @@ import org.koin.core.annotation.Provided
 @KoinViewModel
 class LoginViewModel(
     @Provided private val loginUseCase: LoginUseCase,
+    @Provided private val analytics: Analytics,
     @InjectedParam private val onSignInSuccess: () -> Unit,
     @InjectedParam private val onBackClick: () -> Unit,
 ) : BaseViewModel<LoginViewState, LoginIntent>(LoginViewState()) {
@@ -76,6 +79,7 @@ class LoginViewModel(
                     onSignInSuccess()
                 },
                 failure = { error ->
+                    error.log(analytics, "LoginViewModel: Failed to login")
                     updateState { state ->
                         state.copy(
                             isLoading = false,

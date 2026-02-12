@@ -3,6 +3,8 @@ package com.retro99.books.ui.detail
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.ui.model.toUiModel
@@ -31,6 +33,7 @@ class BookDetailViewModel(
     @Provided private val cancelDownloadUseCase: CancelDownloadUseCase,
     @Provided private val observeDownloadStateUseCase: ObserveDownloadStateUseCase,
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(),
 ) {
@@ -122,6 +125,7 @@ class BookDetailViewModel(
                         }
                     }
                     .onFailure { error ->
+                        error.log(analytics, "BookDetailViewModel: Failed to load book details")
                         updateState {
                             it.copy(
                                 isLoading = false,
