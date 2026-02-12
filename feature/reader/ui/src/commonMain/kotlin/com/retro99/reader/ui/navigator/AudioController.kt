@@ -65,17 +65,31 @@ interface AudioController : AutoCloseable {
     // Media playback methods for ReadAloud books
 
     /**
-     * Starts audio playback, optionally seeking to a specific position.
+     * Toggles audio playback (play/pause).
      *
-     * @param initialPositionMs Optional initial position in milliseconds to seek to before playing.
-     *                          If null, playback starts from the current text position.
+     * The controller internally tracks whether playback has been started:
+     * - If not started yet: starts playback from the initial position or visible sentence
+     * - If started and playing: pauses
+     * - If started and paused: resumes from current position
+     *
+     * @param getVisibleSentenceId Suspend function to get the currently visible sentence ID
+     *                              from the WebView. Used for precise positioning when starting fresh.
      */
-    fun playAudio(initialPositionMs: Long? = null)
+    suspend fun togglePlayback(getVisibleSentenceId: suspend () -> String?)
 
     /**
-     * Resumes audio playback from the current position without seeking.
+     * Sets the initial audio position from saved reading progress.
+     * Should be called when opening a book with a saved position.
+     *
+     * @param positionMs The saved audio position in milliseconds, or null if none
      */
-    fun resumeAudio()
+    fun setInitialPosition(positionMs: Long?)
+
+    /**
+     * Resets the playback state so the next play starts fresh.
+     * Should be called when the user navigates to a new position while paused.
+     */
+    fun resetPlaybackState()
 
     /**
      * Pauses audio playback.

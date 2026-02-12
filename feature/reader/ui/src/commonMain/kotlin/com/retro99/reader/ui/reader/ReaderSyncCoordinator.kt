@@ -36,9 +36,13 @@ class ReaderSyncCoordinator(
         bookToAudioJob = bookController.currentLocator
             .onEach { locator ->
                 audioController.onBookLocationChanged(locator)
-                // Update seek bar position when user navigates (only for ReadAloud books)
-                // AudioController will check if playing and ignore if so
+                // Only handle ReadAloud-specific logic for books with media overlays
                 if (bookController.hasMediaOverlays) {
+                    // Reset playback state when user navigates while not playing
+                    // so next play starts from the current visible text position.
+                    // AudioController checks if playing internally and ignores if so.
+                    audioController.resetPlaybackState()
+                    // Update seek bar position to reflect the visible sentence
                     updateSeekBarForVisibleSentence()
                 }
             }
