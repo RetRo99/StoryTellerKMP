@@ -66,13 +66,14 @@ class AndroidAudioController(
             playbackStateTracker.totalDuration,
             playbackStateTracker.isPlaying,
             playbackStateTracker.playbackState,
-        ) { positionMs, durationMs, isPlaying, playbackState ->
+            playbackStateTracker.isPlayerReady,
+        ) { positionMs, durationMs, isPlaying, playbackState, isPlayerReady ->
             AudioPlaybackState(
                 currentPositionMs = positionMs,
                 totalDurationMs = durationMs,
                 isPlaying = isPlaying,
                 playbackState = playbackState,
-                isPlayerReady = true,
+                isPlayerReady = isPlayerReady,
             )
         }
 
@@ -112,7 +113,9 @@ class AndroidAudioController(
 
         val chapterPrepareStart = nowMillis()
         if (initialChapterUrl != null) {
-            player.prepareChapterDuration(initialChapterUrl)
+            // Pass initial position so audio is pre-buffered at the correct position
+            // This makes playback start instantly when user clicks play
+            player.prepareChapterDuration(initialChapterUrl, initialPositionMs)
         }
         val chapterPrepareTime = nowMillis() - chapterPrepareStart
         logger.i { "⏱️ prepareChapterDuration() completed in ${chapterPrepareTime}ms" }

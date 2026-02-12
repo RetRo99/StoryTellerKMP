@@ -67,6 +67,9 @@ class PlaybackStateTracker(
     private val _totalDuration = MutableStateFlow<Long?>(null)
     val totalDuration: StateFlow<Long?> = _totalDuration.asStateFlow()
 
+    private val _isPlayerReady = MutableStateFlow(false)
+    val isPlayerReady: StateFlow<Boolean> = _isPlayerReady.asStateFlow()
+
     private val _chapterAudioCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     /**
@@ -98,6 +101,9 @@ class PlaybackStateTracker(
             }
             logger.i { "ExoPlayer onPlaybackStateChanged: $stateName, isPlaying=${player.isPlaying}" }
             updatePlaybackState(playerState, player.isPlaying)
+
+            // Update isPlayerReady based on player state
+            _isPlayerReady.value = playerState == Player.STATE_READY
 
             when (playerState) {
                 Player.STATE_ENDED -> {
@@ -203,6 +209,7 @@ class PlaybackStateTracker(
     fun release() {
         player.removeListener(playerListener)
         _playbackState.value = PlaybackState.STOPPED
+        _isPlayerReady.value = false
     }
 }
 
