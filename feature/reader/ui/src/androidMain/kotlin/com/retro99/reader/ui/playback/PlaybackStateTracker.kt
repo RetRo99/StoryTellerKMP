@@ -179,6 +179,14 @@ class PlaybackStateTracker(
         _totalDuration.value = durationMs
     }
 
+    /**
+     * Emits a chapter completion event.
+     * Used when a chapter has no audio content and should be skipped.
+     */
+    fun emitChapterCompleted() {
+        _chapterAudioCompleted.tryEmit(Unit)
+    }
+
     private fun updatePlaybackState(playerState: Int, isPlaying: Boolean) {
         _playbackState.value = when {
             isPlaying -> PlaybackState.PLAYING

@@ -160,7 +160,8 @@ interface AudioController : AutoCloseable {
      * Used to trigger auto-play of the next chapter.
      *
      * Emits the href of the completed chapter when audio reaches the end.
-     * Does not emit if playback was manually stopped or paused.
+     * Also emits when a chapter has no audio content, allowing the coordinator
+     * to skip to the next chapter.
      */
     val chapterAudioCompleted: Flow<String>
 }
