@@ -8,6 +8,8 @@ import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
+import com.retro99.books.domain.usecase.ObserveFavoriteUseCase
+import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.toUiModel
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadState
@@ -34,6 +36,8 @@ class BookDetailViewModel(
     @Provided private val cancelDownloadUseCase: CancelDownloadUseCase,
     @Provided private val observeDownloadStateUseCase: ObserveDownloadStateUseCase,
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
+    @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    @Provided private val observeFavoriteUseCase: ObserveFavoriteUseCase,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(),
@@ -48,6 +52,7 @@ class BookDetailViewModel(
         )
         fetchBook()
         observeDownloadStates()
+        observeFavoriteState()
     }
 
     override fun onIntent(intent: BookDetailIntent) {
@@ -98,7 +103,25 @@ class BookDetailViewModel(
             BookDetailIntent.OnDeleteCacheDismissed -> {
                 updateState { it.copy(deleteConfirmationBookType = null) }
             }
+
+            BookDetailIntent.OnFavoriteClicked -> {
+                toggleFavorite()
+            }
         }
+    }
+
+    private fun toggleFavorite() {
+        viewModelScope.launch {
+            toggleFavoriteUseCase(bookUuid)
+        }
+    }
+
+    private fun observeFavoriteState() {
+        observeFavoriteUseCase(bookUuid)
+            .onEach { isFavorite ->
+                updateState { it.copy(isFavorite = isFavorite) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun handleReadClick(bookType: BookType) {

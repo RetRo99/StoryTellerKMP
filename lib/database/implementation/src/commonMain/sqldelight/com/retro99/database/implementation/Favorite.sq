@@ -1,0 +1,31 @@
+-- ============================================
+-- FAVORITES TABLE (user's favorite books)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS favorites (
+    book_uuid TEXT NOT NULL PRIMARY KEY,
+    added_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_favorites_added_at ON favorites(added_at);
+
+-- Queries for favorites
+insertFavorite:
+INSERT OR REPLACE INTO favorites(book_uuid, added_at)
+VALUES (?, ?);
+
+deleteFavorite:
+DELETE FROM favorites WHERE book_uuid = ?;
+
+isFavorite:
+SELECT COUNT(*) FROM favorites WHERE book_uuid = ?;
+
+getAllFavorites:
+SELECT book_uuid FROM favorites ORDER BY added_at DESC;
+
+deleteAllFavorites:
+DELETE FROM favorites;
+
+getFavoritesCount:
+SELECT COUNT(*) FROM favorites;
+
