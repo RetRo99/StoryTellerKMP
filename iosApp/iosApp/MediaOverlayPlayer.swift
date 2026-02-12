@@ -286,6 +286,8 @@ class MediaOverlayPlayer {
             currentChapterClips = await getClipsForChapter(chapterHref: normalizedHref)
 
             guard !currentChapterClips.isEmpty else {
+                // No audio content for this chapter - emit completion to skip to next
+                onChapterAudioCompleted?(normalizedHref)
                 return
             }
 

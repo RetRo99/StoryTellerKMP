@@ -369,7 +369,11 @@ class MediaOverlayPlayer(
                     initialPositionMs,
                 )
                 if (!success) {
-                    handlePreparationFailure("Chapter preparation returned no playable content")
+                    // No playable content - emit completion to skip to next chapter
+                    handlePreparationFailure(
+                        reason = "Chapter preparation returned no playable content",
+                        emitCompletion = true,
+                    )
                 }
             } catch (e: Exception) {
                 analytics.logException(e, "Failed to prepare chapter: $chapterHref")
@@ -381,13 +385,21 @@ class MediaOverlayPlayer(
     /**
      * Handles preparation failure by stopping the foreground service and resetting state.
      * This prevents zombie notifications when SMIL parsing fails, audio is missing, etc.
+     *
+     * @param reason Description of why preparation failed
+     * @param emitCompletion If true, emits a chapter completion event to skip to next chapter
      */
-    private fun handlePreparationFailure(reason: String) {
+    private fun handlePreparationFailure(reason: String, emitCompletion: Boolean = false) {
         logger.e { "Preparation failed: $reason" }
         playbackStateTracker.setPlayingState(false)
         playbackStateTracker.setPlaybackState(PlaybackState.ERROR)
         audioFocusManager.abandonFocus()
         foregroundServiceController.stopService()
+
+        if (emitCompletion) {
+            // Emit completion event so coordinator can skip to next chapter
+            playbackStateTracker.emitChapterCompleted()
+        }
     }
 
     /**
