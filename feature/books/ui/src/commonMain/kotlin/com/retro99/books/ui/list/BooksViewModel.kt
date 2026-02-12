@@ -60,7 +60,12 @@ class BooksViewModel(
     private fun observeFavorites() {
         observeAllFavoritesUseCase()
             .onEach { favoriteUuids ->
-                updateState { it.copy(favoriteBookUuids = favoriteUuids) }
+                updateState {
+                    it.copy(
+                        favoriteBookUuids = favoriteUuids,
+                        books = sortBooksByFavorites(it.books, favoriteUuids),
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -74,8 +79,9 @@ class BooksViewModel(
                 result
                     .onSuccess { books ->
                         updateState {
+                            val uiBooks = books.map { book -> book.toUiModel() }
                             it.copy(
-                                books = books.map { book -> book.toUiModel() },
+                                books = sortBooksByFavorites(uiBooks, it.favoriteBookUuids),
                                 isLoading = false,
                                 isRefreshing = false,
                                 error = null,
@@ -94,6 +100,13 @@ class BooksViewModel(
                     }
             }
             .launchIn(viewModelScope)
+    }
+
+    private fun sortBooksByFavorites(
+        books: List<BookUiModel>,
+        favoriteUuids: Set<String>,
+    ): List<BookUiModel> {
+        return books.sortedByDescending { it.uuid in favoriteUuids }
     }
 }
 
