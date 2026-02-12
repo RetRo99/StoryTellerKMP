@@ -8,6 +8,7 @@ import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.BookAnalyticsEvent
+import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
@@ -51,6 +52,10 @@ class BooksViewModel(
 
     private fun toggleSearch() {
         val currentlyVisible = viewState.value.isSearchVisible
+        // Only track when opening search, not closing
+        if (!currentlyVisible) {
+            analytics.logEvent(NavigationAnalyticsEvent.SearchOpened(source = "books_list"))
+        }
         if (currentlyVisible) {
             // Clear search when hiding
             searchFieldState.edit { delete(0, length) }

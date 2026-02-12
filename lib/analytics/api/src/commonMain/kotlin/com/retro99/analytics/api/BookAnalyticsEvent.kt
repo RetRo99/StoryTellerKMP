@@ -151,5 +151,17 @@ sealed interface NavigationAnalyticsEvent : AnalyticsEvent {
             "tab_name" to tabName,
         )
     }
+
+    /**
+     * Tracks when user opens search - helps understand search feature usage.
+     */
+    data class SearchOpened(
+        val source: String,
+    ) : NavigationAnalyticsEvent {
+        override val name: String = "search_opened"
+        override val parameters: Map<String, Any> = mapOf(
+            "source" to source,
+        )
+    }
 }
 
