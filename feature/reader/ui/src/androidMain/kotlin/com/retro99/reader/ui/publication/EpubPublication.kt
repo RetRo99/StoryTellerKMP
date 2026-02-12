@@ -1,11 +1,14 @@
 package com.retro99.reader.ui.publication
 
+import android.graphics.Bitmap
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Publication
+import org.readium.r2.shared.publication.services.cover
+import java.io.ByteArrayOutputStream
 
 /**
  * Android implementation of EpubPublication.
@@ -47,6 +50,27 @@ actual class EpubPublication(
         )
         // Return flat list: this item followed by flattened children
         return listOf(item) + children.flatMap { it.toTocItems(level + 1) }
+    }
+
+    /**
+     * Gets the cover image of the publication as a byte array.
+     * Uses Readium's Publication.cover() extension function.
+     * Returns null if no cover is available or if loading fails.
+     *
+     * The cover is compressed as PNG for best quality with transparency support.
+     */
+    suspend fun cover(): ByteArray? {
+        return try {
+            val bitmap = publication.cover() ?: return null
+
+            // Compress to PNG byte array for Media3 notification
+            ByteArrayOutputStream().use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                outputStream.toByteArray()
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 }
 
