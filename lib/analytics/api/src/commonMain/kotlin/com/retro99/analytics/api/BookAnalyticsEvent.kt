@@ -124,17 +124,6 @@ sealed interface AuthAnalyticsEvent : AnalyticsEvent {
  */
 sealed interface NavigationAnalyticsEvent : AnalyticsEvent {
 
-    data class ScreenViewed(
-        val screenName: String,
-        val screenClass: String,
-    ) : NavigationAnalyticsEvent {
-        override val name: String = "screen_view"
-        override val parameters: Map<String, Any> = mapOf(
-            "screen_name" to screenName,
-            "screen_class" to screenClass,
-        )
-    }
-
     /**
      * Tracks when user switches between tabs - helps understand which sections are most used.
      */

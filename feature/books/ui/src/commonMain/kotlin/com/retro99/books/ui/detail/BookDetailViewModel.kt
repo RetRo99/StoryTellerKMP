@@ -40,6 +40,12 @@ class BookDetailViewModel(
 ) {
 
     init {
+        analytics.logEvent(
+            BookAnalyticsEvent.BookDetailViewed(
+                bookUuid = bookUuid,
+                source = "direct",
+            )
+        )
         fetchBook()
         observeDownloadStates()
     }
@@ -154,6 +160,22 @@ class BookDetailViewModel(
             Triple(ebookState, audiobookState, readaloudState)
         }
             .onEach { (ebookState, audiobookState, readaloudState) ->
+                val previousState = viewState.value
+                trackDownloadStateChange(
+                    BookType.EBOOK,
+                    previousState.ebookDownloadState,
+                    ebookState,
+                )
+                trackDownloadStateChange(
+                    BookType.AUDIOBOOK,
+                    previousState.audiobookDownloadState,
+                    audiobookState,
+                )
+                trackDownloadStateChange(
+                    BookType.READALOUD,
+                    previousState.readaloudDownloadState,
+                    readaloudState,
+                )
                 updateState {
                     it.copy(
                         ebookDownloadState = ebookState,
@@ -163,6 +185,38 @@ class BookDetailViewModel(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    private fun trackDownloadStateChange(
+        bookType: BookType,
+        previousState: DownloadState,
+        newState: DownloadState,
+    ) {
+        // Only track transitions from Downloading state
+        if (previousState !is DownloadState.Downloading) return
+
+        when (newState) {
+            is DownloadState.Cached -> {
+                analytics.logEvent(
+                    BookAnalyticsEvent.BookDownloadCompleted(
+                        bookUuid = bookUuid,
+                        downloadDurationMs = 0L, // Duration not tracked at this level
+                    )
+                )
+            }
+
+            is DownloadState.Failed -> {
+                analytics.logEvent(
+                    BookAnalyticsEvent.BookDownloadFailed(
+                        bookUuid = bookUuid,
+                        errorType = newState.error.message ?: "unknown",
+                    )
+                )
+            }
+
+            else -> { /* No tracking needed for other transitions */
+            }
+        }
     }
 
     private fun toggleDownload(bookType: BookType) {
@@ -175,6 +229,9 @@ class BookDetailViewModel(
 
         // If currently downloading, cancel it
         if (currentState is DownloadState.Downloading) {
+            analytics.logEvent(
+                BookAnalyticsEvent.BookDownloadCancelled(bookUuid = bookUuid)
+            )
             viewModelScope.launch {
                 cancelDownloadUseCase(bookUuid, bookType)
             }
@@ -188,6 +245,12 @@ class BookDetailViewModel(
             BookType.READALOUD -> book.readaloudFilepath
         } ?: return
 
+        analytics.logEvent(
+            BookAnalyticsEvent.BookDownloadStarted(
+                bookUuid = bookUuid,
+                bookType = bookType.name.lowercase(),
+            )
+        )
         viewModelScope.launch {
             downloadMediaUseCase(bookUuid, bookType, filePath, book.title)
         }
