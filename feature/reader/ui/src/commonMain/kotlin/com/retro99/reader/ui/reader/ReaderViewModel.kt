@@ -473,10 +473,7 @@ class ReaderViewModel(
 
     private fun setPlaybackSpeed(speed: Float) {
         analytics.logEvent(
-            ReaderAnalyticsEvent.PlaybackSpeedChanged(
-                bookUuid = bookUuid,
-                newSpeed = speed,
-            )
+            ReaderAnalyticsEvent.SettingChanged("playback_speed", speed.toString())
         )
         audioController.setPlaybackSpeed(speed)
         updateState { it.copy(playbackSpeed = speed) }

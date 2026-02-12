@@ -38,6 +38,7 @@ kotlin {
             implementation(projects.translations)
             implementation(projects.feature.settings.domain)
             implementation(projects.feature.reader.domain)
+            implementation(projects.lib.analytics.api)
         }
     }
 }
