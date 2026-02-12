@@ -42,6 +42,12 @@ class IosAudioController(
      */
     private var initialPositionMs: Long? = null
 
+    /**
+     * Currently visible sentence ID, updated by the sync coordinator.
+     * Used for precise positioning when starting playback.
+     */
+    private var currentVisibleSentenceId: String? = null
+
     // Internal mutable flows for state observation
     private val _audioPlaybackState = MutableStateFlow(
         AudioPlaybackState(
@@ -118,17 +124,21 @@ class IosAudioController(
         }
     }
 
-    override suspend fun togglePlayback(getVisibleSentenceId: suspend () -> String?) {
+    override fun togglePlayback() {
         val isCurrentlyPlaying = _audioPlaybackState.value.isPlaying
         if (isCurrentlyPlaying) {
             bridge.pauseAudio()
         } else {
             if (!hasStartedPlayback) {
-                startPlaybackFromCurrentPosition(getVisibleSentenceId)
+                startPlaybackFromCurrentPosition()
             } else {
                 bridge.resumeAudio()
             }
         }
+    }
+
+    override fun setVisibleSentenceId(sentenceId: String?) {
+        currentVisibleSentenceId = sentenceId
     }
 
     override fun setInitialPosition(positionMs: Long?) {
@@ -148,18 +158,16 @@ class IosAudioController(
 
     /**
      * Starts playback from the current position.
-     * Uses saved position if available, otherwise queries visible sentence.
+     * Uses saved position if available, otherwise uses the cached visible sentence.
      */
-    private suspend fun startPlaybackFromCurrentPosition(
-        getVisibleSentenceId: suspend () -> String?,
-    ) {
+    private fun startPlaybackFromCurrentPosition() {
         val savedPosition = initialPositionMs
         if (savedPosition != null) {
             ensureMediaOverlaysInitialized {
                 bridge.playAudio(savedPosition)
             }
         } else {
-            val visibleSentenceId = getVisibleSentenceId()
+            val visibleSentenceId = currentVisibleSentenceId
             if (visibleSentenceId != null) {
                 playFromFragment(visibleSentenceId, chapterHref = null)
             } else {

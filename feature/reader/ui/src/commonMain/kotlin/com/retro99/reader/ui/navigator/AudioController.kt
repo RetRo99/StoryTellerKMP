@@ -72,10 +72,18 @@ interface AudioController : AutoCloseable {
      * - If started and playing: pauses
      * - If started and paused: resumes from current position
      *
-     * @param getVisibleSentenceId Suspend function to get the currently visible sentence ID
-     *                              from the WebView. Used for precise positioning when starting fresh.
+     * Uses the visible sentence ID set via [setVisibleSentenceId] for precise positioning.
      */
-    suspend fun togglePlayback(getVisibleSentenceId: suspend () -> String?)
+    fun togglePlayback()
+
+    /**
+     * Sets the currently visible sentence ID.
+     * Called by the sync coordinator when the book location changes.
+     * Used by [togglePlayback] to know where to start playback from.
+     *
+     * @param sentenceId The fragment ID of the visible sentence, or null if unknown
+     */
+    fun setVisibleSentenceId(sentenceId: String?)
 
     /**
      * Sets the initial audio position from saved reading progress.
