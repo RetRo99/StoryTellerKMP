@@ -13,7 +13,7 @@ fun SeriesDomainModel.toListUiModel(
     // Sort by position in series, then by title
     val sortedBooks = seriesBooks.sortedWith(
         compareBy(
-            { book -> book.series.find { it.uuid == uuid }?.position ?: Int.MAX_VALUE },
+            { book -> book.series.find { it.uuid == uuid }?.position ?: Double.MAX_VALUE },
             { it.title },
         ),
     )

@@ -8,6 +8,6 @@ import com.retro99.database.api.books.BookSeriesEntity
 data class BookSeriesSqlDelightEntity(
     override val bookUuid: String,
     override val seriesUuid: String,
-    override val position: Int?,
+    override val position: Double?,
 ) : BookSeriesEntity
 
