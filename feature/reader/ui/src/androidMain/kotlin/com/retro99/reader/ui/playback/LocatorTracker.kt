@@ -252,5 +252,13 @@ class LocatorTracker(
             0
         }
     }
+
+    /**
+     * Sets the current position directly.
+     * Used to set the initial position from saved reading progress.
+     */
+    fun setCurrentPosition(positionMs: Long) {
+        _currentPosition.value = positionMs
+    }
 }
 

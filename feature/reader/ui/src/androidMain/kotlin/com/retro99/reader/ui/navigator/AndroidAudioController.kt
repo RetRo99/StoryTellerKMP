@@ -131,6 +131,10 @@ class AndroidAudioController(
 
     override fun setInitialPosition(positionMs: Long?) {
         initialPositionMs = positionMs
+        // Also update the locator tracker so the seek bar shows the initial position
+        if (positionMs != null) {
+            locatorTracker.setCurrentPosition(positionMs)
+        }
     }
 
     override fun resetPlaybackState() {
