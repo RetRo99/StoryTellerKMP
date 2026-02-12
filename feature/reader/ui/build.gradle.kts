@@ -38,6 +38,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+            implementation(libs.compose.ui.backhandler)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.navigation3.ui)
             implementation(libs.navigation3.viewmodel)
