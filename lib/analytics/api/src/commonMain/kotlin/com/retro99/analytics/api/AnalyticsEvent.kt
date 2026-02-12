@@ -95,5 +95,18 @@ sealed interface ReaderAnalyticsEvent : AnalyticsEvent {
             "new_value" to newValue,
         )
     }
+
+    /**
+     * Tracks when a settings section is expanded - helps understand which sections
+     * are most used so we can prioritize their position.
+     */
+    data class SettingsSectionExpanded(
+        val sectionName: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "settings_section_expanded"
+        override val parameters: Map<String, Any> = mapOf(
+            "section_name" to sectionName,
+        )
+    }
 }
 
