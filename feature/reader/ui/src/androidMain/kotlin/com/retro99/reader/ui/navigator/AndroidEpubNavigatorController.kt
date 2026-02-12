@@ -43,7 +43,7 @@ import org.readium.r2.shared.util.mediatype.MediaType
 private const val READALOUD_DECORATION_GROUP = "readaloud"
 
 /**
- * Android implementation of [EpubNavigatorController] using Readium's EpubNavigatorFragment.
+ * Android implementation of [BookController] using Readium's EpubNavigatorFragment.
  *
  * This controller wraps the Readium navigator fragment and provides navigation
  * and settings functionality. It is created by the View after the publication
@@ -59,7 +59,7 @@ private const val READALOUD_DECORATION_GROUP = "readaloud"
  */
 @Scope(ReaderScope::class)
 @Scoped(binds = [BookController::class])
-class AndroidEpubNavigatorController internal constructor() : EpubNavigatorController {
+class AndroidEpubNavigatorController internal constructor() : BookController {
 
     private val _navigator = MutableStateFlow<EpubNavigatorFragment?>(null)
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

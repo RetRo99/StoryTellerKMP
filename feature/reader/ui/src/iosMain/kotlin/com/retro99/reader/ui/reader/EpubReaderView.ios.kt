@@ -19,7 +19,7 @@ import co.touchlab.kermit.Logger
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.navigator.BookController
-import com.retro99.reader.ui.navigator.IosEpubNavigatorController
+import com.retro99.reader.ui.navigator.IosBookController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
@@ -45,7 +45,7 @@ internal actual fun EpubReaderViewInternal(
 ) {
     logger.d { "EpubReaderView composing for bookUuid=$bookUuid" }
 
-    val navigator = bookController as? IosEpubNavigatorController
+    val navigator = bookController as? IosBookController
 
     // Note: Double-tap events are handled by ReaderSyncCoordinator, not the View
 
