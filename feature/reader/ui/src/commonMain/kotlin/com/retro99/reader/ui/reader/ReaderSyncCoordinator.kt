@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.reader
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
@@ -30,8 +29,6 @@ class ReaderSyncCoordinator(
     private val bookController: BookController,
     private val audioController: AudioController,
 ) : AutoCloseable {
-
-    private val logger = Logger.withTag("ReaderSyncCoordinator")
 
     private var bookToAudioJob: Job? = null
     private var audioToBookJob: Job? = null
@@ -76,7 +73,6 @@ class ReaderSyncCoordinator(
         // Handle chapter audio completion - auto-play next chapter
         chapterCompletionJob = audioController.chapterAudioCompleted
             .onEach { completedChapterHref ->
-                logger.i { "Chapter audio completed: $completedChapterHref, navigating to next" }
                 onChapterAudioCompleted(scope, completedChapterHref)
             }
             .launchIn(scope)
@@ -95,8 +91,6 @@ class ReaderSyncCoordinator(
             val newLocator = bookController.currentLocator
                 .drop(1) // Skip current value
                 .first { it.href != completedChapterHref }
-
-            logger.i { "Navigated to next chapter: ${newLocator.href}, starting playback" }
 
             // Start playback from the beginning of the new chapter
             audioController.playFromFragment(

@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.service
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.model.PositionUiModel
@@ -9,8 +8,6 @@ import com.retro99.reader.ui.publication.EpubPublication
 import org.koin.core.annotation.Single
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-
-private val logger = Logger.withTag("IosEpubPublicationService")
 
 /**
  * iOS implementation of [EpubPublicationService].
@@ -36,7 +33,6 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
     ): EpubPublication? {
         val currentBridge = bridge
         if (currentBridge == null) {
-            logger.e { "EPUB reader bridge not registered!" }
             setError("EPUB reader bridge not registered")
             return null
         }
@@ -63,7 +59,6 @@ class IosEpubPublicationService : BaseEpubPublicationService() {
                     continuation.resume(publication)
                 },
                 onError = { errorMessage ->
-                    logger.e { "openPublication failed: $errorMessage" }
                     setError(errorMessage)
                     continuation.resume(null)
                 },

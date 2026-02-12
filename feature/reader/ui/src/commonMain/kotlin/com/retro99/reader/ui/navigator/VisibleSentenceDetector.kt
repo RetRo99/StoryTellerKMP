@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -16,7 +15,6 @@ import kotlinx.serialization.json.Json
  */
 object VisibleSentenceDetector {
 
-    private val logger = Logger.withTag("VisibleSentenceDetector")
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
     /**
@@ -97,14 +95,11 @@ object VisibleSentenceDetector {
         return try {
             val data = jsonParser.decodeFromString<VisibleSentenceResult>(json)
             if (data.status == "found") {
-                logger.d { "Found visible sentence: ${data.elementId} at y=${data.topY}" }
                 data.elementId
             } else {
-                logger.d { "No visible sentence found" }
                 null
             }
-        } catch (e: Exception) {
-            logger.w(e) { "Failed to parse visible sentence result: $json" }
+        } catch (_: Exception) {
             null
         }
     }

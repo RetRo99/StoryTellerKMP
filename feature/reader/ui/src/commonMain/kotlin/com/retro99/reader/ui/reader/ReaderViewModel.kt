@@ -136,7 +136,6 @@ class ReaderViewModel(
     }
 
     override fun onIntent(intent: ReaderIntent) {
-        println("čič $intent")
         when (intent) {
             is ReaderIntent.UpdateSettings -> updateSettings(intent.settings)
             ReaderIntent.ToggleSettings -> toggleSettings()
@@ -224,7 +223,6 @@ class ReaderViewModel(
     private fun observeAudioPlaybackState() {
         audioController.audioPlaybackState
             .onEach { state ->
-                println("čič123 observeAudioPlaybackState: $state")
                 updateAudioPosition(
                     positionMs = state.currentPositionMs,
                     totalDurationMs = state.totalDurationMs,
@@ -257,8 +255,6 @@ class ReaderViewModel(
         val settings = data.initialSettings.toUiModel()
         val bookType = data.bookType
         val (position, conflict) = data.progressResult.toUiData()
-
-        println("čič openPublication: initialAudioTimestampMs=${position?.audioTimestampMs}")
 
         val publication = publicationService.openPublication(
             filePath = data.localEbookPath,
@@ -495,8 +491,6 @@ class ReaderViewModel(
         val currentState = viewState.value
         val audioPositionMs = currentState.currentAudioPositionMs
         val lastPosition = currentState.lastKnownPosition
-
-        println("čič saveCurrentAudioPosition: audioPositionMs=$audioPositionMs, lastPosition=${lastPosition != null}")
 
         if (audioPositionMs <= 0) return
         if (lastPosition == null) return

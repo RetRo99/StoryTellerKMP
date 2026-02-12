@@ -3,7 +3,6 @@ package com.retro99.reader.ui.playback
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PlaybackState
@@ -56,8 +55,6 @@ class PlaybackStateTracker(
     private val foregroundServiceController: ForegroundServiceController,
     private val locatorTracker: LocatorTracker,
 ) {
-    private val logger = Logger.withTag("PlaybackStateTracker")
-
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -92,14 +89,6 @@ class PlaybackStateTracker(
         }
 
         override fun onPlaybackStateChanged(playerState: Int) {
-            val stateName = when (playerState) {
-                Player.STATE_IDLE -> "IDLE"
-                Player.STATE_BUFFERING -> "BUFFERING"
-                Player.STATE_READY -> "READY"
-                Player.STATE_ENDED -> "ENDED"
-                else -> "UNKNOWN($playerState)"
-            }
-            logger.i { "ExoPlayer onPlaybackStateChanged: $stateName, isPlaying=${player.isPlaying}" }
             updatePlaybackState(playerState, player.isPlaying)
 
             // Update isPlayerReady based on player state
@@ -107,7 +96,6 @@ class PlaybackStateTracker(
 
             when (playerState) {
                 Player.STATE_ENDED -> {
-                    logger.i { "Chapter audio completed naturally" }
                     _isPlaying.value = false
                     // Don't abandon audio focus or stop service here - we may be
                     // auto-playing the next chapter. The service will be stopped
@@ -118,7 +106,6 @@ class PlaybackStateTracker(
 
                 Player.STATE_READY -> {
                     val duration = player.duration
-                    logger.i { "ExoPlayer READY - duration=${duration}ms, playWhenReady=${player.playWhenReady}" }
                     if (duration > 0) {
                         _totalDuration.value = duration
                     }
@@ -141,7 +128,6 @@ class PlaybackStateTracker(
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            logger.e { "ExoPlayer ERROR: ${error.message}" }
             analytics.logException(error, "ExoPlayer playback error")
             // Update state to reflect the error so UI can show appropriate feedback
             _playbackState.value = PlaybackState.ERROR
