@@ -86,14 +86,6 @@ interface AudioController : AutoCloseable {
     fun setVisibleSentenceId(sentenceId: String?)
 
     /**
-     * Sets the initial audio position from saved reading progress.
-     * Should be called when opening a book with a saved position.
-     *
-     * @param positionMs The saved audio position in milliseconds, or null if none
-     */
-    fun setInitialPosition(positionMs: Long?)
-
-    /**
      * Resets the playback state so the next play starts fresh.
      * Should be called when the user navigates to a new position while paused.
      */

@@ -45,8 +45,9 @@ class AndroidAudioController(
     /**
      * Initial audio position from saved reading progress.
      * Used on first playback, then cleared.
+     * Initialized from publication's saved position.
      */
-    private var initialPositionMs: Long? = null
+    private var initialPositionMs: Long? = publication.initialPosition?.audioTimestampMs
 
     /**
      * Currently visible sentence ID, updated by the sync coordinator.
@@ -127,14 +128,6 @@ class AndroidAudioController(
 
     override fun setVisibleSentenceId(sentenceId: String?) {
         currentVisibleSentenceId = sentenceId
-    }
-
-    override fun setInitialPosition(positionMs: Long?) {
-        initialPositionMs = positionMs
-        // Also update the locator tracker so the seek bar shows the initial position
-        if (positionMs != null) {
-            locatorTracker.setCurrentPosition(positionMs)
-        }
     }
 
     override fun resetPlaybackState() {

@@ -290,18 +290,16 @@ class ReaderViewModel(
             }
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
-                initAudio(position?.audioTimestampMs)
+                initAudio()
             }
         }
             ?: updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
     }
 
-    private fun initAudio(initialAudioPositionMs: Long?) {
+    private fun initAudio() {
         // Start sync coordinator (this also triggers lazy initialization of audioController)
+        // Note: Initial audio position is handled via constructor injection in AudioController
         syncCoordinator.start(viewModelScope)
-
-        // Set the initial audio position from saved reading progress
-        audioController.setInitialPosition(initialAudioPositionMs)
 
         audioController.audioPlaybackState
             .map { it.isPlayerReady }
