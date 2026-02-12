@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "org.retro99.storyteller.android"
+    namespace = "com.retro99.parrot.android"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "org.retro99.storyteller"
+        applicationId = "com.retro99.parrot"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1

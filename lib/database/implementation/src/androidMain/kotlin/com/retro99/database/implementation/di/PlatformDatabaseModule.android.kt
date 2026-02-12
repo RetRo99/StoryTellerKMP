@@ -10,7 +10,7 @@ import org.koin.core.annotation.Module
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
-private const val DATABASE_NAME = "storyteller.db"
+private const val DATABASE_NAME = "parrot.db"
 
 /**
  * Android implementation of platform-specific Database module.

@@ -7,11 +7,11 @@ package com.retro99.base.deeplink
  * ensuring consistency between URI building (in reader:ui) and
  * URI parsing (in home:ui).
  *
- * URI Scheme: `storyteller://`
+ * URI Scheme: `parrot://`
  */
 object DeepLinkUriBuilder {
 
-    const val SCHEME = "storyteller://"
+    const val SCHEME = "parrot://"
     const val PATH_READER = "reader"
     const val PARAM_BOOK_UUID = "bookUuid"
     const val PARAM_BOOK_TYPE = "bookType"
@@ -21,7 +21,7 @@ object DeepLinkUriBuilder {
      *
      * @param bookUuid The unique identifier of the book
      * @param bookType The type of book as a string (e.g., "ebook", "audiobook", "readaloud")
-     * @return The deep link URI string (e.g., "storyteller://reader?bookUuid=xxx&bookType=readaloud")
+     * @return The deep link URI string (e.g., "parrot://reader?bookUuid=xxx&bookType=readaloud")
      */
     fun buildReaderUri(bookUuid: String, bookType: String): String {
         return "$SCHEME$PATH_READER?$PARAM_BOOK_UUID=$bookUuid&$PARAM_BOOK_TYPE=$bookType"

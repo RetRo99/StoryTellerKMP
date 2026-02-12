@@ -14,7 +14,7 @@ kotlin {
     jvmToolchain(libs.versions.jdk.get().toInt())
 
     androidLibrary {
-        namespace = "org.retro99.storyteller"
+        namespace = "com.retro99.parrot"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
         androidResources.enable = true
@@ -96,11 +96,11 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "org.retro99.storyteller.MainKt"
+        mainClass = "com.retro99.parrot.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.retro99.storyteller"
+            packageName = "com.retro99.parrot"
             packageVersion = "1.0.0"
         }
     }
