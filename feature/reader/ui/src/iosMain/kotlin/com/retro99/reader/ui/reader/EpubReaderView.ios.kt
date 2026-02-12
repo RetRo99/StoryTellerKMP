@@ -47,11 +47,7 @@ internal actual fun EpubReaderViewInternal(
 
     val navigator = bookController as? IosEpubNavigatorController
 
-    // Observe double-tap events on sentences for ReadAloud playback
-    ObserveSentenceDoubleTapEvents(
-        bookController = bookController,
-        intentDispatcher = intentDispatcher,
-    )
+    // Note: Double-tap events are handled by ReaderSyncCoordinator, not the View
 
     // Key the state by bookUuid to ensure it persists across recompositions
     // but resets when opening a different book

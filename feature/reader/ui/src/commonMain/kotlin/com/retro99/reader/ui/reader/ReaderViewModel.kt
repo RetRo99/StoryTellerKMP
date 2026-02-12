@@ -156,10 +156,6 @@ class ReaderViewModel(
             is ReaderIntent.UndoChapterNavigation -> undoChapterNavigation(intent.position)
             ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
             is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.color)
-            is ReaderIntent.PlayFromFragment -> playFromFragment(
-                intent.fragmentId,
-                intent.chapterHref
-            )
         }
     }
 
@@ -499,16 +495,6 @@ class ReaderViewModel(
     }
 
     /**
-     * Starts audio playback from a specific text fragment (sentence).
-     * Used when user double-taps on a sentence to start playback from that point.
-     */
-    private fun playFromFragment(fragmentId: String, chapterHref: String?) {
-        if (!viewState.value.isReadAloud) return
-        audioController.playFromFragment(fragmentId, chapterHref)
-        updateState { it.copy(hasStartedPlayback = true) }
-    }
-
-    /**
      * Skips forward by a fixed increment (10 seconds).
      * Delegates to the player which uses its authoritative position.
      * The milliseconds parameter is ignored - the player uses a fixed 10-second increment.
@@ -545,10 +531,20 @@ class ReaderViewModel(
 
     /**
      * Updates the playing state from the navigator.
-     * Called by the View when the navigator reports playback state changes.
+     * Called when the audio controller reports playback state changes.
+     *
+     * When playback starts (isPlaying becomes true), we also set hasStartedPlayback = true.
+     * This ensures the ViewModel knows playback has been initiated, regardless of whether
+     * it was started via the play button, double-tap on a sentence, or any other mechanism.
      */
     private fun updatePlayingState(isPlaying: Boolean) {
-        updateState { it.copy(isPlaying = isPlaying) }
+        updateState {
+            if (isPlaying) {
+                it.copy(isPlaying = true, hasStartedPlayback = true)
+            } else {
+                it.copy(isPlaying = false)
+            }
+        }
         if (!isPlaying) {
             saveCurrentAudioPosition()
         }
