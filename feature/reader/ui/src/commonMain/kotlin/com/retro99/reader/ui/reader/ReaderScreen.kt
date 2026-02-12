@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.retro99.base.formatCurrentTime
 import com.retro99.base.nowMillis
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
@@ -567,6 +568,14 @@ private fun ReadingProgressBar(
             }
 
             Box(modifier = Modifier.fillMaxWidth()) {
+                // Current time on the left (formatted according to user's locale)
+                Text(
+                    text = formatCurrentTime(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterStart),
+                )
+
                 // Centered chapter title
                 if (chapterText.isNotEmpty()) {
                     Text(
