@@ -1,9 +1,12 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.model.ChapterPageInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * Shared utility for calculating the current page within a chapter.
@@ -14,7 +17,9 @@ import kotlinx.serialization.json.Json
  * This provides a more meaningful page number than the EPUB position, which is based on
  * fixed 1024-character blocks and doesn't change with font size or viewport dimensions.
  */
-object ChapterPageCalculator {
+object ChapterPageCalculator : KoinComponent {
+
+    private val analytics: Analytics by inject<Analytics>()
 
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
@@ -84,6 +89,7 @@ object ChapterPageCalculator {
         return try {
             parsePageResultInternal(json)
         } catch (e: Exception) {
+            analytics.logException(e, "Failed to parse page result, json: $json")
             null
         }
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.retro99.analytics.api.Analytics
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
 import java.security.KeyStore
@@ -17,9 +18,13 @@ import java.security.KeyStore
  * - There's a mismatch between the MasterKey and the encrypted keyset
  *
  * In these cases, the corrupted preferences are cleared and recreated.
+ *
+ * @param context Android context for accessing SharedPreferences
+ * @param analytics Analytics for logging exceptions
  */
 class EncryptedPreferenceFactory(
     private val context: Context,
+    private val analytics: Analytics,
 ) : Settings.Factory {
 
     override fun create(name: String?): Settings {
@@ -103,8 +108,8 @@ class EncryptedPreferenceFactory(
             // Optionally, remove the MasterKey from the Keystore if it's corrupted
             // This is usually not necessary, but can help in some edge cases
             deleteMasterKeyIfExists()
-        } catch (_: Exception) {
-            // Silently ignore cleanup errors
+        } catch (e: Exception) {
+            analytics.logException(e, "Failed to clear corrupted preferences: $name")
         }
     }
 
@@ -115,8 +120,8 @@ class EncryptedPreferenceFactory(
             if (prefsFile.exists()) {
                 prefsFile.delete()
             }
-        } catch (_: Exception) {
-            // Silently ignore file deletion errors
+        } catch (e: Exception) {
+            analytics.logException(e, "Failed to delete SharedPreferences file: $name")
         }
     }
 
@@ -127,8 +132,8 @@ class EncryptedPreferenceFactory(
             if (keyStore.containsAlias(MasterKey.DEFAULT_MASTER_KEY_ALIAS)) {
                 keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             }
-        } catch (_: Exception) {
-            // Silently ignore keystore errors
+        } catch (e: Exception) {
+            analytics.logException(e, "Failed to delete MasterKey from Keystore")
         }
     }
 }

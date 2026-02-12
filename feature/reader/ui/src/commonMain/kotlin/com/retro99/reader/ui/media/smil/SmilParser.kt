@@ -1,8 +1,10 @@
 package com.retro99.reader.ui.media.smil
 
+import com.retro99.analytics.api.Analytics
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 /**
@@ -31,6 +33,7 @@ data class SmilClip(
 class SmilParser(
     private val xml: XML,
     private val clockParser: SmilClockParser,
+    @Provided private val analytics: Analytics,
 ) {
 
     fun parseClips(content: String): List<SmilClip> {
@@ -38,6 +41,8 @@ class SmilParser(
 
         val document = runCatching {
             xml.decodeFromString(SmilDocument.serializer(), content)
+        }.onFailure { e ->
+            analytics.logException(e, "Failed to parse SMIL document")
         }.getOrNull() ?: return emptyList()
 
         val pars = document.body?.collectPars().orEmpty()
