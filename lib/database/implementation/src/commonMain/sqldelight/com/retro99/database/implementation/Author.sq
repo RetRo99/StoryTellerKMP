@@ -1,0 +1,37 @@
+-- ============================================
+-- AUTHORS TABLE (standalone creators from /api/v2/creators)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS authors (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    file_as TEXT,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_authors_name ON authors(name);
+
+-- Queries for authors
+upsertAuthor:
+INSERT OR REPLACE INTO authors(uuid, name, file_as, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?);
+
+getAuthorByUuid:
+SELECT * FROM authors WHERE uuid = ?;
+
+getAllAuthors:
+SELECT * FROM authors ORDER BY name ASC;
+
+searchAuthorsByName:
+SELECT * FROM authors WHERE name LIKE ? ORDER BY name ASC;
+
+deleteAuthor:
+DELETE FROM authors WHERE uuid = ?;
+
+deleteAllAuthors:
+DELETE FROM authors;
+
+getAuthorsCount:
+SELECT COUNT(*) FROM authors;
+
