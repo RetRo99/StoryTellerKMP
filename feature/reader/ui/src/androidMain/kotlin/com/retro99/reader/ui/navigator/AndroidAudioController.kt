@@ -134,6 +134,15 @@ class AndroidAudioController(
         initialPositionMs = null
     }
 
+    override fun setInitialAudioPosition(positionMs: Long?) {
+        initialPositionMs = positionMs
+        hasStartedPlayback = false
+        // Also update the LocatorTracker so the seek bar reflects the new position
+        if (positionMs != null) {
+            locatorTracker.setInitialPosition(positionMs)
+        }
+    }
+
     override fun pauseAudio() {
         player.pause()
     }
