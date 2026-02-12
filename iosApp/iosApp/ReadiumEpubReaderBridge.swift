@@ -91,6 +91,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var publication: Publication?
     private var navigatorViewController: EPUBNavigatorViewController?
     private var onPositionChangedCallback: ((PositionLocator) -> Void)?
+    private var onSentenceDoubleTapCallback: ((String) -> Void)?
 
     // Cached table of contents (populated when publication is opened)
     private var tableOfContentsCache: [TocItem] = []
@@ -328,6 +329,10 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         self.onPositionChangedCallback = callback
     }
 
+    func setOnSentenceDoubleTapCallback(callback: ((String) -> Void)?) {
+        self.onSentenceDoubleTapCallback = callback
+    }
+
     func getTableOfContents() -> [TocItem] {
         return tableOfContentsCache
     }
@@ -494,7 +499,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             let state = PlaybackState(
                 isPlaying: false,
                 currentPositionMs: positionMs,
-                durationMs: player.currentChapterDurationMs.map {
+                durationMs: player.durationMs.map {
                     KotlinLong(value: $0)
                 }
             )

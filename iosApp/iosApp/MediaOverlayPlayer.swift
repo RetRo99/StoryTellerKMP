@@ -78,6 +78,12 @@ class MediaOverlayPlayer {
     /// Background prefetch task
     private var prefetchTask: Task<Void, Never>?
 
+    /// Cover image for Now Playing info
+    private var coverImage: UIImage?
+
+    /// Book title for Now Playing info
+    private var bookTitle: String = "Reading Aloud"
+
     var onPlaybackStateChanged: ((MediaPlaybackState) -> Void)?
     /// Callback when the current locator changes. Includes the sentence duration in milliseconds.
     var onLocatorChanged: ((Locator, Int64) -> Void)?
@@ -88,6 +94,7 @@ class MediaOverlayPlayer {
         self.publication = publication
         self.smilParser = SmilParserProvider.shared.smilParser
         self.quickScanner = SmilParserProvider.shared.quickScanner
+        self.bookTitle = publication.metadata.title ?? "Reading Aloud"
     }
 
     /// Initializes the player with lazy SMIL loading.
@@ -104,6 +111,14 @@ class MediaOverlayPlayer {
         readingOrder = publication.readingOrder.map {
             normalizeChapterHref($0.href.description)
         }
+
+        // Load cover image for Now Playing info
+        if let coverResult = try? await publication.cover().get() {
+            coverImage = coverResult
+        }
+
+        // Set up initial Now Playing info with book metadata
+        updateNowPlayingInfo()
 
         // Build initial index for current chapter and nearby chapters
         let chapterHref = initialChapterHref ?? publication.readingOrder.first?.href.description ?? ""
@@ -269,6 +284,9 @@ class MediaOverlayPlayer {
         chapterClipsCache.removeAll()
         chapterToSmilIndex.removeAll()
         scannedSmilFiles.removeAll()
+
+        // Clear Now Playing info
+        NowPlayingInfo.shared.clear()
     }
 
     // MARK: - Private Methods
@@ -491,6 +509,35 @@ class MediaOverlayPlayer {
             durationMs: durationMs
         )
         onPlaybackStateChanged?(state)
+
+        // Update Now Playing info with current playback state
+        updateNowPlayingPlayback()
+    }
+
+    /// Updates the Now Playing info media metadata (title, artwork).
+    /// Called once during initialization.
+    private func updateNowPlayingInfo() {
+        NowPlayingInfo.shared.media = NowPlayingInfo.Media(
+            title: bookTitle,
+            artist: "StoryTeller",
+            artwork: coverImage
+        )
+    }
+
+    /// Updates the Now Playing info playback state (elapsed time, duration, rate).
+    /// Called whenever playback state changes.
+    private func updateNowPlayingPlayback() {
+        let elapsedSeconds = Double(currentPositionMs) / 1000.0
+        let durationSeconds = durationMs.map {
+            Double($0) / 1000.0
+        }
+        let rate = isPlaying ? 1.0 : 0.0
+
+        NowPlayingInfo.shared.playback = NowPlayingInfo.Playback(
+            duration: durationSeconds,
+            elapsedTime: elapsedSeconds,
+            rate: rate
+        )
     }
 
     private var lastFragmentId: String?
