@@ -458,6 +458,10 @@ class MediaOverlayPlayer(
             ?: locatorTracker.findPositionForProgression(initialProgression)
         logger.d { "Position to seek: $positionToSeek" }
 
+        // Update metadata with chapter title for notification display
+        val chapterTitle = getChapterTitle(chapterHref)
+        mediaSessionManager.updateMetadata(bookTitle, chapterTitle)
+
         if (currentAudioHref != audioHref) {
             logger.d { "New audio file, preparing: $audioHref (was: $currentAudioHref)" }
             currentAudioHref = audioHref
@@ -538,5 +542,50 @@ class MediaOverlayPlayer(
                 null
             }
         }
+    }
+
+    /**
+     * Gets the chapter title from the publication's reading order or table of contents.
+     *
+     * First tries to find the chapter in the reading order by matching the href.
+     * Falls back to the table of contents if not found in reading order.
+     *
+     * @param chapterHref The href of the chapter
+     * @return The chapter title, or null if not found
+     */
+    private fun getChapterTitle(chapterHref: Url): String? {
+        val normalizedHref = chapterHref.removeFragment().toString()
+
+        // Try reading order first (most common case)
+        val readingOrderTitle = publication.readingOrder.find { link ->
+            link.href.toString().substringBefore('#') == normalizedHref
+        }?.title
+
+        if (readingOrderTitle != null) {
+            return readingOrderTitle
+        }
+
+        // Fall back to table of contents (may have more descriptive titles)
+        return findTitleInToc(publication.tableOfContents, normalizedHref)
+    }
+
+    /**
+     * Recursively searches the table of contents for a matching href.
+     */
+    private fun findTitleInToc(
+        links: List<org.readium.r2.shared.publication.Link>,
+        normalizedHref: String,
+    ): String? {
+        for (link in links) {
+            if (link.href.toString().substringBefore('#') == normalizedHref) {
+                return link.title
+            }
+            // Search children recursively
+            val childTitle = findTitleInToc(link.children, normalizedHref)
+            if (childTitle != null) {
+                return childTitle
+            }
+        }
+        return null
     }
 }

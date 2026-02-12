@@ -59,7 +59,7 @@ private const val READALOUD_DECORATION_GROUP = "readaloud"
  */
 @Scope(ReaderScope::class)
 @Scoped(binds = [BookController::class])
-class AndroidEpubNavigatorController internal constructor() : BookController {
+class AndroidBookController internal constructor() : BookController {
 
     private val _navigator = MutableStateFlow<EpubNavigatorFragment?>(null)
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -368,7 +368,7 @@ class AndroidEpubNavigatorController internal constructor() : BookController {
         _navigator.value = null
     }
 
-    private companion object {
+    private companion object Companion {
         private val logger = Logger.withTag("AndroidEpubNavigatorController")
 
         /** Minimum delay before page turn to avoid jarring transitions */
