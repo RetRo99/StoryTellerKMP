@@ -6,7 +6,6 @@ import com.retro99.reader.domain.model.DownloadKey
 import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -43,7 +42,6 @@ class DownloadStateHolder {
         val key = DownloadKey(bookUuid, bookType)
         return downloadStates
             .map { states -> states[key] ?: DownloadState.Idle }
-            .distinctUntilChanged()
     }
 
     fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadState>> {
