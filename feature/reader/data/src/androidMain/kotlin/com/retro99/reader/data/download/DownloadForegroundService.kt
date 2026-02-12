@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.reader.data.source.EbookFileDownloader
@@ -35,7 +34,6 @@ class DownloadForegroundService : Service() {
 
     private val fileDownloader: EbookFileDownloader by inject()
     private val downloadStateHolder: DownloadStateHolder by inject()
-    private val logger = Logger.withTag("DownloadService")
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeJobs = mutableMapOf<String, Job>()
@@ -137,10 +135,8 @@ class DownloadForegroundService : Service() {
                     )
                 },
             ).onSuccess {
-                logger.i { "Download completed: $bookUuid" }
                 downloadStateHolder.markCached(bookUuid, bookType)
             }.onFailure { error ->
-                logger.e { "Download failed: $bookUuid - $error" }
                 downloadStateHolder.markFailed(bookUuid, bookType, error)
             }
 

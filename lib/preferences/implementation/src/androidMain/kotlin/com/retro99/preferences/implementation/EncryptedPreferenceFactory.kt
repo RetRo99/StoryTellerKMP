@@ -2,7 +2,6 @@ package com.retro99.preferences.implementation
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.russhwolf.settings.Settings
@@ -33,7 +32,6 @@ class EncryptedPreferenceFactory(
             // This can happen when encryption keys don't match the stored data
             // (e.g., after backup restore, factory reset, or Keystore corruption)
             if (isEncryptionException(e)) {
-                Log.w(TAG, "Failed to create encrypted preferences, clearing and retrying", e)
                 clearCorruptedPreferences(name)
                 createEncryptedSharedPreferences(name)
             } else {
@@ -105,8 +103,8 @@ class EncryptedPreferenceFactory(
             // Optionally, remove the MasterKey from the Keystore if it's corrupted
             // This is usually not necessary, but can help in some edge cases
             deleteMasterKeyIfExists()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clearing corrupted preferences", e)
+        } catch (_: Exception) {
+            // Silently ignore cleanup errors
         }
     }
 
@@ -117,8 +115,8 @@ class EncryptedPreferenceFactory(
             if (prefsFile.exists()) {
                 prefsFile.delete()
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting SharedPreferences file", e)
+        } catch (_: Exception) {
+            // Silently ignore file deletion errors
         }
     }
 
@@ -129,12 +127,8 @@ class EncryptedPreferenceFactory(
             if (keyStore.containsAlias(MasterKey.DEFAULT_MASTER_KEY_ALIAS)) {
                 keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting MasterKey from Keystore", e)
+        } catch (_: Exception) {
+            // Silently ignore keystore errors
         }
-    }
-
-    private companion object {
-        private const val TAG = "EncryptedPreferenceFactory"
     }
 }

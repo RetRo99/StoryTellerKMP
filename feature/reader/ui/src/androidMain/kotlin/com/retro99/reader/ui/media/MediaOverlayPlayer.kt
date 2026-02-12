@@ -6,7 +6,6 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.smil.SmilClip
@@ -72,7 +71,6 @@ class MediaOverlayPlayer(
     private val playbackStateTracker: PlaybackStateTracker,
 ) {
     private val publication: Publication = epubPublication.publication
-    private val logger = Logger.withTag("MediaOverlayPlayer")
 
     /**
      * Internal coroutine scope for this player.
@@ -167,7 +165,6 @@ class MediaOverlayPlayer(
             // Use tryLock to prevent concurrent play calls from double-taps
             // If already playing/starting, ignore the second tap
             if (!playMutex.tryLock()) {
-                logger.d { "play() ignored - already in progress" }
                 return@launch
             }
             try {
@@ -319,7 +316,6 @@ class MediaOverlayPlayer(
         // This prepares ExoPlayer with playWhenReady=false, so it buffers but doesn't play.
         val audioHref = chapterClips.firstOrNull()?.audioHref
         if (audioHref != null && currentAudioHref != audioHref) {
-            logger.d { "Pre-buffering audio: $audioHref at position ${initialPositionMs ?: 0}ms" }
             currentAudioHref = audioHref
             prepareAudio(audioHref, initialPositionMs)
         }
@@ -402,7 +398,6 @@ class MediaOverlayPlayer(
      * @param emitCompletion If true, emits a chapter completion event to skip to next chapter
      */
     private fun handlePreparationFailure(reason: String, emitCompletion: Boolean = false) {
-        logger.e { "Preparation failed: $reason" }
         playbackStateTracker.setPlayingState(false)
         playbackStateTracker.setPlaybackState(PlaybackState.ERROR)
         audioFocusManager.abandonFocus()
@@ -425,35 +420,28 @@ class MediaOverlayPlayer(
         initialProgression: Double?,
         initialPositionMs: Long?,
     ): Boolean {
-        logger.d { "prepareChapterAsync() - chapterHref=$chapterHref" }
         val normalizedHref = chapterHref.removeFragment().toString()
 
         // Load clips for this chapter using lazy loading
         val smilClips = smilLoadingManager.getClipsForChapter(normalizedHref)
-        logger.d { "SMIL clips loaded: ${smilClips.size} clips" }
 
         // Convert SmilClip to MediaOverlayClip and update locator tracker
         val chapterClips = convertSmilClipsToMediaOverlayClips(smilClips, chapterHref)
         locatorTracker.setChapterClips(chapterClips)
-        logger.d { "Converted to MediaOverlayClips: ${chapterClips.size} clips" }
 
         if (chapterClips.isEmpty()) {
-            logger.w { "No clips found for chapter" }
             return false
         }
 
         // Calculate total duration from clips (last clip's end time)
         val chapterDurationMs = chapterClips.maxOfOrNull { (it.endTime * SECONDS_TO_MS).toLong() }
-        logger.d { "Chapter duration: ${chapterDurationMs}ms" }
         if (chapterDurationMs != null && chapterDurationMs > 0) {
             playbackStateTracker.setTotalDuration(chapterDurationMs)
         }
 
         // Get the audio file for this chapter (assuming one audio file per chapter)
         val audioHref = chapterClips.firstOrNull()?.audioHref
-        logger.d { "Audio href: $audioHref" }
         if (audioHref == null) {
-            logger.w { "No audio href found" }
             return false
         }
 
@@ -461,14 +449,12 @@ class MediaOverlayPlayer(
         val positionToSeek = initialPositionMs
             ?: locatorTracker.findPositionForFragment(initialFragmentId)
             ?: locatorTracker.findPositionForProgression(initialProgression)
-        logger.d { "Position to seek: $positionToSeek" }
 
         // Update metadata with chapter title for notification display
         val chapterTitle = getChapterTitle(chapterHref)
         mediaSessionManager.updateMetadata(bookTitle, chapterTitle)
 
         if (currentAudioHref != audioHref) {
-            logger.d { "New audio file, preparing: $audioHref (was: $currentAudioHref)" }
             currentAudioHref = audioHref
             // Pass initial position directly to prepareAudio to avoid seeking after playback starts
             // This prevents the brief pause that occurs when seeking a playing player
@@ -479,10 +465,7 @@ class MediaOverlayPlayer(
             val currentPosition = exoPlayer.currentPosition
             val seekThresholdMs = 100 // Allow small tolerance to avoid micro-seeks
             if (kotlin.math.abs(currentPosition - positionToSeek) > seekThresholdMs) {
-                logger.d { "Same audio file, seeking from $currentPosition to $positionToSeek" }
                 exoPlayer.seekTo(positionToSeek)
-            } else {
-                logger.d { "Same audio file, already at position $currentPosition (target: $positionToSeek)" }
             }
         }
 
@@ -506,7 +489,6 @@ class MediaOverlayPlayer(
         // The audio is inside the EPUB, so we need to use the publication's container
         val audioUrl = publication.baseUrl?.resolve(audioHref)?.toString()
             ?: audioHref.toString()
-        logger.d { "prepareAudio() - audioUrl=$audioUrl, startPositionMs=$startPositionMs" }
 
         // Build MediaItem with metadata for proper notification/lockscreen display
         val mediaItem = MediaItem.Builder()

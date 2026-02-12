@@ -1,11 +1,8 @@
 package com.retro99.reader.ui.playback
 
-import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.content.ContextCompat
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -24,8 +21,6 @@ import org.koin.core.annotation.Scoped
 class ForegroundServiceController(
     private val context: Context,
 ) {
-    private val logger = Logger.withTag("ForegroundServiceController")
-
     /**
      * Starts the foreground service for background playback.
      * Should be called after notification permission is granted and audio focus is acquired.
@@ -38,16 +33,9 @@ class ForegroundServiceController(
         return try {
             ContextCompat.startForegroundService(context, intent)
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // On Android 12+, ForegroundServiceStartNotAllowedException is thrown
             // if the app isn't in a foreground-allowed state
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                e is ForegroundServiceStartNotAllowedException
-            ) {
-                logger.e(e) { "Cannot start foreground service - app not in foreground state" }
-            } else {
-                logger.e(e) { "Failed to start foreground service" }
-            }
             false
         }
     }

@@ -1,7 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
-import com.retro99.base.nowMillis
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.model.AudioLocatorState
@@ -99,29 +97,17 @@ class AndroidAudioController(
     }
 
     private suspend fun initializeMediaOverlays() {
-        val totalStartTime = nowMillis()
-        logger.i { "⏱️ MediaOverlay initialization STARTED" }
-
         val initialChapterHref = publication.initialPosition?.href
             ?: publication.publication.readingOrder.firstOrNull()?.href?.toString()
         val initialChapterUrl = initialChapterHref?.let { Url(it) }
 
-        val initializeStart = nowMillis()
         player.initialize(initialChapterHref)
-        val initializeTime = nowMillis() - initializeStart
-        logger.i { "⏱️ player.initialize() completed in ${initializeTime}ms" }
 
-        val chapterPrepareStart = nowMillis()
         if (initialChapterUrl != null) {
             // Pass initial position so audio is pre-buffered at the correct position
             // This makes playback start instantly when user clicks play
             player.prepareChapterDuration(initialChapterUrl, initialPositionMs)
         }
-        val chapterPrepareTime = nowMillis() - chapterPrepareStart
-        logger.i { "⏱️ prepareChapterDuration() completed in ${chapterPrepareTime}ms" }
-
-        val totalTime = nowMillis() - totalStartTime
-        logger.i { "⏱️ MediaOverlay initialization COMPLETE - TOTAL: ${totalTime}ms" }
     }
 
     override fun togglePlayback() {
@@ -159,15 +145,12 @@ class AndroidAudioController(
     private fun startPlaybackFromCurrentPosition() {
         val savedPosition = initialPositionMs
         if (savedPosition != null) {
-            logger.i { "🎵 Starting playback from saved position: ${savedPosition}ms" }
             executePlayCommand(savedPosition)
         } else {
             val visibleSentenceId = currentVisibleSentenceId
             if (visibleSentenceId != null) {
-                logger.i { "🎵 Starting playback from visible sentence: $visibleSentenceId" }
                 playFromFragment(visibleSentenceId, chapterHref = null)
             } else {
-                logger.i { "🎵 Starting playback from beginning (no position info)" }
                 executePlayCommand(null)
             }
         }
@@ -192,7 +175,6 @@ class AndroidAudioController(
     }
 
     override fun playFromFragment(fragmentId: String, chapterHref: String?) {
-        logger.i { "🎵 playFromFragment() called - fragmentId=$fragmentId, chapterHref=$chapterHref" }
         val href = chapterHref?.let { Url(it) } ?: currentBookLocation?.href?.let { Url(it) }
         player.play(
             chapterHref = href,
@@ -229,7 +211,6 @@ class AndroidAudioController(
     }
 
     override fun close() {
-        logger.i { "AndroidAudioController RELEASE called" }
         player.release()
         controllerScope.cancel()
     }
@@ -239,18 +220,10 @@ class AndroidAudioController(
         val currentChapterHref = currentLocator?.href?.let { Url(it) }
         val fragmentId = currentLocator?.fragments?.firstOrNull()
         val progression = currentLocator?.progression
-        logger.i {
-            "🎵 Calling player.play() - href=$currentChapterHref, " +
-                    "fragmentId=$fragmentId, progression=$progression"
-        }
         if (currentChapterHref == null) {
             player.play(initialPositionMs = initialPositionMs)
             return
         }
         player.play(currentChapterHref, fragmentId, progression, initialPositionMs)
-    }
-
-    private companion object {
-        private val logger = Logger.withTag("AndroidAudioController")
     }
 }

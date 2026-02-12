@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitViewController
-import co.touchlab.kermit.Logger
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.navigator.BookController
@@ -24,8 +23,6 @@ import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import platform.UIKit.UIViewController
-
-private val logger = Logger.withTag("EpubReaderView.iOS")
 
 /**
  * iOS implementation of EPUB reader using Readium Swift via bridge.
@@ -43,8 +40,6 @@ internal actual fun EpubReaderViewInternal(
     bookController: BookController,
     modifier: Modifier,
 ) {
-    logger.d { "EpubReaderView composing for bookUuid=$bookUuid" }
-
     val navigator = bookController as? IosBookController
 
     // Note: Double-tap events are handled by ReaderSyncCoordinator, not the View
@@ -55,36 +50,24 @@ internal actual fun EpubReaderViewInternal(
 
     // Create the reader view controller when the publication is ready
     LaunchedEffect(publication, navigator) {
-        logger.d { "LaunchedEffect started for publication" }
-        logger.d { "Initial settings: ${publication.initialSettings}" }
-
         // Try to create the view controller, retrying if needed
         var attempts = 0
         while (readerViewController == null && attempts < 10) {
-            logger.d { "Attempt ${attempts + 1} to create reader view controller" }
             val settings = EpubReaderSettings.from(
                 settings = publication.initialSettings,
                 initialPosition = publication.initialPosition,
             )
-            logger.d { "Created EpubReaderSettings: $settings" }
 
             val viewController = publication.bridge.createReaderViewController(settings = settings)
-            logger.d { "createReaderViewController returned: $viewController" }
 
             if (viewController != null) {
-                logger.i { "Successfully created reader view controller on attempt ${attempts + 1}" }
                 readerViewController = viewController
                 // Note: Media overlays are now initialized by IosAudioController in its init block
                 // when it's created by the ViewModel after the publication is opened
             } else {
                 attempts++
-                logger.w { "createReaderViewController returned null, attempt $attempts/10" }
                 delay(100) // Wait a bit before retrying
             }
-        }
-
-        if (readerViewController == null) {
-            logger.e { "Failed to create reader view controller after 10 attempts" }
         }
     }
 
@@ -93,9 +76,7 @@ internal actual fun EpubReaderViewInternal(
     // permission for audio playback, so permission dialogs are not needed here.
 
     DisposableEffect(bookUuid) {
-        logger.d { "DisposableEffect started for bookUuid=$bookUuid" }
         onDispose {
-            logger.d { "DisposableEffect onDispose - closing publication" }
             readerViewController = null
             navigator?.close()
         }

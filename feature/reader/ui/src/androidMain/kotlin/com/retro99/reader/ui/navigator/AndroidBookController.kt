@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.LocatorState
@@ -128,7 +127,6 @@ class AndroidBookController internal constructor() : BookController {
             delay(SCRIPT_INJECTION_DELAY_MS)
             val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
             _navigator.value?.evaluateJavascript(script)
-            logger.d { "Double-tap detection script injected" }
         }
     }
 
@@ -138,7 +136,6 @@ class AndroidBookController internal constructor() : BookController {
      * We launch a coroutine on Main dispatcher to safely access navigator state.
      */
     fun onSentenceDoubleTap(fragmentId: String) {
-        logger.d { "Double-tap detected on fragment: $fragmentId" }
         controllerScope.launch {
             // Access navigator state on Main thread for thread safety
             val currentHref = _navigator.value?.currentLocator?.value?.href?.toString()
@@ -217,7 +214,6 @@ class AndroidBookController internal constructor() : BookController {
         // Check visibility and handle page turn if needed
         if (fragmentId != null) {
             val visibility = checkSentenceVisibility(fragmentId)
-            logger.d { "Visibility: $visibility" }
             if (visibility.needsPageTurn && fragmentId != lastPageTurnSentenceId) {
                 // Cancel any pending page turn from a previous sentence
                 pendingPageTurnJob?.cancel()
@@ -226,16 +222,9 @@ class AndroidBookController internal constructor() : BookController {
                 val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
                     .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
 
-                logger.d {
-                    "Scheduling page turn for '$fragmentId' - " +
-                            "visible: ${(visibility.visibleFraction * 100).toInt()}%, " +
-                            "delay: ${delayMs}ms"
-                }
-
                 lastPageTurnSentenceId = fragmentId
                 pendingPageTurnJob = controllerScope.launch {
                     delay(delayMs)
-                    logger.d { "Executing pre-emptive page turn for '$fragmentId'" }
                     navigator.goForward()
                 }
             } else if (!visibility.needsPageTurn) {
@@ -369,8 +358,6 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     private companion object Companion {
-        private val logger = Logger.withTag("AndroidEpubNavigatorController")
-
         /** Minimum delay before page turn to avoid jarring transitions */
         private const val MIN_PAGE_TURN_DELAY_MS = 200L
 

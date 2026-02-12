@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.navigator.SentenceVisibilityChecker.getVisibilityCheckScript
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -17,7 +16,6 @@ import kotlinx.serialization.json.Json
  */
 object SentenceVisibilityChecker {
 
-    private val logger = Logger.withTag("SentenceVisibilityChecker")
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
     /** Minimum visible fraction required to NOT trigger a page turn */
@@ -88,21 +86,16 @@ object SentenceVisibilityChecker {
      */
     fun parseVisibilityResult(json: String, elementId: String): SentenceVisibilityResult {
         return try {
-            parseVisibilityResultInternal(json, elementId)
-        } catch (e: Exception) {
-            logger.w(e) { "Failed to parse visibility result for '$elementId': $json" }
+            parseVisibilityResultInternal(json)
+        } catch (_: Exception) {
             SentenceVisibilityResult.FULLY_VISIBLE
         }
     }
 
-    private fun parseVisibilityResultInternal(
-        json: String,
-        elementId: String,
-    ): SentenceVisibilityResult {
+    private fun parseVisibilityResultInternal(json: String): SentenceVisibilityResult {
         val data = jsonParser.decodeFromString<VisibilityCheckResult>(json)
 
         if (data.status == "not_found") {
-            logger.d { "Element '$elementId' not found in DOM" }
             return SentenceVisibilityResult.FULLY_VISIBLE
         }
 
@@ -113,7 +106,6 @@ object SentenceVisibilityChecker {
 
         // Guard against division by zero
         if (totalLines <= 0) {
-            logger.w { "Element '$elementId' has no lines (totalLines=$totalLines)" }
             return SentenceVisibilityResult.FULLY_VISIBLE
         }
 
@@ -127,13 +119,6 @@ object SentenceVisibilityChecker {
         val needsPageTurn = (visibleFraction <= 0.0) ||
                 (visibleFraction < MINIMUM_VISIBLE_FRACTION) ||
                 startsInAwkwardBuffer
-
-        logger.d {
-            "Visibility check for '$elementId': " +
-                    "lines=$totalLines, offScreen=$linesOff, " +
-                    "visible=${(visibleFraction * 100).toInt()}%, " +
-                    "awkwardBuffer=$startsInAwkwardBuffer, needsTurn=$needsPageTurn"
-        }
 
         return SentenceVisibilityResult(
             visibleFraction = visibleFraction,

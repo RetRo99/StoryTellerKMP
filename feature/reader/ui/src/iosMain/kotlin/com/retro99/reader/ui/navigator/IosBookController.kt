@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
@@ -104,9 +103,7 @@ class IosBookController(
             // Small delay to ensure WebView content is loaded
             delay(SCRIPT_INJECTION_DELAY_MS)
             val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
-            bridge.evaluateJavaScript(script) { _ ->
-                logger.d { "Double-tap detection script injected" }
-            }
+            bridge.evaluateJavaScript(script) { _ -> }
         }
     }
 
@@ -164,16 +161,9 @@ class IosBookController(
                 val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
                     .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
 
-                logger.d {
-                    "Scheduling page turn for '$fragmentId' - " +
-                            "visible: ${(visibility.visibleFraction * 100).toInt()}%, " +
-                            "delay: ${delayMs}ms"
-                }
-
                 lastPageTurnSentenceId = fragmentId
                 pendingPageTurnJob = controllerScope.launch {
                     delay(delayMs)
-                    logger.d { "Executing pre-emptive page turn for '$fragmentId'" }
                     bridge.goToNextPage()
                 }
             } else if (!visibility.needsPageTurn) {
@@ -258,8 +248,6 @@ class IosBookController(
     }
 
     private companion object {
-        private val logger = Logger.withTag("IosBookController")
-
         /** Minimum delay before page turn to avoid jarring transitions */
         private const val MIN_PAGE_TURN_DELAY_MS = 200L
 
