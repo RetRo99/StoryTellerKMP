@@ -42,6 +42,7 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.general_back
 import resources.translations.series_detail_position
 
 @Composable
@@ -92,7 +93,7 @@ private fun SeriesDetailScreenContent(
                     IconButton(onClick = { intentDispatcher(SeriesDetailIntent.OnBackClicked) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(StringRes.general_back),
                         )
                     }
                 },

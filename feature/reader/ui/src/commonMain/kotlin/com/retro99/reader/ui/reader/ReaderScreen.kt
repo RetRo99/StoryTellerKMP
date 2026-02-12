@@ -67,7 +67,9 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.general_close
 import resources.translations.reader_toc_jumped_to_chapter
+import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
 import resources.translations.settings_icon_content_description
 
@@ -415,7 +417,7 @@ private fun ReaderToolbar(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Close",
+                    contentDescription = stringResource(StringRes.general_close),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -432,7 +434,7 @@ private fun ReaderToolbar(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Table of Contents",
+                        contentDescription = stringResource(StringRes.reader_toc_title),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
