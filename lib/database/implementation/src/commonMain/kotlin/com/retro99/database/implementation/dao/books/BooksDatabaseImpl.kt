@@ -110,6 +110,14 @@ internal class BooksDatabaseImpl(
         sqlDelightDao.deleteBookSeries(bookUuid)
     }
 
+    override suspend fun getAllSeries(): List<SeriesEntity> {
+        return sqlDelightDao.getAllSeries()
+    }
+
+    override suspend fun deleteAllSeries() {
+        sqlDelightDao.deleteAllSeries()
+    }
+
     // ==================== TAG OPERATIONS ====================
 
     override suspend fun upsertTag(tag: TagEntity) {

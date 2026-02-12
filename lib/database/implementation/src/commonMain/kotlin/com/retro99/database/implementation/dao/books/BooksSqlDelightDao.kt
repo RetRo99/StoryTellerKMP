@@ -266,6 +266,26 @@ internal class BooksSqlDelightDao(
         }
     }
 
+    suspend fun getAllSeries(): List<SeriesSqlDelightEntity> {
+        return withContext(Dispatchers.IO) {
+            seriesQueries.getAllSeries().executeAsList().map { row ->
+                SeriesSqlDelightEntity(
+                    uuid = row.uuid,
+                    name = row.name,
+                    featured = row.featured?.toInt(),
+                    createdAt = row.created_at,
+                    updatedAt = row.updated_at,
+                )
+            }
+        }
+    }
+
+    suspend fun deleteAllSeries() {
+        withContext(Dispatchers.IO) {
+            seriesQueries.deleteAllSeries()
+        }
+    }
+
     // ==================== TAG OPERATIONS ====================
 
     suspend fun upsertTag(tag: TagSqlDelightEntity) {
