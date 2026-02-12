@@ -9,6 +9,7 @@ import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
 import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
@@ -33,6 +34,7 @@ actual class BookDownloadManagerImpl(
     ): Flow<DownloadState> {
         return downloadStateHolder.observeDownloadState(bookUuid, bookType)
             .map { state -> resolveState(state, bookUuid, bookType) }
+            .distinctUntilChanged()
     }
 
     override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadState>> {

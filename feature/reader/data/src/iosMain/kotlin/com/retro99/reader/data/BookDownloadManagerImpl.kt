@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -57,6 +58,7 @@ actual class BookDownloadManagerImpl(
     ): Flow<DownloadState> {
         return downloadStateHolder.observeDownloadState(bookUuid, bookType)
             .map { state -> resolveState(state, bookUuid, bookType) }
+            .distinctUntilChanged()
     }
 
     override fun observeAllDownloads(): Flow<Map<DownloadKey, DownloadState>> {
