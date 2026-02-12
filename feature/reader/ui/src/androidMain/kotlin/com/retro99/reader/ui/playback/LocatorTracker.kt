@@ -49,7 +49,9 @@ class LocatorTracker(
     private val initialAudioPosition: InitialAudioPosition,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val _currentPosition = MutableStateFlow(initialAudioPosition.positionMs)
+    private val _currentPosition = MutableStateFlow(initialAudioPosition.positionMs ?: 0L)
+
+    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
     /**
      * Internal state holding both the locator and the current clip for duration calculation.
@@ -115,7 +117,7 @@ class LocatorTracker(
         stopPositionUpdates()
         positionUpdateJob = scope.launch {
             while (isActive) {
-                _currentPosition.value = player.currentPosition
+                _currentPosition.update { player.currentPosition }
                 updateCurrentLocator()
                 delay(POSITION_UPDATE_INTERVAL_MS)
             }
