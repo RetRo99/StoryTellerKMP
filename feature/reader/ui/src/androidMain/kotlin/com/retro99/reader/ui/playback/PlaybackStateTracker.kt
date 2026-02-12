@@ -7,8 +7,11 @@ import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PlaybackState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -64,6 +67,14 @@ class PlaybackStateTracker(
     private val _totalDuration = MutableStateFlow<Long?>(null)
     val totalDuration: StateFlow<Long?> = _totalDuration.asStateFlow()
 
+    private val _chapterAudioCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Flow that emits when the current chapter's audio playback completes naturally.
+     * Does not emit if playback was manually stopped or paused.
+     */
+    val chapterAudioCompleted: Flow<Unit> = _chapterAudioCompleted.asSharedFlow()
+
     // Pending initial position to seek to after audio is prepared
     private var pendingInitialPositionMs: Long? = null
 
@@ -90,9 +101,12 @@ class PlaybackStateTracker(
 
             when (playerState) {
                 Player.STATE_ENDED -> {
+                    logger.i { "Chapter audio completed naturally" }
                     _isPlaying.value = false
                     audioFocusManager.abandonFocus()
                     foregroundServiceController.stopService()
+                    // Emit chapter completion event for auto-play next chapter
+                    _chapterAudioCompleted.tryEmit(Unit)
                 }
 
                 Player.STATE_READY -> {

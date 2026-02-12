@@ -18,6 +18,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -82,6 +84,12 @@ class AndroidAudioController(
 
     override val showPermissionRationale: Flow<Boolean>
         get() = player.showPermissionRationale
+
+    override val chapterAudioCompleted: Flow<String>
+        get() = playbackStateTracker.chapterAudioCompleted.map {
+            // Return the current chapter href when audio completes
+            currentBookLocation?.href ?: ""
+        }.filter { it.isNotEmpty() }
 
     init {
         controllerScope.launch {

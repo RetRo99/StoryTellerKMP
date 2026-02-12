@@ -9,8 +9,10 @@ import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Scope
@@ -62,6 +64,7 @@ class IosAudioController(
     private val _showPermissionDeniedDialog = MutableStateFlow(false)
     private val _playbackState = MutableStateFlow(PlaybackState.STOPPED)
     private val _currentAudioLocator = MutableStateFlow<AudioLocatorState?>(null)
+    private val _chapterAudioCompleted = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
     // AudioController state observation flows
     override val audioPlaybackState: Flow<AudioPlaybackState> = _audioPlaybackState
@@ -73,6 +76,8 @@ class IosAudioController(
 
     // iOS doesn't need permission rationale - always false
     override val showPermissionRationale: Flow<Boolean> = flowOf(false)
+
+    override val chapterAudioCompleted: Flow<String> = _chapterAudioCompleted.asSharedFlow()
 
     init {
         setupCallbacks()
@@ -122,6 +127,10 @@ class IosAudioController(
 
         bridge.setOnAudioLocatorChangedCallback { locator ->
             _currentAudioLocator.value = locator.toAudioLocatorState()
+        }
+
+        bridge.setOnChapterAudioCompletedCallback { chapterHref ->
+            _chapterAudioCompleted.tryEmit(chapterHref)
         }
     }
 
@@ -232,6 +241,7 @@ class IosAudioController(
         bridge.setOnPlaybackStateChangedCallback(null)
         bridge.setOnMediaPlayerReadyCallback(null)
         bridge.setOnAudioLocatorChangedCallback(null)
+        bridge.setOnChapterAudioCompletedCallback(null)
     }
 }
 

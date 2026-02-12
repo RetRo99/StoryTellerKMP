@@ -59,6 +59,7 @@ class MediaOverlayPlayer {
 
     private var currentChapterClips: [MediaOverlayClip] = []
     private var currentAudioHref: RelativeURL?
+    private var currentChapterHref: String?
 
     private(set) var isPlaying: Bool = false
     private(set) var currentPositionMs: Int64 = 0
@@ -67,6 +68,9 @@ class MediaOverlayPlayer {
     /// Flag to prevent time observer from overwriting position immediately after seek
     /// The time observer should wait until AVPlayer's position catches up to our seeked position
     private var lastSeekTargetMs: Int64?
+
+    /// Flag to prevent multiple chapter completion callbacks for the same chapter
+    private var hasNotifiedChapterCompletion: Bool = false
 
     /// Cache of temp file URLs indexed by audio href for reuse
     private var tempFileCache: [String: URL] = [:]
@@ -77,6 +81,8 @@ class MediaOverlayPlayer {
     var onPlaybackStateChanged: ((MediaPlaybackState) -> Void)?
     /// Callback when the current locator changes. Includes the sentence duration in milliseconds.
     var onLocatorChanged: ((Locator, Int64) -> Void)?
+    /// Callback when chapter audio playback completes. Provides the completed chapter href.
+    var onChapterAudioCompleted: ((String) -> Void)?
 
     init(publication: Publication) {
         self.publication = publication
@@ -270,6 +276,10 @@ class MediaOverlayPlayer {
     private func prepareChapter(chapterHref: RelativeURL, initialFragmentId: String? = nil, initialProgression: Double? = nil, initialPositionMs: Int64? = nil) {
         let normalizedHref = normalizeChapterHref(chapterHref.description)
 
+        // Track current chapter and reset completion flag
+        currentChapterHref = normalizedHref
+        hasNotifiedChapterCompletion = false
+
         // Use Task to handle async clip loading
         Task {
             // Get clips using lazy loading
@@ -445,6 +455,29 @@ class MediaOverlayPlayer {
 
             self.updateCurrentLocator()
             self.notifyPlaybackStateChanged()
+
+            // Check for chapter completion
+            self.checkChapterCompletion()
+        }
+    }
+
+    /// Checks if the chapter audio has completed and notifies the callback.
+    private func checkChapterCompletion() {
+        guard let duration = durationMs,
+              duration > 0,
+              !hasNotifiedChapterCompletion,
+              let chapterHref = currentChapterHref
+        else {
+            return
+        }
+
+        // Consider chapter complete when position is within 200ms of the end
+        // This accounts for timing variations in AVPlayer
+        let completionThreshold: Int64 = 200
+        if currentPositionMs >= duration - completionThreshold {
+            hasNotifiedChapterCompletion = true
+            pause()
+            onChapterAudioCompleted?(chapterHref)
         }
     }
 

@@ -100,6 +100,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var onPlaybackStateChangedCallback: ((PlaybackState) -> Void)?
     private var onAudioLocatorChangedCallback: ((AudioLocator) -> Void)?
     private var onMediaPlayerReadyCallback: (() -> Void)?
+    private var onChapterAudioCompletedCallback: ((String) -> Void)?
     private var currentHighlightId: String?
     private var currentChapterHref: RelativeURL?
     private var currentHighlightColor: UIColor = .yellow
@@ -386,6 +387,10 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             self?.handleLocatorChanged(locator, sentenceDurationMs: sentenceDurationMs)
         }
 
+        player.onChapterAudioCompleted = { [weak self] chapterHref in
+            self?.onChapterAudioCompletedCallback?(chapterHref)
+        }
+
         Task {
             // Get initial chapter href for optimized lazy loading
             let initialChapterHref: String?
@@ -507,6 +512,10 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     func setOnMediaPlayerReadyCallback(callback: (() -> Void)?) {
         self.onMediaPlayerReadyCallback = callback
+    }
+
+    func setOnChapterAudioCompletedCallback(callback: ((String) -> Void)?) {
+        self.onChapterAudioCompletedCallback = callback
     }
 
     func applyAudioHighlight(locator: AudioLocator) {
