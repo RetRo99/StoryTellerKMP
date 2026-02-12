@@ -1,5 +1,10 @@
 package com.retro99.books.ui.list
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,25 +18,38 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +65,8 @@ import org.koin.core.parameter.parametersOf
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
+import resources.translations.books_search_clear
+import resources.translations.books_search_placeholder
 import resources.translations.books_series_with_position
 
 @Composable
@@ -61,6 +81,7 @@ fun BooksListScreen(
     ) { viewState, intentDispatcher ->
         BooksListScreenContent(
             viewState = viewState,
+            searchFieldState = viewModel.searchFieldState,
             intentDispatcher = intentDispatcher,
             modifier = modifier,
         )
@@ -71,36 +92,116 @@ fun BooksListScreen(
 @Composable
 private fun BooksListScreenContent(
     viewState: BooksListViewState,
+    searchFieldState: TextFieldState,
     intentDispatcher: IntentDispatcher<BooksListIntent>,
     modifier: Modifier = Modifier,
 ) {
-    PullToRefreshBox(
-        isRefreshing = viewState.isRefreshing,
-        onRefresh = { intentDispatcher(BooksListIntent.OnRefresh) },
-        modifier = modifier.fillMaxSize(),
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(
-                items = viewState.books,
-                key = { it.uuid },
-            ) { book ->
-                BookItem(
-                    book = book,
-                    isFavorite = book.uuid in viewState.favoriteBookUuids,
-                    onClick = {
-                        intentDispatcher(BooksListIntent.OnBookClicked(book))
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { intentDispatcher(BooksListIntent.OnSearchToggled) },
+            ) {
+                Icon(
+                    imageVector = if (viewState.isSearchVisible) {
+                        Icons.Filled.Close
+                    } else {
+                        Icons.Filled.Search
                     },
-                    onFavoriteClick = {
-                        intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
-                    },
+                    contentDescription = null,
                 )
+            }
+        },
+    ) { paddingValues ->
+        PullToRefreshBox(
+            isRefreshing = viewState.isRefreshing,
+            onRefresh = { intentDispatcher(BooksListIntent.OnRefresh) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                AnimatedVisibility(
+                    visible = viewState.isSearchVisible,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    SearchBar(
+                        searchFieldState = searchFieldState,
+                        isVisible = viewState.isSearchVisible,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(
+                        items = viewState.filteredBooks,
+                        key = { it.uuid },
+                    ) { book ->
+                        BookItem(
+                            book = book,
+                            isFavorite = book.uuid in viewState.favoriteBookUuids,
+                            onClick = {
+                                intentDispatcher(BooksListIntent.OnBookClicked(book))
+                            },
+                            onFavoriteClick = {
+                                intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
+                            },
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun SearchBar(
+    searchFieldState: TextFieldState,
+    isVisible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    OutlinedTextField(
+        state = searchFieldState,
+        modifier = modifier.focusRequester(focusRequester),
+        placeholder = { Text(stringResource(StringRes.books_search_placeholder)) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+            )
+        },
+        trailingIcon = {
+            if (searchFieldState.text.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        searchFieldState.edit { delete(0, length) }
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = stringResource(StringRes.books_search_clear),
+                    )
+                }
+            }
+        },
+        lineLimits = TextFieldLineLimits.SingleLine,
+        shape = RoundedCornerShape(12.dp),
+    )
 }
 
 @Composable
