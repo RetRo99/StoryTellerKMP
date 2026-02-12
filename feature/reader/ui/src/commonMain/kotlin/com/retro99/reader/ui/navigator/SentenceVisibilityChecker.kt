@@ -47,7 +47,10 @@ object SentenceVisibilityChecker {
 
             let linesOffScreen = 0;
             for (let i = 0; i < rects.length; i++) {
-                if (rects[i].left >= (vw - 1)) {
+                const rect = rects[i];
+                // Check if line is off-screen to the right (next page)
+                // OR off-screen to the left (previous page - right edge <= 0)
+                if (rect.left >= (vw - 1) || rect.right <= 0) {
                     linesOffScreen++;
                 }
             }
@@ -86,7 +89,10 @@ object SentenceVisibilityChecker {
      */
     fun parseVisibilityResult(json: String, elementId: String): SentenceVisibilityResult {
         return try {
-            parseVisibilityResultInternal(json)
+
+            val test = parseVisibilityResultInternal(json)
+            println("čič: $test")
+            test
         } catch (_: Exception) {
             SentenceVisibilityResult.FULLY_VISIBLE
         }
@@ -96,7 +102,7 @@ object SentenceVisibilityChecker {
         val data = jsonParser.decodeFromString<VisibilityCheckResult>(json)
 
         if (data.status == "not_found") {
-            return SentenceVisibilityResult.FULLY_VISIBLE
+            return SentenceVisibilityResult.HIDDEN
         }
 
         val totalLines = data.totalLines ?: return SentenceVisibilityResult.FULLY_VISIBLE
