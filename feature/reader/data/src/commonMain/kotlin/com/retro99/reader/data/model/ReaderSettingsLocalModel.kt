@@ -54,6 +54,9 @@ data class ReaderSettingsLocalModel(
     // Progress bar position: TOP or BOTTOM
     @SerialName("progress_bar_position")
     val progressBarPosition: String = "BOTTOM",
+    // Whether to hide system bars (status bar, navigation bar) for immersive reading
+    @SerialName("fullscreen_mode")
+    val fullscreenMode: Boolean = false,
     // Whether to show current time in the progress bar
     @SerialName("show_current_time")
     val showCurrentTime: Boolean = true,
@@ -107,6 +110,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             ProgressBarPosition.BOTTOM
         },
+        fullscreenMode = fullscreenMode,
         showCurrentTime = showCurrentTime,
     )
 }
@@ -131,6 +135,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         showTotalProgress = showTotalProgress,
         progressIndicatorMode = progressIndicatorMode.name,
         progressBarPosition = progressBarPosition.name,
+        fullscreenMode = fullscreenMode,
         showCurrentTime = showCurrentTime,
     )
 }
