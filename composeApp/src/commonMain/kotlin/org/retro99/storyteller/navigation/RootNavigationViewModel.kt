@@ -1,16 +1,20 @@
 package org.retro99.storyteller.navigation
 
 import androidx.lifecycle.viewModelScope
+import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.AuthAnalyticsEvent
 import com.retro99.auth.domain.usecase.CheckAuthStateUseCase
 import com.retro99.auth.domain.usecase.LogoutUseCase
 import com.retro99.base.ui.BaseViewModel
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
+import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class RootNavigationViewModel(
     private val checkAuthStateUseCase: CheckAuthStateUseCase,
     private val logoutUseCase: LogoutUseCase,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<RootNavigationState, RootNavigationIntent>(RootNavigationState()) {
 
     init {
@@ -47,6 +51,7 @@ class RootNavigationViewModel(
     private fun handleLogout() {
         viewModelScope.launch {
             logoutUseCase()
+            analytics.logEvent(AuthAnalyticsEvent.LogoutCompleted)
             updateState { state ->
                 state.copy(backStack = listOf(RootDestination.Login))
             }

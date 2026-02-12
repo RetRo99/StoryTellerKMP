@@ -5,6 +5,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.fold
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.AuthAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.login.domain.usecase.LoginUseCase
@@ -67,18 +68,30 @@ class LoginViewModel(
     }
 
     private fun handleSignInClicked() {
+        val url = urlState.text.toString()
+
+        // Log login attempt (hash URL for privacy)
+        analytics.logEvent(
+            AuthAnalyticsEvent.LoginAttempted(serverUrlHash = url.hashCode().toString())
+        )
+
         updateState { it.copy(isLoading = true, isSignInEnabled = false, loginError = null) }
 
         viewModelScope.launch {
-            val url = urlState.text.toString()
             val username = usernameState.text.toString()
             val password = passwordState.text.toString()
 
             loginUseCase(url, username, password).fold(
                 success = {
+                    analytics.logEvent(AuthAnalyticsEvent.LoginSucceeded)
                     onSignInSuccess()
                 },
                 failure = { error ->
+                    analytics.logEvent(
+                        AuthAnalyticsEvent.LoginFailed(
+                            errorType = error::class.simpleName ?: "unknown",
+                        )
+                    )
                     error.log(analytics, "LoginViewModel: Failed to login")
                     updateState { state ->
                         state.copy(
