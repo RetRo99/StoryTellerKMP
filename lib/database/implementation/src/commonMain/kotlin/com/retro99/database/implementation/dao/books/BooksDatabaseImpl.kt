@@ -102,7 +102,7 @@ internal class BooksDatabaseImpl(
         return sqlDelightDao.getSeriesEntityByUuid(uuid)
     }
 
-    override suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Int?) {
+    override suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Double?) {
         sqlDelightDao.insertBookSeries(bookUuid, seriesUuid, position)
     }
 
@@ -491,7 +491,7 @@ private data class SeriesWithPositionEntityImpl(
     override val uuid: String,
     override val name: String,
     override val featured: Int?,
-    override val position: Int?,
+    override val position: Double?,
     override val createdAt: String?,
     override val updatedAt: String?,
 ) : SeriesWithPositionEntity

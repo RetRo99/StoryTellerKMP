@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS book_series (
     book_uuid TEXT NOT NULL,
     series_uuid TEXT NOT NULL,
-    position INTEGER,
+    position REAL,
     PRIMARY KEY (book_uuid, series_uuid)
 );
 

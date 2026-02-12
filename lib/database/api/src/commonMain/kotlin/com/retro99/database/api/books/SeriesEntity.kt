@@ -17,6 +17,6 @@ interface SeriesEntity {
 interface BookSeriesEntity {
     val bookUuid: String
     val seriesUuid: String
-    val position: Int?
+    val position: Double?
 }
 

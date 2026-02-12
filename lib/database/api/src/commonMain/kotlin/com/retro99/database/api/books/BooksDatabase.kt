@@ -52,7 +52,7 @@ interface BooksDatabase : PositionDatabase {
 
     suspend fun getSeriesEntityByUuid(uuid: String): SeriesEntity?
 
-    suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Int?)
+    suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Double?)
 
     suspend fun deleteBookSeries(bookUuid: String)
 

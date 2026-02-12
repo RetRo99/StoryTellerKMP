@@ -234,7 +234,7 @@ internal class BooksSqlDelightDao(
                 BookSeriesSqlDelightEntity(
                     bookUuid = bookUuid,
                     seriesUuid = row.uuid,
-                    position = row.position?.toInt(),
+                    position = row.position,
                 )
             }
         }
@@ -254,9 +254,9 @@ internal class BooksSqlDelightDao(
         }
     }
 
-    suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Int?) {
+    suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Double?) {
         withContext(Dispatchers.IO) {
-            bookSeriesQueries.insertBookSeries(bookUuid, seriesUuid, position?.toLong())
+            bookSeriesQueries.insertBookSeries(bookUuid, seriesUuid, position?.toDouble())
         }
     }
 

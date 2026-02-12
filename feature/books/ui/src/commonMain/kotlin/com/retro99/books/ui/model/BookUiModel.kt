@@ -26,5 +26,5 @@ data class BookUiModel(
 data class SeriesUiModel(
     val uuid: String,
     val name: String,
-    val position: Int?,
+    val position: Double?,
 )

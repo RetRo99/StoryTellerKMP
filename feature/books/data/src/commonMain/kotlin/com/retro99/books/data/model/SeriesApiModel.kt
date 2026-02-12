@@ -16,7 +16,7 @@ data class SeriesApiModel(
     val featured: Int? = null,
 
     @SerialName("position")
-    val position: Int? = null,
+    val position: Double? = null,
 
     @SerialName("createdAt")
     val createdAt: String? = null,
