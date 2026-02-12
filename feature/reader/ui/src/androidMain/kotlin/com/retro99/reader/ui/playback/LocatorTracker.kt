@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.playback
 
 import androidx.media3.exoplayer.ExoPlayer
+import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayClip
 import com.retro99.reader.ui.model.AudioLocatorState
@@ -39,15 +40,16 @@ private const val SECONDS_TO_MS = 1000.0
  * - Emitting locators for text highlighting
  *
  * @param player The ExoPlayer instance to track position from
+ * @param initialAudioPosition Initial audio position from saved reading progress
  */
 @Scope(ReaderScope::class)
 @Scoped
 class LocatorTracker(
     private val player: ExoPlayer,
+    private val initialAudioPosition: InitialAudioPosition,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val _currentPosition = MutableStateFlow<Long?>(null)
-    val currentPosition: StateFlow<Long?> = _currentPosition
+    private val _currentPosition = MutableStateFlow(initialAudioPosition.positionMs)
 
     /**
      * Internal state holding both the locator and the current clip for duration calculation.
@@ -251,14 +253,6 @@ class LocatorTracker(
         _currentPosition.update {
             0
         }
-    }
-
-    /**
-     * Sets the current position directly.
-     * Used to set the initial position from saved reading progress.
-     */
-    fun setCurrentPosition(positionMs: Long) {
-        _currentPosition.value = positionMs
     }
 }
 

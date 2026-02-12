@@ -39,8 +39,9 @@ class IosAudioController(
     /**
      * Initial audio position from saved reading progress.
      * Used on first playback, then cleared.
+     * Initialized from publication's saved position.
      */
-    private var initialPositionMs: Long? = null
+    private var initialPositionMs: Long? = publication.initialPosition?.audioTimestampMs
 
     /**
      * Currently visible sentence ID, updated by the sync coordinator.
@@ -51,7 +52,7 @@ class IosAudioController(
     // Internal mutable flows for state observation
     private val _audioPlaybackState = MutableStateFlow(
         AudioPlaybackState(
-            currentPositionMs = null,
+            currentPositionMs = publication.initialPosition?.audioTimestampMs,
             totalDurationMs = null,
             isPlaying = false,
             playbackState = PlaybackState.STOPPED,
@@ -141,16 +142,6 @@ class IosAudioController(
         currentVisibleSentenceId = sentenceId
     }
 
-    override fun setInitialPosition(positionMs: Long?) {
-        initialPositionMs = positionMs
-        // Also update the playback state so the seek bar shows the initial position
-        if (positionMs != null) {
-            _audioPlaybackState.value = _audioPlaybackState.value.copy(
-                currentPositionMs = positionMs,
-            )
-        }
-    }
-
     override fun resetPlaybackState() {
         // Only reset if not currently playing - when playing, the audio drives the state
         if (_audioPlaybackState.value.isPlaying) return
@@ -212,6 +203,8 @@ class IosAudioController(
         // Only update position when not playing - when playing, the position
         // is driven by the audio playback itself
         if (_audioPlaybackState.value.isPlaying) return
+        // Don't overwrite initial position from saved reading progress
+        if (initialPositionMs != null) return
         bridge.updatePositionForFragment(fragmentId)
     }
 
