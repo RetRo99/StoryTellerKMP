@@ -1,5 +1,8 @@
 package com.retro99.books.ui.list
 
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
@@ -29,17 +32,38 @@ class BooksViewModel(
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
+    val searchFieldState = TextFieldState()
+
     init {
         observeBooks()
         observeFavorites()
+        observeSearchQuery()
     }
 
     override fun onIntent(intent: BooksListIntent) {
         when (intent) {
             BooksListIntent.OnRefresh -> Unit // Flow automatically refreshes on start
+            BooksListIntent.OnSearchToggled -> toggleSearch()
             is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book)
             is BooksListIntent.OnFavoriteClicked -> toggleFavorite(intent.bookUuid)
         }
+    }
+
+    private fun toggleSearch() {
+        val currentlyVisible = viewState.value.isSearchVisible
+        if (currentlyVisible) {
+            // Clear search when hiding
+            searchFieldState.edit { delete(0, length) }
+        }
+        updateState { it.copy(isSearchVisible = !currentlyVisible) }
+    }
+
+    private fun observeSearchQuery() {
+        snapshotFlow { searchFieldState.text.toString() }
+            .onEach { query ->
+                updateState { it.copy(searchQuery = query) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun toggleFavorite(bookUuid: String) {

@@ -5,6 +5,7 @@ import com.retro99.books.ui.model.BookUiModel
 
 sealed interface BooksListIntent : BaseIntent {
     data object OnRefresh : BooksListIntent
+    data object OnSearchToggled : BooksListIntent
     data class OnBookClicked(val book: BookUiModel) : BooksListIntent
     data class OnFavoriteClicked(val bookUuid: String) : BooksListIntent
 }
