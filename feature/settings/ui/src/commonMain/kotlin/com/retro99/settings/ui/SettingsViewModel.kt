@@ -155,6 +155,15 @@ class SettingsViewModel(
     }
 
     private fun toggleSection(section: SettingsSection) {
+        val isCurrentlyExpanded = section in viewState.value.expandedSections
+        // Only track when expanding, not collapsing
+        if (!isCurrentlyExpanded) {
+            analytics.logEvent(
+                ReaderAnalyticsEvent.SettingsSectionExpanded(
+                    sectionName = section.name.lowercase(),
+                )
+            )
+        }
         updateState { state ->
             val newExpandedSections = if (section in state.expandedSections) {
                 state.expandedSections - section
