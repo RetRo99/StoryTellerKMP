@@ -49,6 +49,7 @@ import org.koin.core.parameter.parametersOf
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
+import resources.translations.general_back
 
 @Composable
 fun AuthorDetailScreen(
@@ -96,7 +97,7 @@ private fun AuthorDetailScreenContent(
                     IconButton(onClick = { intentDispatcher(AuthorDetailIntent.OnBackClicked) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(StringRes.general_back),
                         )
                     }
                 },

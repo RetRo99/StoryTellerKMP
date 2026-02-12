@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import resources.translations.login_back_button
+import resources.translations.general_back
 import resources.translations.login_hide_password
 import resources.translations.login_password_label
 import resources.translations.login_show_password
@@ -191,7 +191,7 @@ private fun LoginScreenContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = { intentDispatcher(LoginIntent.OnBackClicked) }) {
-            Text(stringResource(StringRes.login_back_button))
+            Text(stringResource(StringRes.general_back))
         }
     }
 }

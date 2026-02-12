@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
-import resources.translations.notification_permission_cancel
+import resources.translations.general_cancel
 import resources.translations.notification_permission_message
 import resources.translations.notification_permission_open_settings
 import resources.translations.notification_permission_rationale_message
@@ -68,7 +68,7 @@ fun NotificationPermissionDeniedDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(StringRes.notification_permission_cancel))
+                Text(stringResource(StringRes.general_cancel))
             }
         },
     )

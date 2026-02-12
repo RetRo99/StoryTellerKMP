@@ -69,17 +69,22 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import resources.translations.books_delete_cache_cancel
 import resources.translations.books_delete_cache_confirm
 import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
+import resources.translations.books_detail_add_favorite
+import resources.translations.books_detail_description
+import resources.translations.books_detail_remove_favorite
+import resources.translations.books_detail_series
+import resources.translations.books_detail_tags
 import resources.translations.books_media_audio
-import resources.translations.books_media_cancel
 import resources.translations.books_media_delete
 import resources.translations.books_media_download
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
 import resources.translations.books_media_ready
+import resources.translations.general_back
+import resources.translations.general_cancel
 
 @Composable
 fun BookDetailScreen(
@@ -139,7 +144,7 @@ private fun BookDetailScreenContent(
                     IconButton(onClick = { intentDispatcher(BookDetailIntent.OnBackClicked) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(StringRes.general_back),
                         )
                     }
                 },
@@ -152,9 +157,9 @@ private fun BookDetailScreenContent(
                                 Icons.Outlined.FavoriteBorder
                             },
                             contentDescription = if (isFavorite) {
-                                "Remove from favorites"
+                                stringResource(StringRes.books_detail_remove_favorite)
                             } else {
-                                "Add to favorites"
+                                stringResource(StringRes.books_detail_add_favorite)
                             },
                             tint = if (isFavorite) {
                                 MaterialTheme.colorScheme.error
@@ -405,7 +410,7 @@ private fun MediaButton(
                         // Close icon in the center to indicate tap to cancel
                         Icon(
                             imageVector = Icons.Filled.Close,
-                            contentDescription = stringResource(StringRes.books_media_cancel),
+                            contentDescription = stringResource(StringRes.general_cancel),
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
@@ -456,7 +461,7 @@ private fun MediaButton(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = stringResource(StringRes.books_media_cancel),
+                            text = stringResource(StringRes.general_cancel),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -527,7 +532,7 @@ private fun DescriptionSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Description",
+            text = stringResource(StringRes.books_detail_description),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -554,7 +559,7 @@ private fun TagsSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Tags",
+            text = stringResource(StringRes.books_detail_tags),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -585,7 +590,7 @@ private fun SeriesSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Series",
+            text = stringResource(StringRes.books_detail_series),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -648,7 +653,7 @@ private fun DeleteCacheConfirmationDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(StringRes.books_delete_cache_cancel))
+                Text(text = stringResource(StringRes.general_cancel))
             }
         },
     )

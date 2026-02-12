@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
+    <!-- General -->
+    <string name="general_back">Back</string>
+    <string name="general_cancel">Cancel</string>
+    <string name="general_close">Close</string>
+
     <string name="error_network_connectivity">Network connection unavailable. Please check your internet connection.</string>
     <string name="error_network_generic">A network error occurred. Please try again.</string>
     <string name="error_api_generic">An API error occurred: %1$s</string>
@@ -14,7 +19,6 @@
     <string name="login_username_label">Username</string>
     <string name="login_password_label">Password</string>
     <string name="login_sign_in_button">Sign In</string>
-    <string name="login_back_button">Back</string>
     <string name="login_hide_password">Hide password</string>
     <string name="login_show_password">Show password</string>
     <string name="login_url_tooltip_title">StoryTeller URL</string>
@@ -64,13 +68,21 @@
     <string name="books_media_delete">Delete</string>
     <string name="books_media_download">Download</string>
     <string name="books_media_downloading">Downloading…</string>
-    <string name="books_media_cancel">Cancel</string>
+
+    <!-- Book Detail Screen -->
+    <string name="books_detail_add_favorite">Add to favorites</string>
+    <string name="books_detail_remove_favorite">Remove from favorites</string>
+    <string name="books_detail_description">Description</string>
+    <string name="books_detail_tags">Tags</string>
+    <string name="books_detail_series">Series</string>
 
     <!-- Book Detail - Delete Cache Dialog -->
     <string name="books_delete_cache_title">Delete Downloaded Content?</string>
     <string name="books_delete_cache_message">Are you sure you want to delete the downloaded %1$s? You can download it again later.</string>
     <string name="books_delete_cache_confirm">Delete</string>
-    <string name="books_delete_cache_cancel">Cancel</string>
+
+    <!-- Reader Screen -->
+    <string name="reader_toc_title">Table of Contents</string>
 
     <!-- Reader TOC Navigation -->
     <string name="reader_toc_jumped_to_chapter">Jumped to chapter</string>
@@ -92,7 +104,6 @@
     <string name="notification_permission_rationale_message">Audio playback requires notification permission to show playback controls and keep playing in the background. Please grant this permission to continue.</string>
     <string name="notification_permission_open_settings">Open Settings</string>
     <string name="notification_permission_try_again">Try Again</string>
-    <string name="notification_permission_cancel">Cancel</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>

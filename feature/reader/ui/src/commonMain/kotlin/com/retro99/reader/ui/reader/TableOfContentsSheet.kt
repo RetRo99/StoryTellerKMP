@@ -22,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.retro99.reader.ui.model.TocItemUiModel
+import com.retro99.translations.StringRes
+import org.jetbrains.compose.resources.stringResource
+import resources.translations.reader_toc_title
 
 private const val INDENT_PER_LEVEL_DP = 16
 
@@ -70,7 +73,7 @@ private fun TableOfContentsContent(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Table of Contents",
+            text = stringResource(StringRes.reader_toc_title),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
