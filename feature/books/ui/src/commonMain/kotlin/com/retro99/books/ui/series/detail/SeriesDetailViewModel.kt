@@ -8,6 +8,7 @@ import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.BookAnalyticsEvent
+import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksBySeriesUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
@@ -59,6 +60,10 @@ class SeriesDetailViewModel(
 
     private fun toggleSearch() {
         val currentlyVisible = viewState.value.isSearchVisible
+        // Only track when opening search, not closing
+        if (!currentlyVisible) {
+            analytics.logEvent(NavigationAnalyticsEvent.SearchOpened(source = "series_detail"))
+        }
         if (currentlyVisible) {
             searchFieldState.edit { delete(0, length) }
         }
