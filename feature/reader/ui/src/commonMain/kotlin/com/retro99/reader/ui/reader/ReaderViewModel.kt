@@ -3,10 +3,12 @@ package com.retro99.reader.ui.reader
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
 import com.retro99.base.formatCurrentTime
 import com.retro99.base.now
 import com.retro99.base.nowMillis
 import com.retro99.base.result.AppError
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
@@ -52,6 +54,7 @@ class ReaderViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val publicationService: EpubPublicationService,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
     ReaderViewState(
         bookUuid = bookUuid,
@@ -242,6 +245,7 @@ class ReaderViewModel(
                     openPublication(data)
                 }
                 .onFailure { error ->
+                    error.log(analytics, "ReaderViewModel: Failed to initialize reader")
                     updateState { it.copy(error = error) }
                 }
         }

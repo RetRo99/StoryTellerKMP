@@ -4,6 +4,7 @@ package com.retro99.database.implementation.di
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
+import co.touchlab.kermit.Logger
 import com.retro99.database.implementation.AppDatabase
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
@@ -15,6 +16,7 @@ import platform.Foundation.NSLibraryDirectory
 import platform.Foundation.NSUserDomainMask
 
 private const val DATABASE_NAME = "storyteller.db"
+private const val TAG = "PlatformDatabaseModule"
 
 /**
  * iOS implementation of platform-specific Database module.
@@ -55,6 +57,9 @@ actual class PlatformDatabaseModule {
 
         if (fileManager.fileExistsAtPath(dbPath)) {
             runCatching { fileManager.removeItemAtPath(dbPath, null) }
+                .onFailure { e ->
+                    Logger.e(TAG, e) { "Failed to delete database file at: $dbPath" }
+                }
         }
     }
 }

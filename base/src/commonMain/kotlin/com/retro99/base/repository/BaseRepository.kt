@@ -60,10 +60,14 @@ interface BaseRepository : KoinComponent {
                 }
                 .getOrElse { error ->
                     ensureActive()
+                    // Log the remote error for debugging, even when falling back to cache
+                    analytics.logException(
+                        error.toThrowable(),
+                        "Remote fetch failed${if (cachedData != null) ", using cached data" else ""}",
+                    )
                     if (cachedData == null) {
                         emit(Err(error))
                     }
-                    // If we have cached data, silently ignore remote error
                 }
         }
     }

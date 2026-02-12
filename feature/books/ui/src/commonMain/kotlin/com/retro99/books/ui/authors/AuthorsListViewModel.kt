@@ -3,6 +3,8 @@ package com.retro99.books.ui.authors
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetAuthorsUseCase
 import com.retro99.books.ui.authors.model.AuthorListUiModel
@@ -18,6 +20,7 @@ import org.koin.core.annotation.Provided
 class AuthorsListViewModel(
     @InjectedParam private val onNavigateToAuthorDetail: (author: AuthorListUiModel) -> Unit,
     @Provided private val getAuthorsUseCase: GetAuthorsUseCase,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<AuthorsListViewState, AuthorsListIntent>(AuthorsListViewState()) {
 
     init {
@@ -49,6 +52,7 @@ class AuthorsListViewModel(
                         }
                     }
                     .onFailure { error ->
+                        error.log(analytics, "AuthorsListViewModel: Failed to load authors")
                         updateState {
                             it.copy(
                                 isLoading = false,

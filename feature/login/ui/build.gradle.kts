@@ -38,6 +38,7 @@ kotlin {
             implementation(projects.baseUi)
             implementation(projects.translations)
             implementation(projects.feature.login.domain)
+            implementation(projects.lib.analytics.api)
         }
     }
 }

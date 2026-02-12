@@ -3,6 +3,8 @@ package com.retro99.base.result
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.onFailure
+import com.retro99.analytics.api.Analytics
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.StringResource
 import resources.translations.error_api_generic
@@ -83,5 +85,32 @@ inline infix fun <T, V> T.runCatchingAsAppError(block: T.() -> V): Result<V, App
         Ok(block())
     } catch (e: Throwable) {
         Err(AppError.UnknownError(e))
+    }
+}
+
+/**
+ * Logs the AppError using the provided Analytics instance and returns the error unchanged.
+ * Useful for chaining in error handling flows.
+ *
+ * @param analytics The Analytics instance to use for logging
+ * @param context A descriptive message about where the error occurred
+ * @return The same AppError for chaining
+ */
+fun AppError.log(analytics: Analytics, context: String): AppError {
+    analytics.logException(toThrowable(), context)
+    return this
+}
+
+/**
+ * Extension function on AppResult that logs any error and returns the result unchanged.
+ * Useful for adding logging to existing error handling chains.
+ *
+ * @param analytics The Analytics instance to use for logging
+ * @param context A descriptive message about where the error occurred
+ * @return The same Result for chaining
+ */
+fun <T> AppResult<T>.logOnFailure(analytics: Analytics, context: String): AppResult<T> {
+    return onFailure { error ->
+        error.log(analytics, context)
     }
 }
