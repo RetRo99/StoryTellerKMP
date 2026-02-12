@@ -32,6 +32,7 @@ internal class BooksDataRepository(
             remoteSource = {
                 remoteSource.getBooks().map { books ->
                     books.map { it.toDomain(baseUrl) }
+                        .sortedBy { it.title.lowercase() }
                 }
             },
             saveToCache = { domainBooks ->
