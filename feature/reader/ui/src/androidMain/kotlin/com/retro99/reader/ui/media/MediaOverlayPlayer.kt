@@ -303,6 +303,9 @@ class MediaOverlayPlayer(
             return
         }
 
+        // Set clips to locator tracker so seek bar can update when user navigates
+        locatorTracker.setChapterClips(chapterClips)
+
         // Calculate total duration from clips (last clip's end time)
         val chapterDurationMs = chapterClips.maxOfOrNull { (it.endTime * SECONDS_TO_MS).toLong() }
         if (chapterDurationMs != null && chapterDurationMs > 0) {
