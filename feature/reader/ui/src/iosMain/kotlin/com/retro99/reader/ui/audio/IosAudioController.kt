@@ -30,6 +30,18 @@ class IosAudioController(
 
     private var mediaOverlaysInitialized = false
 
+    /**
+     * Tracks whether playback has been started at least once.
+     * Used to determine whether to start fresh (with positioning) or resume.
+     */
+    private var hasStartedPlayback = false
+
+    /**
+     * Initial audio position from saved reading progress.
+     * Used on first playback, then cleared.
+     */
+    private var initialPositionMs: Long? = null
+
     // Internal mutable flows for state observation
     private val _audioPlaybackState = MutableStateFlow(
         AudioPlaybackState(
@@ -106,18 +118,58 @@ class IosAudioController(
         }
     }
 
-    override fun playAudio(initialPositionMs: Long?) {
-        ensureMediaOverlaysInitialized {
-            bridge.playAudio(initialPositionMs)
+    override suspend fun togglePlayback(getVisibleSentenceId: suspend () -> String?) {
+        val isCurrentlyPlaying = _audioPlaybackState.value.isPlaying
+        if (isCurrentlyPlaying) {
+            bridge.pauseAudio()
+        } else {
+            if (!hasStartedPlayback) {
+                startPlaybackFromCurrentPosition(getVisibleSentenceId)
+            } else {
+                bridge.resumeAudio()
+            }
         }
     }
 
-    override fun resumeAudio() {
-        bridge.resumeAudio()
+    override fun setInitialPosition(positionMs: Long?) {
+        initialPositionMs = positionMs
+    }
+
+    override fun resetPlaybackState() {
+        // Only reset if not currently playing - when playing, the audio drives the state
+        if (_audioPlaybackState.value.isPlaying) return
+        hasStartedPlayback = false
+        initialPositionMs = null
     }
 
     override fun pauseAudio() {
         bridge.pauseAudio()
+    }
+
+    /**
+     * Starts playback from the current position.
+     * Uses saved position if available, otherwise queries visible sentence.
+     */
+    private suspend fun startPlaybackFromCurrentPosition(
+        getVisibleSentenceId: suspend () -> String?,
+    ) {
+        val savedPosition = initialPositionMs
+        if (savedPosition != null) {
+            ensureMediaOverlaysInitialized {
+                bridge.playAudio(savedPosition)
+            }
+        } else {
+            val visibleSentenceId = getVisibleSentenceId()
+            if (visibleSentenceId != null) {
+                playFromFragment(visibleSentenceId, chapterHref = null)
+            } else {
+                ensureMediaOverlaysInitialized {
+                    bridge.playAudio(null)
+                }
+            }
+        }
+        hasStartedPlayback = true
+        initialPositionMs = null // Clear after first use
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {

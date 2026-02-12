@@ -197,17 +197,6 @@ class ReaderViewModel(
                 )
                 updatePosition(positionUiModel)
 
-                // When audio is not playing and user navigates, reset playback state
-                // so next play starts from the current visible text position
-                if (!currentState.isPlaying && currentState.hasStartedPlayback) {
-                    updateState {
-                        it.copy(
-                            hasStartedPlayback = false,
-                            initialAudioPositionMs = null,
-                        )
-                    }
-                }
-
                 // Fetch chapter page info for the current viewport
                 // Only needed when using RELATIVE display mode (viewport-based page numbers)
                 val currentSettings = currentState.currentSettings
@@ -286,7 +275,6 @@ class ReaderViewModel(
                     positionConflict = conflict,
                     playbackSpeed = settings.playbackSpeed,
                     error = null,
-                    initialAudioPositionMs = position?.audioTimestampMs,
                     currentAudioPositionMs = position?.audioTimestampMs ?: 0L,
                     lastKnownPosition = position,
                     tableOfContents = it.tableOfContents,
@@ -302,15 +290,18 @@ class ReaderViewModel(
             }
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
-                initAudio()
+                initAudio(position?.audioTimestampMs)
             }
         }
             ?: updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
     }
 
-    private fun initAudio() {
+    private fun initAudio(initialAudioPositionMs: Long?) {
         // Start sync coordinator (this also triggers lazy initialization of audioController)
         syncCoordinator.start(viewModelScope)
+
+        // Set the initial audio position from saved reading progress
+        audioController.setInitialPosition(initialAudioPositionMs)
 
         audioController.audioPlaybackState
             .map { it.isPlayerReady }
@@ -413,58 +404,16 @@ class ReaderViewModel(
     /**
      * Toggles audio playback.
      *
-     * IMPORTANT: We do NOT optimistically update isPlaying here. The player is the single
-     * source of truth for playback state. The UI will update when the player reports its
-     * actual state via UpdatePlayingState intent. This prevents state divergence when:
-     * - Permission check fails
-     * - Audio focus acquisition fails
-     * - Foreground service fails to start
-     * - Any other playback initialization error occurs
+     * The AudioController handles all the logic internally:
+     * - Whether to start fresh (with positioning) or resume
+     * - Permission checks, audio focus, foreground service
+     * - Querying visible sentence for precise positioning
+     *
+     * The UI will update when the player reports its actual state.
      */
     private fun togglePlayback() {
-        val currentState = viewState.value
-        val isCurrentlyPlaying = currentState.isPlaying
-        if (isCurrentlyPlaying) {
-            audioController.pauseAudio()
-        } else {
-            if (!currentState.hasStartedPlayback) {
-                startPlaybackFromCurrentPosition(currentState.initialAudioPositionMs)
-            } else {
-                audioController.resumeAudio()
-            }
-        }
-    }
-
-    /**
-     * Starts audio playback from the current position.
-     *
-     * If an explicit audio position is provided, uses that position.
-     * Otherwise, queries the WebView to find the first visible sentence and starts
-     * playback from that sentence for precise audio-text synchronization.
-     *
-     * This is called when:
-     * 1. First play with saved position: uses initialAudioPositionMs
-     * 2. Play after manual navigation: queries visible sentence for precise positioning
-     *
-     * @param initialAudioPositionMs Optional saved audio position in milliseconds
-     */
-    private fun startPlaybackFromCurrentPosition(initialAudioPositionMs: Long?) {
         viewModelScope.launch {
-            if (initialAudioPositionMs != null) {
-                // Use the saved audio position
-                audioController.playAudio(initialAudioPositionMs)
-            } else {
-                // Query the visible sentence for precise positioning
-                val visibleSentenceId = bookController.getVisibleSentenceId()
-                if (visibleSentenceId != null) {
-                    // Start from the visible sentence for precise sync
-                    audioController.playFromFragment(visibleSentenceId, chapterHref = null)
-                } else {
-                    // Fallback to progression-based positioning
-                    audioController.playAudio(null)
-                }
-            }
-            updateState { it.copy(hasStartedPlayback = true) }
+            audioController.togglePlayback { bookController.getVisibleSentenceId() }
         }
     }
 
@@ -532,19 +481,9 @@ class ReaderViewModel(
     /**
      * Updates the playing state from the navigator.
      * Called when the audio controller reports playback state changes.
-     *
-     * When playback starts (isPlaying becomes true), we also set hasStartedPlayback = true.
-     * This ensures the ViewModel knows playback has been initiated, regardless of whether
-     * it was started via the play button, double-tap on a sentence, or any other mechanism.
      */
     private fun updatePlayingState(isPlaying: Boolean) {
-        updateState {
-            if (isPlaying) {
-                it.copy(isPlaying = true, hasStartedPlayback = true)
-            } else {
-                it.copy(isPlaying = false)
-            }
-        }
+        updateState { it.copy(isPlaying = isPlaying) }
         if (!isPlaying) {
             saveCurrentAudioPosition()
         }

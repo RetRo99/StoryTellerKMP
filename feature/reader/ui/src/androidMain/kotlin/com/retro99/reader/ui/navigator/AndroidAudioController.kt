@@ -36,6 +36,18 @@ class AndroidAudioController(
 
     private var controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    /**
+     * Tracks whether playback has been started at least once.
+     * Used to determine whether to start fresh (with positioning) or resume.
+     */
+    private var hasStartedPlayback = false
+
+    /**
+     * Initial audio position from saved reading progress.
+     * Used on first playback, then cleared.
+     */
+    private var initialPositionMs: Long? = null
+
     override val currentAudioLocator: StateFlow<AudioLocatorState?>
         get() = locatorTracker.currentLocator
 
@@ -94,17 +106,57 @@ class AndroidAudioController(
         logger.i { "⏱️ MediaOverlay initialization COMPLETE - TOTAL: ${totalTime}ms" }
     }
 
-    override fun playAudio(initialPositionMs: Long?) {
-        logger.i { "🎵 playAudio() called - initialPositionMs=$initialPositionMs" }
-        executePlayCommand(initialPositionMs)
+    override suspend fun togglePlayback(getVisibleSentenceId: suspend () -> String?) {
+        val isCurrentlyPlaying = playbackStateTracker.isPlaying.value
+        if (isCurrentlyPlaying) {
+            player.pause()
+        } else {
+            if (!hasStartedPlayback) {
+                startPlaybackFromCurrentPosition(getVisibleSentenceId)
+            } else {
+                player.resume()
+            }
+        }
     }
 
-    override fun resumeAudio() {
-        player.resume()
+    override fun setInitialPosition(positionMs: Long?) {
+        initialPositionMs = positionMs
+    }
+
+    override fun resetPlaybackState() {
+        // Only reset if not currently playing - when playing, the audio drives the state
+        if (playbackStateTracker.isPlaying.value) return
+        hasStartedPlayback = false
+        initialPositionMs = null
     }
 
     override fun pauseAudio() {
         player.pause()
+    }
+
+    /**
+     * Starts playback from the current position.
+     * Uses saved position if available, otherwise queries visible sentence.
+     */
+    private suspend fun startPlaybackFromCurrentPosition(
+        getVisibleSentenceId: suspend () -> String?,
+    ) {
+        val savedPosition = initialPositionMs
+        if (savedPosition != null) {
+            logger.i { "🎵 Starting playback from saved position: ${savedPosition}ms" }
+            executePlayCommand(savedPosition)
+        } else {
+            val visibleSentenceId = getVisibleSentenceId()
+            if (visibleSentenceId != null) {
+                logger.i { "🎵 Starting playback from visible sentence: $visibleSentenceId" }
+                playFromFragment(visibleSentenceId, chapterHref = null)
+            } else {
+                logger.i { "🎵 Starting playback from beginning (no position info)" }
+                executePlayCommand(null)
+            }
+        }
+        hasStartedPlayback = true
+        initialPositionMs = null // Clear after first use
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {
