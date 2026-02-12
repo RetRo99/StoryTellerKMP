@@ -28,4 +28,8 @@ class DebugAnalyticsManager : Analytics {
             }
         }
     }
+
+    override fun setUserId(userId: String?) {
+        logger.d { "Set User ID: ${userId ?: "null (cleared)"}" }
+    }
 }

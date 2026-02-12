@@ -52,6 +52,7 @@ class RootNavigationViewModel(
         viewModelScope.launch {
             logoutUseCase()
             analytics.logEvent(AuthAnalyticsEvent.LogoutCompleted)
+            analytics.setUserId(null)
             updateState { state ->
                 state.copy(backStack = listOf(RootDestination.Login))
             }

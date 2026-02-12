@@ -83,6 +83,7 @@ class LoginViewModel(
 
             loginUseCase(url, username, password).fold(
                 success = {
+                    analytics.setUserId(username.hashCode().toString())
                     analytics.logEvent(AuthAnalyticsEvent.LoginSucceeded)
                     onSignInSuccess()
                 },

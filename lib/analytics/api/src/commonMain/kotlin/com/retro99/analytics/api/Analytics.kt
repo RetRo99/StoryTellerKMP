@@ -12,4 +12,12 @@ interface Analytics {
      * @param event The analytics event to log
      */
     fun logEvent(event: AnalyticsEvent)
+
+    /**
+     * Sets the user ID for analytics tracking.
+     * This helps track user journeys across sessions.
+     *
+     * @param userId The user identifier (should be hashed for privacy), or null to clear
+     */
+    fun setUserId(userId: String?)
 }

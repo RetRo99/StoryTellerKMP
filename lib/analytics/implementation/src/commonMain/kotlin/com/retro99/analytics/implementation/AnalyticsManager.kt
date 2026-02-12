@@ -19,4 +19,9 @@ class AnalyticsManager(
         val parameters = event.parameters.takeIf { it.isNotEmpty() }
         firebaseAnalytics.logEvent(event.name, parameters)
     }
+
+    override fun setUserId(userId: String?) {
+        firebaseAnalytics.setUserId(userId)
+        firebaseCrashlytics.setUserId(userId ?: "")
+    }
 }
