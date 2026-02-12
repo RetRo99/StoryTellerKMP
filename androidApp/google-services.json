@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "24864637091",
-    "project_id": "storytellerkmp",
-    "storage_bucket": "storytellerkmp.firebasestorage.app"
+    "project_number": "344984435589",
+    "project_id": "parrot-8649f",
+    "storage_bucket": "parrot-8649f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:24864637091:android:c88634e211330820ac7f16",
+        "mobilesdk_app_id": "1:344984435589:android:c7db316ebc013d277ae2ec",
         "android_client_info": {
           "package_name": "com.retro99.parrot"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC6krXFgvB6IB8hsHMFtzfIknqBu96B_Go"
+          "current_key": "AIzaSyBou6dlrfcW0YADJvRz85Jh4vRYNeWDK-Y"
         }
       ],
       "services": {
