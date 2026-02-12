@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -120,13 +119,13 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
      * Injects the double-tap detection JavaScript into the navigator's WebView.
      * This script listens for double-click events and calls back to native code.
      *
-     * Waits for the first locator emission to ensure the WebView is ready,
-     * rather than using an arbitrary delay.
+     * Uses a small delay to ensure the WebView content is loaded.
+     * The script has built-in protection against multiple injections.
      */
     private fun injectDoubleTapDetectionScript() {
         controllerScope.launch {
-            // Wait for the first locator emission - this indicates the WebView is ready
-            currentLocator.first()
+            // Small delay to ensure WebView content is loaded
+            delay(SCRIPT_INJECTION_DELAY_MS)
             val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
             _navigator.value?.evaluateJavascript(script)
             logger.d { "Double-tap detection script injected" }
@@ -374,6 +373,9 @@ class AndroidEpubNavigatorController internal constructor() : EpubNavigatorContr
 
         /** Minimum delay before page turn to avoid jarring transitions */
         private const val MIN_PAGE_TURN_DELAY_MS = 200L
+
+        /** Delay before injecting double-tap detection script to ensure WebView is ready */
+        private const val SCRIPT_INJECTION_DELAY_MS = 500L
     }
 }
 
