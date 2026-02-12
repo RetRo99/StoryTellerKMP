@@ -20,3 +20,8 @@ node_modules/
 
 # CocoaPods
 iosApp/Pods/
+
+# Signing keys
+*.jks
+*.keystore
+signing_key.txt
