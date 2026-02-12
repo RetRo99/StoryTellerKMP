@@ -1,9 +1,11 @@
 package com.retro99.preferences.implementation.di
 
 import android.content.Context
+import com.retro99.analytics.api.Analytics
 import com.retro99.preferences.implementation.EncryptedPreferenceFactory
 import com.russhwolf.settings.Settings
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 /**
@@ -16,8 +18,11 @@ import org.koin.core.annotation.Single
 actual class PlatformPreferencesModule {
 
     @Single
-    fun providesSettingsFactory(context: Context): Settings.Factory {
-        return EncryptedPreferenceFactory(context)
+    fun providesSettingsFactory(
+        context: Context,
+        @Provided analytics: Analytics,
+    ): Settings.Factory {
+        return EncryptedPreferenceFactory(context, analytics)
     }
 }
 

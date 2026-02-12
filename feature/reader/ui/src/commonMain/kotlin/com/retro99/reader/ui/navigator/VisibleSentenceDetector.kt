@@ -1,8 +1,11 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.analytics.api.Analytics
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * Utility for detecting the first visible sentence element in the EPUB WebView viewport.
@@ -13,7 +16,9 @@ import kotlinx.serialization.json.Json
  *
  * Sentence elements are identified by having IDs (e.g., "chapter44.xhtml-sentence50").
  */
-object VisibleSentenceDetector {
+object VisibleSentenceDetector : KoinComponent {
+
+    private val analytics: Analytics by inject<Analytics>()
 
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
@@ -99,7 +104,8 @@ object VisibleSentenceDetector {
             } else {
                 null
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            analytics.logException(e, "Failed to parse visible sentence result, json: $json")
             null
         }
     }

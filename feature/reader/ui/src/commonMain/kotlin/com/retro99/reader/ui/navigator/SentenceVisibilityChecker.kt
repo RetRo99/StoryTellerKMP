@@ -1,9 +1,12 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.navigator.SentenceVisibilityChecker.getVisibilityCheckScript
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * Shared utility for checking sentence visibility in paginated EPUB views.
@@ -14,7 +17,9 @@ import kotlinx.serialization.json.Json
  *
  * This is used for pre-emptive page turn logic during TTS playback.
  */
-object SentenceVisibilityChecker {
+object SentenceVisibilityChecker : KoinComponent {
+
+    private val analytics: Analytics by inject<Analytics>()
 
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
@@ -89,11 +94,12 @@ object SentenceVisibilityChecker {
      */
     fun parseVisibilityResult(json: String, elementId: String): SentenceVisibilityResult {
         return try {
-
-            val test = parseVisibilityResultInternal(json)
-            println("čič: $test")
-            test
-        } catch (_: Exception) {
+            parseVisibilityResultInternal(json)
+        } catch (e: Exception) {
+            analytics.logException(
+                e,
+                "Failed to parse visibility result for element: $elementId, json: $json",
+            )
             SentenceVisibilityResult.FULLY_VISIBLE
         }
     }

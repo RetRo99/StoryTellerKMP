@@ -31,6 +31,7 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.androidx.security.crypto)
+            implementation(projects.lib.analytics.api)
         }
 
         iosMain.dependencies {
