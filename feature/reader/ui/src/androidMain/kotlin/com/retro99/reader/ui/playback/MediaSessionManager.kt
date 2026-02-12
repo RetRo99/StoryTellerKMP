@@ -3,6 +3,7 @@ package com.retro99.reader.ui.playback
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.view.KeyEvent
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -180,8 +181,44 @@ class MediaSessionManager(
      *
      * Intercepts pause commands from notification/lockscreen/Bluetooth to notify
      * [AudioFocusManager] that this is a user-initiated pause (not system focus loss).
+     *
+     * Also intercepts next/previous track commands from Bluetooth headsets and converts
+     * them to 10-second seek forward/backward operations, since we don't have a playlist.
      */
     private inner class MediaSessionCallback : MediaSession.Callback {
+
+        /**
+         * Called when a controller connects to the session.
+         *
+         * We override this to explicitly add COMMAND_SEEK_TO_NEXT and COMMAND_SEEK_TO_PREVIOUS
+         * to the available commands. Without this, these commands are not available when
+         * there's only one item in the playlist (which is our case - single audio file per chapter).
+         *
+         * This enables Bluetooth headset next/previous buttons to trigger onPlayerCommandRequest.
+         */
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): MediaSession.ConnectionResult {
+            // Get the default available commands from the player
+            val defaultCommands = super.onConnect(session, controller)
+
+            // Build player commands including seek to next/previous
+            // These are needed for Bluetooth headset buttons to work
+            val playerCommands = Player.Commands.Builder()
+                .addAll(defaultCommands.availablePlayerCommands)
+                .add(Player.COMMAND_SEEK_TO_NEXT)
+                .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .build()
+
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(defaultCommands.availableSessionCommands)
+                .setAvailablePlayerCommands(playerCommands)
+                .build()
+        }
+
         override fun onPlayerCommandRequest(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -201,9 +238,90 @@ class MediaSessionManager(
                     audioFocusManager.onUserPaused()
                 }
             }
-            // Allow the command to proceed
+
+            // Intercept next/previous track commands and convert them to 10-second seek operations
+            when (playerCommand) {
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                    -> {
+                    seekForward()
+                    return SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                }
+
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                    -> {
+                    seekBackward()
+                    return SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                }
+            }
+
             return SessionResult.RESULT_SUCCESS
         }
+
+        /**
+         * Intercepts raw media button key events from Bluetooth headsets.
+         *
+         * Some Bluetooth headsets (like Sony WH-1000XM4) send KEYCODE_MEDIA_NEXT/PREVIOUS
+         * which may not be properly translated to COMMAND_SEEK_TO_NEXT/PREVIOUS by the system.
+         * By handling the raw key events here, we ensure consistent behavior.
+         *
+         * @return true if the event was handled, false to let the default handler process it
+         */
+        override fun onMediaButtonEvent(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            intent: Intent,
+        ): Boolean {
+            val keyEvent = intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+
+            // Only handle key down events to avoid double-triggering
+            if (keyEvent?.action == KeyEvent.ACTION_DOWN) {
+                when (keyEvent.keyCode) {
+                    KeyEvent.KEYCODE_MEDIA_NEXT,
+                    KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+                        -> {
+                        seekForward()
+                        return true
+                    }
+
+                    KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+                    KeyEvent.KEYCODE_MEDIA_REWIND,
+                        -> {
+                        seekBackward()
+                        return true
+                    }
+                }
+            }
+
+            // Let the default handler process other media button events
+            return super.onMediaButtonEvent(session, controller, intent)
+        }
+    }
+
+    /**
+     * Seeks forward by 10 seconds from the current position.
+     * The position is clamped to the duration of the current media.
+     */
+    private fun seekForward() {
+        val newPosition = (player.currentPosition + SEEK_INCREMENT_MS)
+            .coerceAtMost(player.duration.coerceAtLeast(0L))
+        player.seekTo(newPosition)
+    }
+
+    /**
+     * Seeks backward by 10 seconds from the current position.
+     * The position is clamped to 0.
+     */
+    private fun seekBackward() {
+        val newPosition = (player.currentPosition - SEEK_INCREMENT_MS)
+            .coerceAtLeast(0L)
+        player.seekTo(newPosition)
+    }
+
+    private companion object {
+        /** Seek increment in milliseconds (10 seconds) */
+        private const val SEEK_INCREMENT_MS = 10_000L
     }
 }
 
