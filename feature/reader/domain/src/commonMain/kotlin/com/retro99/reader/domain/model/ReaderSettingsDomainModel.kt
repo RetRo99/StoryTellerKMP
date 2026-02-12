@@ -29,6 +29,8 @@ data class ReaderSettingsDomainModel(
     val showTotalProgress: Boolean = true,
     // Progress indicator mode: NONE, CHAPTER, or BOOK
     val progressIndicatorMode: ProgressIndicatorMode = ProgressIndicatorMode.CHAPTER,
+    // Progress bar position: TOP or BOTTOM
+    val progressBarPosition: ProgressBarPosition = ProgressBarPosition.BOTTOM,
 )
 
 enum class ReaderTheme {
@@ -99,4 +101,15 @@ enum class ProgressIndicatorMode {
 
     /** Show book (total) progress indicator */
     BOOK,
+}
+
+/**
+ * Position of the progress bar in the reader.
+ */
+enum class ProgressBarPosition {
+    /** Progress bar at the top, overlaid with toolbar when visible */
+    TOP,
+
+    /** Progress bar at the bottom (default) */
+    BOTTOM,
 }

@@ -51,6 +51,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
+import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.PositionUiModel
@@ -187,6 +188,15 @@ private fun ReaderContent(
             .fillMaxSize()
             .background(backgroundColor),
     ) {
+
+        AnimatedProgressBar(
+            settings = settings,
+            areControlsVisible = areControlsVisible,
+            position = ProgressBarPosition.TOP,
+            lastKnownPosition = lastKnownPosition,
+            chapterPageInfo = chapterPageInfo,
+        )
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -315,29 +325,44 @@ private fun ReaderContent(
             )
         }
 
-        // Reading progress bar - visibility based on settings:
-        // true = always visible, null = visible with controls, false = never visible
-        val isProgressBarVisible = when (settings.showProgressBar) {
-            true -> true
-            null -> areControlsVisible
-            false -> false
-        }
-        AnimatedVisibility(
-            visible = isProgressBarVisible,
-            enter = fadeIn() + slideInVertically { it },
-            exit = fadeOut() + slideOutVertically { it },
-        ) {
-            ReadingProgressBar(
-                totalProgression = lastKnownPosition?.totalProgression,
-                chapterPageInfo = chapterPageInfo,
-                chapterTitle = lastKnownPosition?.title,
-                chapterProgressDisplayMode = settings.chapterProgressDisplayMode,
-                chapterProgression = lastKnownPosition?.progression,
-                fixedPosition = lastKnownPosition?.position,
-                showTotalProgress = settings.showTotalProgress,
-                progressIndicatorMode = settings.progressIndicatorMode,
-            )
-        }
+        AnimatedProgressBar(
+            settings = settings,
+            areControlsVisible = areControlsVisible,
+            position = ProgressBarPosition.BOTTOM,
+            lastKnownPosition = lastKnownPosition,
+            chapterPageInfo = chapterPageInfo,
+        )
+    }
+}
+
+@Composable
+private fun AnimatedProgressBar(
+    settings: ReaderSettingsUiModel,
+    areControlsVisible: Boolean,
+    position: ProgressBarPosition,
+    lastKnownPosition: PositionUiModel?,
+    chapterPageInfo: ChapterPageInfo?,
+) {
+    val isVisible = when (settings.showProgressBar) {
+        true -> settings.progressBarPosition == position
+        null -> areControlsVisible
+        false -> false
+    }
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn() + slideInVertically { it },
+        exit = fadeOut() + slideOutVertically { it },
+    ) {
+        ReadingProgressBar(
+            totalProgression = lastKnownPosition?.totalProgression,
+            chapterPageInfo = chapterPageInfo,
+            chapterTitle = lastKnownPosition?.title,
+            chapterProgressDisplayMode = settings.chapterProgressDisplayMode,
+            chapterProgression = lastKnownPosition?.progression,
+            fixedPosition = lastKnownPosition?.position,
+            showTotalProgress = settings.showTotalProgress,
+            progressIndicatorMode = settings.progressIndicatorMode,
+        )
     }
 }
 

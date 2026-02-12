@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
@@ -37,6 +38,8 @@ data class ReaderSettingsUiModel(
     val showTotalProgress: Boolean = true,
     // Progress indicator mode: NONE, CHAPTER, or BOOK
     val progressIndicatorMode: ProgressIndicatorMode = ProgressIndicatorMode.CHAPTER,
+    // Progress bar position: TOP or BOTTOM
+    val progressBarPosition: ProgressBarPosition = ProgressBarPosition.BOTTOM,
 )
 
 enum class ReaderThemeUi {
@@ -97,6 +100,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     chapterProgressDisplayMode = chapterProgressDisplayMode,
     showTotalProgress = showTotalProgress,
     progressIndicatorMode = progressIndicatorMode,
+    progressBarPosition = progressBarPosition,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -117,6 +121,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     chapterProgressDisplayMode = chapterProgressDisplayMode,
     showTotalProgress = showTotalProgress,
     progressIndicatorMode = progressIndicatorMode,
+    progressBarPosition = progressBarPosition,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {

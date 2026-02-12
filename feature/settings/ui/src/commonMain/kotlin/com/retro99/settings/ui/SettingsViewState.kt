@@ -3,6 +3,7 @@ package com.retro99.settings.ui
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
+import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderSettingsUiModel
@@ -31,6 +32,7 @@ data class SettingsViewState(
     val highlightStyle: HighlightStyle get() = readerSettings.highlightStyle
     val showTotalProgress: Boolean get() = readerSettings.showTotalProgress
     val progressIndicatorMode: ProgressIndicatorMode get() = readerSettings.progressIndicatorMode
+    val progressBarPosition: ProgressBarPosition get() = readerSettings.progressBarPosition
 
     fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
 }
