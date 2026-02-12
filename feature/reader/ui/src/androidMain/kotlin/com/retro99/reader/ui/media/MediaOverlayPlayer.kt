@@ -216,23 +216,19 @@ class MediaOverlayPlayer(
             return
         }
 
-        // Set playWhenReady so playback starts automatically when audio is ready
-        exoPlayer.playWhenReady = true
-
         if (chapterHref != null) {
-            // prepareChapter will set the media source and call prepare()
-            // playback will start automatically because playWhenReady is true
+            // prepareChapter will handle seeking and then set playWhenReady
             prepareChapter(chapterHref, initialFragmentId, initialProgression, initialPositionMs)
         } else {
-            // No chapter change - try to seek to explicit position, fragment, or progression
+            // No chapter change - seek first (before playback starts), then play
             val positionToSeek = initialPositionMs
                 ?: locatorTracker.findPositionForFragment(initialFragmentId)
                 ?: locatorTracker.findPositionForProgression(initialProgression)
             if (positionToSeek != null && positionToSeek > 0) {
                 exoPlayer.seekTo(positionToSeek)
             }
-            // Only call play() directly if we're not preparing a new chapter
-            // (the chapter is already loaded)
+            // Set playWhenReady and call play() after seeking
+            exoPlayer.playWhenReady = true
             exoPlayer.play()
         }
     }
@@ -297,7 +293,7 @@ class MediaOverlayPlayer(
      *
      * @param chapterHref The href of the chapter to get duration for
      */
-    suspend fun prepareChapterDuration(chapterHref: Url) {
+    suspend fun prepareChapterDuration(chapterHref: Url, initialPositionMs: Long? = null) {
         val normalizedHref = chapterHref.removeFragment().toString()
 
         // Load clips for this chapter using lazy loading
@@ -317,6 +313,15 @@ class MediaOverlayPlayer(
         val chapterDurationMs = chapterClips.maxOfOrNull { (it.endTime * SECONDS_TO_MS).toLong() }
         if (chapterDurationMs != null && chapterDurationMs > 0) {
             playbackStateTracker.setTotalDuration(chapterDurationMs)
+        }
+
+        // Pre-buffer the audio so playback starts instantly when user clicks play.
+        // This prepares ExoPlayer with playWhenReady=false, so it buffers but doesn't play.
+        val audioHref = chapterClips.firstOrNull()?.audioHref
+        if (audioHref != null && currentAudioHref != audioHref) {
+            logger.d { "Pre-buffering audio: $audioHref at position ${initialPositionMs ?: 0}ms" }
+            currentAudioHref = audioHref
+            prepareAudio(audioHref, initialPositionMs)
         }
 
         // Prefetch next chapter in background
@@ -465,14 +470,25 @@ class MediaOverlayPlayer(
         if (currentAudioHref != audioHref) {
             logger.d { "New audio file, preparing: $audioHref (was: $currentAudioHref)" }
             currentAudioHref = audioHref
-            // Store the initial position to seek to after audio is prepared
-            playbackStateTracker.setPendingSeekPosition(positionToSeek)
-            prepareAudio(audioHref)
+            // Pass initial position directly to prepareAudio to avoid seeking after playback starts
+            // This prevents the brief pause that occurs when seeking a playing player
+            prepareAudio(audioHref, positionToSeek)
         } else if (positionToSeek != null && positionToSeek > 0) {
-            logger.d { "Same audio file, seeking to $positionToSeek" }
-            // Same audio file, just seek to the position
-            exoPlayer.seekTo(positionToSeek)
+            // Same audio file - only seek if we're not already at the target position.
+            // This avoids unnecessary seeks when audio was pre-buffered at the correct position.
+            val currentPosition = exoPlayer.currentPosition
+            val seekThresholdMs = 100 // Allow small tolerance to avoid micro-seeks
+            if (kotlin.math.abs(currentPosition - positionToSeek) > seekThresholdMs) {
+                logger.d { "Same audio file, seeking from $currentPosition to $positionToSeek" }
+                exoPlayer.seekTo(positionToSeek)
+            } else {
+                logger.d { "Same audio file, already at position $currentPosition (target: $positionToSeek)" }
+            }
         }
+
+        // Set playWhenReady AFTER all seeking/preparation is done.
+        // This ensures playback starts from the correct position without flickering.
+        exoPlayer.playWhenReady = true
 
         // Prefetch next chapter in background
         smilLoadingManager.prefetchNextChapter(normalizedHref)
@@ -485,12 +501,12 @@ class MediaOverlayPlayer(
      * Sets the media metadata on the MediaItem itself (not just playlistMetadata)
      * because Media3's notification controller prefers MediaItem.mediaMetadata.
      */
-    private fun prepareAudio(audioHref: Url) {
+    private fun prepareAudio(audioHref: Url, startPositionMs: Long? = null) {
         // Create a MediaItem for the audio file
         // The audio is inside the EPUB, so we need to use the publication's container
         val audioUrl = publication.baseUrl?.resolve(audioHref)?.toString()
             ?: audioHref.toString()
-        logger.d { "prepareAudio() - audioUrl=$audioUrl" }
+        logger.d { "prepareAudio() - audioUrl=$audioUrl, startPositionMs=$startPositionMs" }
 
         // Build MediaItem with metadata for proper notification/lockscreen display
         val mediaItem = MediaItem.Builder()
@@ -501,8 +517,11 @@ class MediaOverlayPlayer(
         val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
             .createMediaSource(mediaItem)
 
-        // Use resetPosition=true to start from beginning (we'll seek after prepare)
-        exoPlayer.setMediaSource(mediaSource, /* resetPosition= */ true)
+        // Set the initial position directly when setting the media source.
+        // This avoids seeking after playback starts, which would cause a brief pause
+        // (the player emits isPlaying=false then isPlaying=true during seek buffering).
+        val initialPosition = startPositionMs ?: 0L
+        exoPlayer.setMediaSource(mediaSource, initialPosition)
         exoPlayer.prepare()
     }
 
