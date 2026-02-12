@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.retro99.base.formatCurrentTime
 import com.retro99.base.nowMillis
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
@@ -130,6 +129,7 @@ private fun ReaderScreenContent(
                 previousTocPosition = viewState.previousTocPosition,
                 lastKnownPosition = viewState.lastKnownPosition,
                 chapterPageInfo = viewState.chapterPageInfo,
+                currentTime = viewState.currentTime,
                 intentDispatcher = intentDispatcher,
                 loader = movableLoader,
             )
@@ -163,6 +163,7 @@ private fun ReaderContent(
     previousTocPosition: PositionUiModel?,
     lastKnownPosition: PositionUiModel?,
     chapterPageInfo: ChapterPageInfo?,
+    currentTime: String,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
@@ -201,6 +202,7 @@ private fun ReaderContent(
             position = ProgressBarPosition.TOP,
             lastKnownPosition = lastKnownPosition,
             chapterPageInfo = chapterPageInfo,
+            currentTime = currentTime,
         )
 
         Box(
@@ -337,6 +339,7 @@ private fun ReaderContent(
             position = ProgressBarPosition.BOTTOM,
             lastKnownPosition = lastKnownPosition,
             chapterPageInfo = chapterPageInfo,
+            currentTime = currentTime,
         )
     }
 }
@@ -348,6 +351,7 @@ private fun AnimatedProgressBar(
     position: ProgressBarPosition,
     lastKnownPosition: PositionUiModel?,
     chapterPageInfo: ChapterPageInfo?,
+    currentTime: String,
 ) {
     val isVisible = when (settings.showProgressBar) {
         true -> settings.progressBarPosition == position
@@ -368,6 +372,7 @@ private fun AnimatedProgressBar(
             fixedPosition = lastKnownPosition?.position,
             showTotalProgress = settings.showTotalProgress,
             progressIndicatorMode = settings.progressIndicatorMode,
+            currentTime = currentTime,
         )
     }
 }
@@ -494,6 +499,7 @@ private fun ReadingProgressBar(
     fixedPosition: Int?,
     showTotalProgress: Boolean,
     progressIndicatorMode: ProgressIndicatorMode,
+    currentTime: String,
     modifier: Modifier = Modifier,
 ) {
     val totalProgress = totalProgression?.toFloat() ?: 0f
@@ -570,7 +576,7 @@ private fun ReadingProgressBar(
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Current time on the left (formatted according to user's locale)
                 Text(
-                    text = formatCurrentTime(),
+                    text = currentTime,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.CenterStart),
