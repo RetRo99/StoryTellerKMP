@@ -39,6 +39,13 @@
     <string name="home_tab_series">Series</string>
     <string name="home_tab_authors">Authors</string>
 
+    <!-- Series List Screen -->
+    <string name="series_featured">Featured</string>
+    <string name="series_empty_title">No Series Found</string>
+    <string name="series_empty_subtitle">Series will appear here once available</string>
+    <string name="series_book_count">%1$d books</string>
+    <string name="series_book_count_single">1 book</string>
+
     <!-- Books List Screen -->
     <string name="books_series_with_position">%1$s #%2$s</string>
     <string name="books_media_ebook">eBook</string>
