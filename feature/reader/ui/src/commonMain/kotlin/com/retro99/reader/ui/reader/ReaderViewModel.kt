@@ -3,6 +3,7 @@ package com.retro99.reader.ui.reader
 import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.base.formatCurrentTime
 import com.retro99.base.now
 import com.retro99.base.nowMillis
 import com.retro99.base.result.AppError
@@ -84,6 +85,20 @@ class ReaderViewModel(
 
     init {
         initializeReader()
+        startTimeUpdates()
+    }
+
+    /**
+     * Starts periodic updates of the current time.
+     * Updates immediately and then every minute.
+     */
+    private fun startTimeUpdates() {
+        viewModelScope.launch {
+            while (true) {
+                updateState { it.copy(currentTime = formatCurrentTime()) }
+                delay(TIME_UPDATE_INTERVAL_MS)
+            }
+        }
     }
 
     override fun onIntent(intent: ReaderIntent) {
@@ -493,5 +508,8 @@ class ReaderViewModel(
     private companion object {
         /** Delay before refreshing chapter page info to allow WebView to re-layout */
         private const val CHAPTER_PAGE_INFO_REFRESH_DELAY_MS = 300L
+
+        /** Interval for updating the current time display (1 minute) */
+        private const val TIME_UPDATE_INTERVAL_MS = 60_000L
     }
 }

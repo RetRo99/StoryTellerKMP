@@ -19,6 +19,8 @@ data class ReaderViewState(
     val error: AppError? = null,
     // Current reader settings (updated when user changes settings)
     val currentSettings: ReaderSettingsUiModel? = null,
+    // Current time formatted according to user's locale (updated every minute)
+    val currentTime: String = "",
     // Media playback state for ReadAloud books
     val isPlaying: Boolean = false,
     val currentAudioPositionMs: Long = 0L,
