@@ -23,7 +23,7 @@
     <string name="login_url_info">URL info</string>
 
     <!-- Welcome Screen -->
-    <string name="welcome_title">Welcome to StoryTeller</string>
+    <string name="welcome_title">Welcome to Parrot</string>
     <string name="welcome_subtitle">Your personal story companion</string>
     <string name="welcome_sign_in_button">Sign In</string>
     <string name="welcome_build_debug">DEBUG</string>
