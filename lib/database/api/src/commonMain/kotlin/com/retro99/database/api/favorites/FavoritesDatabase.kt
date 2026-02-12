@@ -17,6 +17,8 @@ interface FavoritesDatabase {
 
     suspend fun getAllFavoriteBookUuids(): List<String>
 
+    fun observeAllFavorites(): Flow<List<String>>
+
     suspend fun deleteAllFavorites()
 }
 

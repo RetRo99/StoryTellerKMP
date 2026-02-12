@@ -12,5 +12,7 @@ interface FavoritesLocalSource {
     suspend fun isFavorite(bookUuid: String): Boolean
 
     fun observeFavorite(bookUuid: String): Flow<Boolean>
+
+    fun observeAllFavorites(): Flow<List<String>>
 }
 

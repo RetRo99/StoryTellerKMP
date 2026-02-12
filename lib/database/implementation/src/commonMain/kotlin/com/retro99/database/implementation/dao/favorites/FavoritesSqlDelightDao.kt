@@ -1,6 +1,7 @@
 package com.retro99.database.implementation.dao.favorites
 
 import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOne
 import com.retro99.base.nowMillis
 import com.retro99.database.implementation.AppDatabase
@@ -48,6 +49,12 @@ internal class FavoritesSqlDelightDao(
         return withContext(Dispatchers.IO) {
             favoriteQueries.getAllFavorites().executeAsList()
         }
+    }
+
+    fun observeAllFavorites(): Flow<List<String>> {
+        return favoriteQueries.getAllFavorites()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
     }
 
     suspend fun deleteAllFavorites() {

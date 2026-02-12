@@ -12,5 +12,7 @@ interface FavoritesRepository {
     fun observeIsFavorite(bookUuid: String): Flow<Boolean>
 
     suspend fun isFavorite(bookUuid: String): Boolean
+
+    fun observeAllFavoriteUuids(): Flow<Set<String>>
 }
 
