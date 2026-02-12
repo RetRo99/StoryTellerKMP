@@ -143,6 +143,12 @@ class IosAudioController(
 
     override fun setInitialPosition(positionMs: Long?) {
         initialPositionMs = positionMs
+        // Also update the playback state so the seek bar shows the initial position
+        if (positionMs != null) {
+            _audioPlaybackState.value = _audioPlaybackState.value.copy(
+                currentPositionMs = positionMs,
+            )
+        }
     }
 
     override fun resetPlaybackState() {
