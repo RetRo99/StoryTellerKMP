@@ -28,6 +28,7 @@ kotlin {
             api(libs.kotlin.result.coroutines)
             api(libs.kermit)
             implementation(projects.translations)
+            implementation(projects.lib.analytics.api)
         }
     }
 }

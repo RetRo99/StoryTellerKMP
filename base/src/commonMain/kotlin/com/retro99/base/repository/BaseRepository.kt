@@ -4,17 +4,23 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.supervisorScope
+import org.koin.core.component.KoinComponent
 
 /**
- * Base repository class that provides common functionality for all repositories.
+ * Base repository interface that provides common functionality for all repositories.
+ * Uses KoinComponent to inject Analytics for exception logging.
  */
-interface BaseRepository {
+interface BaseRepository : KoinComponent {
+
+    private val analytics: Analytics
+        get() = getKoin().get()
 
     /**
      * Fetches data from cache and remote in parallel.
@@ -48,7 +54,7 @@ interface BaseRepository {
                         saveToCache(remoteData)
                     } catch (e: Exception) {
                         ensureActive()
-                        // Log but don't fail if cache save fails
+                        analytics.logException(e, "Failed to save data to cache")
                     }
                     emit(Ok(remoteData))
                 }
@@ -85,8 +91,8 @@ interface BaseRepository {
             if (remoteData != null) {
                 try {
                     saveToCache(remoteData)
-                } catch (_: Exception) {
-                    // Ignore cache save failures
+                } catch (e: Exception) {
+                    analytics.logException(e, "Failed to save data to cache")
                 }
             }
         }
