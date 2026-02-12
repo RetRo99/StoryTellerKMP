@@ -86,6 +86,10 @@ class SettingsViewModel(
             is SettingsIntent.OnHighlightStyleChanged -> updateReaderSetting {
                 it.copy(highlightStyle = intent.style)
             }
+
+            is SettingsIntent.OnFullscreenModeChanged -> updateReaderSetting {
+                it.copy(fullscreenMode = intent.fullscreenMode)
+            }
         }
     }
 

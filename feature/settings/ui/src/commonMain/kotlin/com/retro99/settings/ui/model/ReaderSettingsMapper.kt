@@ -21,6 +21,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     showTotalProgress = showTotalProgress,
     progressIndicatorMode = progressIndicatorMode,
     progressBarPosition = progressBarPosition,
+    fullscreenMode = fullscreenMode,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -40,6 +41,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     showTotalProgress = showTotalProgress,
     progressIndicatorMode = progressIndicatorMode,
     progressBarPosition = progressBarPosition,
+    fullscreenMode = fullscreenMode,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

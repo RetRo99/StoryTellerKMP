@@ -33,6 +33,7 @@ data class SettingsViewState(
     val showTotalProgress: Boolean get() = readerSettings.showTotalProgress
     val progressIndicatorMode: ProgressIndicatorMode get() = readerSettings.progressIndicatorMode
     val progressBarPosition: ProgressBarPosition get() = readerSettings.progressBarPosition
+    val fullscreenMode: Boolean get() = readerSettings.fullscreenMode
 
     fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
 }

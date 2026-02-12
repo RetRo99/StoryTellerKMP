@@ -40,6 +40,8 @@ data class ReaderSettingsUiModel(
     val progressIndicatorMode: ProgressIndicatorMode = ProgressIndicatorMode.CHAPTER,
     // Progress bar position: TOP or BOTTOM
     val progressBarPosition: ProgressBarPosition = ProgressBarPosition.BOTTOM,
+    // Whether to hide system bars (status bar, navigation bar) for immersive reading
+    val fullscreenMode: Boolean = false,
 )
 
 enum class ReaderThemeUi {
@@ -101,6 +103,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     showTotalProgress = showTotalProgress,
     progressIndicatorMode = progressIndicatorMode,
     progressBarPosition = progressBarPosition,
+    fullscreenMode = fullscreenMode,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -122,6 +125,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     showTotalProgress = showTotalProgress,
     progressIndicatorMode = progressIndicatorMode,
     progressBarPosition = progressBarPosition,
+    fullscreenMode = fullscreenMode,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {
