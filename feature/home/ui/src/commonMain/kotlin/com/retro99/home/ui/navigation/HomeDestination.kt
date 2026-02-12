@@ -19,6 +19,12 @@ sealed interface HomeDestination : BottomSheetDestination {
     data class BookDetail(val bookUuid: String) : HomeDestination
 
     @Serializable
+    data class SeriesDetail(
+        val seriesUuid: String,
+        val seriesName: String,
+    ) : HomeDestination
+
+    @Serializable
     data class Reader(
         val bookUuid: String,
         val bookType: BookType,

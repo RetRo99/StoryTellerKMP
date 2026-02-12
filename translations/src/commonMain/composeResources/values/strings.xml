@@ -46,6 +46,9 @@
     <string name="series_book_count">%1$d books</string>
     <string name="series_book_count_single">1 book</string>
 
+    <!-- Series Detail Screen -->
+    <string name="series_detail_position">Book #%1$d</string>
+
     <!-- Books List Screen -->
     <string name="books_series_with_position">%1$s #%2$s</string>
     <string name="books_media_ebook">eBook</string>
