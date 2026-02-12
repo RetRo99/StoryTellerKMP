@@ -12,7 +12,7 @@
 
 /* Begin PBXFileReference section */
 		0BB11F11BB2916B260E7B048 /* Pods-iosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.release.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.release.xcconfig"; sourceTree = "<group>"; };
-		37516C8CEB1022DAFA93CECF /* StoryTellerKMP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StoryTellerKMP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		37516C8CEB1022DAFA93CECF /* Parrot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Parrot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		39F1123880BB567E81988175 /* Pods_iosApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iosApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFA34FB17C7ADB90864A30C2 /* Pods-iosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.debug.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,7 +58,7 @@
 		03FB15BC87461C038515980C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				37516C8CEB1022DAFA93CECF /* StoryTellerKMP.app */,
+				37516C8CEB1022DAFA93CECF /* Parrot.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -114,7 +114,7 @@
 			);
 			name = iosApp;
 			productName = iosApp;
-			productReference = 37516C8CEB1022DAFA93CECF /* StoryTellerKMP.app */;
+			productReference = 37516C8CEB1022DAFA93CECF /* Parrot.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
