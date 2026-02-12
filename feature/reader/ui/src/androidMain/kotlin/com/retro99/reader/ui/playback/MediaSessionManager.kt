@@ -42,6 +42,7 @@ class MediaSessionManager(
 
     private var bookTitle: String = "Reading Aloud"
     private var chapterTitle: String? = null
+    private var coverArtwork: ByteArray? = null
 
     /**
      * Tracks the last known playing state.
@@ -140,14 +141,23 @@ class MediaSessionManager(
      *
      * Note: This does NOT update currently playing media. For that, the caller
      * should rebuild the MediaItem with [buildCurrentMetadata] and set it on the player.
+     *
+     * @param bookTitle The title of the book
+     * @param chapterTitle Optional chapter title
+     * @param coverArtwork Optional cover image as PNG byte array for notification display
      */
-    fun updateMetadata(bookTitle: String, chapterTitle: String? = null) {
+    fun updateMetadata(
+        bookTitle: String,
+        chapterTitle: String? = null,
+        coverArtwork: ByteArray? = null,
+    ) {
         this.bookTitle = bookTitle
         this.chapterTitle = chapterTitle
+        this.coverArtwork = coverArtwork
     }
 
     /**
-     * Builds the current MediaMetadata based on stored book/chapter titles.
+     * Builds the current MediaMetadata based on stored book/chapter titles and cover.
      * Use this when creating a new MediaItem to ensure proper notification display.
      *
      * Media3's notification controller prefers MediaItem.mediaMetadata over
@@ -158,6 +168,11 @@ class MediaSessionManager(
             .setTitle(chapterTitle ?: bookTitle)
             .setArtist(if (chapterTitle != null) bookTitle else "StoryTeller")
             .setDisplayTitle(chapterTitle ?: bookTitle)
+            .apply {
+                coverArtwork?.let { artwork ->
+                    setArtworkData(artwork, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                }
+            }
             .build()
     }
 

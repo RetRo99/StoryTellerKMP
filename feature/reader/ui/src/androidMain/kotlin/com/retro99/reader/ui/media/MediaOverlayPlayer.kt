@@ -60,7 +60,7 @@ private const val SEEK_INCREMENT_MS = 10_000L
 @Scope(ReaderScope::class)
 @Scoped
 class MediaOverlayPlayer(
-    epubPublication: EpubPublication,
+    private val epubPublication: EpubPublication,
     private val analytics: Analytics,
     private val smilLoadingManager: SmilLoadingManager,
     private val notificationPermissionHandler: NotificationPermissionHandler,
@@ -132,6 +132,10 @@ class MediaOverlayPlayer(
      */
     suspend fun initialize(initialChapterHref: String? = null) {
         smilLoadingManager.initialize(playerScope)
+
+        // Load cover image for notification display
+        val coverArtwork = epubPublication.cover()
+        mediaSessionManager.updateMetadata(bookTitle, coverArtwork = coverArtwork)
 
         // Build initial index for current chapter and nearby chapters
         val chapterHref = initialChapterHref
