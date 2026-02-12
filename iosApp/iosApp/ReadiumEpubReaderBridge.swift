@@ -483,6 +483,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
 
         if let positionMs = player.findPositionForFragment(fragmentId: fragmentId) {
+            // Seek AVPlayer so playback starts from this position
+            player.seekTo(positionMs: positionMs)
             // Emit the position through the playback state callback
             let state = PlaybackState(
                 isPlaying: false,
