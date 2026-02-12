@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import com.retro99.base.ui.BaseScreen
+import com.retro99.books.ui.authors.detail.AuthorDetailScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
 import com.retro99.books.ui.series.detail.SeriesDetailScreen
@@ -92,8 +93,30 @@ fun HomeNavigation(
                     entry<HomeDestination.AuthorsList> {
                         AuthorsListScreen(
                             onNavigateToAuthorDetail = { author ->
-                                // TODO: Navigate to author detail when implemented
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(
+                                        HomeDestination.AuthorDetail(
+                                            authorUuid = author.uuid,
+                                            authorName = author.name,
+                                        ),
+                                    ),
+                                )
                             },
+                        )
+                    }
+
+                    entry<HomeDestination.AuthorDetail> { destination ->
+                        AuthorDetailScreen(
+                            authorUuid = destination.authorUuid,
+                            authorName = destination.authorName,
+                            onNavigateToBookDetail = { book ->
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(
+                                        HomeDestination.BookDetail(book.uuid),
+                                    ),
+                                )
+                            },
+                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
                         )
                     }
 
