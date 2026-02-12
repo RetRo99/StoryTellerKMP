@@ -203,15 +203,19 @@ class AndroidAudioController(
     }
 
     override fun onBookLocationChanged(locator: LocatorState) {
-        if (currentBookLocation?.href == locator.href) {
-            currentBookLocation = locator
-            return
-        }
+        val isChapterChange = currentBookLocation?.href != locator.href
         currentBookLocation = locator
+        if (isChapterChange) {
+            onChapterChanged(locator)
+        }
+    }
+
+    private fun onChapterChanged(locator: LocatorState) {
         val chapterUrl = Url(locator.href) ?: return
         controllerScope.launch {
             player.prepareChapterDuration(chapterUrl)
         }
+        locatorTracker.resetCurrentPosition()
     }
 
     override fun close() {
