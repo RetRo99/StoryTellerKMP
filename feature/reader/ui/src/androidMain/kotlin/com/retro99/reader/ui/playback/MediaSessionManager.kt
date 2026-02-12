@@ -218,7 +218,7 @@ class MediaSessionManager(
     fun buildCurrentMetadata(): MediaMetadata {
         return MediaMetadata.Builder()
             .setTitle(chapterTitle ?: bookTitle)
-            .setArtist(if (chapterTitle != null) bookTitle else "StoryTeller")
+            .setArtist(if (chapterTitle != null) bookTitle else "Parrot")
             .setDisplayTitle(chapterTitle ?: bookTitle)
             .apply {
                 coverArtwork?.let { artwork ->

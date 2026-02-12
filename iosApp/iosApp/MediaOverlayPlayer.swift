@@ -519,7 +519,7 @@ class MediaOverlayPlayer {
     private func updateNowPlayingInfo() {
         NowPlayingInfo.shared.media = NowPlayingInfo.Media(
             title: bookTitle,
-            artist: "StoryTeller",
+            artist: "Parrot",
             artwork: coverImage
         )
     }
