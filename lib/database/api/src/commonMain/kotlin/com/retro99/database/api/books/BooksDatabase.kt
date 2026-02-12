@@ -46,6 +46,8 @@ interface BooksDatabase : PositionDatabase {
 
     suspend fun upsertSeries(series: SeriesEntity)
 
+    suspend fun getAllSeries(): List<SeriesEntity>
+
     suspend fun getSeriesByBookUuid(bookUuid: String): List<BookSeriesEntity>
 
     suspend fun getSeriesEntityByUuid(uuid: String): SeriesEntity?
@@ -53,6 +55,8 @@ interface BooksDatabase : PositionDatabase {
     suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Int?)
 
     suspend fun deleteBookSeries(bookUuid: String)
+
+    suspend fun deleteAllSeries()
 
     // ==================== TAG OPERATIONS ====================
 
