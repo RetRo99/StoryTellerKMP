@@ -7,5 +7,7 @@ data class SeriesListUiModel(
     val uuid: String,
     val name: String,
     val featured: Int?,
+    val coverUrl: String?,
+    val bookCount: Int,
 )
 
