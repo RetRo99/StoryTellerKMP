@@ -2,6 +2,7 @@ package com.retro99.home.ui.series
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.retro99.books.ui.series.model.SeriesListUiModel
 import com.retro99.books.ui.series.SeriesListScreen as BooksSeriesListScreen
 
 /**
@@ -9,9 +10,11 @@ import com.retro99.books.ui.series.SeriesListScreen as BooksSeriesListScreen
  */
 @Composable
 fun SeriesListScreen(
+    onNavigateToSeriesDetail: (series: SeriesListUiModel) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     BooksSeriesListScreen(
+        onNavigateToSeriesDetail = onNavigateToSeriesDetail,
         modifier = modifier,
     )
 }

@@ -12,6 +12,7 @@ import androidx.navigation3.runtime.entryProvider
 import com.retro99.base.ui.BaseScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
+import com.retro99.books.ui.series.detail.SeriesDetailScreen
 import com.retro99.home.ui.authors.AuthorsListScreen
 import com.retro99.home.ui.series.SeriesListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
@@ -54,7 +55,33 @@ fun HomeNavigation(
                     }
 
                     entry<HomeDestination.SeriesList> {
-                        SeriesListScreen()
+                        SeriesListScreen(
+                            onNavigateToSeriesDetail = { series ->
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(
+                                        HomeDestination.SeriesDetail(
+                                            seriesUuid = series.uuid,
+                                            seriesName = series.name,
+                                        ),
+                                    ),
+                                )
+                            },
+                        )
+                    }
+
+                    entry<HomeDestination.SeriesDetail> { destination ->
+                        SeriesDetailScreen(
+                            seriesUuid = destination.seriesUuid,
+                            seriesName = destination.seriesName,
+                            onNavigateToBookDetail = { book ->
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(
+                                        HomeDestination.BookDetail(book.uuid),
+                                    ),
+                                )
+                            },
+                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                        )
                     }
 
                     entry<HomeDestination.AuthorsList> {
