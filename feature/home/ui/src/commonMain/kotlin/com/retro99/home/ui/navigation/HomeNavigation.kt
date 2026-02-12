@@ -10,11 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import com.retro99.base.ui.BaseScreen
-import com.retro99.books.ui.authors.detail.AuthorDetailScreen
+// import com.retro99.books.ui.authors.detail.AuthorDetailScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
 import com.retro99.books.ui.series.detail.SeriesDetailScreen
-import com.retro99.home.ui.authors.AuthorsListScreen
+// import com.retro99.home.ui.authors.AuthorsListScreen
 import com.retro99.home.ui.series.SeriesListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
 import com.retro99.settings.ui.SettingsScreen
@@ -90,35 +90,35 @@ fun HomeNavigation(
                         )
                     }
 
-                    entry<HomeDestination.AuthorsList> {
-                        AuthorsListScreen(
-                            onNavigateToAuthorDetail = { author ->
-                                intentDispatcher(
-                                    HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.AuthorDetail(
-                                            authorUuid = author.uuid,
-                                            authorName = author.name,
-                                        ),
-                                    ),
-                                )
-                            },
-                        )
-                    }
-
-                    entry<HomeDestination.AuthorDetail> { destination ->
-                        AuthorDetailScreen(
-                            authorUuid = destination.authorUuid,
-                            authorName = destination.authorName,
-                            onNavigateToBookDetail = { book ->
-                                intentDispatcher(
-                                    HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.BookDetail(book.uuid),
-                                    ),
-                                )
-                            },
-                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
-                        )
-                    }
+//                    entry<HomeDestination.AuthorsList> {
+//                        AuthorsListScreen(
+//                            onNavigateToAuthorDetail = { author ->
+//                                intentDispatcher(
+//                                    HomeNavigationIntent.NavigateTo(
+//                                        HomeDestination.AuthorDetail(
+//                                            authorUuid = author.uuid,
+//                                            authorName = author.name,
+//                                        ),
+//                                    ),
+//                                )
+//                            },
+//                        )
+//                    }
+//
+//                    entry<HomeDestination.AuthorDetail> { destination ->
+//                        AuthorDetailScreen(
+//                            authorUuid = destination.authorUuid,
+//                            authorName = destination.authorName,
+//                            onNavigateToBookDetail = { book ->
+//                                intentDispatcher(
+//                                    HomeNavigationIntent.NavigateTo(
+//                                        HomeDestination.BookDetail(book.uuid),
+//                                    ),
+//                                )
+//                            },
+//                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+//                        )
+//                    }
 
                     entry<HomeDestination.BookDetail> { destination ->
                         BookDetailScreen(
