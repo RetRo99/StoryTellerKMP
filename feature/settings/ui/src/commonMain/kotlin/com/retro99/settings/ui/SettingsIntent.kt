@@ -40,5 +40,8 @@ sealed interface SettingsIntent : BaseIntent {
 
     // Fullscreen mode intent
     data class OnFullscreenModeChanged(val fullscreenMode: Boolean) : SettingsIntent
+
+    // Show current time intent
+    data class OnShowCurrentTimeChanged(val showCurrentTime: Boolean) : SettingsIntent
 }
 

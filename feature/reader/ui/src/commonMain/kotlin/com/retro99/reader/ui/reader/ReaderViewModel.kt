@@ -26,6 +26,7 @@ import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.service.EpubPublicationService
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -83,9 +84,31 @@ class ReaderViewModel(
         }
     }
 
+    /** Job for the time update coroutine, cancelled when showCurrentTime is disabled */
+    private var timeUpdateJob: Job? = null
+
     init {
         initializeReader()
-        startTimeUpdates()
+        observeShowCurrentTimeSetting()
+    }
+
+    /**
+     * Observes the showCurrentTime setting and starts/stops time updates accordingly.
+     * When enabled, updates the current time immediately and then every minute.
+     * When disabled, cancels the time update coroutine and clears the current time.
+     */
+    private fun observeShowCurrentTimeSetting() {
+        getReaderSettingsUseCase()
+            .map { it.showCurrentTime }
+            .distinctUntilChanged()
+            .onEach { showCurrentTime ->
+                if (showCurrentTime) {
+                    startTimeUpdates()
+                } else {
+                    stopTimeUpdates()
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
@@ -93,12 +116,23 @@ class ReaderViewModel(
      * Updates immediately and then every minute.
      */
     private fun startTimeUpdates() {
-        viewModelScope.launch {
+        // Cancel any existing job before starting a new one
+        timeUpdateJob?.cancel()
+        timeUpdateJob = viewModelScope.launch {
             while (true) {
                 updateState { it.copy(currentTime = formatCurrentTime()) }
                 delay(TIME_UPDATE_INTERVAL_MS)
             }
         }
+    }
+
+    /**
+     * Stops the periodic time updates and clears the current time display.
+     */
+    private fun stopTimeUpdates() {
+        timeUpdateJob?.cancel()
+        timeUpdateJob = null
+        updateState { it.copy(currentTime = "") }
     }
 
     override fun onIntent(intent: ReaderIntent) {

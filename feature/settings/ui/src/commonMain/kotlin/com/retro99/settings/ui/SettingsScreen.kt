@@ -107,6 +107,8 @@ import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_readaloud_description
 import resources.translations.settings_section_typography
 import resources.translations.settings_section_typography_description
+import resources.translations.settings_show_current_time
+import resources.translations.settings_show_current_time_description
 import resources.translations.settings_show_total_progress
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
@@ -318,6 +320,13 @@ private fun SettingsScreenContent(
             FullscreenModeSwitch(
                 isEnabled = viewState.fullscreenMode,
                 onToggle = { intentDispatcher(SettingsIntent.OnFullscreenModeChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ShowCurrentTimeSwitch(
+                isEnabled = viewState.showCurrentTime,
+                onToggle = { intentDispatcher(SettingsIntent.OnShowCurrentTimeChanged(it)) },
             )
         }
 
@@ -950,6 +959,37 @@ private fun FullscreenModeSwitch(
         }
         Text(
             text = stringResource(StringRes.settings_fullscreen_mode_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Switch to toggle current time display in the progress bar.
+ */
+@Composable
+private fun ShowCurrentTimeSwitch(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_show_current_time),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onToggle,
+            )
+        }
+        Text(
+            text = stringResource(StringRes.settings_show_current_time_description),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
