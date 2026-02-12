@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
@@ -95,6 +96,13 @@ class BookDetailViewModel(
     }
 
     private fun handleReadClick(bookType: BookType) {
+        analytics.logEvent(
+            BookAnalyticsEvent.ReadButtonClicked(
+                bookUuid = bookUuid,
+                bookType = bookType.name.lowercase(),
+            )
+        )
+
         val currentState = viewState.value
         val downloadState = when (bookType) {
             BookType.EBOOK -> currentState.ebookDownloadState
@@ -186,6 +194,12 @@ class BookDetailViewModel(
     }
 
     private fun deleteMediaCache(bookType: BookType) {
+        analytics.logEvent(
+            BookAnalyticsEvent.BookCacheDeleted(
+                bookUuid = bookUuid,
+                bookType = bookType.name.lowercase(),
+            )
+        )
         viewModelScope.launch {
             deleteMediaCacheUseCase(bookUuid, bookType)
             // Download state will be updated via the observer
