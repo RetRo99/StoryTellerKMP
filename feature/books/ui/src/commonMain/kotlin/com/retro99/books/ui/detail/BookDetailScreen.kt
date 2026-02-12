@@ -25,8 +25,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,6 +100,7 @@ fun BookDetailScreen(
                 audiobookDownloadState = viewState.audiobookDownloadState,
                 readaloudDownloadState = viewState.readaloudDownloadState,
                 deleteConfirmationBookType = viewState.deleteConfirmationBookType,
+                isFavorite = viewState.isFavorite,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -112,6 +115,7 @@ private fun BookDetailScreenContent(
     audiobookDownloadState: DownloadState,
     readaloudDownloadState: DownloadState,
     deleteConfirmationBookType: BookType?,
+    isFavorite: Boolean,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -133,6 +137,27 @@ private fun BookDetailScreenContent(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { intentDispatcher(BookDetailIntent.OnFavoriteClicked) }) {
+                        Icon(
+                            imageVector = if (isFavorite) {
+                                Icons.Filled.Favorite
+                            } else {
+                                Icons.Outlined.FavoriteBorder
+                            },
+                            contentDescription = if (isFavorite) {
+                                "Remove from favorites"
+                            } else {
+                                "Add to favorites"
+                            },
+                            tint = if (isFavorite) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                         )
                     }
                 },

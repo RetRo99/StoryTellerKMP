@@ -15,5 +15,6 @@ sealed interface BookDetailIntent : BaseIntent {
     data class OnDeleteCacheClicked(val bookType: BookType) : BookDetailIntent
     data object OnDeleteCacheConfirmed : BookDetailIntent
     data object OnDeleteCacheDismissed : BookDetailIntent
+    data object OnFavoriteClicked : BookDetailIntent
 }
 

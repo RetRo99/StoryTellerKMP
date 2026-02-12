@@ -13,5 +13,6 @@ data class BookDetailViewState(
     val audiobookDownloadState: DownloadState = DownloadState.Idle,
     val readaloudDownloadState: DownloadState = DownloadState.Idle,
     val deleteConfirmationBookType: BookType? = null,
+    val isFavorite: Boolean = false,
 )
 
