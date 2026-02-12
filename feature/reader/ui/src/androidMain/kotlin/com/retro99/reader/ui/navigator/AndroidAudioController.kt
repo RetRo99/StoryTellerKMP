@@ -215,7 +215,6 @@ class AndroidAudioController(
         controllerScope.launch {
             player.prepareChapterDuration(chapterUrl)
         }
-        locatorTracker.resetCurrentPosition()
     }
 
     override fun close() {
