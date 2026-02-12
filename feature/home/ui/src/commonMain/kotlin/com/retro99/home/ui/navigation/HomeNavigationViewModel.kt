@@ -1,16 +1,20 @@
 package com.retro99.home.ui.navigation
 
 import androidx.lifecycle.viewModelScope
+import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.home.ui.deeplink.DeepLinkDestination
 import com.retro99.home.ui.deeplink.DeepLinkHandler
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.core.annotation.KoinViewModel
+import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class HomeNavigationViewModel(
     deepLinkHandler: DeepLinkHandler,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<HomeNavigationState, HomeNavigationIntent>(
     HomeNavigationState(),
 ) {
@@ -86,6 +90,7 @@ class HomeNavigationViewModel(
     }
 
     private fun handleSwitchTab(tab: HomeTab) {
+        analytics.logEvent(NavigationAnalyticsEvent.TabSwitched(tabName = tab.name.lowercase()))
         updateState { state ->
             state.copy(currentTab = tab)
         }
