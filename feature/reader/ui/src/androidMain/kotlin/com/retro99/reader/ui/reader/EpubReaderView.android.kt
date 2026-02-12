@@ -151,7 +151,10 @@ internal actual fun EpubReaderViewInternal(
                     as? EpubNavigatorFragment
 
             navigatorFragment?.let {
-                navigatorController?.init(it)
+                navigatorController?.init(
+                    navigator = it,
+                    hasMediaOverlays = publication.hasMediaOverlays,
+                )
             }
         },
     )
