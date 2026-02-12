@@ -15,7 +15,7 @@ import platform.Foundation.NSFileManager
 import platform.Foundation.NSLibraryDirectory
 import platform.Foundation.NSUserDomainMask
 
-private const val DATABASE_NAME = "storyteller.db"
+private const val DATABASE_NAME = "parrot.db"
 private const val TAG = "PlatformDatabaseModule"
 
 /**

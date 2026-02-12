@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
-        android:name="org.retro99.storyteller.android.ParrotApplication"
+        android:name="com.retro99.parrot.android.ParrotApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -20,7 +20,7 @@
         <activity
             android:exported="true"
             android:launchMode="singleTask"
-            android:name="org.retro99.storyteller.android.MainActivity">
+            android:name="com.retro99.parrot.android.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -34,7 +34,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="storyteller" />
+                <data android:scheme="parrot" />
             </intent-filter>
         </activity>
 

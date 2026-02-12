@@ -1,4 +1,4 @@
-rootProject.name = "StoryTellerKMP"
+rootProject.name = "Parrot"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

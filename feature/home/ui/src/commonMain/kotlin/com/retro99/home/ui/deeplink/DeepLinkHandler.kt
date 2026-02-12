@@ -31,7 +31,7 @@ sealed interface DeepLinkDestination {
  * and emits a navigation event that can be observed by the navigation ViewModels.
  *
  * URI Scheme:
- * - `storyteller://reader?bookUuid={uuid}&bookType={ebook|audiobook|readaloud}`
+ * - `parrot://reader?bookUuid={uuid}&bookType={ebook|audiobook|readaloud}`
  *
  * Usage:
  * 1. In MainActivity, call [handleDeepLink] with the intent's data URI
@@ -53,7 +53,7 @@ class DeepLinkHandler {
     /**
      * Parses a deep link URI and emits a navigation event if valid.
      *
-     * @param uri The deep link URI string (e.g., "storyteller://reader?bookUuid=xxx&bookType=readaloud")
+     * @param uri The deep link URI string (e.g., "parrot://reader?bookUuid=xxx&bookType=readaloud")
      * @return true if the URI was valid and a navigation event was emitted, false otherwise
      */
     fun handleDeepLink(uri: String?): Boolean {
@@ -68,13 +68,13 @@ class DeepLinkHandler {
      * Parses a URI string into a [DeepLinkDestination].
      *
      * Supports the following URI formats:
-     * - `storyteller://reader?bookUuid={uuid}&bookType={type}`
+     * - `parrot://reader?bookUuid={uuid}&bookType={type}`
      *
      * @param uri The URI string to parse
      * @return The parsed destination, or null if the URI is invalid
      */
     private fun parseUri(uri: String): DeepLinkDestination? {
-        // Expected format: storyteller://reader?bookUuid=xxx&bookType=readaloud
+        // Expected format: parrot://reader?bookUuid=xxx&bookType=readaloud
         if (!uri.startsWith(DeepLinkUriBuilder.SCHEME)) return null
 
         val path = uri.removePrefix(DeepLinkUriBuilder.SCHEME)
