@@ -45,6 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.retro99.base.nowMillis
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
@@ -82,6 +85,13 @@ fun ReaderScreen(
         parametersOf(bookUuid, bookType, onClose, onSettingsClick)
     },
 ) {
+    // Intercept hardware back press to ensure audio progress is saved before navigation
+    val backHandlerState = rememberNavigationEventState(NavigationEventInfo.None)
+    NavigationBackHandler(
+        state = backHandlerState,
+        onBackCompleted = { viewModel.close() },
+    )
+
     BaseScreen(
         modifier = modifier,
         viewModel = viewModel,

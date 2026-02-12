@@ -400,11 +400,13 @@ class ReaderViewModel(
         updateState { it.copy(previousTocPosition = null) }
     }
 
-    private fun close() {
-        if (viewState.value.isReadAloud) {
-            saveCurrentAudioPosition()
+    fun close() {
+        viewModelScope.launch {
+            if (viewState.value.isReadAloud) {
+                saveCurrentAudioPositionSync()
+            }
+            onClose()
         }
-        onClose()
     }
 
     /**
@@ -495,9 +497,20 @@ class ReaderViewModel(
 
     /**
      * Saves the current audio position to persistence.
-     * This is called when playback is paused or the reader is closed.
+     * This is called when playback is paused.
      */
     private fun saveCurrentAudioPosition() {
+        viewModelScope.launch {
+            saveCurrentAudioPositionSync()
+        }
+    }
+
+    /**
+     * Saves the current audio position to persistence synchronously.
+     * This is called when the reader is closed to ensure the position is saved
+     * before navigation occurs.
+     */
+    private suspend fun saveCurrentAudioPositionSync() {
         val currentState = viewState.value
         val audioPositionMs = currentState.currentAudioPositionMs
         val lastPosition = currentState.lastKnownPosition
@@ -505,28 +518,25 @@ class ReaderViewModel(
         if (audioPositionMs <= 0) return
         if (lastPosition == null) return
 
-        viewModelScope.launch {
-            // Create a position with the current audio timestamp
-            val now = now().toString()
-            val positionDomainModel = PositionDomainModel(
-                bookUuid = bookUuid,
-                timestamp = nowMillis(),
-                createdAt = lastPosition.createdAt,
-                updatedAt = now,
-                locatorHref = lastPosition.href,
-                locatorType = lastPosition.type,
-                locatorTitle = lastPosition.title,
-                locatorTarget = null,
-                audioTimestampMs = audioPositionMs,
-                chapterIndex = lastPosition.chapterIndex,
-                progression = lastPosition.progression,
-                totalChapters = lastPosition.totalChapters,
-                totalDurationMs = currentState.totalDurationMs,
-                totalProgression = lastPosition.totalProgression,
-                position = lastPosition.position,
-            )
-            saveReadingProgressUseCase(positionDomainModel)
-        }
+        val now = now().toString()
+        val positionDomainModel = PositionDomainModel(
+            bookUuid = bookUuid,
+            timestamp = nowMillis(),
+            createdAt = lastPosition.createdAt,
+            updatedAt = now,
+            locatorHref = lastPosition.href,
+            locatorType = lastPosition.type,
+            locatorTitle = lastPosition.title,
+            locatorTarget = null,
+            audioTimestampMs = audioPositionMs,
+            chapterIndex = lastPosition.chapterIndex,
+            progression = lastPosition.progression,
+            totalChapters = lastPosition.totalChapters,
+            totalDurationMs = currentState.totalDurationMs,
+            totalProgression = lastPosition.totalProgression,
+            position = lastPosition.position,
+        )
+        saveReadingProgressUseCase(positionDomainModel)
     }
 
     override fun onCleared() {
