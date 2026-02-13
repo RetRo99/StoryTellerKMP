@@ -9,12 +9,10 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.base.result.logOnFailure
 import kotlinx.coroutines.async
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.supervisorScope
 import org.koin.core.component.KoinComponent
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Base repository interface that provides common functionality for all repositories.
@@ -61,21 +59,13 @@ interface BaseRepository : KoinComponent {
 
             deferredRemote.await()
                 .onSuccess { remoteData ->
-                    try {
-                        saveToCache(remoteData).logOnFailure(
-                            analytics,
-                            "Failed to save data to cache",
-                        )
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        ensureActive()
-                        analytics.logException(e, "Failed to save data to cache (Exception)")
-                    }
+                    saveToCache(remoteData).logOnFailure(
+                        analytics,
+                        "Failed to save data to cache",
+                    )
                     emit(Ok(remoteData))
                 }
                 .getOrElse { error ->
-                    ensureActive()
                     // Log the remote error for debugging, even when falling back to cache
                     analytics.logException(
                         error.toThrowable(),
@@ -109,16 +99,10 @@ interface BaseRepository : KoinComponent {
 
         remoteResult.onSuccess { remoteData ->
             if (remoteData != null) {
-                try {
-                    saveToCache(remoteData).logOnFailure(
-                        analytics,
-                        "Failed to save data to cache",
-                    )
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    analytics.logException(e, "Failed to save data to cache (Exception)")
-                }
+                saveToCache(remoteData).logOnFailure(
+                    analytics,
+                    "Failed to save data to cache",
+                )
             }
         }
 
