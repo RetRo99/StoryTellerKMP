@@ -104,23 +104,6 @@ private fun AppSettingsScreenContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Account Section
-            SettingsSectionHeader(
-                title = stringResource(StringRes.app_settings_section_account),
-            )
-
-            SettingsItem(
-                icon = Icons.AutoMirrored.Filled.Logout,
-                title = stringResource(StringRes.app_settings_logout),
-                description = stringResource(StringRes.app_settings_logout_description),
-                onClick = onLogout,
-                isDestructive = true,
-            )
-
-            HorizontalDivider()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Support Section
             SettingsSectionHeader(
                 title = stringResource(StringRes.app_settings_section_support),
@@ -148,6 +131,23 @@ private fun AppSettingsScreenContent(
                 title = stringResource(StringRes.app_settings_clear_logs),
                 description = stringResource(StringRes.app_settings_clear_logs_description),
                 onClick = { intentDispatcher(AppSettingsIntent.OnClearLogsClicked) },
+            )
+
+            HorizontalDivider()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Account Section
+            SettingsSectionHeader(
+                title = stringResource(StringRes.app_settings_section_account),
+            )
+
+            SettingsItem(
+                icon = Icons.AutoMirrored.Filled.Logout,
+                title = stringResource(StringRes.app_settings_logout),
+                description = stringResource(StringRes.app_settings_logout_description),
+                onClick = onLogout,
+                isDestructive = true,
             )
 
             HorizontalDivider()
