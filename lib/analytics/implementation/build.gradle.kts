@@ -23,6 +23,7 @@ kotlin {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
             implementation(projects.lib.analytics.api)
+            implementation(projects.lib.preferences.api)
             implementation(libs.kermit)
             implementation(libs.datetime)
             api(libs.gitlive.firebase.kotlin.crashlytics)

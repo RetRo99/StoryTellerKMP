@@ -43,6 +43,7 @@ kotlin {
             implementation(projects.feature.reader.ui)
             implementation(projects.feature.settings.ui)
             implementation(projects.lib.analytics.api)
+            implementation(projects.lib.preferences.api)
         }
     }
 }

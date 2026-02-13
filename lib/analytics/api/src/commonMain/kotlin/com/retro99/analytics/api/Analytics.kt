@@ -21,12 +21,4 @@ interface Analytics {
      * @param userId The user identifier (should be hashed for privacy), or null to clear
      */
     fun setUserId(userId: String?)
-
-    /**
-     * Gets the FileLogger instance for accessing log files.
-     * Users can use this to get the log file path for sharing.
-     *
-     * @return The FileLogger instance
-     */
-    fun getFileLogger(): FileLogger
 }

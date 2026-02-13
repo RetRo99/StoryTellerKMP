@@ -3,6 +3,8 @@ package com.retro99.analytics.implementation
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.AnalyticsEvent
 import com.retro99.analytics.api.FileLogger
+import com.retro99.preferences.api.Preferences
+import com.retro99.preferences.api.PreferencesKey
 import dev.gitlive.firebase.analytics.FirebaseAnalytics
 import dev.gitlive.firebase.crashlytics.FirebaseCrashlytics
 
@@ -10,6 +12,7 @@ class AnalyticsManager(
     private val firebaseAnalytics: FirebaseAnalytics,
     private val firebaseCrashlytics: FirebaseCrashlytics,
     private val fileLogger: FileLogger,
+    private val preferences: Preferences,
 ) : Analytics {
 
     override fun logException(throwable: Throwable, message: String?) {
@@ -17,31 +20,39 @@ class AnalyticsManager(
         message?.let { firebaseCrashlytics.log(it) }
         firebaseCrashlytics.recordException(throwable)
 
-        // Also log to file for user sharing
-        fileLogger.logException(throwable, message)
+        // Also log to file for user sharing (if enabled)
+        if (isFileLoggingEnabled()) {
+            fileLogger.logException(throwable, message)
+        }
     }
 
     override fun logEvent(event: AnalyticsEvent) {
         val parameters = event.parameters.takeIf { it.isNotEmpty() }
         firebaseAnalytics.logEvent(event.name, parameters)
 
-        // Also log events to file
-        val eventMessage = buildString {
-            append("Event: ${event.name}")
-            if (event.parameters.isNotEmpty()) {
-                append(" | Parameters: ${event.parameters}")
+        // Also log events to file (if enabled)
+        if (isFileLoggingEnabled()) {
+            val eventMessage = buildString {
+                append("Event: ${event.name}")
+                if (event.parameters.isNotEmpty()) {
+                    append(" | Parameters: ${event.parameters}")
+                }
             }
+            fileLogger.log("Analytics", eventMessage)
         }
-        fileLogger.log("Analytics", eventMessage)
     }
 
     override fun setUserId(userId: String?) {
         firebaseAnalytics.setUserId(userId)
         firebaseCrashlytics.setUserId(userId ?: "")
 
-        // Log user ID change to file
-        fileLogger.log("Analytics", "User ID set: ${userId ?: "null (cleared)"}")
+        // Log user ID change to file (if enabled)
+        if (isFileLoggingEnabled()) {
+            fileLogger.log("Analytics", "User ID set: ${userId ?: "null (cleared)"}")
+        }
     }
 
-    override fun getFileLogger(): FileLogger = fileLogger
+    private fun isFileLoggingEnabled(): Boolean {
+        return preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = true)
+    }
 }

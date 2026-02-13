@@ -4,6 +4,7 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.FileLogger
 import com.retro99.analytics.implementation.AnalyticsManager
 import com.retro99.analytics.implementation.DebugAnalyticsManager
+import com.retro99.preferences.api.Preferences
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.analytics.FirebaseAnalytics
 import dev.gitlive.firebase.analytics.analytics
@@ -13,6 +14,7 @@ import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 @Module(
@@ -35,14 +37,16 @@ class AnalyticsModule {
         firebaseAnalytics: FirebaseAnalytics,
         firebaseCrashlytics: FirebaseCrashlytics,
         fileLogger: FileLogger,
+        @Provided preferences: Preferences,
         @Named("isDebug") isDebug: Boolean,
     ): Analytics = if (isDebug) {
-        DebugAnalyticsManager(fileLogger)
+        DebugAnalyticsManager(fileLogger, preferences)
     } else {
         AnalyticsManager(
             firebaseAnalytics,
             firebaseCrashlytics,
             fileLogger,
+            preferences,
         )
     }
 }
