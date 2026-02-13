@@ -19,7 +19,10 @@ class NetworkingModule {
     fun provideHttpClientEngineFactory(): HttpClientEngineFactory<*> = getHttpEngine()
 
     @Single
-    fun provideJson(): Json = Json { ignoreUnknownKeys = true }
+    fun provideJson(): Json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    }
 
     @Single
     fun provideHttpClient(

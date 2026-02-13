@@ -64,5 +64,8 @@ sealed interface HomeDestination : BottomSheetDestination, BottomBarDestination 
             fillMaxHeight = false,
         )
     }
+
+    @Serializable
+    data object AppSettings : HomeDestination
 }
 

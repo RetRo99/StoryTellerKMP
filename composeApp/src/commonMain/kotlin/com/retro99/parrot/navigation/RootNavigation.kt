@@ -43,7 +43,11 @@ fun RootNavigation(
                 }
 
                 entry<RootDestination.Home> {
-                    HomeNavigation()
+                    HomeNavigation(
+                        onLogout = {
+                            intentDispatcher(RootNavigationIntent.OnLogout)
+                        },
+                    )
                 }
             },
         )
