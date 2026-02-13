@@ -10,7 +10,7 @@ data class MediaFileApiModel(
     val uuid: String,
 
     @SerialName("filepath")
-    val filepath: String,
+    val filepath: String? = null,
 
     @SerialName("missing")
     val missing: Int? = null,

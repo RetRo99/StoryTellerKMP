@@ -6,7 +6,7 @@ import com.retro99.database.api.books.ReadaloudEntity
 data class ReadaloudLocalModel(
     override val uuid: String,
     override val bookUuid: String,
-    override val filepath: String,
+    override val filepath: String?,
     override val missing: Int?,
     override val status: String?,
     override val currentStage: String?,

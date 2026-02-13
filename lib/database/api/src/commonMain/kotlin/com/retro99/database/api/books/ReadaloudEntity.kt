@@ -6,7 +6,7 @@ package com.retro99.database.api.books
 interface ReadaloudEntity {
     val uuid: String
     val bookUuid: String
-    val filepath: String
+    val filepath: String?
     val missing: Int?
     val status: String?
     val currentStage: String?
