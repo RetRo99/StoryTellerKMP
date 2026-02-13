@@ -6,6 +6,7 @@ import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppResult
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +53,8 @@ interface BaseRepository : KoinComponent {
                 .onSuccess { remoteData ->
                     try {
                         saveToCache(remoteData)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         ensureActive()
                         analytics.logException(e, "Failed to save data to cache")
@@ -95,6 +98,8 @@ interface BaseRepository : KoinComponent {
             if (remoteData != null) {
                 try {
                     saveToCache(remoteData)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     analytics.logException(e, "Failed to save data to cache")
                 }

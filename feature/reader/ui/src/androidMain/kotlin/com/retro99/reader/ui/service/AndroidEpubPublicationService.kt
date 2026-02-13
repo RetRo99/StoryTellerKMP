@@ -6,6 +6,7 @@ import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
@@ -87,6 +88,8 @@ class AndroidEpubPublicationService(
                     bookType,
                     initialPosition
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 setError("Error opening ebook: ${e.message}")
                 null

@@ -9,6 +9,7 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.services.cover
 import java.io.ByteArrayOutputStream
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Android implementation of EpubPublication.
@@ -70,6 +71,8 @@ actual class EpubPublication(
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
                 outputStream.toByteArray()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
