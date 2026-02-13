@@ -6,13 +6,13 @@ import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppResult
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.supervisorScope
 import org.koin.core.component.KoinComponent
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Base repository interface that provides common functionality for all repositories.
@@ -44,7 +44,15 @@ interface BaseRepository : KoinComponent {
             val deferredCache = async { cacheSource() }
             val deferredRemote = async { remoteSource() }
 
-            val cachedData = deferredCache.await().getOrElse { null }
+            val cacheResult = deferredCache.await()
+            val cachedData = cacheResult.getOrElse { cacheError ->
+                // Log cache read failures for debugging - these were previously silent!
+                analytics.logException(
+                    cacheError.toThrowable(),
+                    "Cache read failed, will rely on remote source",
+                )
+                null
+            }
             if (cachedData != null) {
                 emit(Ok(cachedData))
             }
@@ -108,7 +116,15 @@ interface BaseRepository : KoinComponent {
 
         return remoteResult.getOrElse { remoteError ->
             // Remote failed, try cache
-            val cachedData = cacheSource().getOrElse { null }
+            val cacheResult = cacheSource()
+            val cachedData = cacheResult.getOrElse { cacheError ->
+                // Log cache read failures for debugging - these were previously silent!
+                analytics.logException(
+                    cacheError.toThrowable(),
+                    "Cache fallback read failed after remote error",
+                )
+                null
+            }
             return if (cachedData != null) {
                 Ok(cachedData)
             } else {
