@@ -1,8 +1,8 @@
 package com.retro99.books.data
 
-import com.github.michaelbull.result.map
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.mapCatching
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.model.toSeriesLocal
 import com.retro99.books.data.source.SeriesLocalSource
@@ -22,12 +22,12 @@ internal class SeriesDataRepository(
     override fun getSeries(): Flow<AppResult<List<SeriesDomainModel>>> {
         return cachedRemoteFlow(
             cacheSource = {
-                localSource.getSeries().map { series ->
+                localSource.getSeries().mapCatching { series ->
                     series?.map { it.toDomain() }
                 }
             },
             remoteSource = {
-                remoteSource.getSeries().map { seriesList ->
+                remoteSource.getSeries().mapCatching { seriesList ->
                     seriesList.map { it.toDomain() }
                         .sortedBy { it.name.lowercase() }
                 }
