@@ -169,3 +169,28 @@ sealed interface NavigationAnalyticsEvent : AnalyticsEvent {
     }
 }
 
+/**
+ * Network-related analytics events for debugging connectivity issues.
+ */
+sealed interface NetworkAnalyticsEvent : AnalyticsEvent {
+
+    /**
+     * Tracks network request failures - helps identify connectivity patterns and server issues.
+     * The endpoint is the API path (e.g., "/api/v2/books/positions") without the base URL for privacy.
+     */
+    data class NetworkRequestFailed(
+        val endpoint: String,
+        val errorType: String,
+        val isTimeout: Boolean,
+        val isConnectivity: Boolean,
+    ) : NetworkAnalyticsEvent {
+        override val name: String = "network_request_failed"
+        override val parameters: Map<String, Any> = mapOf(
+            "endpoint" to endpoint,
+            "error_type" to errorType,
+            "is_timeout" to isTimeout,
+            "is_connectivity" to isConnectivity,
+        )
+    }
+}
+
