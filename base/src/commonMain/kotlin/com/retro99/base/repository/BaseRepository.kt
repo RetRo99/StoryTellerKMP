@@ -6,6 +6,8 @@ import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
+import com.retro99.base.result.logOnFailure
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -32,13 +34,13 @@ interface BaseRepository : KoinComponent {
      *
      * @param cacheSource Suspend function that returns cached data result (null value means no cache)
      * @param remoteSource Suspend function that fetches data from remote
-     * @param saveToCache Suspend function that saves remote data to cache
+     * @param saveToCache Suspend function that saves remote data to cache and returns result
      * @return Flow that emits AppResult with cached data (if available) then remote data
      */
     fun <T : Any> cachedRemoteFlow(
         cacheSource: suspend () -> AppResult<T?>,
         remoteSource: suspend () -> AppResult<T>,
-        saveToCache: suspend (T) -> Unit,
+        saveToCache: suspend (T) -> CompletableResult,
     ): Flow<AppResult<T>> = flow {
         supervisorScope {
             val deferredCache = async { cacheSource() }
@@ -60,12 +62,15 @@ interface BaseRepository : KoinComponent {
             deferredRemote.await()
                 .onSuccess { remoteData ->
                     try {
-                        saveToCache(remoteData)
+                        saveToCache(remoteData).logOnFailure(
+                            analytics,
+                            "Failed to save data to cache",
+                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         ensureActive()
-                        analytics.logException(e, "Failed to save data to cache")
+                        analytics.logException(e, "Failed to save data to cache (Exception)")
                     }
                     emit(Ok(remoteData))
                 }
@@ -92,24 +97,27 @@ interface BaseRepository : KoinComponent {
      *
      * @param remoteSource Suspend function that fetches data from remote
      * @param cacheSource Suspend function that returns cached data result (null value means no cache)
-     * @param saveToCache Suspend function that saves remote data to cache
+     * @param saveToCache Suspend function that saves remote data to cache and returns result
      * @return AppResult with remote data, or cached data on remote failure, or error if both fail
      */
     suspend fun <T : Any> remoteWithCacheFallback(
         remoteSource: suspend () -> AppResult<T?>,
         cacheSource: suspend () -> AppResult<T?>,
-        saveToCache: suspend (T) -> Unit,
+        saveToCache: suspend (T) -> CompletableResult,
     ): AppResult<T?> {
         val remoteResult = remoteSource()
 
         remoteResult.onSuccess { remoteData ->
             if (remoteData != null) {
                 try {
-                    saveToCache(remoteData)
+                    saveToCache(remoteData).logOnFailure(
+                        analytics,
+                        "Failed to save data to cache",
+                    )
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    analytics.logException(e, "Failed to save data to cache")
+                    analytics.logException(e, "Failed to save data to cache (Exception)")
                 }
             }
         }
