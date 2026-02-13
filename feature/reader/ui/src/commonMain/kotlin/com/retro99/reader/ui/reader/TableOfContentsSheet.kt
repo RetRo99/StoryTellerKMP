@@ -84,7 +84,7 @@ private fun TableOfContentsContent(
         ) {
             itemsIndexed(
                 items = tableOfContents,
-                key = { _, item -> item.href },
+                key = { index, item -> "${index}_${item.href}" },
             ) { _, tocItem ->
                 val isCurrentChapter =
                     currentChapterHref != null && tocItem.href == currentChapterHref
