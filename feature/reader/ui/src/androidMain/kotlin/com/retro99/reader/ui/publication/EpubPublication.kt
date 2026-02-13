@@ -1,10 +1,13 @@
 package com.retro99.reader.ui.publication
 
 import android.graphics.Bitmap
+import com.retro99.analytics.api.Analytics
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.services.cover
@@ -21,7 +24,9 @@ actual class EpubPublication(
     actual val initialSettings: ReaderSettingsUiModel,
     actual val bookType: BookType = BookType.EBOOK,
     val initialPosition: PositionUiModel? = null,
-) {
+) : KoinComponent {
+
+    private val analytics: Analytics by inject()
     /**
      * Whether this publication has media overlays (audio narration).
      * Checks Readium's publication metadata for media overlay information.
@@ -74,6 +79,7 @@ actual class EpubPublication(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            analytics.logException(e, "EpubPublication: Failed to load cover for book=$bookUuid")
             null
         }
     }

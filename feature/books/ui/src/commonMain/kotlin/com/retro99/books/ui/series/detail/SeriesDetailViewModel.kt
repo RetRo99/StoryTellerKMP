@@ -9,6 +9,7 @@ import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.analytics.api.NavigationAnalyticsEvent
+import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksBySeriesUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
@@ -118,6 +119,7 @@ class SeriesDetailViewModel(
                         }
                     }
                     .onFailure { error ->
+                        error.log(analytics, "SeriesDetailViewModel: Failed to load series books")
                         updateState {
                             it.copy(
                                 isLoading = false,
