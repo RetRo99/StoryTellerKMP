@@ -2,6 +2,8 @@ package com.retro99.reader.data
 
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.reader.data.download.DownloadStateHolder
 import com.retro99.reader.data.source.EbookFileDownloader
 import com.retro99.reader.domain.BookDownloadManager
@@ -37,6 +39,7 @@ import org.koin.core.annotation.Single
 actual class BookDownloadManagerImpl(
     @Provided private val fileDownloader: EbookFileDownloader,
     @Provided private val downloadStateHolder: DownloadStateHolder,
+    @Provided private val analytics: Analytics,
 ) : BookDownloadManager {
 
     /**
@@ -107,6 +110,10 @@ actual class BookDownloadManagerImpl(
             ).onSuccess {
                 downloadStateHolder.markCached(bookUuid, bookType)
             }.onFailure { error ->
+                error.log(
+                    analytics,
+                    "BookDownloadManager: Download failed for book=$bookUuid, type=$bookType",
+                )
                 downloadStateHolder.markFailed(bookUuid, bookType, error)
             }
             activeJobsMutex.withLock {

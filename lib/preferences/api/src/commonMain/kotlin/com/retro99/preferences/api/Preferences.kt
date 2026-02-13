@@ -22,7 +22,9 @@ inline fun <reified T> Preferences.getObject(key: PreferencesKey): T? {
     return try {
         Json.decodeFromString<T>(jsonString)
     } catch (e: Exception) {
-        e.printStackTrace()
+        // Note: This is in the API module without Analytics dependency.
+        // Callers should handle null return appropriately.
+        // Consider using a logged version in implementation if needed.
         null
     }
 }

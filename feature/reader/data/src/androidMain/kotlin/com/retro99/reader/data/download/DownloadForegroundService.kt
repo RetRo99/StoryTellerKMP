@@ -14,6 +14,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.log
 import com.retro99.reader.data.source.EbookFileDownloader
 import com.retro99.reader.domain.model.BookType
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +36,7 @@ class DownloadForegroundService : Service() {
 
     private val fileDownloader: EbookFileDownloader by inject()
     private val downloadStateHolder: DownloadStateHolder by inject()
+    private val analytics: Analytics by inject()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeJobs = mutableMapOf<String, Job>()
@@ -137,6 +140,10 @@ class DownloadForegroundService : Service() {
             ).onSuccess {
                 downloadStateHolder.markCached(bookUuid, bookType)
             }.onFailure { error ->
+                error.log(
+                    analytics,
+                    "DownloadForegroundService: Download failed for book=$bookUuid, type=$bookType",
+                )
                 downloadStateHolder.markFailed(bookUuid, bookType, error)
             }
 
