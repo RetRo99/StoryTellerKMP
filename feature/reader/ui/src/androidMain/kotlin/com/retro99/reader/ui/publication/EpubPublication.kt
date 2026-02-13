@@ -43,14 +43,15 @@ actual class EpubPublication(
         }
 
     private fun Link.toTocItems(level: Int): List<TocItemUiModel> {
+        val flattenedChildren = children.flatMap { it.toTocItems(level + 1) }
         val item = TocItemUiModel(
             href = href.toString(),
             title = title ?: href.toString(),
             level = level,
-            children = children.flatMap { it.toTocItems(level + 1) },
+            children = flattenedChildren,
         )
         // Return flat list: this item followed by flattened children
-        return listOf(item) + children.flatMap { it.toTocItems(level + 1) }
+        return listOf(item) + flattenedChildren
     }
 
     /**
