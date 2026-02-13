@@ -50,6 +50,12 @@
     <string name="app_settings_logout">Logout</string>
     <string name="app_settings_logout_description">Sign out of your account</string>
     <string name="app_settings_version">Version %1$s (%2$d)</string>
+    <string name="app_settings_section_support">Support</string>
+    <string name="app_settings_share_logs">Share Logs</string>
+    <string name="app_settings_share_logs_description">Share app logs for debugging</string>
+    <string name="app_settings_clear_logs">Clear Logs</string>
+    <string name="app_settings_clear_logs_description">Delete all stored logs</string>
+    <string name="app_settings_logs_cleared">Logs cleared</string>
 
     <!-- Series List Screen -->
     <string name="series_featured">Featured</string>

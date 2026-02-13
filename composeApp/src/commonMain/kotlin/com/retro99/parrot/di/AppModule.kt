@@ -4,6 +4,7 @@ import com.retro99.analytics.implementation.di.AnalyticsModule
 import com.retro99.auth.data.di.AuthDataModule
 import com.retro99.auth.domain.di.AuthDomainModule
 import com.retro99.base.buildconfig.di.BuildConfigModule
+import com.retro99.base.ui.di.BaseUiModule
 import com.retro99.books.data.di.BooksDataModule
 import com.retro99.books.domain.di.BooksDomainModule
 import com.retro99.books.ui.di.BooksUiModule
@@ -28,6 +29,7 @@ import org.koin.core.annotation.Module
 @Module(
     includes = [
         AnalyticsModule::class,
+        BaseUiModule::class,
         BuildConfigModule::class,
         DatabaseModule::class,
         NetworkingModule::class,
