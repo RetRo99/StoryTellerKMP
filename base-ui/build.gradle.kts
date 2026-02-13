@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.koinCompilerPlugin)
 }
 
 version = "1.0"
@@ -23,6 +24,8 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.lib.analytics.api)
             implementation(projects.base)
+            implementation(libs.koin.core)
+            api(libs.koin.annotations)
             implementation(libs.koin.compose)
             implementation(compose.runtime)
             implementation(compose.foundation)
