@@ -4,6 +4,7 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.smil.SmilContentProvider
 import com.retro99.reader.ui.publication.EpubPublication
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Scope
@@ -34,6 +35,8 @@ class PublicationSmilContentProvider(
                 val resource = publication.get(url) ?: return@withContext null
                 val bytes = resource.read().getOrElse { return@withContext null }
                 bytes.decodeToString()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 analytics.logException(e, "Failed to read SMIL file: $smilHref")
                 null

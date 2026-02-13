@@ -17,6 +17,7 @@ import resources.translations.error_unknown
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.coroutines.cancellation.CancellationException
 
 typealias AppResult<T> = Result<T, AppError>
 
@@ -75,6 +76,7 @@ sealed class AppError(open val message: String?) {
  * Calls the specified function [block] with [this] value as its receiver and returns its
  * encapsulated result if invocation was successful, catching any [Throwable] exception that was
  * thrown from the [block] function execution and encapsulating it as an AppError.
+ * CancellationException is rethrown to allow proper coroutine cancellation.
  */
 @OptIn(ExperimentalContracts::class)
 inline infix fun <T, V> T.runCatchingAsAppError(block: T.() -> V): Result<V, AppError> {
@@ -83,6 +85,8 @@ inline infix fun <T, V> T.runCatchingAsAppError(block: T.() -> V): Result<V, App
     }
     return try {
         Ok(block())
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Throwable) {
         Err(AppError.UnknownError(e))
     }

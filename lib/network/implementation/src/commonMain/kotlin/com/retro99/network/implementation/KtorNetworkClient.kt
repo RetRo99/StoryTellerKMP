@@ -35,6 +35,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.SerializationException
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
@@ -137,6 +138,8 @@ class KtorNetworkClient(
             } else {
                 handleHttpError(response, url)
             }
+        } catch (e: CancellationException) {
+            throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
             handleException(e, url)
@@ -164,6 +167,8 @@ class KtorNetworkClient(
                     handleHttpError(response, url)
                 }
             }
+        } catch (e: CancellationException) {
+            throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
             handleException(e, url)
@@ -199,6 +204,8 @@ class KtorNetworkClient(
                     handleHttpError(response, url)
                 }
             }
+        } catch (e: CancellationException) {
+            throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
             handleException(e, url)
@@ -237,6 +244,8 @@ class KtorNetworkClient(
         try {
             val response = block()
             handleResponseWithTypeInfo(response, typeInfo, requestUrl)
+        } catch (e: CancellationException) {
+            throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
             handleException(e, requestUrl)
