@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.asset.AssetRetriever
+import org.readium.r2.shared.util.getOrElse
 import org.readium.r2.shared.util.http.DefaultHttpClient
 import org.readium.r2.shared.util.toUrl
 import org.readium.r2.streamer.PublicationOpener
@@ -31,7 +32,7 @@ import java.io.File
 @Single(binds = [EpubPublicationService::class])
 class AndroidEpubPublicationService(
     private val context: Context,
-    analytics: Analytics,
+    private val analytics: Analytics,
 ) : BaseEpubPublicationService(analytics) {
 
     private val httpClient by lazy { DefaultHttpClient() }
@@ -65,19 +66,24 @@ class AndroidEpubPublicationService(
                 }
 
                 val url = file.toUrl()
-                val asset = assetRetriever.retrieve(url).getOrNull()
-                if (asset == null) {
-                    setError("Failed to retrieve ebook asset")
+                val asset = assetRetriever.retrieve(url).getOrElse { error ->
+                    analytics.logException(
+                        Exception("Asset retrieval failed: ${error.message}"),
+                        "AndroidEpubPublicationService: Failed to retrieve asset for book=$bookUuid, path=$filePath",
+                    )
+                    setError("Failed to retrieve ebook asset: ${error.message}")
                     return@withContext null
                 }
 
                 val openedPublication = publicationOpener.open(asset, allowUserInteraction = false)
-                    .getOrNull()
-
-                if (openedPublication == null) {
-                    setError("Failed to open ebook")
-                    return@withContext null
-                }
+                    .getOrElse { error ->
+                        analytics.logException(
+                            Exception("Publication open failed: ${error.message}"),
+                            "AndroidEpubPublicationService: Failed to open publication for book=$bookUuid, path=$filePath",
+                        )
+                        setError("Failed to open ebook: ${error.message}")
+                        return@withContext null
+                    }
 
                 publication = openedPublication
                 setReady()

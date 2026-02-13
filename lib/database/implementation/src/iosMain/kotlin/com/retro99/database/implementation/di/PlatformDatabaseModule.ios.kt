@@ -4,7 +4,7 @@ package com.retro99.database.implementation.di
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
-import co.touchlab.kermit.Logger
+import com.retro99.analytics.api.Analytics
 import com.retro99.database.implementation.AppDatabase
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
@@ -16,7 +16,6 @@ import platform.Foundation.NSLibraryDirectory
 import platform.Foundation.NSUserDomainMask
 
 private const val DATABASE_NAME = "parrot.db"
-private const val TAG = "PlatformDatabaseModule"
 
 /**
  * iOS implementation of platform-specific Database module.
@@ -26,14 +25,17 @@ private const val TAG = "PlatformDatabaseModule"
 actual class PlatformDatabaseModule {
 
     @Single
-    fun providesSqlDriver(@Provided preferences: Preferences): SqlDriver {
+    fun providesSqlDriver(
+        @Provided preferences: Preferences,
+        @Provided analytics: Analytics,
+    ): SqlDriver {
         val currentSchemaVersion = AppDatabase.Schema.version
         val storedVersion = preferences.getLong(PreferencesKey.DatabaseSchemaVersion)
 
         // If schema version changed, delete old database (destructive migration)
         // Data will be re-fetched from server since this is a cache
         if (storedVersion != currentSchemaVersion) {
-            deleteDatabaseFile()
+            deleteDatabaseFile(analytics)
             preferences.putLong(PreferencesKey.DatabaseSchemaVersion, currentSchemaVersion)
         }
 
@@ -43,7 +45,7 @@ actual class PlatformDatabaseModule {
         )
     }
 
-    private fun deleteDatabaseFile() {
+    private fun deleteDatabaseFile(analytics: Analytics) {
         val fileManager = NSFileManager.defaultManager
         val libraryPaths = fileManager.URLsForDirectory(
             NSLibraryDirectory,
@@ -58,7 +60,7 @@ actual class PlatformDatabaseModule {
         if (fileManager.fileExistsAtPath(dbPath)) {
             runCatching { fileManager.removeItemAtPath(dbPath, null) }
                 .onFailure { e ->
-                    Logger.e(TAG, e) { "Failed to delete database file at: $dbPath" }
+                    analytics.logException(e, "Failed to delete database file at: $dbPath")
                 }
         }
     }
