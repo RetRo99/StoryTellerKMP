@@ -3,6 +3,7 @@ package com.retro99.analytics.api
 interface Analytics {
     /**
      * Logs an exception to crashlytics with an optional context message.
+     * Also writes to the local log file for user sharing.
      */
     fun logException(throwable: Throwable, message: String?)
 
@@ -20,4 +21,12 @@ interface Analytics {
      * @param userId The user identifier (should be hashed for privacy), or null to clear
      */
     fun setUserId(userId: String?)
+
+    /**
+     * Gets the FileLogger instance for accessing log files.
+     * Users can use this to get the log file path for sharing.
+     *
+     * @return The FileLogger instance
+     */
+    fun getFileLogger(): FileLogger
 }

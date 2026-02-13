@@ -1,6 +1,7 @@
 package com.retro99.analytics.implementation.di
 
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.FileLogger
 import com.retro99.analytics.implementation.AnalyticsManager
 import com.retro99.analytics.implementation.DebugAnalyticsManager
 import dev.gitlive.firebase.Firebase
@@ -14,7 +15,11 @@ import org.koin.core.annotation.Module
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Single
 
-@Module
+@Module(
+    includes = [
+        PlatformAnalyticsModule::class,
+    ],
+)
 @Configuration
 @ComponentScan("com.retro99.analytics.implementation")
 class AnalyticsModule {
@@ -29,9 +34,15 @@ class AnalyticsModule {
     fun provideAnalytics(
         firebaseAnalytics: FirebaseAnalytics,
         firebaseCrashlytics: FirebaseCrashlytics,
+        fileLogger: FileLogger,
         @Named("isDebug") isDebug: Boolean,
-    ): Analytics = if (isDebug) DebugAnalyticsManager() else AnalyticsManager(
-        firebaseAnalytics,
-        firebaseCrashlytics,
-    )
+    ): Analytics = if (isDebug) {
+        DebugAnalyticsManager(fileLogger)
+    } else {
+        AnalyticsManager(
+            firebaseAnalytics,
+            firebaseCrashlytics,
+            fileLogger,
+        )
+    }
 }

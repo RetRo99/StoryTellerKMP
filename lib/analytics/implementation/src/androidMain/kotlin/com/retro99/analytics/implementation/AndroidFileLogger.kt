@@ -1,0 +1,102 @@
+package com.retro99.analytics.implementation
+
+import android.content.Context
+import com.retro99.analytics.api.FileLogger
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import java.io.File
+import kotlin.time.Clock
+
+private const val LOG_FILE_NAME = "app_logs.txt"
+private const val MAX_LOG_SIZE_BYTES = 5 * 1024 * 1024L // 5MB max log file size
+
+/**
+ * Android implementation of FileLogger.
+ * Writes logs to a file in the app's files directory.
+ */
+class AndroidFileLogger(
+    private val context: Context,
+) : FileLogger {
+
+    private val logFile: File
+        get() = File(context.filesDir, LOG_FILE_NAME)
+
+    override fun logException(throwable: Throwable, message: String?) {
+        val timestamp = getCurrentTimestamp()
+        val logEntry = buildString {
+            appendLine("[$timestamp] ERROR")
+            if (!message.isNullOrEmpty()) {
+                appendLine("Message: $message")
+            }
+            appendLine("Exception: ${throwable::class.simpleName}: ${throwable.message}")
+            appendLine("Stack trace:")
+            appendLine(throwable.stackTraceToString())
+            appendLine("---")
+        }
+        appendToLogFile(logEntry)
+    }
+
+    override fun log(tag: String, message: String) {
+        val timestamp = getCurrentTimestamp()
+        val logEntry = "[$timestamp] [$tag] $message\n"
+        appendToLogFile(logEntry)
+    }
+
+    override fun getLogFilePath(): String = logFile.absolutePath
+
+    override fun clearLogs() {
+        try {
+            if (logFile.exists()) {
+                logFile.delete()
+            }
+        } catch (e: Exception) {
+            // Ignore errors when clearing logs
+        }
+    }
+
+    override fun getLogContents(): String {
+        return try {
+            if (logFile.exists()) {
+                logFile.readText()
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    private fun appendToLogFile(entry: String) {
+        try {
+            // Rotate log file if it gets too large
+            if (logFile.exists() && logFile.length() > MAX_LOG_SIZE_BYTES) {
+                rotateLogFile()
+            }
+            logFile.appendText(entry)
+        } catch (e: Exception) {
+            // Silently fail - we don't want logging to crash the app
+        }
+    }
+
+    private fun rotateLogFile() {
+        try {
+            val backupFile = File(context.filesDir, "app_logs_old.txt")
+            if (backupFile.exists()) {
+                backupFile.delete()
+            }
+            logFile.renameTo(backupFile)
+        } catch (e: Exception) {
+            // If rotation fails, just clear the log
+            logFile.delete()
+        }
+    }
+
+    private fun getCurrentTimestamp(): String {
+        val now = Clock.System.now()
+        val localDateTime = now.toLocalDateTime(TimeZone.currentSystemDefault())
+        return "${localDateTime.date} ${localDateTime.hour.toString().padStart(2, '0')}:" +
+            "${localDateTime.minute.toString().padStart(2, '0')}:" +
+            "${localDateTime.second.toString().padStart(2, '0')}"
+    }
+}
+
