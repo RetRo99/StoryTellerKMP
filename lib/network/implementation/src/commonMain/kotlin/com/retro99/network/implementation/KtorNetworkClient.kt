@@ -3,6 +3,7 @@ package com.retro99.network.implementation
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.NetworkAnalyticsEvent
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import io.ktor.client.HttpClient
@@ -41,6 +42,8 @@ import retro99.network.api.BaseUrlProvider
 import retro99.network.api.NetworkClient
 import retro99.network.api.QueryParamsScope
 
+private const val CONNECT_TIMEOUT_MS = 30_000L // 30 seconds
+
 @Single(binds = [NetworkClient::class])
 class KtorNetworkClient(
     @Provided private val httpClient: HttpClient,
@@ -53,10 +56,12 @@ class KtorNetworkClient(
         typeInfo: TypeInfo,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
+    ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        httpClient.get(url) {
-            headers(headers)
+        return performRequestWithTypeInfo(typeInfo, url) {
+            httpClient.get(url) {
+                headers(headers)
+            }
         }
     }
 
@@ -66,12 +71,14 @@ class KtorNetworkClient(
         body: Any?,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
+    ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        httpClient.post(url) {
-            headers(headers)
-            body?.let { setBody(it) }
-            contentType(ContentType.Application.Json)
+        return performRequestWithTypeInfo(typeInfo, url) {
+            httpClient.post(url) {
+                headers(headers)
+                body?.let { setBody(it) }
+                contentType(ContentType.Application.Json)
+            }
         }
     }
 
@@ -81,12 +88,14 @@ class KtorNetworkClient(
         body: Any?,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
+    ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        httpClient.delete(url) {
-            headers(headers)
-            body?.let { setBody(it) }
-            contentType(ContentType.Application.Json)
+        return performRequestWithTypeInfo(typeInfo, url) {
+            httpClient.delete(url) {
+                headers(headers)
+                body?.let { setBody(it) }
+                contentType(ContentType.Application.Json)
+            }
         }
     }
 
@@ -96,17 +105,19 @@ class KtorNetworkClient(
         formData: Map<String, String>,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit
-    ): AppResult<T> = performRequestWithTypeInfo(typeInfo) {
+    ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        httpClient.submitForm(
-            url = url,
-            formParameters = Parameters.build {
-                formData.forEach { (key, value) ->
-                    append(key, value)
+        return performRequestWithTypeInfo(typeInfo, url) {
+            httpClient.submitForm(
+                url = url,
+                formParameters = Parameters.build {
+                    formData.forEach { (key, value) ->
+                        append(key, value)
+                    }
                 }
+            ) {
+                headers(headers)
             }
-        ) {
-            headers(headers)
         }
     }
 
@@ -115,8 +126,8 @@ class KtorNetworkClient(
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<ByteArray> = withContext(Dispatchers.IO) {
+        val url = buildUrl(path, queryBuilder)
         try {
-            val url = buildUrl(path, queryBuilder)
             val response = httpClient.get(url) {
                 headers(headers)
             }
@@ -124,11 +135,11 @@ class KtorNetworkClient(
             if (response.status.isSuccess()) {
                 Ok(response.bodyAsBytes())
             } else {
-                handleHttpError(response)
+                handleHttpError(response, url)
             }
         } catch (e: Exception) {
             ensureActive()
-            handleException(e)
+            handleException(e, url)
         }
     }
 
@@ -138,9 +149,8 @@ class KtorNetworkClient(
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {
+        val url = buildUrl(path, queryBuilder)
         try {
-            val url = buildUrl(path, queryBuilder)
-
             // Use prepareGet for streaming - this doesn't buffer the entire response in memory
             httpClient.prepareGet(url) {
                 headers(headers)
@@ -151,12 +161,12 @@ class KtorNetworkClient(
                     writeChannelToFile(channel, destinationPath)
                     Ok(destinationPath)
                 } else {
-                    handleHttpError(response)
+                    handleHttpError(response, url)
                 }
             }
         } catch (e: Exception) {
             ensureActive()
-            handleException(e)
+            handleException(e, url)
         }
     }
 
@@ -167,9 +177,8 @@ class KtorNetworkClient(
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {
+        val url = buildUrl(path, queryBuilder)
         try {
-            val url = buildUrl(path, queryBuilder)
-
             // Use prepareGet for streaming - this doesn't buffer the entire response in memory
             httpClient.prepareGet(url) {
                 headers(headers)
@@ -187,12 +196,12 @@ class KtorNetworkClient(
                     )
                     Ok(destinationPath)
                 } else {
-                    handleHttpError(response)
+                    handleHttpError(response, url)
                 }
             }
         } catch (e: Exception) {
             ensureActive()
-            handleException(e)
+            handleException(e, url)
         }
     }
 
@@ -222,25 +231,27 @@ class KtorNetworkClient(
 
     private suspend fun <T> performRequestWithTypeInfo(
         typeInfo: TypeInfo,
-        block: suspend () -> HttpResponse
+        requestUrl: String,
+        block: suspend () -> HttpResponse,
     ): AppResult<T> = withContext(Dispatchers.IO) {
         try {
             val response = block()
-            handleResponseWithTypeInfo(response, typeInfo)
+            handleResponseWithTypeInfo(response, typeInfo, requestUrl)
         } catch (e: Exception) {
             ensureActive()
-            handleException(e)
+            handleException(e, requestUrl)
         }
     }
 
     private suspend fun <T> handleResponseWithTypeInfo(
         response: HttpResponse,
-        typeInfo: TypeInfo
+        typeInfo: TypeInfo,
+        requestUrl: String,
     ): AppResult<T> {
         return if (response.status.isSuccess()) {
             parseSuccessResponseWithTypeInfo(response, typeInfo)
         } else {
-            handleHttpError(response)
+            handleHttpError(response, requestUrl)
         }
     }
 
@@ -261,7 +272,10 @@ class KtorNetworkClient(
         }
     }
 
-    private suspend fun handleHttpError(response: HttpResponse): AppResult<Nothing> {
+    private suspend fun handleHttpError(
+        response: HttpResponse,
+        requestUrl: String,
+    ): AppResult<Nothing> {
         val errorBody = response.bodyAsText()
         val errorCode = response.status.value
         val error = when (errorCode) {
@@ -280,10 +294,16 @@ class KtorNetworkClient(
                 )
             )
         }
-        // Log HTTP errors for debugging
+        // Log HTTP errors for debugging with URL context
+        val baseUrl = baseUrlProvider.getBaseUrl() ?: "unknown"
         analytics.logException(
             Exception("HTTP $errorCode: $errorBody"),
-            "HTTP error on request"
+            buildString {
+                append("HTTP error on request")
+                append(" | url=$requestUrl")
+                append(" | baseUrl=$baseUrl")
+                append(" | statusCode=$errorCode")
+            }
         )
         return error
     }
@@ -313,8 +333,42 @@ class KtorNetworkClient(
         }
     }
 
-    private fun handleException(e: Exception): AppResult<Nothing> {
-        analytics.logException(e, "Network request exception")
+    private fun handleException(e: Exception, requestUrl: String): AppResult<Nothing> {
+        val baseUrl = baseUrlProvider.getBaseUrl() ?: "unknown"
+        val errorType = classifyNetworkError(e)
+        val isTimeout = e is ConnectTimeoutException || e is SocketTimeoutException
+        val isConnectivity = isConnectivityError(e)
+
+        // Build detailed context message for debugging
+        val contextMessage = buildString {
+            append("Network request exception")
+            append(" | url=$requestUrl")
+            append(" | baseUrl=$baseUrl")
+            append(" | errorType=$errorType")
+            append(" | exceptionClass=${e::class.simpleName}")
+            if (isTimeout) {
+                append(" | isTimeout=true")
+                append(" | connectTimeoutMs=$CONNECT_TIMEOUT_MS")
+            }
+            if (isConnectivity) {
+                append(" | isConnectivity=true")
+            }
+            e.message?.let { append(" | message=$it") }
+        }
+
+        analytics.logException(e, contextMessage)
+
+        // Also log as analytics event for tracking patterns
+        val endpoint = extractEndpoint(requestUrl, baseUrl)
+        analytics.logEvent(
+            NetworkAnalyticsEvent.NetworkRequestFailed(
+                endpoint = endpoint,
+                errorType = errorType,
+                isTimeout = isTimeout,
+                isConnectivity = isConnectivity,
+            )
+        )
+
         return when (e) {
             is IOException,
             is ConnectTimeoutException,
@@ -331,18 +385,49 @@ class KtorNetworkClient(
         }
     }
 
-    private fun handleNetworkException(e: Exception): AppResult<Nothing> {
-        val isConnectivity = e.message?.let { message ->
-            message.contains("unable to resolve host", ignoreCase = true) ||
-                    message.contains("host not found", ignoreCase = true) ||
-                    message.contains("network is unreachable", ignoreCase = true) ||
-                    message.contains("connection refused", ignoreCase = true)
-        } == true
+    /**
+     * Extracts the API endpoint path from the full URL for analytics.
+     * This removes the base URL to avoid logging sensitive server addresses.
+     */
+    private fun extractEndpoint(requestUrl: String, baseUrl: String): String {
+        return requestUrl.removePrefix(baseUrl).takeIf { it.isNotEmpty() } ?: requestUrl
+    }
 
+    private fun isConnectivityError(e: Exception): Boolean {
+        return e.message?.let { message ->
+            message.contains("unable to resolve host", ignoreCase = true) ||
+                message.contains("host not found", ignoreCase = true) ||
+                message.contains("network is unreachable", ignoreCase = true) ||
+                message.contains("connection refused", ignoreCase = true)
+        } == true
+    }
+
+    private fun classifyNetworkError(e: Exception): String {
+        return when (e) {
+            is ConnectTimeoutException -> "connect_timeout"
+            is SocketTimeoutException -> "socket_timeout"
+            is IOException -> {
+                val message = e.message?.lowercase() ?: ""
+                when {
+                    message.contains("unable to resolve host") -> "dns_resolution_failed"
+                    message.contains("host not found") -> "host_not_found"
+                    message.contains("network is unreachable") -> "network_unreachable"
+                    message.contains("connection refused") -> "connection_refused"
+                    message.contains("connection reset") -> "connection_reset"
+                    message.contains("broken pipe") -> "broken_pipe"
+                    message.contains("ssl") || message.contains("tls") -> "ssl_error"
+                    else -> "io_error"
+                }
+            }
+            else -> "unknown"
+        }
+    }
+
+    private fun handleNetworkException(e: Exception): AppResult<Nothing> {
         return Err(
             AppError.NetworkError(
                 throwable = e,
-                isConnectivity = isConnectivity
+                isConnectivity = isConnectivityError(e)
             )
         )
     }

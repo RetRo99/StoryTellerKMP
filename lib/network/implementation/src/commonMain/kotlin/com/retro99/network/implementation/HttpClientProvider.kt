@@ -53,7 +53,13 @@ class HttpClientProvider(
             }
             HttpResponseValidator {
                 handleResponseExceptionWithRequest { cause, request ->
-                    analytics.logException(cause, cause.message)
+                    val contextMessage = buildString {
+                        append("Ktor HTTP exception")
+                        append(" | url=${request.url}")
+                        append(" | method=${request.method.value}")
+                        cause.message?.let { append(" | message=$it") }
+                    }
+                    analytics.logException(cause, contextMessage)
                 }
             }
         }
