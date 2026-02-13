@@ -1,8 +1,8 @@
 package com.retro99.books.data
 
-import com.github.michaelbull.result.map
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.mapCatching
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.model.toLocal
 import com.retro99.books.data.source.AuthorsLocalSource
@@ -22,12 +22,12 @@ internal class AuthorsDataRepository(
     override fun getAuthors(): Flow<AppResult<List<PersonDomainModel>>> {
         return cachedRemoteFlow(
             cacheSource = {
-                localSource.getAuthors().map { authors ->
+                localSource.getAuthors().mapCatching { authors ->
                     authors?.map { it.toDomain() }
                 }
             },
             remoteSource = {
-                remoteSource.getAuthors().map { authorsList ->
+                remoteSource.getAuthors().mapCatching { authorsList ->
                     authorsList.map { it.toDomain() }
                         .sortedBy { it.name.lowercase() }
                 }
