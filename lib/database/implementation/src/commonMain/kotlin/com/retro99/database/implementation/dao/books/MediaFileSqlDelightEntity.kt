@@ -9,7 +9,7 @@ data class MediaFileSqlDelightEntity(
     override val uuid: String,
     override val bookUuid: String,
     override val type: String,
-    override val filepath: String,
+    override val filepath: String?,
     override val missing: Int?,
     override val createdAt: String?,
     override val updatedAt: String?,

@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS readalouds (
     uuid TEXT NOT NULL PRIMARY KEY,
     book_uuid TEXT NOT NULL UNIQUE,
-    filepath TEXT NOT NULL,
+    filepath TEXT,
     missing INTEGER,
     status TEXT,
     current_stage TEXT,
