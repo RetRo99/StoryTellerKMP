@@ -15,29 +15,33 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.retro99.analytics.api.Analytics
 import com.retro99.base.buildconfig.BuildConfig
-import com.retro99.base.ui.sharing.FileSharer
+import com.retro99.base.ui.BaseScreen
+import com.retro99.base.ui.IntentDispatcher
 import com.retro99.translations.StringRes
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.app_settings_clear_logs
 import resources.translations.app_settings_clear_logs_description
+import resources.translations.app_settings_enable_logging
+import resources.translations.app_settings_enable_logging_description
 import resources.translations.app_settings_logout
 import resources.translations.app_settings_logout_description
 import resources.translations.app_settings_logs_cleared
@@ -52,13 +56,37 @@ import resources.translations.app_settings_version
 fun AppSettingsScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: AppSettingsViewModel = koinViewModel(),
+) {
+    BaseScreen(
+        modifier = modifier,
+        viewModel = viewModel,
+    ) { viewState, intentDispatcher ->
+        AppSettingsScreenContent(
+            viewState = viewState,
+            onLogout = onLogout,
+            intentDispatcher = intentDispatcher,
+        )
+    }
+}
+
+@Composable
+private fun AppSettingsScreenContent(
+    viewState: AppSettingsViewState,
+    onLogout: () -> Unit,
+    intentDispatcher: IntentDispatcher<AppSettingsIntent>,
+    modifier: Modifier = Modifier,
     buildConfig: BuildConfig = koinInject(),
-    analytics: Analytics = koinInject(),
-    fileSharer: FileSharer = koinInject(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val logsClearedMessage = stringResource(StringRes.app_settings_logs_cleared)
+
+    LaunchedEffect(viewState.showLogsClearedMessage) {
+        if (viewState.showLogsClearedMessage) {
+            snackbarHostState.showSnackbar(logsClearedMessage)
+            intentDispatcher(AppSettingsIntent.OnLogsClearedMessageShown)
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -98,31 +126,28 @@ fun AppSettingsScreen(
                 title = stringResource(StringRes.app_settings_section_support),
             )
 
+            SettingsToggleItem(
+                icon = Icons.Default.Description,
+                title = stringResource(StringRes.app_settings_enable_logging),
+                description = stringResource(StringRes.app_settings_enable_logging_description),
+                isChecked = viewState.isLoggingEnabled,
+                onCheckedChange = { enabled ->
+                    intentDispatcher(AppSettingsIntent.OnLoggingToggled(enabled))
+                },
+            )
+
             SettingsItem(
                 icon = Icons.Default.Share,
                 title = stringResource(StringRes.app_settings_share_logs),
                 description = stringResource(StringRes.app_settings_share_logs_description),
-                onClick = {
-                    val fileLogger = analytics.getFileLogger()
-                    val logFilePath = fileLogger.getLogFilePath()
-                    fileSharer.shareFile(
-                        filePath = logFilePath,
-                        mimeType = "text/plain",
-                        title = "Share App Logs",
-                    )
-                },
+                onClick = { intentDispatcher(AppSettingsIntent.OnShareLogsClicked) },
             )
 
             SettingsItem(
                 icon = Icons.Default.DeleteSweep,
                 title = stringResource(StringRes.app_settings_clear_logs),
                 description = stringResource(StringRes.app_settings_clear_logs_description),
-                onClick = {
-                    analytics.getFileLogger().clearLogs()
-                    scope.launch {
-                        snackbarHostState.showSnackbar(logsClearedMessage)
-                    }
-                },
+                onClick = { intentDispatcher(AppSettingsIntent.OnClearLogsClicked) },
             )
 
             HorizontalDivider()
@@ -210,6 +235,50 @@ private fun SettingsItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun SettingsToggleItem(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!isChecked) }
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Switch(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange,
+        )
     }
 }
 

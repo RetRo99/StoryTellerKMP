@@ -56,6 +56,8 @@
     <string name="app_settings_clear_logs">Clear Logs</string>
     <string name="app_settings_clear_logs_description">Delete all stored logs</string>
     <string name="app_settings_logs_cleared">Logs cleared</string>
+    <string name="app_settings_enable_logging">Enable File Logging</string>
+    <string name="app_settings_enable_logging_description">Write logs to file for debugging</string>
 
     <!-- Series List Screen -->
     <string name="series_featured">Featured</string>
