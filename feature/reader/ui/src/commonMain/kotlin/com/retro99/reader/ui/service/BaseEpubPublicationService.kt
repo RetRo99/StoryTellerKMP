@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.analytics.api.Analytics
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +17,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * Platform-specific implementations should extend this class and implement the
  * publication lifecycle methods.
  */
-abstract class BaseEpubPublicationService : EpubPublicationService {
+abstract class BaseEpubPublicationService(
+    private val analytics: Analytics,
+) : EpubPublicationService {
 
     protected val _isReady = MutableStateFlow(false)
     override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
@@ -35,11 +38,15 @@ abstract class BaseEpubPublicationService : EpubPublicationService {
 
     /**
      * Sets an error state with the given message.
-     * Automatically sets isReady to false.
+     * Automatically sets isReady to false and logs the error to analytics.
      */
     protected fun setError(message: String) {
         _error.value = message
         _isReady.value = false
+        analytics.logException(
+            throwable = Throwable(message),
+            message = "EpubPublicationService: Failed to open publication",
+        )
     }
 
     /**

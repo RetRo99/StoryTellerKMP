@@ -271,7 +271,7 @@ class ReaderViewModel(
             initialPosition = position,
         )
 
-        publication?.let {
+        if (publication != null) {
             // Track book opened event
             bookOpenedTimestamp = nowMillis()
             analytics.logEvent(
@@ -284,14 +284,14 @@ class ReaderViewModel(
             updateState { state ->
                 state.copy(
                     bookUuid = data.bookUuid,
-                    publication = it,
+                    publication = publication,
                     bookType = bookType,
                     positionConflict = conflict,
                     playbackSpeed = settings.playbackSpeed,
                     error = null,
                     currentAudioPositionMs = position?.audioTimestampMs ?: 0L,
                     lastKnownPosition = position,
-                    tableOfContents = it.tableOfContents,
+                    tableOfContents = publication.tableOfContents,
                 )
             }
             // Start observing after publication is ready
@@ -306,8 +306,17 @@ class ReaderViewModel(
             if (publication.hasMediaOverlays) {
                 initAudio()
             }
+        } else {
+            val errorMessage = publicationService.error.value ?: "Unknown publication error"
+            analytics.logEvent(
+                ReaderAnalyticsEvent.BookOpenFailed(
+                    bookUuid = data.bookUuid,
+                    bookType = bookType.name,
+                    errorMessage = errorMessage,
+                )
+            )
+            updateState { it.copy(error = AppError.UnknownError(Throwable(errorMessage))) }
         }
-            ?: updateState { it.copy(error = AppError.UnknownError(Throwable("Failed to open publication"))) }
     }
 
     private fun initAudio() {
