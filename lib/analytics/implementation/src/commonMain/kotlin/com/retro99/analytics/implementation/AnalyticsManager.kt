@@ -29,27 +29,11 @@ class AnalyticsManager(
     override fun logEvent(event: AnalyticsEvent) {
         val parameters = event.parameters.takeIf { it.isNotEmpty() }
         firebaseAnalytics.logEvent(event.name, parameters)
-
-        // Also log events to file (if enabled)
-        if (isFileLoggingEnabled()) {
-            val eventMessage = buildString {
-                append("Event: ${event.name}")
-                if (event.parameters.isNotEmpty()) {
-                    append(" | Parameters: ${event.parameters}")
-                }
-            }
-            fileLogger.log("Analytics", eventMessage)
-        }
     }
 
     override fun setUserId(userId: String?) {
         firebaseAnalytics.setUserId(userId)
         firebaseCrashlytics.setUserId(userId ?: "")
-
-        // Log user ID change to file (if enabled)
-        if (isFileLoggingEnabled()) {
-            fileLogger.log("Analytics", "User ID set: ${userId ?: "null (cleared)"}")
-        }
     }
 
     private fun isFileLoggingEnabled(): Boolean {

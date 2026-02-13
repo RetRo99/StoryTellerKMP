@@ -36,17 +36,10 @@ class DebugAnalyticsManager(
             }
         }
         logger.d { eventMessage }
-        // Also log events to file (if enabled)
-        if (isFileLoggingEnabled()) {
-            fileLogger.log("Analytics", eventMessage)
-        }
     }
 
     override fun setUserId(userId: String?) {
         logger.d { "Set User ID: ${userId ?: "null (cleared)"}" }
-        if (isFileLoggingEnabled()) {
-            fileLogger.log("Analytics", "User ID set: ${userId ?: "null (cleared)"}")
-        }
     }
 
     private fun isFileLoggingEnabled(): Boolean {
