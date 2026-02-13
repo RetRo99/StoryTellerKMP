@@ -14,6 +14,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
 import com.retro99.books.ui.series.detail.SeriesDetailScreen
+import com.retro99.home.ui.appsettings.AppSettingsScreen
 // import com.retro99.home.ui.authors.AuthorsListScreen
 import com.retro99.home.ui.series.SeriesListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
@@ -23,6 +24,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeNavigation(
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeNavigationViewModel = koinViewModel(),
 ) {
@@ -149,6 +151,12 @@ fun HomeNavigation(
 
                     entry<HomeDestination.Settings> {
                         SettingsScreen()
+                    }
+
+                    entry<HomeDestination.AppSettings> {
+                        AppSettingsScreen(
+                            onLogout = onLogout,
+                        )
                     }
                 },
             )
