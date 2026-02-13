@@ -1,8 +1,8 @@
 package com.retro99.books.data
 
-import com.github.michaelbull.result.map
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.mapCatching
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.model.toLocal
 import com.retro99.books.data.source.BooksLocalSource
@@ -25,12 +25,12 @@ internal class BooksDataRepository(
         val baseUrl = baseUrlProvider.getBaseUrl()
         return cachedRemoteFlow(
             cacheSource = {
-                localSource.getBooks().map { books ->
+                localSource.getBooks().mapCatching { books ->
                     books?.map { it.toDomain(baseUrl) }
                 }
             },
             remoteSource = {
-                remoteSource.getBooks().map { books ->
+                remoteSource.getBooks().mapCatching { books ->
                     books.map { it.toDomain(baseUrl) }
                         .sortedBy { it.title.lowercase() }
                 }
@@ -45,12 +45,12 @@ internal class BooksDataRepository(
         val baseUrl = baseUrlProvider.getBaseUrl()
         return cachedRemoteFlow(
             cacheSource = {
-                localSource.getBook(uuid).map { book ->
+                localSource.getBook(uuid).mapCatching { book ->
                     book?.toDomain(baseUrl)
                 }
             },
             remoteSource = {
-                remoteSource.getBook(uuid).map { book ->
+                remoteSource.getBook(uuid).mapCatching { book ->
                     book.toDomain(baseUrl)
                 }
             },

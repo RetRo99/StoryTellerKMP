@@ -3,6 +3,8 @@ package com.retro99.base.result
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.annotation.UnsafeResultValueAccess
+import com.github.michaelbull.result.asErr
 import com.github.michaelbull.result.onFailure
 import com.retro99.analytics.api.Analytics
 import com.retro99.translations.StringRes
@@ -89,6 +91,29 @@ inline infix fun <T, V> T.runCatchingAsAppError(block: T.() -> V): Result<V, App
         throw e
     } catch (e: Throwable) {
         Err(AppError.UnknownError(e))
+    }
+}
+
+/**
+ * Maps this [AppResult] by applying the [transform] function to the value if this result is Ok.
+ * Unlike the standard [map], this catches any exception thrown by [transform] and wraps it
+ * as [AppError.UnknownError].
+ * CancellationException is rethrown to allow proper coroutine cancellation.
+ */
+@OptIn(ExperimentalContracts::class, UnsafeResultValueAccess::class)
+inline infix fun <V, U> AppResult<V>.mapCatching(transform: (V) -> U): AppResult<U> {
+    contract {
+        callsInPlace(transform, InvocationKind.AT_MOST_ONCE)
+    }
+    return when {
+        isOk -> try {
+            Ok(transform(value))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            Err(AppError.UnknownError(e))
+        }
+        else -> this.asErr()
     }
 }
 
