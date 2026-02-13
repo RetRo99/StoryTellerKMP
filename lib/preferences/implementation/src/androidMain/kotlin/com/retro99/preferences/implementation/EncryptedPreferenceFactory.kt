@@ -2,9 +2,9 @@ package com.retro99.preferences.implementation
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.retro99.analytics.api.Analytics
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
 import java.security.KeyStore
@@ -19,13 +19,18 @@ import java.security.KeyStore
  *
  * In these cases, the corrupted preferences are cleared and recreated.
  *
+ * Note: Uses Android Log directly instead of Analytics to avoid circular dependency,
+ * since Analytics depends on Preferences.
+ *
  * @param context Android context for accessing SharedPreferences
- * @param analytics Analytics for logging exceptions
  */
 class EncryptedPreferenceFactory(
     private val context: Context,
-    private val analytics: Analytics,
 ) : Settings.Factory {
+
+    private companion object {
+        const val TAG = "EncryptedPrefFactory"
+    }
 
     override fun create(name: String?): Settings {
         checkNotNull(name) { "Settings Name cannot be null" }
@@ -109,7 +114,7 @@ class EncryptedPreferenceFactory(
             // This is usually not necessary, but can help in some edge cases
             deleteMasterKeyIfExists()
         } catch (e: Exception) {
-            analytics.logException(e, "Failed to clear corrupted preferences: $name")
+            Log.e(TAG, "Failed to clear corrupted preferences: $name", e)
         }
     }
 
@@ -121,7 +126,7 @@ class EncryptedPreferenceFactory(
                 prefsFile.delete()
             }
         } catch (e: Exception) {
-            analytics.logException(e, "Failed to delete SharedPreferences file: $name")
+            Log.e(TAG, "Failed to delete SharedPreferences file: $name", e)
         }
     }
 
@@ -133,7 +138,7 @@ class EncryptedPreferenceFactory(
                 keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             }
         } catch (e: Exception) {
-            analytics.logException(e, "Failed to delete MasterKey from Keystore")
+            Log.e(TAG, "Failed to delete MasterKey from Keystore", e)
         }
     }
 }
