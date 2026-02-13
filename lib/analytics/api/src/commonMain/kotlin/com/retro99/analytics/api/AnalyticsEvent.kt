@@ -108,5 +108,21 @@ sealed interface ReaderAnalyticsEvent : AnalyticsEvent {
             "section_name" to sectionName,
         )
     }
+
+    /**
+     * Tracks when a book fails to open - helps identify and fix publication issues.
+     */
+    data class BookOpenFailed(
+        val bookUuid: String,
+        val bookType: String,
+        val errorMessage: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "book_open_failed"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "book_type" to bookType,
+            "error_message" to errorMessage,
+        )
+    }
 }
 

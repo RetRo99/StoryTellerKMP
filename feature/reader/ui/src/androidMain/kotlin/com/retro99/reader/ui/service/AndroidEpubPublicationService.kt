@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.service
 
 import android.content.Context
+import com.retro99.analytics.api.Analytics
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -29,7 +30,8 @@ import java.io.File
 @Single(binds = [EpubPublicationService::class])
 class AndroidEpubPublicationService(
     private val context: Context,
-) : BaseEpubPublicationService() {
+    analytics: Analytics,
+) : BaseEpubPublicationService(analytics) {
 
     private val httpClient by lazy { DefaultHttpClient() }
     private val assetRetriever by lazy { AssetRetriever(context.contentResolver, httpClient) }

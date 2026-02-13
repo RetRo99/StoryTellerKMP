@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.service
 
+import com.retro99.analytics.api.Analytics
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.model.PositionUiModel
@@ -15,7 +16,9 @@ import kotlin.coroutines.suspendCoroutine
  * Uses the [EpubReaderBridgeRegistry] to delegate to the Swift Readium implementation.
  */
 @Single(binds = [EpubPublicationService::class])
-class IosEpubPublicationService : BaseEpubPublicationService() {
+class IosEpubPublicationService(
+    analytics: Analytics,
+) : BaseEpubPublicationService(analytics) {
 
     /**
      * Gets the bridge instance, if registered.
