@@ -17,7 +17,7 @@ class AppSettingsViewModel(
     AppSettingsViewState(
         isLoggingEnabled = preferences.getBoolean(
             PreferencesKey.FileLoggingEnabled,
-            defaultValue = true,
+            defaultValue = false,
         ),
     ),
 ) {

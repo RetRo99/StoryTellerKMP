@@ -43,6 +43,6 @@ class DebugAnalyticsManager(
     }
 
     private fun isFileLoggingEnabled(): Boolean {
-        return preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = true)
+        return preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = false)
     }
 }
