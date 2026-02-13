@@ -130,6 +130,10 @@ sealed interface AuthAnalyticsEvent : AnalyticsEvent {
         )
     }
 
+    data object LogoutClicked : AuthAnalyticsEvent {
+        override val name: String = "logout_clicked"
+    }
+
     data object LogoutCompleted : AuthAnalyticsEvent {
         override val name: String = "logout_completed"
     }

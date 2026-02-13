@@ -49,6 +49,7 @@ class RootNavigationViewModel(
     }
 
     private fun handleLogout() {
+        analytics.logEvent(AuthAnalyticsEvent.LogoutClicked)
         viewModelScope.launch {
             logoutUseCase()
             analytics.logEvent(AuthAnalyticsEvent.LogoutCompleted)
