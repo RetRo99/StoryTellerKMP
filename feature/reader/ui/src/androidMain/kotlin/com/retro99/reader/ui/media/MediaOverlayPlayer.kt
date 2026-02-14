@@ -298,9 +298,14 @@ class MediaOverlayPlayer(
         val smilClips = smilLoadingManager.getClipsForChapter(normalizedHref)
 
         // Convert SmilClip to MediaOverlayClip
-        val chapterClips = convertSmilClipsToMediaOverlayClips(smilClips, chapterHref)
+        val chapterClips = convertSmilClipsToMediaOverlayClips(smilClips)
 
         if (chapterClips.isEmpty()) {
+            val nextChapterWithAudio = smilLoadingManager.findNextChapterWithAudio(normalizedHref)
+            if (nextChapterWithAudio != null) {
+                // Recursively prepare the next chapter
+                prepareChapterDuration(Url(nextChapterWithAudio)!!, initialPositionMs)
+            }
             return
         }
 
@@ -429,7 +434,7 @@ class MediaOverlayPlayer(
         val smilClips = smilLoadingManager.getClipsForChapter(normalizedHref)
 
         // Convert SmilClip to MediaOverlayClip and update locator tracker
-        val chapterClips = convertSmilClipsToMediaOverlayClips(smilClips, chapterHref)
+        val chapterClips = convertSmilClipsToMediaOverlayClips(smilClips)
         locatorTracker.setChapterClips(chapterClips)
 
         if (chapterClips.isEmpty()) {
@@ -513,31 +518,29 @@ class MediaOverlayPlayer(
     /**
      * Converts SmilClip (from shared parser) to MediaOverlayClip (Android-specific).
      *
-     * SmilClip contains raw string references, while MediaOverlayClip uses Readium Url objects.
-     * This method resolves the relative paths and extracts fragment IDs.
+     * SmilClip contains string references that are already resolved to absolute paths
+     * (relative to publication root) by SmilLoadingManager.parseSmilFile().
+     * This method parses them as Readium Url objects and extracts fragment IDs.
      *
-     * @param smilClips The raw clips from the shared parser
-     * @param chapterHref The chapter href for context (used to resolve relative paths)
-     * @return List of MediaOverlayClip with resolved URLs
+     * @param smilClips The clips from the shared parser with resolved paths
+     * @return List of MediaOverlayClip with Readium Url objects
      */
     private fun convertSmilClipsToMediaOverlayClips(
         smilClips: List<SmilClip>,
-        chapterHref: Url,
     ): List<MediaOverlayClip> {
         return smilClips.mapNotNull { raw ->
             try {
+                // Paths are already resolved to absolute paths in SmilLoadingManager.parseSmilFile()
+                // so we just need to parse them as URLs and extract fragment IDs
                 val textUrl = Url(raw.textSrc) ?: return@mapNotNull null
-                // Resolve relative to chapter href's directory
-                val resolvedTextUrl = chapterHref.resolve(textUrl)
-                val fragmentId = resolvedTextUrl.fragment
+                val fragmentId = textUrl.fragment
 
                 val audioUrl = Url(raw.audioSrc) ?: return@mapNotNull null
-                val resolvedAudioUrl = chapterHref.resolve(audioUrl)
 
                 MediaOverlayClip(
-                    textHref = resolvedTextUrl.removeFragment(),
+                    textHref = textUrl.removeFragment(),
                     fragmentId = fragmentId,
-                    audioHref = resolvedAudioUrl.removeFragment(),
+                    audioHref = audioUrl.removeFragment(),
                     startTime = raw.clipBegin,
                     endTime = raw.clipEnd,
                 )

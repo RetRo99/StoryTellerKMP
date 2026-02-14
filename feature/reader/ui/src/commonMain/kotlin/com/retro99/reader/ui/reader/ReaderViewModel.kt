@@ -357,8 +357,8 @@ class ReaderViewModel(
                 )
             }
             bookController.goToPosition(conflict.remotePosition)
-            // Also update the audio position if this is a ReadAloud book
-            if (currentState.isReadAloud) {
+            // Also update the audio position if this is a ReadAloud book with actual media overlays
+            if (currentState.isReadAloud && currentState.publication?.hasMediaOverlays == true) {
                 audioController.setInitialAudioPosition(conflict.remotePosition.audioTimestampMs)
             }
         }
@@ -438,7 +438,8 @@ class ReaderViewModel(
 
     fun close() {
         viewModelScope.launch {
-            if (viewState.value.isReadAloud) {
+            // Only save audio position if this is a ReadAloud book with actual media overlays
+            if (viewState.value.isReadAloud && viewState.value.publication?.hasMediaOverlays == true) {
                 saveCurrentAudioPositionSync()
             }
 
