@@ -309,6 +309,11 @@ class ReaderViewModel(
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()
+            } else if (bookType == BookType.READALOUD) {
+                // Track when a ReadAloud book is missing media overlays
+                analytics.logEvent(
+                    ReaderAnalyticsEvent.ReadAloudMissingMediaOverlays(bookUuid = data.bookUuid)
+                )
             }
         }.onFailure { error ->
             analytics.logEvent(
@@ -358,7 +363,7 @@ class ReaderViewModel(
             }
             bookController.goToPosition(conflict.remotePosition)
             // Also update the audio position if this is a ReadAloud book with actual media overlays
-            if (currentState.isReadAloud && currentState.publication?.hasMediaOverlays == true) {
+            if (currentState.isReadAloud) {
                 audioController.setInitialAudioPosition(conflict.remotePosition.audioTimestampMs)
             }
         }
@@ -439,7 +444,7 @@ class ReaderViewModel(
     fun close() {
         viewModelScope.launch {
             // Only save audio position if this is a ReadAloud book with actual media overlays
-            if (viewState.value.isReadAloud && viewState.value.publication?.hasMediaOverlays == true) {
+            if (viewState.value.isReadAloud) {
                 saveCurrentAudioPositionSync()
             }
 

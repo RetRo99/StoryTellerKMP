@@ -40,8 +40,10 @@ data class ReaderViewState(
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.
+     * Both conditions must be true: the book type must be READALOUD and
+     * the publication must have media overlays.
      */
     val isReadAloud: Boolean
-        get() = bookType == BookType.READALOUD
+        get() = bookType == BookType.READALOUD && publication?.hasMediaOverlays == true
 }
 
