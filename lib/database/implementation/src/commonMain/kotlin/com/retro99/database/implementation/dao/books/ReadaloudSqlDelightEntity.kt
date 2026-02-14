@@ -12,7 +12,7 @@ data class ReadaloudSqlDelightEntity(
     override val missing: Int?,
     override val status: String?,
     override val currentStage: String?,
-    override val stageProgress: Int?,
+    override val stageProgress: Double?,
     override val queuePosition: Int?,
     override val restartPending: Boolean?,
     override val createdAt: String?,
