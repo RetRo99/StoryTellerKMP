@@ -6,6 +6,7 @@ import com.retro99.auth.domain.tokens.BearerTokenRefresher
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.HttpResponseValidator
+import kotlin.coroutines.cancellation.CancellationException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -53,6 +54,10 @@ class HttpClientProvider(
             }
             HttpResponseValidator {
                 handleResponseExceptionWithRequest { cause, request ->
+                    // CancellationException is a normal part of coroutine cancellation
+                    // (e.g., user navigates away, ViewModel cleared) - don't log it
+                    if (cause is CancellationException) return@handleResponseExceptionWithRequest
+
                     // Only log endpoint path, never full URLs for privacy
                     val endpoint = request.url.encodedPath
                     val contextMessage = buildString {
