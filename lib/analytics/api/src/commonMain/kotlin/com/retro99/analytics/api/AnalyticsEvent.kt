@@ -124,5 +124,18 @@ sealed interface ReaderAnalyticsEvent : AnalyticsEvent {
             "error_message" to errorMessage,
         )
     }
+
+    /**
+     * Tracks when a ReadAloud book is opened but has no media overlays.
+     * This indicates a content issue that should be investigated.
+     */
+    data class ReadAloudMissingMediaOverlays(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "readaloud_missing_media_overlays"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
 }
 
