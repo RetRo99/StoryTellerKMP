@@ -44,9 +44,10 @@ fun CoilImage(
             onState?.invoke(state)
             if (state is AsyncImagePainter.State.Error) {
                 val throwable = state.result.throwable
+                // Don't log the URL/data for privacy - only log cache key if available
                 analytics.logException(
                     throwable = throwable,
-                    message = "Image Load Failed for: $data"
+                    message = "Image Load Failed${cacheKey?.let { " for cacheKey=$it" } ?: ""}"
                 )
             }
         },

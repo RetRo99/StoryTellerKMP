@@ -59,7 +59,7 @@ class KtorNetworkClient(
         headers: HeadersBuilder.() -> Unit
     ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        return performRequestWithTypeInfo(typeInfo, url) {
+        return performRequestWithTypeInfo(typeInfo, path) {
             httpClient.get(url) {
                 headers(headers)
             }
@@ -74,7 +74,7 @@ class KtorNetworkClient(
         headers: HeadersBuilder.() -> Unit
     ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        return performRequestWithTypeInfo(typeInfo, url) {
+        return performRequestWithTypeInfo(typeInfo, path) {
             httpClient.post(url) {
                 headers(headers)
                 body?.let { setBody(it) }
@@ -91,7 +91,7 @@ class KtorNetworkClient(
         headers: HeadersBuilder.() -> Unit
     ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        return performRequestWithTypeInfo(typeInfo, url) {
+        return performRequestWithTypeInfo(typeInfo, path) {
             httpClient.delete(url) {
                 headers(headers)
                 body?.let { setBody(it) }
@@ -108,7 +108,7 @@ class KtorNetworkClient(
         headers: HeadersBuilder.() -> Unit
     ): AppResult<T> {
         val url = buildUrl(path, queryBuilder)
-        return performRequestWithTypeInfo(typeInfo, url) {
+        return performRequestWithTypeInfo(typeInfo, path) {
             httpClient.submitForm(
                 url = url,
                 formParameters = Parameters.build {
@@ -136,13 +136,13 @@ class KtorNetworkClient(
             if (response.status.isSuccess()) {
                 Ok(response.bodyAsBytes())
             } else {
-                handleHttpError(response, url)
+                handleHttpError(response, path)
             }
         } catch (e: CancellationException) {
             throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
-            handleException(e, url)
+            handleException(e, path)
         }
     }
 
@@ -164,14 +164,14 @@ class KtorNetworkClient(
                     writeChannelToFile(channel, destinationPath)
                     Ok(destinationPath)
                 } else {
-                    handleHttpError(response, url)
+                    handleHttpError(response, path)
                 }
             }
         } catch (e: CancellationException) {
             throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
-            handleException(e, url)
+            handleException(e, path)
         }
     }
 
@@ -201,14 +201,14 @@ class KtorNetworkClient(
                     )
                     Ok(destinationPath)
                 } else {
-                    handleHttpError(response, url)
+                    handleHttpError(response, path)
                 }
             }
         } catch (e: CancellationException) {
             throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
-            handleException(e, url)
+            handleException(e, path)
         }
     }
 
@@ -238,29 +238,29 @@ class KtorNetworkClient(
 
     private suspend fun <T> performRequestWithTypeInfo(
         typeInfo: TypeInfo,
-        requestUrl: String,
+        endpoint: String,
         block: suspend () -> HttpResponse,
     ): AppResult<T> = withContext(Dispatchers.IO) {
         try {
             val response = block()
-            handleResponseWithTypeInfo(response, typeInfo, requestUrl)
+            handleResponseWithTypeInfo(response, typeInfo, endpoint)
         } catch (e: CancellationException) {
             throw e // Re-throw cancellation exceptions to allow proper coroutine cancellation
         } catch (e: Exception) {
             ensureActive()
-            handleException(e, requestUrl)
+            handleException(e, endpoint)
         }
     }
 
     private suspend fun <T> handleResponseWithTypeInfo(
         response: HttpResponse,
         typeInfo: TypeInfo,
-        requestUrl: String,
+        endpoint: String,
     ): AppResult<T> {
         return if (response.status.isSuccess()) {
             parseSuccessResponseWithTypeInfo(response, typeInfo)
         } else {
-            handleHttpError(response, requestUrl)
+            handleHttpError(response, endpoint)
         }
     }
 
@@ -283,7 +283,7 @@ class KtorNetworkClient(
 
     private suspend fun handleHttpError(
         response: HttpResponse,
-        requestUrl: String,
+        endpoint: String,
     ): AppResult<Nothing> {
         val errorBody = response.bodyAsText()
         val errorCode = response.status.value
@@ -303,14 +303,12 @@ class KtorNetworkClient(
                 )
             )
         }
-        // Log HTTP errors for debugging with URL context
-        val baseUrl = baseUrlProvider.getBaseUrl() ?: "unknown"
+        // Log HTTP errors for debugging - only log endpoint path, never URLs
         analytics.logException(
             Exception("HTTP $errorCode: $errorBody"),
             buildString {
                 append("HTTP error on request")
-                append(" | url=$requestUrl")
-                append(" | baseUrl=$baseUrl")
+                append(" | endpoint=$endpoint")
                 append(" | statusCode=$errorCode")
             }
         )
@@ -342,17 +340,15 @@ class KtorNetworkClient(
         }
     }
 
-    private fun handleException(e: Exception, requestUrl: String): AppResult<Nothing> {
-        val baseUrl = baseUrlProvider.getBaseUrl() ?: "unknown"
+    private fun handleException(e: Exception, endpoint: String): AppResult<Nothing> {
         val errorType = classifyNetworkError(e)
         val isTimeout = e is ConnectTimeoutException || e is SocketTimeoutException
         val isConnectivity = isConnectivityError(e)
 
-        // Build detailed context message for debugging
+        // Build detailed context message for debugging - only log endpoint path, never URLs
         val contextMessage = buildString {
             append("Network request exception")
-            append(" | url=$requestUrl")
-            append(" | baseUrl=$baseUrl")
+            append(" | endpoint=$endpoint")
             append(" | errorType=$errorType")
             append(" | exceptionClass=${e::class.simpleName}")
             if (isTimeout) {
@@ -362,13 +358,13 @@ class KtorNetworkClient(
             if (isConnectivity) {
                 append(" | isConnectivity=true")
             }
-            e.message?.let { append(" | message=$it") }
         }
 
-        analytics.logException(e, contextMessage)
+        // Create a sanitized exception that doesn't expose URLs/hosts from the original message
+        val sanitizedException = Exception("Network error: $errorType", e.cause)
+        analytics.logException(sanitizedException, contextMessage)
 
         // Also log as analytics event for tracking patterns
-        val endpoint = extractEndpoint(requestUrl, baseUrl)
         analytics.logEvent(
             NetworkAnalyticsEvent.NetworkRequestFailed(
                 endpoint = endpoint,
@@ -392,14 +388,6 @@ class KtorNetworkClient(
 
             else -> Err(AppError.UnknownError(e))
         }
-    }
-
-    /**
-     * Extracts the API endpoint path from the full URL for analytics.
-     * This removes the base URL to avoid logging sensitive server addresses.
-     */
-    private fun extractEndpoint(requestUrl: String, baseUrl: String): String {
-        return requestUrl.removePrefix(baseUrl).takeIf { it.isNotEmpty() } ?: requestUrl
     }
 
     private fun isConnectivityError(e: Exception): Boolean {

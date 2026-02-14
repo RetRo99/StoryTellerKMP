@@ -67,9 +67,10 @@ class AndroidEpubPublicationService(
 
                 val url = file.toUrl()
                 val asset = assetRetriever.retrieve(url).getOrElse { error ->
+                    // Don't log file path for privacy - only log book UUID
                     analytics.logException(
                         Exception("Asset retrieval failed: ${error.message}"),
-                        "AndroidEpubPublicationService: Failed to retrieve asset for book=$bookUuid, path=$filePath",
+                        "AndroidEpubPublicationService: Failed to retrieve asset for book=$bookUuid",
                     )
                     setError("Failed to retrieve ebook asset: ${error.message}")
                     return@withContext null
@@ -77,9 +78,10 @@ class AndroidEpubPublicationService(
 
                 val openedPublication = publicationOpener.open(asset, allowUserInteraction = false)
                     .getOrElse { error ->
+                        // Don't log file path for privacy - only log book UUID
                         analytics.logException(
                             Exception("Publication open failed: ${error.message}"),
-                            "AndroidEpubPublicationService: Failed to open publication for book=$bookUuid, path=$filePath",
+                            "AndroidEpubPublicationService: Failed to open publication for book=$bookUuid",
                         )
                         setError("Failed to open ebook: ${error.message}")
                         return@withContext null
