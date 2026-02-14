@@ -106,6 +106,9 @@
     <string name="reader_toc_jumped_to_chapter">Jumped to chapter</string>
     <string name="reader_toc_undo">Undo</string>
 
+    <!-- Reader ReadAloud -->
+    <string name="reader_readaloud_no_audio">This book has no audio narration available</string>
+
     <!-- Reader Position Conflict Dialog -->
     <string name="reader_conflict_title">Reading Position Conflict</string>
     <string name="reader_conflict_message">Your reading position differs between this device and the server. Which position would you like to use?</string>
