@@ -45,12 +45,29 @@ class PublicationSmilContentProvider(
     }
 
     override fun getAllSmilHrefs(): List<String> {
-        return publication.resources
+        // Try to find SMIL files in resources
+        val fromResources = publication.resources
             .filter { link ->
                 link.mediaType?.toString()?.contains("smil") == true ||
                         link.href.toString().endsWith(".smil")
             }
             .map { it.href.toString() }
+
+        // If no SMIL files in resources, try to find them in readingOrder alternates
+        if (fromResources.isEmpty()) {
+            val fromAlternates = publication.readingOrder
+                .flatMap { it.alternates }
+                .filter { link ->
+                    link.mediaType?.toString()?.contains("smil") == true ||
+                            link.href.toString().endsWith(".smil")
+                }
+                .map { it.href.toString() }
+            if (fromAlternates.isNotEmpty()) {
+                return fromAlternates
+            }
+        }
+
+        return fromResources
     }
 
     override fun getReadingOrder(): List<String> {
@@ -58,9 +75,32 @@ class PublicationSmilContentProvider(
     }
 
     override fun resolveSmilPath(smilHref: String, relativePath: String): String {
-        val smilUrl = Url(smilHref) ?: return relativePath
-        val relativeUrl = Url(relativePath) ?: return relativePath
-        return smilUrl.resolve(relativeUrl).toString()
+        // If relative path is absolute (starts with /), return as-is without leading slash
+        if (relativePath.startsWith('/')) {
+            return relativePath.removePrefix("/")
+        }
+
+        // Get the directory of the SMIL file
+        val baseDir = smilHref.substringBeforeLast('/', "")
+
+        // Handle ../ navigation
+        var currentDir = baseDir
+        var remainingPath = relativePath
+
+        while (remainingPath.startsWith("../")) {
+            remainingPath = remainingPath.removePrefix("../")
+            currentDir = currentDir.substringBeforeLast('/', "")
+        }
+
+        // Remove leading ./ if present
+        remainingPath = remainingPath.removePrefix("./")
+
+        // Combine directory and remaining path
+        return if (currentDir.isEmpty()) {
+            remainingPath
+        } else {
+            "$currentDir/$remainingPath"
+        }
     }
 }
 

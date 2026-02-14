@@ -3,6 +3,7 @@ package com.retro99.reader.ui.playback
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PlaybackState
@@ -55,6 +56,8 @@ class PlaybackStateTracker(
     private val foregroundServiceController: ForegroundServiceController,
     private val locatorTracker: LocatorTracker,
 ) {
+    private val logger = Logger.withTag("PlaybackStateTracker")
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -124,11 +127,16 @@ class PlaybackStateTracker(
                     // 3. play() triggers focus request -> may fail or conflict
                     // ExoPlayer handles playWhenReady correctly; trust it.
                 }
+
+                Player.STATE_IDLE, Player.STATE_BUFFERING -> {
+                    // No special handling needed
+                }
             }
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            analytics.logException(error, "ExoPlayer playback error")
+            logger.e(error) { "ExoPlayer playback error: ${error.errorCodeName}" }
+            analytics.logException(error, "ExoPlayer playback error: ${error.errorCodeName}")
             // Update state to reflect the error so UI can show appropriate feedback
             _playbackState.value = PlaybackState.ERROR
             _isPlaying.value = false

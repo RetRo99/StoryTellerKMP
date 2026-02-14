@@ -268,7 +268,11 @@ class SmilLoadingManager(
     }
 
     /**
-     * Parses a single SMIL file and returns its clips.
+     * Parses a single SMIL file and returns its clips with resolved paths.
+     *
+     * The SMIL file contains relative paths (e.g., "../Audio/00001.mp4").
+     * This method resolves them to absolute paths relative to the publication root
+     * (e.g., "OPS/Audio/00001.mp4") so they can be used directly by the player.
      */
     private suspend fun parseSmilFile(smilHref: String): List<SmilClip> {
         return try {
@@ -276,13 +280,62 @@ class SmilLoadingManager(
                 contentProvider.readSmilContent(smilHref)
             } ?: return emptyList()
 
-            smilParser.parseClips(content)
+            val rawClips = smilParser.parseClips(content)
+
+            // Resolve relative paths to absolute paths using the SMIL file location
+            rawClips.map { clip ->
+                SmilClip(
+                    textSrc = contentProvider.resolveSmilPath(smilHref, clip.textSrc),
+                    audioSrc = contentProvider.resolveSmilPath(smilHref, clip.audioSrc),
+                    clipBegin = clip.clipBegin,
+                    clipEnd = clip.clipEnd,
+                )
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             analytics.logException(e, "Failed to parse SMIL file: $smilHref")
             emptyList()
         }
+    }
+
+    /**
+     * Finds the next chapter in the reading order that has audio (SMIL files).
+     *
+     * This is useful when the current chapter (e.g., cover page) doesn't have audio,
+     * so we can prepare the next chapter that does.
+     *
+     * @param currentChapterHref The current chapter href
+     * @return The next chapter href that has audio, or null if none found
+     */
+    suspend fun findNextChapterWithAudio(currentChapterHref: String): String? {
+        val normalized = quickScanner.normalizeChapterHref(currentChapterHref)
+        val readingOrder = contentProvider.getReadingOrder()
+            .map { quickScanner.normalizeChapterHref(it) }
+
+        val currentIndex = readingOrder.indexOf(normalized)
+        if (currentIndex < 0) {
+            return null
+        }
+
+        // Ensure all SMIL files are scanned so we know which chapters have audio
+        val allSmilHrefs = contentProvider.getAllSmilHrefs()
+        val unscanned = index.getUnscannedSmilFiles(allSmilHrefs)
+        if (unscanned.isNotEmpty()) {
+            for (smilHref in unscanned) {
+                scanSmilFile(smilHref)
+            }
+        }
+
+        // Find the next chapter with audio
+        for (i in (currentIndex + 1) until readingOrder.size) {
+            val chapter = readingOrder[i]
+            if (index.hasSmilForChapter(chapter)) {
+                return chapter
+            }
+        }
+
+        return null
     }
 
     /**

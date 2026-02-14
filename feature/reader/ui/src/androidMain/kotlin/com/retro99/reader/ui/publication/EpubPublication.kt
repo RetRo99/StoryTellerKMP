@@ -27,17 +27,26 @@ actual class EpubPublication(
 ) : KoinComponent {
 
     private val analytics: Analytics by inject()
+
     /**
      * Whether this publication has media overlays (audio narration).
      * Checks Readium's publication metadata for media overlay information.
+     *
+     * Note: duration must be > 0, not just non-null, because some EPUBs have
+     * duration=0.0 set even without actual audio content.
      */
     actual val hasMediaOverlays: Boolean
-        get() = publication.metadata.duration != null ||
-                publication.resources.any { it.mediaType?.isAudio == true } ||
-                publication.resources.any {
-                    it.mediaType?.toString()?.contains("smil") == true ||
-                            it.href.toString().endsWith(".smil")
-                }
+        get() {
+            val duration = publication.metadata.duration
+            val hasDuration = duration != null && duration > 0.0
+            val hasAudioResource = publication.resources.any { it.mediaType?.isAudio == true }
+            val hasSmilResource = publication.resources.any {
+                it.mediaType?.toString()?.contains("smil") == true ||
+                        it.href.toString().endsWith(".smil")
+            }
+
+            return hasDuration || hasAudioResource || hasSmilResource
+        }
 
     /**
      * The table of contents for this publication.
