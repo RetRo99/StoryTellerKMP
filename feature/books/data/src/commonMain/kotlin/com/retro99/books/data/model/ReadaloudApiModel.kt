@@ -22,7 +22,7 @@ data class ReadaloudApiModel(
     val currentStage: String? = null,
 
     @SerialName("stageProgress")
-    val stageProgress: Int? = null,
+    val stageProgress: Double? = null,
 
     @SerialName("queuePosition")
     val queuePosition: Int? = null,

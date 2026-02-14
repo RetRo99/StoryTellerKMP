@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS readalouds (
     missing INTEGER,
     status TEXT,
     current_stage TEXT,
-    stage_progress INTEGER,
+    stage_progress REAL,
     queue_position INTEGER,
     restart_pending INTEGER,
     created_at TEXT,

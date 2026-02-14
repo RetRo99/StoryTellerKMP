@@ -6,7 +6,7 @@ data class ReadaloudDomainModel(
     val missing: Int?,
     val status: String?,
     val currentStage: String?,
-    val stageProgress: Int?,
+    val stageProgress: Double?,
     val queuePosition: Int?,
     val restartPending: Boolean?,
     val createdAt: String?,

@@ -1,0 +1,24 @@
+-- Migration from version 2 to version 3
+-- Changes stage_progress column from INTEGER to REAL to support decimal values
+
+-- SQLite doesn't support ALTER COLUMN, so we need to recreate the table
+-- Drop and recreate the readalouds table with the new schema
+
+DROP TABLE IF EXISTS readalouds;
+
+CREATE TABLE IF NOT EXISTS readalouds (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    book_uuid TEXT NOT NULL UNIQUE,
+    filepath TEXT,
+    missing INTEGER,
+    status TEXT,
+    current_stage TEXT,
+    stage_progress REAL,
+    queue_position INTEGER,
+    restart_pending INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_readalouds_book ON readalouds(book_uuid);
+
