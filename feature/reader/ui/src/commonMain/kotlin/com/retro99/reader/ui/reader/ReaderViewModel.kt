@@ -167,7 +167,12 @@ class ReaderViewModel(
             ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
             is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.color)
             ReaderIntent.Retry -> retry()
+            ReaderIntent.DismissNoAudioMessage -> dismissNoAudioMessage()
         }
+    }
+
+    private fun dismissNoAudioMessage() {
+        updateState { it.copy(showNoAudioMessage = false) }
     }
 
     private fun retry() {
@@ -310,10 +315,11 @@ class ReaderViewModel(
             if (publication.hasMediaOverlays) {
                 initAudio()
             } else if (bookType == BookType.READALOUD) {
-                // Track when a ReadAloud book is missing media overlays
+                // Track when a ReadAloud book is missing media overlays and show snackbar
                 analytics.logEvent(
                     ReaderAnalyticsEvent.ReadAloudMissingMediaOverlays(bookUuid = data.bookUuid)
                 )
+                updateState { it.copy(showNoAudioMessage = true) }
             }
         }.onFailure { error ->
             analytics.logEvent(

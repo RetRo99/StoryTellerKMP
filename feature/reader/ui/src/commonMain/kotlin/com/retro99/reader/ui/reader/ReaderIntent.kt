@@ -115,5 +115,10 @@ sealed interface ReaderIntent : BaseIntent {
      * @param color The highlight color to use
      */
     data class SetHighlightColor(val color: ReadAloudHighlightColor) : ReaderIntent
+
+    /**
+     * Dismiss the "no audio available" snackbar message.
+     */
+    data object DismissNoAudioMessage : ReaderIntent
 }
 

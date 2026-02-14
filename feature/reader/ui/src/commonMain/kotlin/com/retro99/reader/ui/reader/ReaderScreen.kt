@@ -68,6 +68,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import resources.translations.general_close
+import resources.translations.reader_readaloud_no_audio
 import resources.translations.reader_toc_jumped_to_chapter
 import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
@@ -165,7 +166,38 @@ private fun ReaderScreenContent(
                 onUseRemote = { intentDispatcher(ReaderIntent.UseRemotePosition) },
             )
         }
+
+        NoAudioSnackbar(
+            showMessage = viewState.showNoAudioMessage,
+            onDismiss = { intentDispatcher(ReaderIntent.DismissNoAudioMessage) },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
+}
+
+@Composable
+private fun NoAudioSnackbar(
+    showMessage: Boolean,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val noAudioMessage = stringResource(StringRes.reader_readaloud_no_audio)
+
+    LaunchedEffect(showMessage) {
+        if (showMessage) {
+            snackbarHostState.showSnackbar(
+                message = noAudioMessage,
+                duration = SnackbarDuration.Short,
+            )
+            onDismiss()
+        }
+    }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

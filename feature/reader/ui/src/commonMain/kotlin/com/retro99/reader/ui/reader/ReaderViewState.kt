@@ -37,6 +37,8 @@ data class ReaderViewState(
     val previousTocPosition: PositionUiModel? = null,
     // Current page within the chapter based on actual viewport display
     val chapterPageInfo: ChapterPageInfo? = null,
+    // Flag to show snackbar when ReadAloud book has no media overlays
+    val showNoAudioMessage: Boolean = false,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.
