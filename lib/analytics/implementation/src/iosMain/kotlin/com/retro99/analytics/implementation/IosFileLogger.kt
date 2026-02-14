@@ -1,11 +1,13 @@
 package com.retro99.analytics.implementation
 
 import com.retro99.analytics.api.FileLogger
+import com.retro99.analytics.api.FileLogger.Companion.BACKUP_LOG_FILE_NAME
+import com.retro99.analytics.api.FileLogger.Companion.LOG_FILE_NAME
+import com.retro99.analytics.api.FileLogger.Companion.MAX_LOG_SIZE_BYTES
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
 import platform.Foundation.NSData
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -17,9 +19,7 @@ import platform.Foundation.create
 import platform.Foundation.dataWithContentsOfFile
 import platform.Foundation.stringByAppendingPathComponent
 import platform.Foundation.writeToFile
-
-private const val LOG_FILE_NAME = "app_logs.txt"
-private const val MAX_LOG_SIZE_BYTES = 5 * 1024 * 1024L // 5MB max log file size
+import kotlin.time.Clock
 
 /**
  * iOS implementation of FileLogger.
@@ -132,7 +132,7 @@ class IosFileLogger : FileLogger {
             )
             val documentsDir = paths.firstOrNull()?.toString() ?: ""
             val backupPath = NSString.create(string = documentsDir)
-                .stringByAppendingPathComponent("app_logs_old.txt")
+                .stringByAppendingPathComponent(BACKUP_LOG_FILE_NAME)
 
             if (fileManager.fileExistsAtPath(backupPath)) {
                 fileManager.removeItemAtPath(backupPath, null)

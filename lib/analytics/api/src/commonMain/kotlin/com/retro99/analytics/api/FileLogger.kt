@@ -6,6 +6,12 @@ package com.retro99.analytics.api
  */
 interface FileLogger {
 
+    companion object {
+        const val LOG_FILE_NAME = "parrot_logs.txt"
+        const val BACKUP_LOG_FILE_NAME = "parrot_logs_old.txt"
+        const val MAX_LOG_SIZE_BYTES = 9.9 * 1024 * 1024L // 9.9MB max log file size
+    }
+
     /**
      * Logs an exception with an optional context message to the log file.
      *

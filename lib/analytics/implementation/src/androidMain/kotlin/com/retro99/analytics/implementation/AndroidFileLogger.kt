@@ -2,13 +2,13 @@ package com.retro99.analytics.implementation
 
 import android.content.Context
 import com.retro99.analytics.api.FileLogger
+import com.retro99.analytics.api.FileLogger.Companion.BACKUP_LOG_FILE_NAME
+import com.retro99.analytics.api.FileLogger.Companion.LOG_FILE_NAME
+import com.retro99.analytics.api.FileLogger.Companion.MAX_LOG_SIZE_BYTES
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import java.io.File
 import kotlin.time.Clock
-
-private const val LOG_FILE_NAME = "app_logs.txt"
-private const val MAX_LOG_SIZE_BYTES = 5 * 1024 * 1024L // 5MB max log file size
 
 /**
  * Android implementation of FileLogger.
@@ -80,7 +80,7 @@ class AndroidFileLogger(
 
     private fun rotateLogFile() {
         try {
-            val backupFile = File(context.filesDir, "app_logs_old.txt")
+            val backupFile = File(context.filesDir, BACKUP_LOG_FILE_NAME)
             if (backupFile.exists()) {
                 backupFile.delete()
             }
