@@ -45,6 +45,7 @@ import resources.translations.app_settings_enable_logging_description
 import resources.translations.app_settings_logout
 import resources.translations.app_settings_logout_description
 import resources.translations.app_settings_logs_cleared
+import resources.translations.app_settings_no_logs
 import resources.translations.app_settings_section_account
 import resources.translations.app_settings_section_support
 import resources.translations.app_settings_share_logs
@@ -80,11 +81,19 @@ private fun AppSettingsScreenContent(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val logsClearedMessage = stringResource(StringRes.app_settings_logs_cleared)
+    val noLogsMessage = stringResource(StringRes.app_settings_no_logs)
 
     LaunchedEffect(viewState.showLogsClearedMessage) {
         if (viewState.showLogsClearedMessage) {
             snackbarHostState.showSnackbar(logsClearedMessage)
             intentDispatcher(AppSettingsIntent.OnLogsClearedMessageShown)
+        }
+    }
+
+    LaunchedEffect(viewState.showNoLogsMessage) {
+        if (viewState.showNoLogsMessage) {
+            snackbarHostState.showSnackbar(noLogsMessage)
+            intentDispatcher(AppSettingsIntent.OnNoLogsMessageShown)
         }
     }
 

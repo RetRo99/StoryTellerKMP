@@ -7,5 +7,6 @@ sealed interface AppSettingsIntent : BaseIntent {
     data object OnShareLogsClicked : AppSettingsIntent
     data object OnClearLogsClicked : AppSettingsIntent
     data object OnLogsClearedMessageShown : AppSettingsIntent
+    data object OnNoLogsMessageShown : AppSettingsIntent
 }
 
