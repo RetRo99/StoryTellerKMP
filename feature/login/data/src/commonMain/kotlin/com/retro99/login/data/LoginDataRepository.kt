@@ -38,9 +38,10 @@ internal class LoginDataRepository(
 
         return remoteSource.login(request)
             .onFailure { error ->
+                // Never log serverUrl for privacy - only log error type
                 analytics.logException(
                     error.toThrowable(),
-                    "LoginRepository: Login failed for server=$serverUrl"
+                    "LoginRepository: Login failed | errorType=${error::class.simpleName}"
                 )
                 preferences.remove(PreferencesKey.ServerUrl)
             }

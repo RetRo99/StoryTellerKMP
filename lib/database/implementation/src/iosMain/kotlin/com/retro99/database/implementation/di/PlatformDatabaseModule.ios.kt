@@ -60,7 +60,8 @@ actual class PlatformDatabaseModule {
         if (fileManager.fileExistsAtPath(dbPath)) {
             runCatching { fileManager.removeItemAtPath(dbPath, null) }
                 .onFailure { e ->
-                    analytics.logException(e, "Failed to delete database file at: $dbPath")
+                    // Don't log full path for privacy - only log database name
+                    analytics.logException(e, "Failed to delete database file: $DATABASE_NAME")
                 }
         }
     }

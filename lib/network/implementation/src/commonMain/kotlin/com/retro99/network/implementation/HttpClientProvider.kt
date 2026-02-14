@@ -53,13 +53,20 @@ class HttpClientProvider(
             }
             HttpResponseValidator {
                 handleResponseExceptionWithRequest { cause, request ->
+                    // Only log endpoint path, never full URLs for privacy
+                    val endpoint = request.url.encodedPath
                     val contextMessage = buildString {
                         append("Ktor HTTP exception")
-                        append(" | url=${request.url}")
+                        append(" | endpoint=$endpoint")
                         append(" | method=${request.method.value}")
-                        cause.message?.let { append(" | message=$it") }
+                        append(" | exceptionClass=${cause::class.simpleName}")
                     }
-                    analytics.logException(cause, contextMessage)
+                    // Create sanitized exception to avoid exposing URLs from original message
+                    val sanitizedException = Exception(
+                        "HTTP exception: ${cause::class.simpleName}",
+                        cause.cause,
+                    )
+                    analytics.logException(sanitizedException, contextMessage)
                 }
             }
         }
