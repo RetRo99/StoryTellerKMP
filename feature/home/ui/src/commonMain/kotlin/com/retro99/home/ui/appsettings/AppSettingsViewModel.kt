@@ -28,6 +28,7 @@ class AppSettingsViewModel(
             AppSettingsIntent.OnShareLogsClicked -> shareLogs()
             AppSettingsIntent.OnClearLogsClicked -> clearLogs()
             AppSettingsIntent.OnLogsClearedMessageShown -> onLogsClearedMessageShown()
+            AppSettingsIntent.OnNoLogsMessageShown -> onNoLogsMessageShown()
         }
     }
 
@@ -37,6 +38,11 @@ class AppSettingsViewModel(
     }
 
     private fun shareLogs() {
+        val logContents = fileLogger.getLogContents()
+        if (logContents.isEmpty()) {
+            updateState { it.copy(showNoLogsMessage = true) }
+            return
+        }
         val logFilePath = fileLogger.getLogFilePath()
         fileSharer.shareFile(
             filePath = logFilePath,
@@ -52,6 +58,10 @@ class AppSettingsViewModel(
 
     private fun onLogsClearedMessageShown() {
         updateState { it.copy(showLogsClearedMessage = false) }
+    }
+
+    private fun onNoLogsMessageShown() {
+        updateState { it.copy(showNoLogsMessage = false) }
     }
 }
 
