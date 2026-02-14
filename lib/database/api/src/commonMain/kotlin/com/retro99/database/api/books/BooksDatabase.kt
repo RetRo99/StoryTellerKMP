@@ -1,10 +1,12 @@
 package com.retro99.database.api.books
 
+import com.retro99.database.api.DataClearable
+
 /**
  * Database interface for book-related operations.
  * Supports normalized schema with related entities.
  */
-interface BooksDatabase : PositionDatabase {
+interface BooksDatabase : PositionDatabase, DataClearable {
 
     // ==================== BOOK OPERATIONS ====================
 
@@ -102,5 +104,5 @@ interface BooksDatabase : PositionDatabase {
 
     // ==================== TRANSACTION SUPPORT ====================
 
-    suspend fun deleteAllRelatedData()
+    override suspend fun clearAllData()
 }

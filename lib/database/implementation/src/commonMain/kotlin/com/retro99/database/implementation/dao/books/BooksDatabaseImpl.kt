@@ -208,7 +208,7 @@ internal class BooksDatabaseImpl(
 
     // ==================== TRANSACTION SUPPORT ====================
 
-    override suspend fun deleteAllRelatedData() {
+    override suspend fun clearAllData() {
         sqlDelightDao.deleteAllRelatedData()
     }
 

@@ -25,6 +25,7 @@ kotlin {
             implementation(libs.coroutines)
             implementation(projects.base)
             implementation(projects.lib.network.api)
+            implementation(projects.lib.database.api)
         }
     }
 }

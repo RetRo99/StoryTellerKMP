@@ -34,6 +34,10 @@ internal class AuthorsDatabaseImpl(
         return dao.getAuthorsCount().toInt()
     }
 
+    override suspend fun clearAllData() {
+        dao.deleteAllAuthors()
+    }
+
     private fun PersonEntity.toSqlDelightEntity(): PersonSqlDelightEntity {
         return PersonSqlDelightEntity(
             uuid = uuid,

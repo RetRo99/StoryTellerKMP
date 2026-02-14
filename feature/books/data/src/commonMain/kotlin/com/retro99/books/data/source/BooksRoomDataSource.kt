@@ -55,7 +55,7 @@ internal class BooksRoomDataSource(
 
     override suspend fun clearCache(): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
-            booksDatabase.deleteAllRelatedData()
+            booksDatabase.clearAllData()
         }
     }
 

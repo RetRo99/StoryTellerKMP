@@ -31,7 +31,7 @@ internal class FavoritesDatabaseImpl(
         return sqlDelightDao.observeAllFavorites()
     }
 
-    override suspend fun deleteAllFavorites() {
+    override suspend fun clearAllData() {
         sqlDelightDao.deleteAllFavorites()
     }
 }

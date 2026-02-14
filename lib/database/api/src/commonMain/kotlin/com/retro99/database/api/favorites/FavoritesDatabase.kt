@@ -1,11 +1,12 @@
 package com.retro99.database.api.favorites
 
+import com.retro99.database.api.DataClearable
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Database interface for favorites-related operations.
  */
-interface FavoritesDatabase {
+interface FavoritesDatabase : DataClearable {
 
     suspend fun addFavorite(bookUuid: String)
 
@@ -19,6 +20,6 @@ interface FavoritesDatabase {
 
     fun observeAllFavorites(): Flow<List<String>>
 
-    suspend fun deleteAllFavorites()
+    override suspend fun clearAllData()
 }
 
