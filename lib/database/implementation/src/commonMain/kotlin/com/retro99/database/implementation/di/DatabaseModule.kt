@@ -1,6 +1,7 @@
 package com.retro99.database.implementation.di
 
 import app.cash.sqldelight.db.SqlDriver
+import com.retro99.database.api.DataClearable
 import com.retro99.database.api.books.AuthorsDatabase
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.PositionDatabase
@@ -64,5 +65,14 @@ class DatabaseModule {
     @Single
     internal fun provideFavoritesDatabase(dao: FavoritesSqlDelightDao): FavoritesDatabase {
         return FavoritesDatabaseImpl(dao)
+    }
+
+    @Single
+    internal fun provideDataClearables(
+        booksDatabase: BooksDatabase,
+        favoritesDatabase: FavoritesDatabase,
+        authorsDatabase: AuthorsDatabase,
+    ): List<DataClearable> {
+        return listOf(booksDatabase, favoritesDatabase, authorsDatabase)
     }
 }

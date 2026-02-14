@@ -1,9 +1,11 @@
 package com.retro99.database.api.books
 
+import com.retro99.database.api.DataClearable
+
 /**
  * Database interface for reading position operations.
  */
-interface PositionDatabase {
+interface PositionDatabase : DataClearable {
 
     suspend fun upsertPosition(position: PositionEntity)
 
