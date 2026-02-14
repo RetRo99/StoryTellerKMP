@@ -166,7 +166,13 @@ class ReaderViewModel(
             is ReaderIntent.UndoChapterNavigation -> undoChapterNavigation(intent.position)
             ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
             is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.color)
+            ReaderIntent.Retry -> retry()
         }
+    }
+
+    private fun retry() {
+        updateState { it.copy(error = null) }
+        initializeReader()
     }
 
     private fun goToNextPage() {
@@ -263,15 +269,13 @@ class ReaderViewModel(
         val bookType = data.bookType
         val (position, conflict) = data.progressResult.toUiData()
 
-        val publication = publicationService.openPublication(
+        publicationService.openPublication(
             filePath = data.localEbookPath,
             bookUuid = data.bookUuid,
             initialSettings = settings,
             bookType = bookType,
             initialPosition = position,
-        )
-
-        if (publication != null) {
+        ).onSuccess { publication ->
             // Track book opened event
             bookOpenedTimestamp = nowMillis()
             analytics.logEvent(
@@ -306,16 +310,15 @@ class ReaderViewModel(
             if (publication.hasMediaOverlays) {
                 initAudio()
             }
-        } else {
-            val errorMessage = publicationService.error.value ?: "Unknown publication error"
+        }.onFailure { error ->
             analytics.logEvent(
                 ReaderAnalyticsEvent.BookOpenFailed(
                     bookUuid = data.bookUuid,
                     bookType = bookType.name,
-                    errorMessage = errorMessage,
+                    errorMessage = error.message ?: "Unknown publication error",
                 )
             )
-            updateState { it.copy(error = AppError.UnknownError(Throwable(errorMessage))) }
+            updateState { it.copy(error = error) }
         }
     }
 

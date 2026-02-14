@@ -125,28 +125,37 @@ private fun ReaderScreenContent(
         val movableLoader = movableContentOf {
             LoadingScreen()
         }
-        if (viewState.publication != null) {
-            ReaderContent(
-                bookUuid = bookUuid,
-                publication = viewState.publication,
-                currentSettings = viewState.currentSettings,
-                isReadAloud = viewState.isReadAloud,
-                isPlaying = viewState.isPlaying,
-                currentAudioPositionMs = viewState.currentAudioPositionMs,
-                totalDurationMs = viewState.totalDurationMs,
-                playbackSpeed = viewState.playbackSpeed,
-                isAudioPlayerReady = viewState.isAudioPlayerReady,
-                tableOfContents = viewState.tableOfContents,
-                isTocVisible = viewState.isTocVisible,
-                previousTocPosition = viewState.previousTocPosition,
-                lastKnownPosition = viewState.lastKnownPosition,
-                chapterPageInfo = viewState.chapterPageInfo,
-                currentTime = viewState.currentTime,
-                intentDispatcher = intentDispatcher,
-                loader = movableLoader,
-            )
-        } else {
-            movableLoader()
+        when {
+            viewState.publication != null -> {
+                ReaderContent(
+                    bookUuid = bookUuid,
+                    publication = viewState.publication,
+                    currentSettings = viewState.currentSettings,
+                    isReadAloud = viewState.isReadAloud,
+                    isPlaying = viewState.isPlaying,
+                    currentAudioPositionMs = viewState.currentAudioPositionMs,
+                    totalDurationMs = viewState.totalDurationMs,
+                    playbackSpeed = viewState.playbackSpeed,
+                    isAudioPlayerReady = viewState.isAudioPlayerReady,
+                    tableOfContents = viewState.tableOfContents,
+                    isTocVisible = viewState.isTocVisible,
+                    previousTocPosition = viewState.previousTocPosition,
+                    lastKnownPosition = viewState.lastKnownPosition,
+                    chapterPageInfo = viewState.chapterPageInfo,
+                    currentTime = viewState.currentTime,
+                    intentDispatcher = intentDispatcher,
+                    loader = movableLoader,
+                )
+            }
+            viewState.error != null -> {
+                ReaderErrorView(
+                    message = viewState.error.message ?: "An error occurred",
+                    onRetry = { intentDispatcher(ReaderIntent.Retry) },
+                )
+            }
+            else -> {
+                movableLoader()
+            }
         }
 
         viewState.positionConflict?.let { conflict ->

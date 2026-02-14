@@ -1,60 +1,35 @@
 package com.retro99.reader.ui.service
 
+import com.github.michaelbull.result.Err
 import com.retro99.analytics.api.Analytics
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.retro99.base.result.AppError
+import com.retro99.base.result.AppResult
 
 /**
- * Base implementation of [EpubPublicationService] that provides shared state management.
+ * Base implementation of [EpubPublicationService] that provides shared utilities.
  *
- * This abstract class handles the common state management logic for both Android and iOS
- * implementations, including:
- * - Ready state tracking
- * - Error state tracking
- * - Helper methods for state mutations
+ * This abstract class handles common logic for both Android and iOS implementations,
+ * including error logging and result creation.
  *
  * Platform-specific implementations should extend this class and implement the
  * publication lifecycle methods.
  */
 abstract class BaseEpubPublicationService(
-    private val analytics: Analytics,
+    protected val analytics: Analytics,
 ) : EpubPublicationService {
 
-    protected val _isReady = MutableStateFlow(false)
-    override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
-
-    protected val _error = MutableStateFlow<String?>(null)
-    override val error: StateFlow<String?> = _error.asStateFlow()
-
     /**
-     * Resets all state to initial values.
-     * Should be called when closing a publication.
+     * Creates an error result with the given message and logs it to analytics.
+     *
+     * @param message The error message
+     * @return An [AppResult] containing the error
      */
-    protected fun resetState() {
-        _isReady.value = false
-        _error.value = null
-    }
-
-    /**
-     * Sets an error state with the given message.
-     * Automatically sets isReady to false and logs the error to analytics.
-     */
-    protected fun setError(message: String) {
-        _error.value = message
-        _isReady.value = false
+    protected fun <T> createError(message: String): AppResult<T> {
         analytics.logException(
             throwable = Throwable(message),
             message = "EpubPublicationService: Failed to open publication",
         )
-    }
-
-    /**
-     * Sets the ready state to true and clears any error.
-     */
-    protected fun setReady() {
-        _isReady.value = true
-        _error.value = null
+        return Err(AppError.UnknownError(Throwable(message)))
     }
 }
 

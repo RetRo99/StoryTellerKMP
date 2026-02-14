@@ -1,6 +1,8 @@
 package com.retro99.reader.ui.service
 
+import com.github.michaelbull.result.Ok
 import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.AppResult
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.bridge.EpubReaderBridgeRegistry
 import com.retro99.reader.ui.model.PositionUiModel
@@ -25,33 +27,26 @@ class IosEpubPublicationService(
      */
     val bridge get() = EpubReaderBridgeRegistry.getBridge()
 
-    private var initialSettings: ReaderSettingsUiModel? = null
-
     override suspend fun openPublication(
         filePath: String,
         bookUuid: String,
         initialSettings: ReaderSettingsUiModel,
         bookType: BookType,
         initialPosition: PositionUiModel?,
-    ): EpubPublication? {
+    ): AppResult<EpubPublication> {
         val currentBridge = bridge
         if (currentBridge == null) {
-            setError("EPUB reader bridge not registered")
-            return null
+            return createError("EPUB reader bridge not registered")
         }
 
         // Close any existing publication before opening a new one
         // This ensures proper cleanup of the previous view controller
         currentBridge.closePublication()
 
-        resetState()
-        this.initialSettings = initialSettings
-
         return suspendCoroutine { continuation ->
             currentBridge.openPublication(
                 filePath = filePath,
                 onSuccess = {
-                    setReady()
                     val publication = EpubPublication(
                         currentBridge,
                         bookUuid,
@@ -59,28 +54,13 @@ class IosEpubPublicationService(
                         bookType,
                         initialPosition,
                     )
-                    continuation.resume(publication)
+                    continuation.resume(Ok(publication))
                 },
                 onError = { errorMessage ->
-                    setError(errorMessage)
-                    continuation.resume(null)
+                    continuation.resume(createError(errorMessage))
                 },
             )
         }
     }
-
-    override fun closePublication() {
-        bridge?.closePublication()
-        initialSettings = null
-        resetState()
-    }
-
-    /**
-     * Gets the initial settings that were used to open the publication.
-     * This is iOS-specific and used by the View to create the reader with initial preferences.
-     *
-     * @return The initial settings, or null if no publication is open
-     */
-    fun getInitialSettings(): ReaderSettingsUiModel? = initialSettings
 }
 
