@@ -15,6 +15,11 @@ sealed interface ReaderIntent : BaseIntent {
     data object Close : ReaderIntent
 
     /**
+     * Retry loading the publication after an error.
+     */
+    data object Retry : ReaderIntent
+
+    /**
      * Navigate to app settings screen.
      */
     data object OnSettingsClicked : ReaderIntent

@@ -1,7 +1,9 @@
 package com.retro99.reader.ui.service
 
 import android.content.Context
+import com.github.michaelbull.result.Ok
 import com.retro99.analytics.api.Analytics
+import com.retro99.base.result.AppResult
 import com.retro99.reader.domain.model.BookType
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -10,7 +12,6 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
-import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.asset.AssetRetriever
 import org.readium.r2.shared.util.getOrElse
 import org.readium.r2.shared.util.http.DefaultHttpClient
@@ -32,7 +33,7 @@ import java.io.File
 @Single(binds = [EpubPublicationService::class])
 class AndroidEpubPublicationService(
     private val context: Context,
-    private val analytics: Analytics,
+    analytics: Analytics,
 ) : BaseEpubPublicationService(analytics) {
 
     private val httpClient by lazy { DefaultHttpClient() }
@@ -42,27 +43,18 @@ class AndroidEpubPublicationService(
     }
     private val publicationOpener by lazy { PublicationOpener(publicationParser) }
 
-    private var publication: Publication? = null
-    private var initialSettings: ReaderSettingsUiModel? = null
-    private var initialPosition: PositionUiModel? = null
-
     override suspend fun openPublication(
         filePath: String,
         bookUuid: String,
         initialSettings: ReaderSettingsUiModel,
         bookType: BookType,
         initialPosition: PositionUiModel?,
-    ): EpubPublication? =
+    ): AppResult<EpubPublication> =
         withContext(Dispatchers.IO) {
             try {
-                resetState()
-                this@AndroidEpubPublicationService.initialSettings = initialSettings
-                this@AndroidEpubPublicationService.initialPosition = initialPosition
-
                 val file = File(filePath)
                 if (!file.exists()) {
-                    setError("Ebook file not found: $filePath")
-                    return@withContext null
+                    return@withContext createError("Ebook file not found: $filePath")
                 }
 
                 val url = file.toUrl()
@@ -72,8 +64,7 @@ class AndroidEpubPublicationService(
                         Exception("Asset retrieval failed: ${error.message}"),
                         "AndroidEpubPublicationService: Failed to retrieve asset for book=$bookUuid",
                     )
-                    setError("Failed to retrieve ebook asset: ${error.message}")
-                    return@withContext null
+                    return@withContext createError("Failed to retrieve ebook asset: ${error.message}")
                 }
 
                 val openedPublication = publicationOpener.open(asset, allowUserInteraction = false)
@@ -83,47 +74,23 @@ class AndroidEpubPublicationService(
                             Exception("Publication open failed: ${error.message}"),
                             "AndroidEpubPublicationService: Failed to open publication for book=$bookUuid",
                         )
-                        setError("Failed to open ebook: ${error.message}")
-                        return@withContext null
+                        return@withContext createError("Failed to open ebook: ${error.message}")
                     }
 
-                publication = openedPublication
-                setReady()
-                EpubPublication(
-                    openedPublication,
-                    bookUuid,
-                    initialSettings,
-                    bookType,
-                    initialPosition
+                Ok(
+                    EpubPublication(
+                        openedPublication,
+                        bookUuid,
+                        initialSettings,
+                        bookType,
+                        initialPosition,
+                    )
                 )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                setError("Error opening ebook: ${e.message}")
-                null
+                createError("Error opening ebook: ${e.message}")
             }
         }
-
-    override fun closePublication() {
-        publication = null
-        initialSettings = null
-        resetState()
-    }
-
-    /**
-     * Gets the currently open Readium Publication.
-     * This is Android-specific and used by the View to create the navigator.
-     *
-     * @return The open Publication, or null if no publication is open
-     */
-    fun getPublication(): Publication? = publication
-
-    /**
-     * Gets the initial settings that were used to open the publication.
-     * This is Android-specific and used by the View to create the navigator with initial preferences.
-     *
-     * @return The initial settings, or null if no publication is open
-     */
-    fun getInitialSettings(): ReaderSettingsUiModel? = initialSettings
 }
 
