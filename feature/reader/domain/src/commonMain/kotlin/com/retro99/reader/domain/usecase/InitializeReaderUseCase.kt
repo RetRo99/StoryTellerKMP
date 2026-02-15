@@ -7,7 +7,7 @@ import com.github.michaelbull.result.getOrElse
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ReaderInitializationData
 import com.retro99.reader.domain.model.ReadingProgressResult
 import kotlinx.coroutines.async

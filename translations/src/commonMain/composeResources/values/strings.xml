@@ -60,6 +60,7 @@
     <string name="app_settings_no_logs">No logs to share</string>
     <string name="app_settings_enable_logging">Enable File Logging</string>
     <string name="app_settings_enable_logging_description">Write logs to file for debugging</string>
+    <string name="app_settings_section_reading">Reading</string>
 
     <!-- Series List Screen -->
     <string name="series_featured">Featured</string>
@@ -214,4 +215,12 @@
     <string name="statistics_hours_minutes">%1$dh %2$dm</string>
     <string name="statistics_minutes">%1$dm</string>
     <string name="statistics_day_number">Day %1$d</string>
+    <string name="statistics_detail_today_title">Today\'s Reading</string>
+    <string name="statistics_detail_week_title">This Week\'s Reading</string>
+    <string name="statistics_detail_month_title">This Month\'s Reading</string>
+    <string name="statistics_detail_total_title">All Time Reading</string>
+    <string name="statistics_detail_no_books">No books read in this period</string>
+    <string name="statistics_detail_sessions">%1$d sessions</string>
+    <string name="statistics_detail_session">1 session</string>
+    <string name="statistics_description">View your reading statistics and progress</string>
 </resources>

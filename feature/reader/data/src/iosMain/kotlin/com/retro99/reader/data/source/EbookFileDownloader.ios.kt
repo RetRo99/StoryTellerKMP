@@ -1,7 +1,7 @@
 package com.retro99.reader.data.source
 
 import com.retro99.base.result.AppResult
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

@@ -1,6 +1,6 @@
 package com.retro99.home.ui.navigation
 
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 

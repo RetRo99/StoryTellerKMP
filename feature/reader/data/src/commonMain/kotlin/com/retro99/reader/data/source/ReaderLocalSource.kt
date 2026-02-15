@@ -4,7 +4,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import kotlinx.coroutines.flow.Flow
 
 /**

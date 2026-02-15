@@ -11,7 +11,7 @@ import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.domain.usecase.ObserveFavoriteUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.toUiModel
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadState
 import com.retro99.reader.domain.usecase.CancelDownloadUseCase
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase

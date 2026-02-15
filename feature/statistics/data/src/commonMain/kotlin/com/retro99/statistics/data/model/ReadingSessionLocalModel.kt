@@ -1,7 +1,7 @@
 package com.retro99.statistics.data.model
 
 import com.retro99.database.api.statistics.ReadingSessionEntity
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.statistics.domain.model.ReadingSessionDomainModel
 
 /**

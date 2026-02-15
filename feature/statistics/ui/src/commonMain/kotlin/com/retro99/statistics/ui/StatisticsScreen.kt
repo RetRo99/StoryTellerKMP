@@ -1,5 +1,6 @@
 package com.retro99.statistics.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,6 +32,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.BaseScreen
@@ -38,6 +40,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.base.ui.compose.TextWrapper
 import com.retro99.base.ui.compose.stringTextWrapper
+import com.retro99.statistics.domain.model.StatisticsPeriod
 import com.retro99.statistics.ui.model.ReadingStatisticsUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
@@ -46,6 +49,7 @@ import org.koin.core.parameter.parametersOf
 import resources.translations.general_back
 import resources.translations.statistics_books_read
 import resources.translations.statistics_current_streak
+import resources.translations.statistics_days
 import resources.translations.statistics_longest_streak
 import resources.translations.statistics_month
 import resources.translations.statistics_title
@@ -105,8 +109,21 @@ private fun StatisticsScreenContent(
                 .padding(paddingValues),
         ) {
             viewState.statistics?.let { stats ->
-                StatisticsContent(stats = stats)
+                StatisticsContent(
+                    stats = stats,
+                    onPeriodClick = { period ->
+                        intentDispatcher(StatisticsIntent.OnPeriodClicked(period))
+                    },
+                )
             }
+        }
+
+        // Show detail bottom sheet when detailState is not null
+        viewState.detailState?.let { detailState ->
+            StatisticsDetailBottomSheet(
+                detailState = detailState,
+                onDismiss = { intentDispatcher(StatisticsIntent.OnDismissDetail) },
+            )
         }
     }
 }
@@ -114,6 +131,7 @@ private fun StatisticsScreenContent(
 @Composable
 private fun StatisticsContent(
     stats: ReadingStatisticsUiModel,
+    onPeriodClick: (StatisticsPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -139,12 +157,14 @@ private fun StatisticsContent(
                     title = stringResource(StringRes.statistics_today),
                     value = stats.todayReadingTimeFormatted,
                     icon = Icons.Default.Schedule,
+                    onClick = { onPeriodClick(StatisticsPeriod.TODAY) },
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
                     title = stringResource(StringRes.statistics_week),
                     value = stats.weekReadingTimeFormatted,
                     icon = Icons.Default.Schedule,
+                    onClick = { onPeriodClick(StatisticsPeriod.WEEK) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -159,12 +179,14 @@ private fun StatisticsContent(
                     title = stringResource(StringRes.statistics_month),
                     value = stats.monthReadingTimeFormatted,
                     icon = Icons.Default.Schedule,
+                    onClick = { onPeriodClick(StatisticsPeriod.MONTH) },
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
                     title = stringResource(StringRes.statistics_total_time),
                     value = stats.totalReadingTimeFormatted,
                     icon = Icons.Default.AutoStories,
+                    onClick = { onPeriodClick(StatisticsPeriod.TOTAL) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -224,10 +246,20 @@ private fun StatCard(
     value: TextWrapper,
     icon: ImageVector,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
+    val cardShape = RoundedCornerShape(16.dp)
+    val cardModifier = if (onClick != null) {
+        modifier
+            .clip(cardShape)
+            .clickable(onClick = onClick)
+    } else {
+        modifier
+    }
+
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = cardModifier,
+        shape = cardShape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),

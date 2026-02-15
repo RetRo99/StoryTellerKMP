@@ -2,7 +2,7 @@ package com.retro99.reader.ui.publication
 
 import android.graphics.Bitmap
 import com.retro99.analytics.api.Analytics
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel

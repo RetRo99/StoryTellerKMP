@@ -15,7 +15,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.retro99.base.deeplink.DeepLinkUriBuilder
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.di.ReaderScope
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped

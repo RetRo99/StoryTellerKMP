@@ -1,5 +1,7 @@
 package com.retro99.reader.domain.model
 
+import com.retro99.books.domain.model.BookType
+
 /**
  * Contains all data needed to initialize the reader.
  *

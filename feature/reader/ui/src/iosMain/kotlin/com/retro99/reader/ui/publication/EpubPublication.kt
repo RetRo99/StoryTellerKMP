@@ -1,6 +1,6 @@
 package com.retro99.reader.ui.publication
 
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel

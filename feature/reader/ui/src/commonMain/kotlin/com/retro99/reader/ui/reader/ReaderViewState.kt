@@ -1,7 +1,7 @@
 package com.retro99.reader.ui.reader
 
 import com.retro99.base.result.AppError
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel

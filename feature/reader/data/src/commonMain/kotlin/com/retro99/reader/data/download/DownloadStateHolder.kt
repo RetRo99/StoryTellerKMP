@@ -1,7 +1,7 @@
 package com.retro99.reader.data.download
 
 import com.retro99.base.result.AppError
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
 import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow

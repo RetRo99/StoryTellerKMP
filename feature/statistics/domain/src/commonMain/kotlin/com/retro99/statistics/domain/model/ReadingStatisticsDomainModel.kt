@@ -1,6 +1,6 @@
 package com.retro99.statistics.domain.model
 
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 
 /**
  * Aggregated reading statistics for display in the dashboard.
