@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Share
@@ -50,12 +51,16 @@ import resources.translations.app_settings_section_account
 import resources.translations.app_settings_section_support
 import resources.translations.app_settings_share_logs
 import resources.translations.app_settings_share_logs_description
+import resources.translations.app_settings_section_reading
 import resources.translations.app_settings_title
 import resources.translations.app_settings_version
+import resources.translations.statistics_description
+import resources.translations.statistics_title
 
 @Composable
 fun AppSettingsScreen(
     onLogout: () -> Unit,
+    onNavigateToStatistics: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AppSettingsViewModel = koinViewModel(),
 ) {
@@ -66,6 +71,7 @@ fun AppSettingsScreen(
         AppSettingsScreenContent(
             viewState = viewState,
             onLogout = onLogout,
+            onNavigateToStatistics = onNavigateToStatistics,
             intentDispatcher = intentDispatcher,
         )
     }
@@ -75,6 +81,7 @@ fun AppSettingsScreen(
 private fun AppSettingsScreenContent(
     viewState: AppSettingsViewState,
     onLogout: () -> Unit,
+    onNavigateToStatistics: () -> Unit,
     intentDispatcher: IntentDispatcher<AppSettingsIntent>,
     modifier: Modifier = Modifier,
     buildConfig: BuildConfig = koinInject(),
@@ -140,6 +147,22 @@ private fun AppSettingsScreenContent(
                 title = stringResource(StringRes.app_settings_clear_logs),
                 description = stringResource(StringRes.app_settings_clear_logs_description),
                 onClick = { intentDispatcher(AppSettingsIntent.OnClearLogsClicked) },
+            )
+
+            HorizontalDivider()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Reading Section
+            SettingsSectionHeader(
+                title = stringResource(StringRes.app_settings_section_reading),
+            )
+
+            SettingsItem(
+                icon = Icons.Default.BarChart,
+                title = stringResource(StringRes.statistics_title),
+                description = stringResource(StringRes.statistics_description),
+                onClick = onNavigateToStatistics,
             )
 
             HorizontalDivider()
