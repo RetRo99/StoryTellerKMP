@@ -3,8 +3,12 @@ package com.retro99.statistics.ui.model
 import com.retro99.base.ui.compose.TextWrapper
 import com.retro99.books.domain.model.BookType
 import com.retro99.statistics.domain.model.BookReadingStatsDomainModel
+import com.retro99.statistics.domain.model.ReadingSessionDomainModel
 import com.retro99.statistics.domain.model.ReadingStatisticsDomainModel
 import com.retro99.translations.StringRes
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import resources.translations.statistics_day_number
 import resources.translations.statistics_hours_minutes
 import resources.translations.statistics_minutes
@@ -38,6 +42,16 @@ data class BookReadingStatsUiModel(
     val totalTimeMs: Long,
     val totalTimeFormatted: TextWrapper,
     val sessionCount: Long,
+)
+
+data class ReadingSessionUiModel(
+    val id: Long,
+    val bookUuid: String,
+    val bookTitle: String,
+    val startTime: Long,
+    val durationMs: Long,
+    val durationFormatted: TextWrapper,
+    val dateFormatted: String,
 )
 
 fun ReadingStatisticsDomainModel.toUiModel(): ReadingStatisticsUiModel {
@@ -101,3 +115,30 @@ fun BookReadingStatsDomainModel.toBookUiModel(): BookReadingStatsUiModel {
     )
 }
 
+fun ReadingSessionDomainModel.toSessionUiModel(): ReadingSessionUiModel {
+    return ReadingSessionUiModel(
+        id = id,
+        bookUuid = bookUuid,
+        bookTitle = bookTitle,
+        startTime = startTime,
+        durationMs = durationMs,
+        durationFormatted = formatDuration(durationMs),
+        dateFormatted = formatSessionDate(startTime),
+    )
+}
+
+private fun formatSessionDate(timestamp: Long): String {
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    val month = localDateTime.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+    val day = localDateTime.dayOfMonth
+    val hour = localDateTime.hour
+    val minute = localDateTime.minute.toString().padStart(2, '0')
+    val amPm = if (hour < 12) "AM" else "PM"
+    val displayHour = when {
+        hour == 0 -> 12
+        hour > 12 -> hour - 12
+        else -> hour
+    }
+    return "$month $day, $displayHour:$minute $amPm"
+}

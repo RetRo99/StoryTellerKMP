@@ -229,4 +229,10 @@
     <string name="statistics_streak_current_title">Current Streak</string>
     <string name="statistics_streak_longest_title">Longest Streak</string>
     <string name="statistics_streak_no_days">No reading days recorded</string>
+    <string name="statistics_books_read_title">Books Read</string>
+    <string name="statistics_books_read_no_books">No books read yet</string>
+    <string name="statistics_sessions_title">Reading Sessions</string>
+    <string name="statistics_sessions_total">%1$d total sessions</string>
+    <string name="statistics_sessions_no_sessions">No reading sessions yet</string>
+    <string name="statistics_sessions_recent">Recent Sessions</string>
 </resources>

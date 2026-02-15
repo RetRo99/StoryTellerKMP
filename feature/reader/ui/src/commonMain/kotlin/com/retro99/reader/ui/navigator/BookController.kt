@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -143,4 +144,14 @@ interface BookController : AutoCloseable {
      * @return The element ID of the first visible sentence, or null if not found
      */
     suspend fun getVisibleSentenceId(): String?
+
+    /**
+     * Gets the word count of the current chapter.
+     *
+     * This is used to estimate reading time for the current chapter.
+     * The word count is calculated by counting words in the chapter's text content.
+     *
+     * @return The word count info, or null if it cannot be determined
+     */
+    suspend fun getChapterWordCount(): ChapterWordCountInfo?
 }

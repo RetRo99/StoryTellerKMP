@@ -9,6 +9,8 @@ sealed interface StatisticsIntent : BaseIntent {
     data class OnPeriodClicked(val period: StatisticsPeriod) : StatisticsIntent
     data object OnCurrentStreakClicked : StatisticsIntent
     data object OnLongestStreakClicked : StatisticsIntent
+    data object OnBooksReadClicked : StatisticsIntent
+    data object OnTotalSessionsClicked : StatisticsIntent
     data object OnDismissDetail : StatisticsIntent
 }
 

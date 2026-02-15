@@ -7,9 +7,12 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.statistics.domain.model.StatisticsPeriod
+import com.retro99.statistics.domain.usecase.GetAllBooksReadUseCase
 import com.retro99.statistics.domain.usecase.GetBooksForPeriodUseCase
 import com.retro99.statistics.domain.usecase.GetReadingStatisticsUseCase
+import com.retro99.statistics.domain.usecase.GetRecentSessionsUseCase
 import com.retro99.statistics.ui.model.toBookUiModel
+import com.retro99.statistics.ui.model.toSessionUiModel
 import com.retro99.statistics.ui.model.toUiModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -24,6 +27,8 @@ class StatisticsViewModel(
     @InjectedParam private val onBack: () -> Unit,
     @Provided private val getReadingStatisticsUseCase: GetReadingStatisticsUseCase,
     @Provided private val getBooksForPeriodUseCase: GetBooksForPeriodUseCase,
+    @Provided private val getAllBooksReadUseCase: GetAllBooksReadUseCase,
+    @Provided private val getRecentSessionsUseCase: GetRecentSessionsUseCase,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<StatisticsViewState, StatisticsIntent>(StatisticsViewState()) {
 
@@ -38,6 +43,8 @@ class StatisticsViewModel(
             is StatisticsIntent.OnPeriodClicked -> loadBooksForPeriod(intent.period)
             StatisticsIntent.OnCurrentStreakClicked -> showCurrentStreak()
             StatisticsIntent.OnLongestStreakClicked -> showLongestStreak()
+            StatisticsIntent.OnBooksReadClicked -> showBooksRead()
+            StatisticsIntent.OnTotalSessionsClicked -> showRecentSessions()
             StatisticsIntent.OnDismissDetail -> dismissDetail()
         }
     }
@@ -127,8 +134,75 @@ class StatisticsViewModel(
         }
     }
 
+    private fun showBooksRead() {
+        updateState {
+            it.copy(
+                booksReadDetailState = BooksReadDetailState(
+                    books = emptyList(),
+                    isLoading = true,
+                )
+            )
+        }
+
+        viewModelScope.launch {
+            getAllBooksReadUseCase()
+                .onSuccess { books ->
+                    updateState {
+                        it.copy(
+                            booksReadDetailState = BooksReadDetailState(
+                                books = books.map { book -> book.toBookUiModel() },
+                                isLoading = false,
+                            )
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    error.log(analytics, "StatisticsViewModel: Failed to load books read")
+                    updateState { it.copy(booksReadDetailState = null) }
+                }
+        }
+    }
+
+    private fun showRecentSessions() {
+        val totalSessions = viewState.value.statistics?.totalSessions ?: 0L
+        updateState {
+            it.copy(
+                sessionsDetailState = SessionsDetailState(
+                    sessions = emptyList(),
+                    totalSessions = totalSessions,
+                    isLoading = true,
+                )
+            )
+        }
+
+        viewModelScope.launch {
+            getRecentSessionsUseCase()
+                .onSuccess { sessions ->
+                    updateState {
+                        it.copy(
+                            sessionsDetailState = SessionsDetailState(
+                                sessions = sessions.map { session -> session.toSessionUiModel() },
+                                totalSessions = totalSessions,
+                                isLoading = false,
+                            )
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    error.log(analytics, "StatisticsViewModel: Failed to load recent sessions")
+                    updateState { it.copy(sessionsDetailState = null) }
+                }
+        }
+    }
+
     private fun dismissDetail() {
-        updateState { it.copy(detailState = null, streakDetailState = null) }
+        updateState {
+            it.copy(
+                detailState = null,
+                streakDetailState = null,
+                booksReadDetailState = null,
+                sessionsDetailState = null,
+            )
+        }
     }
 }
-
