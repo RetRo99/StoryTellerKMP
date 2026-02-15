@@ -226,4 +226,7 @@
     <string name="statistics_detail_sessions">%1$d sessions</string>
     <string name="statistics_detail_session">1 session</string>
     <string name="statistics_description">View your reading statistics and progress</string>
+    <string name="statistics_streak_current_title">Current Streak</string>
+    <string name="statistics_streak_longest_title">Longest Streak</string>
+    <string name="statistics_streak_no_days">No reading days recorded</string>
 </resources>

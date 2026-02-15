@@ -39,6 +39,7 @@ kotlin {
             implementation(projects.feature.statistics.domain)
             implementation(projects.feature.books.domain)
             implementation(projects.lib.analytics.api)
+            implementation(libs.datetime)
         }
     }
 }

@@ -18,6 +18,8 @@ data class ReadingStatisticsUiModel(
     val totalBooksRead: Long,
     val currentStreak: Int,
     val longestStreak: Int,
+    val currentStreakDays: List<Long>,
+    val longestStreakDays: List<Long>,
     val dailyReadingTime: List<DailyReadingTimeUiModel>,
     val mostReadBooks: List<BookReadingStatsUiModel>,
     val readingTimeByType: Map<BookType, Long>,
@@ -48,6 +50,8 @@ fun ReadingStatisticsDomainModel.toUiModel(): ReadingStatisticsUiModel {
         totalBooksRead = totalBooksRead,
         currentStreak = currentStreak,
         longestStreak = longestStreak,
+        currentStreakDays = currentStreakDays,
+        longestStreakDays = longestStreakDays,
         dailyReadingTime = dailyReadingTime.map { daily ->
             DailyReadingTimeUiModel(
                 date = formatDate(daily.dayStart),
