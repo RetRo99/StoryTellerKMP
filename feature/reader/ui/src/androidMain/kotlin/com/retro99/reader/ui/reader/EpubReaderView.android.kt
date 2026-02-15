@@ -7,11 +7,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.navigator.AndroidBookController
 import com.retro99.reader.ui.navigator.BookController
@@ -84,16 +87,39 @@ internal actual fun EpubReaderViewInternal(
 
     val containerId = remember { View.generateViewId() }
 
-    DisposableEffect(bookUuid) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Use lifecycle observer to properly clean up the fragment.
+    // We remove the fragment during ON_STOP (before onSaveInstanceState) to prevent
+    // Android from trying to restore it on app restart, which would fail because
+    // EpubNavigatorFragment requires factory instantiation and has no default constructor.
+    DisposableEffect(bookUuid, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                // Release media overlay player resources
+                navigatorController?.close()
+                // Remove fragment before onSaveInstanceState to prevent restoration issues
+                val existingFragment = activity.supportFragmentManager
+                    .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+                if (existingFragment != null) {
+                    // Use commitNow to ensure the fragment is removed synchronously
+                    // before onSaveInstanceState is called
+                    activity.supportFragmentManager.commitNow {
+                        remove(existingFragment)
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
-            // Release media overlay player resources
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            // Also clean up on dispose in case ON_STOP wasn't called
             navigatorController?.close()
-            // Clean up the navigator controller
-            // Clean up the fragment when the composable is disposed
             val existingFragment = activity.supportFragmentManager
                 .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
             if (existingFragment != null) {
-                activity.supportFragmentManager.commit {
+                activity.supportFragmentManager.commit(allowStateLoss = true) {
                     remove(existingFragment)
                 }
             }
