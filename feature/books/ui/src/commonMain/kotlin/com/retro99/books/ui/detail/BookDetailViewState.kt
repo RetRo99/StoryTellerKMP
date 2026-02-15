@@ -2,7 +2,7 @@ package com.retro99.books.ui.detail
 
 import com.retro99.base.result.AppError
 import com.retro99.books.ui.model.BookUiModel
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadState
 
 data class BookDetailViewState(

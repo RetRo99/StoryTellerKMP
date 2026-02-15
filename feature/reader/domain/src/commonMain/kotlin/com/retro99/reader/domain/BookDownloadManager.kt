@@ -1,6 +1,6 @@
 package com.retro99.reader.domain
 
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
 import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow

@@ -63,7 +63,7 @@ import com.retro99.base.ui.LoadingScreen
 import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadState
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource

@@ -7,7 +7,7 @@ import com.retro99.base.result.log
 import com.retro99.reader.data.download.DownloadStateHolder
 import com.retro99.reader.data.source.EbookFileDownloader
 import com.retro99.reader.domain.BookDownloadManager
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadKey
 import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.CoroutineScope

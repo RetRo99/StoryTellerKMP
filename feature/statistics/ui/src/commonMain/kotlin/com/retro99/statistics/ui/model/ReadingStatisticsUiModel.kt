@@ -1,9 +1,13 @@
 package com.retro99.statistics.ui.model
 
 import com.retro99.base.ui.compose.TextWrapper
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
+import com.retro99.statistics.domain.model.BookReadingStatsDomainModel
 import com.retro99.statistics.domain.model.ReadingStatisticsDomainModel
 import com.retro99.translations.StringRes
+import resources.translations.statistics_day_number
+import resources.translations.statistics_hours_minutes
+import resources.translations.statistics_minutes
 
 data class ReadingStatisticsUiModel(
     val totalReadingTimeFormatted: TextWrapper,
@@ -78,5 +82,15 @@ private fun formatDuration(ms: Long): TextWrapper {
 private fun formatDate(timestamp: Long): TextWrapper {
     val dayNumber = timestamp / (24 * 60 * 60 * 1000)
     return TextWrapper.Resource(StringRes.statistics_day_number, dayNumber)
+}
+
+fun BookReadingStatsDomainModel.toBookUiModel(): BookReadingStatsUiModel {
+    return BookReadingStatsUiModel(
+        bookUuid = bookUuid,
+        bookTitle = bookTitle,
+        totalTimeMs = totalDurationMs,
+        totalTimeFormatted = formatDuration(totalDurationMs),
+        sessionCount = sessionCount,
+    )
 }
 

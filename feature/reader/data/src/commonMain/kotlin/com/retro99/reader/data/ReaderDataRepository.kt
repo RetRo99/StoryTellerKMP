@@ -14,7 +14,7 @@ import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.data.source.ReaderRemoteSource
 import com.retro99.reader.domain.ReaderRepository
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.Flow

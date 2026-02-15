@@ -1,7 +1,7 @@
 package com.retro99.reader.domain.usecase
 
 import com.retro99.reader.domain.BookDownloadManager
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadState
 import kotlinx.coroutines.flow.Flow
 import org.koin.core.annotation.Factory

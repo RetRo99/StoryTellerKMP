@@ -17,7 +17,7 @@ import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.log
 import com.retro99.reader.data.source.EbookFileDownloader
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

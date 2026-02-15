@@ -1,7 +1,7 @@
 package com.retro99.statistics.domain.usecase
 
 import com.retro99.base.result.CompletableResult
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.statistics.domain.StatisticsRepository
 import com.retro99.statistics.domain.model.ReadingSessionDomainModel
 import org.koin.core.annotation.Factory

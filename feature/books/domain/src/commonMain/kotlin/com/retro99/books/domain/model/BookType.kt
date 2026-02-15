@@ -1,4 +1,4 @@
-package com.retro99.reader.domain.model
+package com.retro99.books.domain.model
 
 /**
  * Represents the type of book being read.

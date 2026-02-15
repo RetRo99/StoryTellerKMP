@@ -1,7 +1,7 @@
 package com.retro99.home.ui.deeplink
 
 import com.retro99.base.deeplink.DeepLinkUriBuilder
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow

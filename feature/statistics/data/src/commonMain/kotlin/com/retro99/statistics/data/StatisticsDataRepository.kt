@@ -6,7 +6,7 @@ import com.github.michaelbull.result.map
 import com.retro99.base.nowMillis
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.statistics.data.source.StatisticsLocalSource
 import com.retro99.statistics.domain.StatisticsRepository
 import com.retro99.statistics.domain.model.BookReadingStatsDomainModel
@@ -123,6 +123,14 @@ internal class StatisticsDataRepository(
     ): AppResult<List<BookReadingStatsDomainModel>> {
         val now = nowMillis()
         return localSource.getMostReadBooks(0, now, limit)
+    }
+
+    override suspend fun getMostReadBooksInDateRange(
+        startTime: Long,
+        endTime: Long,
+        limit: Int,
+    ): AppResult<List<BookReadingStatsDomainModel>> {
+        return localSource.getMostReadBooks(startTime, endTime, limit)
     }
 
     override suspend fun getReadingTimeByType(): AppResult<Map<BookType, Long>> {

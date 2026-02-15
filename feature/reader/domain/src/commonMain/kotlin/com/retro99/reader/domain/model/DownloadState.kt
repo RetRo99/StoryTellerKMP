@@ -1,6 +1,7 @@
 package com.retro99.reader.domain.model
 
 import com.retro99.base.result.AppError
+import com.retro99.books.domain.model.BookType
 
 /**
  * Represents the download state for a specific book and book type.

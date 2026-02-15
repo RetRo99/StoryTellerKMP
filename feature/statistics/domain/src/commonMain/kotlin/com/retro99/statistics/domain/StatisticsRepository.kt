@@ -2,7 +2,7 @@ package com.retro99.statistics.domain
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 import com.retro99.statistics.domain.model.BookReadingStatsDomainModel
 import com.retro99.statistics.domain.model.DailyReadingTimeDomainModel
 import com.retro99.statistics.domain.model.ReadingSessionDomainModel
@@ -64,6 +64,15 @@ interface StatisticsRepository {
      * Gets the most read books.
      */
     suspend fun getMostReadBooks(limit: Int): AppResult<List<BookReadingStatsDomainModel>>
+
+    /**
+     * Gets the most read books within a specific date range.
+     */
+    suspend fun getMostReadBooksInDateRange(
+        startTime: Long,
+        endTime: Long,
+        limit: Int,
+    ): AppResult<List<BookReadingStatsDomainModel>>
 
     /**
      * Gets reading time grouped by book type.

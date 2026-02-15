@@ -1,7 +1,7 @@
 package com.retro99.books.ui.detail
 
 import com.retro99.base.ui.BaseIntent
-import com.retro99.reader.domain.model.BookType
+import com.retro99.books.domain.model.BookType
 
 sealed interface BookDetailIntent : BaseIntent {
     data object OnBackClicked : BookDetailIntent

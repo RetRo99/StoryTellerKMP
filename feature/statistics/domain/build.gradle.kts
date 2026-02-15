@@ -23,8 +23,9 @@ kotlin {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
             implementation(libs.coroutines)
+            implementation(libs.datetime)
             implementation(projects.base)
-            implementation(projects.feature.reader.domain)
+            implementation(projects.feature.books.domain)
         }
     }
 }
