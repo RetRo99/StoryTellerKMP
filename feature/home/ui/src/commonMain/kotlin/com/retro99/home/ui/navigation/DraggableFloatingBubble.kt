@@ -114,8 +114,12 @@ fun DraggableFloatingBubble(
             animatedX.snapTo(newTargetX)
             animatedY.snapTo(newTargetY)
             hasInitialized = true
+        } else if (isDragging) {
+            // During drag: snap to position immediately for responsive feel
+            animatedX.snapTo(newTargetX)
+            animatedY.snapTo(newTargetY)
         } else {
-            // Subsequent updates: animate
+            // After drag ends: animate to final position
             launch {
                 animatedX.animateTo(
                     newTargetX,
