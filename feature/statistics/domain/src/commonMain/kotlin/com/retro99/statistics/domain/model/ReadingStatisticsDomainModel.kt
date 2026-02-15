@@ -14,6 +14,8 @@ data class ReadingStatisticsDomainModel(
     val totalBooksRead: Long,
     val currentStreak: Int,
     val longestStreak: Int,
+    val currentStreakDays: List<Long>,
+    val longestStreakDays: List<Long>,
     val dailyReadingTime: List<DailyReadingTimeDomainModel>,
     val mostReadBooks: List<BookReadingStatsDomainModel>,
     val readingTimeByType: Map<BookType, Long>,

@@ -80,6 +80,8 @@ internal class StatisticsDataRepository(
             totalBooksRead = totalBooks,
             currentStreak = streak.currentStreak,
             longestStreak = streak.longestStreak,
+            currentStreakDays = streak.currentStreakDays,
+            longestStreakDays = streak.longestStreakDays,
             dailyReadingTime = dailyReadingTime,
             mostReadBooks = mostReadBooks,
             readingTimeByType = readingTimeByType.mapKeys { BookType.fromValue(it.key) },
@@ -164,6 +166,11 @@ internal class StatisticsDataRepository(
         var tempStreak = 1
         var lastDay = sortedDays.first()
 
+        // Track days for each streak
+        var currentStreakDays = mutableListOf<Long>()
+        var longestStreakDays = mutableListOf<Long>()
+        var tempStreakDays = mutableListOf(sortedDays.first())
+
         // Check if the most recent reading day is today or yesterday
         val isCurrentStreakActive = lastDay == todayDayNumber || lastDay == todayDayNumber - 1
 
@@ -171,12 +178,18 @@ internal class StatisticsDataRepository(
             val currentDay = sortedDays[i]
             if (lastDay - currentDay == 1L) {
                 tempStreak++
+                tempStreakDays.add(currentDay)
             } else {
                 if (isCurrentStreakActive && currentStreak == 0) {
                     currentStreak = tempStreak
+                    currentStreakDays = tempStreakDays.toMutableList()
                 }
-                longestStreak = maxOf(longestStreak, tempStreak)
+                if (tempStreak > longestStreak) {
+                    longestStreak = tempStreak
+                    longestStreakDays = tempStreakDays.toMutableList()
+                }
                 tempStreak = 1
+                tempStreakDays = mutableListOf(currentDay)
             }
             lastDay = currentDay
         }
@@ -184,13 +197,23 @@ internal class StatisticsDataRepository(
         // Handle the last streak
         if (isCurrentStreakActive && currentStreak == 0) {
             currentStreak = tempStreak
+            currentStreakDays = tempStreakDays.toMutableList()
         }
-        longestStreak = maxOf(longestStreak, tempStreak)
+        if (tempStreak > longestStreak) {
+            longestStreak = tempStreak
+            longestStreakDays = tempStreakDays.toMutableList()
+        }
+
+        // Convert day numbers to timestamps (start of day)
+        val currentStreakTimestamps = currentStreakDays.map { it * MS_PER_DAY }.sorted()
+        val longestStreakTimestamps = longestStreakDays.map { it * MS_PER_DAY }.sorted()
 
         return ReadingStreakDomainModel(
             currentStreak = currentStreak,
             longestStreak = longestStreak,
             lastReadingDay = sortedDays.first() * MS_PER_DAY,
+            currentStreakDays = currentStreakTimestamps,
+            longestStreakDays = longestStreakTimestamps,
         )
     }
 

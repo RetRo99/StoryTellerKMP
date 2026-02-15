@@ -36,6 +36,8 @@ class StatisticsViewModel(
             StatisticsIntent.OnRefresh -> loadStatistics()
             StatisticsIntent.OnBackClicked -> onBack()
             is StatisticsIntent.OnPeriodClicked -> loadBooksForPeriod(intent.period)
+            StatisticsIntent.OnCurrentStreakClicked -> showCurrentStreak()
+            StatisticsIntent.OnLongestStreakClicked -> showLongestStreak()
             StatisticsIntent.OnDismissDetail -> dismissDetail()
         }
     }
@@ -101,8 +103,32 @@ class StatisticsViewModel(
         }
     }
 
+    private fun showCurrentStreak() {
+        val currentStreakDays = viewState.value.statistics?.currentStreakDays ?: return
+        updateState {
+            it.copy(
+                streakDetailState = StreakDetailState(
+                    streakType = StreakType.CURRENT,
+                    days = currentStreakDays,
+                )
+            )
+        }
+    }
+
+    private fun showLongestStreak() {
+        val longestStreakDays = viewState.value.statistics?.longestStreakDays ?: return
+        updateState {
+            it.copy(
+                streakDetailState = StreakDetailState(
+                    streakType = StreakType.LONGEST,
+                    days = longestStreakDays,
+                )
+            )
+        }
+    }
+
     private fun dismissDetail() {
-        updateState { it.copy(detailState = null) }
+        updateState { it.copy(detailState = null, streakDetailState = null) }
     }
 }
 

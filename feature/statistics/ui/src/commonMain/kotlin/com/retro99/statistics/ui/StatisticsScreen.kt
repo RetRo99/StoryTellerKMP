@@ -114,6 +114,12 @@ private fun StatisticsScreenContent(
                     onPeriodClick = { period ->
                         intentDispatcher(StatisticsIntent.OnPeriodClicked(period))
                     },
+                    onCurrentStreakClick = {
+                        intentDispatcher(StatisticsIntent.OnCurrentStreakClicked)
+                    },
+                    onLongestStreakClick = {
+                        intentDispatcher(StatisticsIntent.OnLongestStreakClicked)
+                    },
                 )
             }
         }
@@ -125,6 +131,14 @@ private fun StatisticsScreenContent(
                 onDismiss = { intentDispatcher(StatisticsIntent.OnDismissDetail) },
             )
         }
+
+        // Show streak detail bottom sheet when streakDetailState is not null
+        viewState.streakDetailState?.let { streakDetailState ->
+            StreakDetailBottomSheet(
+                streakDetailState = streakDetailState,
+                onDismiss = { intentDispatcher(StatisticsIntent.OnDismissDetail) },
+            )
+        }
     }
 }
 
@@ -132,6 +146,8 @@ private fun StatisticsScreenContent(
 private fun StatisticsContent(
     stats: ReadingStatisticsUiModel,
     onPeriodClick: (StatisticsPeriod) -> Unit,
+    onCurrentStreakClick: () -> Unit,
+    onLongestStreakClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -206,12 +222,14 @@ private fun StatisticsContent(
                     title = stringResource(StringRes.statistics_books_read),
                     value = TextWrapper.Text(stats.totalBooksRead.toString()),
                     icon = Icons.Default.MenuBook,
+                    onClick = { onPeriodClick(StatisticsPeriod.TOTAL) },
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
                     title = stringResource(StringRes.statistics_total_sessions),
                     value = TextWrapper.Text(stats.totalSessions.toString()),
                     icon = Icons.Default.AutoStories,
+                    onClick = { onPeriodClick(StatisticsPeriod.TOTAL) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -227,12 +245,14 @@ private fun StatisticsContent(
                     title = stringResource(StringRes.statistics_current_streak),
                     value = TextWrapper.Resource(StringRes.statistics_days, stats.currentStreak),
                     icon = Icons.Default.LocalFireDepartment,
+                    onClick = onCurrentStreakClick,
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
                     title = stringResource(StringRes.statistics_longest_streak),
                     value = TextWrapper.Resource(StringRes.statistics_days, stats.longestStreak),
                     icon = Icons.Default.LocalFireDepartment,
+                    onClick = onLongestStreakClick,
                     modifier = Modifier.weight(1f),
                 )
             }
