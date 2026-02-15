@@ -32,6 +32,7 @@ data class DailyReadingTimeUiModel(
 data class BookReadingStatsUiModel(
     val bookUuid: String,
     val bookTitle: String,
+    val coverUrl: String?,
     val totalTimeMs: Long,
     val totalTimeFormatted: TextWrapper,
     val sessionCount: Long,
@@ -58,6 +59,7 @@ fun ReadingStatisticsDomainModel.toUiModel(): ReadingStatisticsUiModel {
             BookReadingStatsUiModel(
                 bookUuid = book.bookUuid,
                 bookTitle = book.bookTitle,
+                coverUrl = book.coverUrl,
                 totalTimeMs = book.totalDurationMs,
                 totalTimeFormatted = formatDuration(book.totalDurationMs),
                 sessionCount = book.sessionCount,
@@ -88,6 +90,7 @@ fun BookReadingStatsDomainModel.toBookUiModel(): BookReadingStatsUiModel {
     return BookReadingStatsUiModel(
         bookUuid = bookUuid,
         bookTitle = bookTitle,
+        coverUrl = coverUrl,
         totalTimeMs = totalDurationMs,
         totalTimeFormatted = formatDuration(totalDurationMs),
         sessionCount = sessionCount,

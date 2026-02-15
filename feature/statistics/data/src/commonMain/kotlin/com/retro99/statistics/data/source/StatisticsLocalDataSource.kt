@@ -14,10 +14,12 @@ import com.retro99.statistics.domain.model.DailyReadingTimeDomainModel
 import com.retro99.statistics.domain.model.ReadingSessionDomainModel
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
+import retro99.network.api.BaseUrlProvider
 
 @Single(binds = [StatisticsLocalSource::class])
 internal class StatisticsLocalDataSource(
     @Provided private val database: ReadingSessionDatabase,
+    @Provided private val baseUrlProvider: BaseUrlProvider,
 ) : StatisticsLocalSource {
 
     override suspend fun insertSession(session: ReadingSessionDomainModel): CompletableResult {
@@ -104,8 +106,9 @@ internal class StatisticsLocalDataSource(
         endTime: Long,
         limit: Int,
     ): AppResult<List<BookReadingStatsDomainModel>> {
+        val baseUrl = baseUrlProvider.getBaseUrl()
         return runCatchingAsAppError {
-            database.getMostReadBooks(startTime, endTime, limit).map { it.toDomain() }
+            database.getMostReadBooks(startTime, endTime, limit).map { it.toDomain(baseUrl) }
         }
     }
 
