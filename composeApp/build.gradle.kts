@@ -87,6 +87,9 @@ kotlin {
             implementation(projects.feature.settings.ui)
             implementation(projects.feature.settings.domain)
             implementation(projects.feature.settings.data)
+            implementation(projects.feature.statistics.ui)
+            implementation(projects.feature.statistics.domain)
+            implementation(projects.feature.statistics.data)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
