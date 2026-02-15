@@ -199,4 +199,19 @@
     <string name="settings_highlight_style_highlight">Highlight</string>
     <string name="settings_highlight_style_highlight_underline">Both</string>
     <string name="settings_highlight_style_underline">Underline</string>
+
+    <!-- Statistics Screen -->
+    <string name="statistics_title">Reading Statistics</string>
+    <string name="statistics_today">Today</string>
+    <string name="statistics_week">This Week</string>
+    <string name="statistics_month">This Month</string>
+    <string name="statistics_total_time">Total Time</string>
+    <string name="statistics_books_read">Books Read</string>
+    <string name="statistics_total_sessions">Total Sessions</string>
+    <string name="statistics_current_streak">Current Streak</string>
+    <string name="statistics_longest_streak">Longest Streak</string>
+    <string name="statistics_days">%1$d days</string>
+    <string name="statistics_hours_minutes">%1$dh %2$dm</string>
+    <string name="statistics_minutes">%1$dm</string>
+    <string name="statistics_day_number">Day %1$d</string>
 </resources>
