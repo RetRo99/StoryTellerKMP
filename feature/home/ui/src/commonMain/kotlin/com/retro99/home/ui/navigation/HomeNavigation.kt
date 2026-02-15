@@ -9,16 +9,17 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
-import com.retro99.base.ui.BaseScreen
-// import com.retro99.books.ui.authors.detail.AuthorDetailScreen
 import com.retro99.books.ui.detail.BookDetailScreen
 import com.retro99.books.ui.list.BooksListScreen
 import com.retro99.books.ui.series.detail.SeriesDetailScreen
 import com.retro99.home.ui.appsettings.AppSettingsScreen
-// import com.retro99.home.ui.authors.AuthorsListScreen
 import com.retro99.home.ui.series.SeriesListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
 import com.retro99.settings.ui.SettingsScreen
@@ -32,28 +33,69 @@ fun HomeNavigation(
     modifier: Modifier = Modifier,
     viewModel: HomeNavigationViewModel = koinViewModel(),
 ) {
-    BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
-        val currentDestination = state.currentBackStack.lastOrNull()
-        val showBottomBar = (currentDestination as? BottomBarDestination)?.showBottomBar != false
-        val isInReader = currentDestination is HomeDestination.Reader
-        val currentlyReading = state.currentlyReading
+    // Navigation state managed by Nav3's rememberNavBackStack for automatic persistence
+    val navigationState = rememberHomeNavigationState()
 
-        Box(modifier = modifier.fillMaxSize()) {
-            Scaffold(
-                bottomBar = {
-                    if (showBottomBar) {
-                        HomeBottomNavigationBar(
-                            currentTab = state.currentTab,
-                            onTabSelected = { tab ->
-                                intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
-                            },
-                        )
-                    }
-                },
-            ) { paddingValues ->
+    // UI state from ViewModel (currently reading, bubble position)
+    val uiState by viewModel.viewState.collectAsState()
+
+    // Intent dispatcher for navigation actions
+    val intentDispatcher: (HomeNavigationIntent) -> Unit = { viewModel.onIntent(it) }
+
+    // Handle navigation events from ViewModel
+    LaunchedEffect(viewModel) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
+                is HomeNavigationEvent.NavigateTo -> {
+                    navigationState.navigateTo(event.destination)
+                }
+                is HomeNavigationEvent.SwitchTab -> {
+                    navigationState.switchTab(event.tab)
+                }
+                HomeNavigationEvent.GoBack -> {
+                    navigationState.goBack()
+                }
+                is HomeNavigationEvent.NavigateToReaderReplacing -> {
+                    navigationState.switchTab(event.tab)
+                    navigationState.navigateToReplacing(
+                        HomeDestination.Reader(event.bookUuid, event.bookType),
+                        event.tab,
+                    )
+                }
+            }
+        }
+    }
+
+    val currentDestination = navigationState.currentDestination
+    val showBottomBar = (currentDestination as? BottomBarDestination)?.showBottomBar != false
+    val isInReader = currentDestination is HomeDestination.Reader
+    val currentlyReading = uiState.currentlyReading
+
+    // Track when leaving reader to refresh currently reading state
+    val wasInReader = remember { mutableStateOf(false) }
+    LaunchedEffect(isInReader) {
+        if (wasInReader.value && !isInReader) {
+            intentDispatcher(HomeNavigationIntent.RefreshCurrentlyReading)
+        }
+        wasInReader.value = isInReader
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                if (showBottomBar) {
+                    HomeBottomNavigationBar(
+                        currentTab = navigationState.currentTab,
+                        onTabSelected = { tab ->
+                            intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
+                        },
+                    )
+                }
+            },
+        ) { paddingValues ->
             BottomSheetNavDisplay(
-                backStack = state.currentBackStack,
-                onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                backStack = navigationState.currentBackStack,
+                onBack = { intentDispatcher(HomeNavigationIntent.GoBack) },
                 modifier = Modifier.padding(paddingValues),
                 entryProvider = entryProvider {
                     entry<HomeDestination.BooksList> {
@@ -61,8 +103,8 @@ fun HomeNavigation(
                             onNavigateToBookDetail = { book ->
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.BookDetail(book.uuid),
-                                    ),
+                                        HomeDestination.BookDetail(book.uuid)
+                                    )
                                 )
                             },
                         )
@@ -76,8 +118,8 @@ fun HomeNavigation(
                                         HomeDestination.SeriesDetail(
                                             seriesUuid = series.uuid,
                                             seriesName = series.name,
-                                        ),
-                                    ),
+                                        )
+                                    )
                                 )
                             },
                         )
@@ -90,43 +132,13 @@ fun HomeNavigation(
                             onNavigateToBookDetail = { book ->
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.BookDetail(book.uuid),
-                                    ),
+                                        HomeDestination.BookDetail(book.uuid)
+                                    )
                                 )
                             },
-                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                            onBack = { intentDispatcher(HomeNavigationIntent.GoBack) },
                         )
                     }
-
-//                    entry<HomeDestination.AuthorsList> {
-//                        AuthorsListScreen(
-//                            onNavigateToAuthorDetail = { author ->
-//                                intentDispatcher(
-//                                    HomeNavigationIntent.NavigateTo(
-//                                        HomeDestination.AuthorDetail(
-//                                            authorUuid = author.uuid,
-//                                            authorName = author.name,
-//                                        ),
-//                                    ),
-//                                )
-//                            },
-//                        )
-//                    }
-//
-//                    entry<HomeDestination.AuthorDetail> { destination ->
-//                        AuthorDetailScreen(
-//                            authorUuid = destination.authorUuid,
-//                            authorName = destination.authorName,
-//                            onNavigateToBookDetail = { book ->
-//                                intentDispatcher(
-//                                    HomeNavigationIntent.NavigateTo(
-//                                        HomeDestination.BookDetail(book.uuid),
-//                                    ),
-//                                )
-//                            },
-//                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
-//                        )
-//                    }
 
                     entry<HomeDestination.BookDetail> { destination ->
                         BookDetailScreen(
@@ -134,11 +146,11 @@ fun HomeNavigation(
                             onNavigateToReader = { bookUuid, bookType ->
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.Reader(bookUuid, bookType),
-                                    ),
+                                        HomeDestination.Reader(bookUuid, bookType)
+                                    )
                                 )
                             },
-                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                            onBack = { intentDispatcher(HomeNavigationIntent.GoBack) },
                         )
                     }
 
@@ -146,10 +158,10 @@ fun HomeNavigation(
                         ReaderScreen(
                             bookUuid = destination.bookUuid,
                             bookType = destination.bookType,
-                            onClose = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                            onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
                             onSettingsClick = {
                                 intentDispatcher(
-                                    HomeNavigationIntent.NavigateTo(HomeDestination.Settings),
+                                    HomeNavigationIntent.NavigateTo(HomeDestination.Settings)
                                 )
                             },
                         )
@@ -164,7 +176,7 @@ fun HomeNavigation(
                             onLogout = onLogout,
                             onNavigateToStatistics = {
                                 intentDispatcher(
-                                    HomeNavigationIntent.NavigateTo(HomeDestination.Statistics),
+                                    HomeNavigationIntent.NavigateTo(HomeDestination.Statistics)
                                 )
                             },
                         )
@@ -172,40 +184,37 @@ fun HomeNavigation(
 
                     entry<HomeDestination.Statistics> {
                         StatisticsScreen(
-                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
+                            onBack = { intentDispatcher(HomeNavigationIntent.GoBack) },
                         )
                     }
                 },
             )
         }
 
-            // Draggable floating bubble for Continue Reading
-            // Only show when position is loaded (not null) to avoid flicker
-            val bubblePosition = state.bubblePosition
-            if (!isInReader && currentlyReading != null && bubblePosition != null) {
-                DraggableFloatingBubble(
-                    modifier = Modifier.fillMaxSize(),
-                    initialSide = bubblePosition.toBubbleSide(),
-                    initialYFraction = bubblePosition.yFraction,
-                    edgePadding = 16f,
-                    onPositionChanged = { side, yFraction ->
-                        intentDispatcher(HomeNavigationIntent.UpdateBubblePosition(side, yFraction))
-                    },
-                ) {
-                    ContinueReadingBubble(
-                        currentlyReading = currentlyReading,
-                        onClick = {
-                            intentDispatcher(
-                                HomeNavigationIntent.NavigateTo(
-                                    HomeDestination.Reader(
-                                        bookUuid = currentlyReading.bookUuid,
-                                        bookType = currentlyReading.bookType,
-                                    ),
-                                ),
+        // Draggable floating bubble for Continue Reading
+        // Only show when position is loaded (not null) to avoid flicker
+        val bubblePosition = uiState.bubblePosition
+        if (!isInReader && currentlyReading != null && bubblePosition != null) {
+            DraggableFloatingBubble(
+                modifier = Modifier.fillMaxSize(),
+                initialSide = bubblePosition.toBubbleSide(),
+                initialYFraction = bubblePosition.yFraction,
+                edgePadding = 16f,
+                onPositionChanged = { side, yFraction ->
+                    intentDispatcher(HomeNavigationIntent.UpdateBubblePosition(side, yFraction))
+                },
+            ) {
+                ContinueReadingBubble(
+                    currentlyReading = currentlyReading,
+                    onClick = {
+                        intentDispatcher(
+                            HomeNavigationIntent.OpenReader(
+                                bookUuid = currentlyReading.bookUuid,
+                                bookType = currentlyReading.bookType,
                             )
-                        },
-                    )
-                }
+                        )
+                    },
+                )
             }
         }
     }

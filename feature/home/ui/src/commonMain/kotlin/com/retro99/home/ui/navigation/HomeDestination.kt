@@ -1,5 +1,6 @@
 package com.retro99.home.ui.navigation
 
+import androidx.navigation3.runtime.NavKey
 import com.retro99.books.domain.model.BookType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -18,7 +19,8 @@ interface BottomBarDestination {
         get() = true
 }
 
-sealed interface HomeDestination : BottomSheetDestination, BottomBarDestination {
+@Serializable
+sealed interface HomeDestination : NavKey, BottomSheetDestination, BottomBarDestination {
 
     @Serializable
     data object BooksList : HomeDestination
