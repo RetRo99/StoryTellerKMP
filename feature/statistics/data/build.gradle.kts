@@ -28,6 +28,7 @@ kotlin {
             implementation(libs.datetime)
             implementation(projects.base)
             implementation(projects.lib.database.api)
+            implementation(projects.lib.network.api)
             implementation(projects.feature.statistics.domain)
             implementation(projects.feature.books.domain)
         }

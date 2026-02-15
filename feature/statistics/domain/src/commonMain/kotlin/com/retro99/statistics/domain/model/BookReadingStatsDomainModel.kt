@@ -6,6 +6,7 @@ package com.retro99.statistics.domain.model
 data class BookReadingStatsDomainModel(
     val bookUuid: String,
     val bookTitle: String,
+    val coverUrl: String?,
     val totalDurationMs: Long,
     val sessionCount: Long,
 )
