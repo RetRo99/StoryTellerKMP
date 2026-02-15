@@ -1,5 +1,6 @@
 package com.retro99.books.data.model
 
+import com.retro99.base.url.CoverUrlBuilder
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.database.api.books.BookEntity
 
@@ -40,9 +41,9 @@ fun BookLocalModel.toDomain(baseUrl: String?): BookDomainModel {
         rating = rating,
         suffix = suffix,
         subtitle = subtitle,
-        coverUrl = baseUrl?.let { "$it/api/v2/books/$uuid/cover" },
-        ebookCoverUrl = baseUrl?.let { "$it/api/v2/books/$uuid/cover" },
-        audiobookCoverUrl = baseUrl?.let { "$it/api/v2/books/$uuid/cover?audio" },
+        coverUrl = CoverUrlBuilder.buildCoverUrl(baseUrl, uuid),
+        ebookCoverUrl = CoverUrlBuilder.buildEbookCoverUrl(baseUrl, uuid),
+        audiobookCoverUrl = CoverUrlBuilder.buildAudiobookCoverUrl(baseUrl, uuid),
         authors = authors.map { it.toDomain() },
         narrators = narrators.map { it.toDomain() },
         creators = creators.map { it.toDomain() },
