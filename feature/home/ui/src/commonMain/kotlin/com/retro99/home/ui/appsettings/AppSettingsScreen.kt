@@ -123,6 +123,32 @@ private fun AppSettingsScreenContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Reading Section
+            SettingsSectionHeader(
+                title = stringResource(StringRes.app_settings_section_reading),
+            )
+
+            SettingsToggleItem(
+                icon = Icons.Default.MenuBook,
+                title = stringResource(StringRes.app_settings_open_last_book),
+                description = stringResource(StringRes.app_settings_open_last_book_description),
+                isChecked = viewState.openLastBookOnLaunch,
+                onCheckedChange = { enabled ->
+                    intentDispatcher(AppSettingsIntent.OnOpenLastBookToggled(enabled))
+                },
+            )
+
+            SettingsItem(
+                icon = Icons.Default.BarChart,
+                title = stringResource(StringRes.statistics_title),
+                description = stringResource(StringRes.statistics_description),
+                onClick = onNavigateToStatistics,
+            )
+
+            HorizontalDivider()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Support Section
             SettingsSectionHeader(
                 title = stringResource(StringRes.app_settings_section_support),
@@ -150,32 +176,6 @@ private fun AppSettingsScreenContent(
                 title = stringResource(StringRes.app_settings_clear_logs),
                 description = stringResource(StringRes.app_settings_clear_logs_description),
                 onClick = { intentDispatcher(AppSettingsIntent.OnClearLogsClicked) },
-            )
-
-            HorizontalDivider()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Reading Section
-            SettingsSectionHeader(
-                title = stringResource(StringRes.app_settings_section_reading),
-            )
-
-            SettingsToggleItem(
-                icon = Icons.Default.MenuBook,
-                title = stringResource(StringRes.app_settings_open_last_book),
-                description = stringResource(StringRes.app_settings_open_last_book_description),
-                isChecked = viewState.openLastBookOnLaunch,
-                onCheckedChange = { enabled ->
-                    intentDispatcher(AppSettingsIntent.OnOpenLastBookToggled(enabled))
-                },
-            )
-
-            SettingsItem(
-                icon = Icons.Default.BarChart,
-                title = stringResource(StringRes.statistics_title),
-                description = stringResource(StringRes.statistics_description),
-                onClick = onNavigateToStatistics,
             )
 
             HorizontalDivider()
