@@ -73,6 +73,7 @@ class InitializeReaderUseCase(
                     Ok(
                         ReaderInitializationData(
                             bookUuid = bookUuid,
+                            bookTitle = book.title,
                             localEbookPath = localPath,
                             bookType = bookType,
                             initialSettings = settings,

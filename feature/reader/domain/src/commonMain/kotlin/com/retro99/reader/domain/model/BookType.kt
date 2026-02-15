@@ -22,5 +22,11 @@ enum class BookType(val value: String) {
      * that synchronize professional audio narration with text.
      */
     READALOUD("readaloud"),
+    ;
+
+    companion object {
+        fun fromValue(value: String): BookType =
+            entries.find { it.value == value.lowercase() } ?: EBOOK
+    }
 }
 
