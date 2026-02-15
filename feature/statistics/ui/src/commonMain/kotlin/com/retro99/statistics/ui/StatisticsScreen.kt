@@ -120,6 +120,12 @@ private fun StatisticsScreenContent(
                     onLongestStreakClick = {
                         intentDispatcher(StatisticsIntent.OnLongestStreakClicked)
                     },
+                    onBooksReadClick = {
+                        intentDispatcher(StatisticsIntent.OnBooksReadClicked)
+                    },
+                    onTotalSessionsClick = {
+                        intentDispatcher(StatisticsIntent.OnTotalSessionsClicked)
+                    },
                 )
             }
         }
@@ -139,6 +145,22 @@ private fun StatisticsScreenContent(
                 onDismiss = { intentDispatcher(StatisticsIntent.OnDismissDetail) },
             )
         }
+
+        // Show books read detail bottom sheet when booksReadDetailState is not null
+        viewState.booksReadDetailState?.let { booksReadDetailState ->
+            BooksReadDetailBottomSheet(
+                booksReadDetailState = booksReadDetailState,
+                onDismiss = { intentDispatcher(StatisticsIntent.OnDismissDetail) },
+            )
+        }
+
+        // Show sessions detail bottom sheet when sessionsDetailState is not null
+        viewState.sessionsDetailState?.let { sessionsDetailState ->
+            SessionsDetailBottomSheet(
+                sessionsDetailState = sessionsDetailState,
+                onDismiss = { intentDispatcher(StatisticsIntent.OnDismissDetail) },
+            )
+        }
     }
 }
 
@@ -148,6 +170,8 @@ private fun StatisticsContent(
     onPeriodClick: (StatisticsPeriod) -> Unit,
     onCurrentStreakClick: () -> Unit,
     onLongestStreakClick: () -> Unit,
+    onBooksReadClick: () -> Unit,
+    onTotalSessionsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -222,14 +246,14 @@ private fun StatisticsContent(
                     title = stringResource(StringRes.statistics_books_read),
                     value = TextWrapper.Text(stats.totalBooksRead.toString()),
                     icon = Icons.Default.MenuBook,
-                    onClick = { onPeriodClick(StatisticsPeriod.TOTAL) },
+                    onClick = onBooksReadClick,
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
                     title = stringResource(StringRes.statistics_total_sessions),
                     value = TextWrapper.Text(stats.totalSessions.toString()),
                     icon = Icons.Default.AutoStories,
-                    onClick = { onPeriodClick(StatisticsPeriod.TOTAL) },
+                    onClick = onTotalSessionsClick,
                     modifier = Modifier.weight(1f),
                 )
             }
