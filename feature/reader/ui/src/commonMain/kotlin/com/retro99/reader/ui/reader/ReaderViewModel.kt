@@ -19,6 +19,7 @@ import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
@@ -54,6 +55,7 @@ class ReaderViewModel(
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
+    @Provided private val saveReadingSessionUseCase: SaveReadingSessionUseCase,
     @Provided private val publicationService: EpubPublicationService,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
@@ -293,6 +295,7 @@ class ReaderViewModel(
             updateState { state ->
                 state.copy(
                     bookUuid = data.bookUuid,
+                    bookTitle = data.bookTitle,
                     publication = publication,
                     bookType = bookType,
                     positionConflict = conflict,
@@ -456,8 +459,9 @@ class ReaderViewModel(
 
             // Track book closed event with reading duration and progress
             val currentState = viewState.value
+            val endTime = nowMillis()
             val readingDurationMs = if (bookOpenedTimestamp > 0) {
-                nowMillis() - bookOpenedTimestamp
+                endTime - bookOpenedTimestamp
             } else {
                 0L
             }
@@ -471,6 +475,19 @@ class ReaderViewModel(
                     progressPercent = progressPercent,
                 )
             )
+
+            // Save reading session for statistics (only if we have a valid session)
+            if (bookOpenedTimestamp > 0 && readingDurationMs > 0 && currentState.bookTitle.isNotEmpty()) {
+                saveReadingSessionUseCase(
+                    bookUuid = bookUuid,
+                    bookTitle = currentState.bookTitle,
+                    bookType = currentState.bookType,
+                    startTime = bookOpenedTimestamp,
+                    endTime = endTime,
+                    durationMs = readingDurationMs,
+                    endProgression = currentState.lastKnownPosition?.totalProgression,
+                )
+            }
 
             onClose()
         }

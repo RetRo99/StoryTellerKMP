@@ -12,6 +12,7 @@ import com.retro99.reader.ui.publication.EpubPublication
 data class ReaderViewState(
     val bookType: BookType,
     val bookUuid: String,
+    val bookTitle: String = "",
     val localFilePath: String? = null,
     val publication: EpubPublication? = null,
     val positionConflict: PositionConflictUiModel? = null,
