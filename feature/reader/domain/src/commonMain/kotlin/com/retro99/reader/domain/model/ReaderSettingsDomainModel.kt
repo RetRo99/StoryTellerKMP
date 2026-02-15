@@ -35,7 +35,16 @@ data class ReaderSettingsDomainModel(
     val fullscreenMode: Boolean = false,
     // Whether to show current time in the progress bar
     val showCurrentTime: Boolean = true,
-)
+    // Whether to show estimated reading time for the current chapter
+    val showReadingTime: Boolean = true,
+    // Reading speed in words per minute (used for reading time estimation)
+    val readingSpeedWpm: Int = DEFAULT_READING_SPEED_WPM,
+) {
+    companion object {
+        /** Default reading speed in words per minute (average adult reading speed) */
+        const val DEFAULT_READING_SPEED_WPM = 200
+    }
+}
 
 enum class ReaderTheme {
     LIGHT,

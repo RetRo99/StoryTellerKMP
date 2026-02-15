@@ -4,6 +4,7 @@ import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.di.ReaderScope
+import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -235,6 +236,22 @@ class IosBookController(
         }
 
         return VisibleSentenceDetector.parseResult(rawResult)
+    }
+
+    override suspend fun getChapterWordCount(): ChapterWordCountInfo? {
+        val script = ChapterWordCountCalculator.getWordCountScript()
+
+        val rawResult: String? = suspendCancellableCoroutine { continuation ->
+            bridge.evaluateJavaScript(script) { result ->
+                continuation.resume(result)
+            }
+        }
+
+        if (rawResult == null) {
+            return null
+        }
+
+        return ChapterWordCountCalculator.parseWordCountResult(rawResult)
     }
 
     override fun close() {

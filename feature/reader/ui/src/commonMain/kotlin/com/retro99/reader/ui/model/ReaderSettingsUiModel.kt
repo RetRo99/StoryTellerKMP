@@ -9,6 +9,7 @@ import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_READING_SPEED_WPM
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
 
@@ -44,6 +45,10 @@ data class ReaderSettingsUiModel(
     val fullscreenMode: Boolean = false,
     // Whether to show current time in the progress bar
     val showCurrentTime: Boolean = true,
+    // Whether to show estimated reading time for the current chapter
+    val showReadingTime: Boolean = true,
+    // Reading speed in words per minute (used for reading time estimation)
+    val readingSpeedWpm: Int = DEFAULT_READING_SPEED_WPM,
 )
 
 enum class ReaderThemeUi {
@@ -107,6 +112,8 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     progressBarPosition = progressBarPosition,
     fullscreenMode = fullscreenMode,
     showCurrentTime = showCurrentTime,
+    showReadingTime = showReadingTime,
+    readingSpeedWpm = readingSpeedWpm,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -130,6 +137,8 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     progressBarPosition = progressBarPosition,
     fullscreenMode = fullscreenMode,
     showCurrentTime = showCurrentTime,
+    showReadingTime = showReadingTime,
+    readingSpeedWpm = readingSpeedWpm,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {

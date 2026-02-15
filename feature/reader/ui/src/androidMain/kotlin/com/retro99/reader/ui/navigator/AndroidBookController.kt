@@ -2,6 +2,7 @@ package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
@@ -294,6 +295,16 @@ class AndroidBookController internal constructor() : BookController {
 
         val cleanJson = cleanWebViewJson(rawResult)
         return VisibleSentenceDetector.parseResult(cleanJson)
+    }
+
+    override suspend fun getChapterWordCount(): ChapterWordCountInfo? {
+        val nav = _navigator.value ?: return null
+
+        val script = ChapterWordCountCalculator.getWordCountScript()
+        val rawResult = nav.evaluateJavascript(script) ?: return null
+
+        val cleanJson = cleanWebViewJson(rawResult)
+        return ChapterWordCountCalculator.parseWordCountResult(cleanJson)
     }
 
     /**
