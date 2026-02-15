@@ -30,6 +30,7 @@ class HomeNavigationViewModel(
         observeDeepLinks(deepLinkHandler)
         loadCurrentlyReading()
         loadBubblePosition()
+        checkOpenLastBookOnLaunch()
     }
 
     /**
@@ -39,6 +40,34 @@ class HomeNavigationViewModel(
     private fun loadCurrentlyReading() {
         val currentlyReading = getCurrentlyReadingUseCase()?.toUiModel()
         updateState { it.copy(currentlyReading = currentlyReading) }
+    }
+
+    /**
+     * Checks if the "Open Last Book on Launch" setting is enabled and
+     * automatically navigates to the reader if there's a currently reading book.
+     */
+    private fun checkOpenLastBookOnLaunch() {
+        val isEnabled = preferences.getBoolean(
+            PreferencesKey.OpenLastBookOnLaunch,
+            defaultValue = false,
+        )
+        if (!isEnabled) return
+
+        val currentlyReading = getCurrentlyReadingUseCase() ?: return
+
+        // Navigate to the reader with the currently reading book
+        updateState { state ->
+            val booksTab = HomeTab.Books
+            val currentBooksStack = state.backStacks[booksTab]
+                ?: listOf(booksTab.startDestination)
+            val newBooksStack = currentBooksStack
+                .filterNot { it is HomeDestination.Reader }
+                .plus(HomeDestination.Reader(currentlyReading.bookUuid, currentlyReading.bookType))
+            state.copy(
+                currentTab = booksTab,
+                backStacks = state.backStacks + (booksTab to newBooksStack),
+            )
+        }
     }
 
     /**

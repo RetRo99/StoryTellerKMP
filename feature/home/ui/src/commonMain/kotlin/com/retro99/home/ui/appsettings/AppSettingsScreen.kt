@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +48,8 @@ import resources.translations.app_settings_logout
 import resources.translations.app_settings_logout_description
 import resources.translations.app_settings_logs_cleared
 import resources.translations.app_settings_no_logs
+import resources.translations.app_settings_open_last_book
+import resources.translations.app_settings_open_last_book_description
 import resources.translations.app_settings_section_account
 import resources.translations.app_settings_section_reading
 import resources.translations.app_settings_section_support
@@ -156,6 +159,16 @@ private fun AppSettingsScreenContent(
             // Reading Section
             SettingsSectionHeader(
                 title = stringResource(StringRes.app_settings_section_reading),
+            )
+
+            SettingsToggleItem(
+                icon = Icons.Default.MenuBook,
+                title = stringResource(StringRes.app_settings_open_last_book),
+                description = stringResource(StringRes.app_settings_open_last_book_description),
+                isChecked = viewState.openLastBookOnLaunch,
+                onCheckedChange = { enabled ->
+                    intentDispatcher(AppSettingsIntent.OnOpenLastBookToggled(enabled))
+                },
             )
 
             SettingsItem(

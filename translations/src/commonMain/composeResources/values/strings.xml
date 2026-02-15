@@ -62,6 +62,8 @@
     <string name="app_settings_enable_logging">Enable File Logging</string>
     <string name="app_settings_enable_logging_description">Write logs to file for debugging</string>
     <string name="app_settings_section_reading">Reading</string>
+    <string name="app_settings_open_last_book">Open Last Book on Launch</string>
+    <string name="app_settings_open_last_book_description">Automatically open your currently reading book when the app starts</string>
 
     <!-- Series List Screen -->
     <string name="series_featured">Featured</string>
