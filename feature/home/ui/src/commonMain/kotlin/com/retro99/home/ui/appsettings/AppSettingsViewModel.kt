@@ -19,12 +19,17 @@ class AppSettingsViewModel(
             PreferencesKey.FileLoggingEnabled,
             defaultValue = false,
         ),
+        openLastBookOnLaunch = preferences.getBoolean(
+            PreferencesKey.OpenLastBookOnLaunch,
+            defaultValue = false,
+        ),
     ),
 ) {
 
     override fun onIntent(intent: AppSettingsIntent) {
         when (intent) {
             is AppSettingsIntent.OnLoggingToggled -> setLoggingEnabled(intent.enabled)
+            is AppSettingsIntent.OnOpenLastBookToggled -> setOpenLastBookOnLaunch(intent.enabled)
             AppSettingsIntent.OnShareLogsClicked -> shareLogs()
             AppSettingsIntent.OnClearLogsClicked -> clearLogs()
             AppSettingsIntent.OnLogsClearedMessageShown -> onLogsClearedMessageShown()
@@ -35,6 +40,11 @@ class AppSettingsViewModel(
     private fun setLoggingEnabled(enabled: Boolean) {
         preferences.putBoolean(PreferencesKey.FileLoggingEnabled, enabled)
         updateState { it.copy(isLoggingEnabled = enabled) }
+    }
+
+    private fun setOpenLastBookOnLaunch(enabled: Boolean) {
+        preferences.putBoolean(PreferencesKey.OpenLastBookOnLaunch, enabled)
+        updateState { it.copy(openLastBookOnLaunch = enabled) }
     }
 
     private fun shareLogs() {

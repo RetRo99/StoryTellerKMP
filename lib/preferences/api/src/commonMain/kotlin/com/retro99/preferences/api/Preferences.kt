@@ -37,4 +37,5 @@ sealed class PreferencesKey(val name: String) {
     data object FileLoggingEnabled : PreferencesKey("FileLoggingEnabled")
     data object CurrentlyReading : PreferencesKey("CurrentlyReading")
     data object BubblePosition : PreferencesKey("BubblePosition")
+    data object OpenLastBookOnLaunch : PreferencesKey("OpenLastBookOnLaunch")
 }
