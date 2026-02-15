@@ -1,46 +1,51 @@
 package com.retro99.home.ui.navigation
 
+import com.retro99.books.domain.model.BookType
+
 /**
- * State for the Home navigation with multiple back stacks.
+ * UI state for the Home screen (non-navigation concerns).
  *
- * Each tab maintains its own back stack, allowing users to navigate within a tab
- * and switch between tabs without losing their navigation state.
+ * Navigation state is now managed by [HomeNavigationStateHolder] using Nav3's
+ * [rememberNavBackStack] for automatic persistence across process death.
  *
- * @property currentTab The currently selected tab in the bottom navigation.
- * @property backStacks A map of back stacks, one for each tab. Each back stack
- *   starts with the tab's start destination.
  * @property currentlyReading The book that the user was last reading for at least 1 minute.
  * @property bubblePosition The persisted position of the continue reading bubble. Null until loaded.
  */
-data class HomeNavigationState(
-    val currentTab: HomeTab = HomeTab.DEFAULT,
-    val backStacks: Map<HomeTab, List<HomeDestination>> = HomeTab.entries.associateWith {
-        listOf(it.startDestination)
-    },
+data class HomeUiState(
     val currentlyReading: CurrentlyReadingUiModel? = null,
     val bubblePosition: BubblePositionModel? = null,
-) {
+)
+
+/**
+ * Navigation events that the ViewModel emits to request navigation changes.
+ * These are consumed by the composable which owns the navigation state.
+ */
+sealed interface HomeNavigationEvent {
     /**
-     * Returns the current back stack for the selected tab.
+     * Navigate to a destination within the current tab.
      */
-    val currentBackStack: List<HomeDestination>
-        get() = backStacks[currentTab] ?: listOf(currentTab.startDestination)
+    data class NavigateTo(val destination: HomeDestination) : HomeNavigationEvent
 
     /**
-     * Returns the combined back stack for NavDisplay.
-     *
-     * This follows the "exit through home" pattern where the start tab's entries
-     * are always at the bottom of the stack, ensuring the user exits through
-     * the starting tab.
+     * Switch to a different tab.
      */
-    val combinedBackStack: List<HomeDestination>
-        get() = if (currentTab == HomeTab.DEFAULT) {
-            currentBackStack
-        } else {
-            // Include the start tab's entries at the bottom, then current tab's entries
-            val startTabStack =
-                backStacks[HomeTab.DEFAULT] ?: listOf(HomeTab.DEFAULT.startDestination)
-            startTabStack + currentBackStack
-        }
+    data class SwitchTab(val tab: HomeTab) : HomeNavigationEvent
+
+    /**
+     * Go back in the navigation stack.
+     */
+    data object GoBack : HomeNavigationEvent
+
+    /**
+     * Navigate to the reader screen, replacing any existing reader in the stack.
+     * Used for deep links and "open last book on launch".
+     */
+    data class NavigateToReaderReplacing(
+        val bookUuid: String,
+        val bookType: BookType,
+        val tab: HomeTab = HomeTab.Books,
+    ) : HomeNavigationEvent
 }
+
+
 

@@ -11,20 +11,45 @@ import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
 import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 
+/**
+ * ViewModel for Home screen that handles non-navigation UI concerns.
+ *
+ * Navigation state is now managed by [HomeNavigationStateHolder] in the composable layer
+ * using Nav3's [rememberNavBackStack] for automatic persistence across process death.
+ *
+ * This ViewModel handles:
+ * - Currently reading book state
+ * - Bubble position persistence
+ * - Deep link navigation requests (emitted as [HomeNavigationEvent])
+ * - "Open last book on launch" feature (emitted as [HomeNavigationEvent])
+ * - Analytics for tab switches
+ */
 @KoinViewModel
 class HomeNavigationViewModel(
     deepLinkHandler: DeepLinkHandler,
-    @Provided private val analytics: Analytics,
+    @Provided val analytics: Analytics,
     @Provided private val getCurrentlyReadingUseCase: GetCurrentlyReadingUseCase,
     @Provided private val preferences: Preferences,
-) : BaseViewModel<HomeNavigationState, HomeNavigationIntent>(
-    HomeNavigationState(),
+) : BaseViewModel<HomeUiState, HomeNavigationIntent>(
+    HomeUiState(),
 ) {
+
+    private val _navigationEvents = MutableSharedFlow<HomeNavigationEvent>(extraBufferCapacity = 1)
+
+    /**
+     * Navigation events that should be consumed by the composable to perform navigation.
+     * These are one-shot events for deep links and "open last book on launch".
+     */
+    val navigationEvents: SharedFlow<HomeNavigationEvent> = _navigationEvents.asSharedFlow()
 
     init {
         observeDeepLinks(deepLinkHandler)
@@ -44,7 +69,7 @@ class HomeNavigationViewModel(
 
     /**
      * Checks if the "Open Last Book on Launch" setting is enabled and
-     * automatically navigates to the reader if there's a currently reading book.
+     * emits a navigation event to open the reader if there's a currently reading book.
      */
     private fun checkOpenLastBookOnLaunch() {
         val isEnabled = preferences.getBoolean(
@@ -55,19 +80,14 @@ class HomeNavigationViewModel(
 
         val currentlyReading = getCurrentlyReadingUseCase() ?: return
 
-        // Navigate to the reader with the currently reading book
-        updateState { state ->
-            val booksTab = HomeTab.Books
-            val currentBooksStack = state.backStacks[booksTab]
-                ?: listOf(booksTab.startDestination)
-            val newBooksStack = currentBooksStack
-                .filterNot { it is HomeDestination.Reader }
-                .plus(HomeDestination.Reader(currentlyReading.bookUuid, currentlyReading.bookType))
-            state.copy(
-                currentTab = booksTab,
-                backStacks = state.backStacks + (booksTab to newBooksStack),
+        // Emit navigation event to open the reader
+        emitNavigationEvent(
+            HomeNavigationEvent.NavigateToReaderReplacing(
+                bookUuid = currentlyReading.bookUuid,
+                bookType = currentlyReading.bookType,
+                tab = HomeTab.Books,
             )
-        }
+        )
     }
 
     /**
@@ -99,74 +119,48 @@ class HomeNavigationViewModel(
     private fun handleDeepLinkDestination(destination: DeepLinkDestination) {
         when (destination) {
             is DeepLinkDestination.Reader -> {
-                // Navigate to reader in the Books tab, replacing any existing reader
-                // This ensures we don't stack multiple reader screens
-                updateState { state ->
-                    val booksTab = HomeTab.Books
-                    val currentBooksStack = state.backStacks[booksTab]
-                        ?: listOf(booksTab.startDestination)
-                    val newBooksStack = currentBooksStack
-                        .filterNot { it is HomeDestination.Reader }
-                        .plus(HomeDestination.Reader(destination.bookUuid, destination.bookType))
-                    state.copy(
-                        currentTab = booksTab,
-                        backStacks = state.backStacks + (booksTab to newBooksStack),
+                // Emit navigation event to open the reader
+                emitNavigationEvent(
+                    HomeNavigationEvent.NavigateToReaderReplacing(
+                        bookUuid = destination.bookUuid,
+                        bookType = destination.bookType,
+                        tab = HomeTab.Books,
                     )
-                }
+                )
             }
         }
     }
 
     override fun onIntent(intent: HomeNavigationIntent) {
         when (intent) {
-            HomeNavigationIntent.OnBackClicked -> handleBackClicked()
-            is HomeNavigationIntent.NavigateTo -> handleNavigateTo(intent.destination)
-            is HomeNavigationIntent.SwitchTab -> handleSwitchTab(intent.tab)
+            // UI state intents
             is HomeNavigationIntent.UpdateBubblePosition -> saveBubblePosition(intent.side, intent.yFraction)
-        }
-    }
+            HomeNavigationIntent.RefreshCurrentlyReading -> loadCurrentlyReading()
 
-    private fun handleBackClicked() {
-        val currentState = viewState.value
-        val wasInReader = currentState.currentBackStack.lastOrNull() is HomeDestination.Reader
-
-        updateState { state ->
-            val currentStack = state.currentBackStack
-            if (currentStack.size > 1) {
-                // Pop the current tab's back stack
-                val newStack = currentStack.dropLast(1)
-                state.copy(
-                    backStacks = state.backStacks + (state.currentTab to newStack),
+            // Navigation intents - emit corresponding events
+            is HomeNavigationIntent.NavigateTo -> {
+                emitNavigationEvent(HomeNavigationEvent.NavigateTo(intent.destination))
+            }
+            is HomeNavigationIntent.SwitchTab -> {
+                analytics.logEvent(NavigationAnalyticsEvent.TabSwitched(tabName = intent.tab.name.lowercase()))
+                emitNavigationEvent(HomeNavigationEvent.SwitchTab(intent.tab))
+            }
+            HomeNavigationIntent.GoBack -> {
+                emitNavigationEvent(HomeNavigationEvent.GoBack)
+            }
+            is HomeNavigationIntent.OpenReader -> {
+                emitNavigationEvent(
+                    HomeNavigationEvent.NavigateTo(
+                        HomeDestination.Reader(intent.bookUuid, intent.bookType)
+                    )
                 )
-            } else if (state.currentTab != HomeTab.DEFAULT) {
-                // If at the root of a non-default tab, switch to the default tab
-                state.copy(currentTab = HomeTab.DEFAULT)
-            } else {
-                // At the root of the default tab, do nothing (or let the system handle it)
-                state
             }
         }
-
-        // Refresh currently reading state when leaving the reader
-        if (wasInReader) {
-            loadCurrentlyReading()
-        }
     }
 
-    private fun handleNavigateTo(destination: HomeDestination) {
-        updateState { state ->
-            val currentStack = state.currentBackStack
-            val newStack = currentStack + destination
-            state.copy(
-                backStacks = state.backStacks + (state.currentTab to newStack),
-            )
-        }
-    }
-
-    private fun handleSwitchTab(tab: HomeTab) {
-        analytics.logEvent(NavigationAnalyticsEvent.TabSwitched(tabName = tab.name.lowercase()))
-        updateState { state ->
-            state.copy(currentTab = tab)
+    private fun emitNavigationEvent(event: HomeNavigationEvent) {
+        viewModelScope.launch {
+            _navigationEvents.emit(event)
         }
     }
 }

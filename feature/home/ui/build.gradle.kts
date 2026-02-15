@@ -27,6 +27,7 @@ kotlin {
             api(libs.koin.annotations)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.coroutines)
+            implementation(libs.serialization)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
