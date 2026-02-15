@@ -22,6 +22,9 @@ import com.retro99.reader.ui.di.ReaderUiModule
 import com.retro99.settings.data.di.SettingsDataModule
 import com.retro99.settings.domain.di.SettingsDomainModule
 import com.retro99.settings.ui.di.SettingsUiModule
+import com.retro99.statistics.data.di.StatisticsDataModule
+import com.retro99.statistics.domain.di.StatisticsDomainModule
+import com.retro99.statistics.ui.di.StatisticsUiModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
@@ -50,6 +53,9 @@ import org.koin.core.annotation.Module
         SettingsDomainModule::class,
         SettingsDataModule::class,
         SettingsUiModule::class,
+        StatisticsDomainModule::class,
+        StatisticsDataModule::class,
+        StatisticsUiModule::class,
     ],
 )
 @Configuration
