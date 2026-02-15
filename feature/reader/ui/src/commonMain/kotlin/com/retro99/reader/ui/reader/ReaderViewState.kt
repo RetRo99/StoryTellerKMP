@@ -3,6 +3,7 @@ package com.retro99.reader.ui.reader
 import com.retro99.base.result.AppError
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -39,6 +40,8 @@ data class ReaderViewState(
     val previousTocPosition: PositionUiModel? = null,
     // Current page within the chapter based on actual viewport display
     val chapterPageInfo: ChapterPageInfo? = null,
+    // Estimated reading time for the current chapter
+    val chapterReadingTimeInfo: ChapterReadingTimeInfo? = null,
     // Flag to show snackbar when ReadAloud book has no media overlays
     val showNoAudioMessage: Boolean = false,
 ) {

@@ -23,6 +23,8 @@ import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
 import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import com.retro99.reader.ui.di.ReaderScope
+import com.retro99.reader.ui.model.ChapterReadingTimeInfo
+import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -102,6 +104,12 @@ class ReaderViewModel(
 
     /** Tracks the previous playing state to detect play/pause transitions */
     private var wasPlaying: Boolean = false
+
+    /** Cached word count for the current chapter (to avoid re-fetching on every position change) */
+    private var cachedChapterWordCount: ChapterWordCountInfo? = null
+
+    /** The href of the chapter for which we have cached word count */
+    private var cachedChapterHref: String? = null
 
     init {
         initializeReader()
@@ -225,8 +233,37 @@ class ReaderViewModel(
                     val chapterPageInfo = bookController.getChapterPageInfo()
                     updateState { it.copy(chapterPageInfo = chapterPageInfo) }
                 }
+
+                // Calculate reading time if enabled and not a ReadAloud book
+                if (currentSettings?.showReadingTime == true && !currentState.isReadAloud) {
+                    updateReadingTimeInfo(locator.href, locator.progression, currentSettings)
+                }
             }
             .launchIn(viewModelScope)
+    }
+
+    /**
+     * Updates the reading time info for the current chapter.
+     * Fetches word count if the chapter has changed, then calculates remaining time.
+     */
+    private suspend fun updateReadingTimeInfo(
+        chapterHref: String,
+        progression: Double?,
+        settings: ReaderSettingsUiModel,
+    ) {
+        // Fetch word count if chapter changed
+        if (chapterHref != cachedChapterHref) {
+            cachedChapterWordCount = bookController.getChapterWordCount()
+            cachedChapterHref = chapterHref
+        }
+
+        val readingTimeInfo = ChapterReadingTimeInfo.calculate(
+            wordCountInfo = cachedChapterWordCount,
+            chapterProgression = progression,
+            wordsPerMinute = settings.readingSpeedWpm,
+        )
+
+        updateState { it.copy(chapterReadingTimeInfo = readingTimeInfo) }
     }
 
     /**

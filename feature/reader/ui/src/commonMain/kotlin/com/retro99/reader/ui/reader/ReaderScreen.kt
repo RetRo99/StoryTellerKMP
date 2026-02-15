@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,6 +58,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
@@ -69,6 +71,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import resources.translations.general_close
 import resources.translations.reader_readaloud_no_audio
+import resources.translations.reader_time_remaining_less_than_minute
+import resources.translations.reader_time_remaining_minutes
 import resources.translations.reader_toc_jumped_to_chapter
 import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
@@ -143,6 +147,7 @@ private fun ReaderScreenContent(
                     previousTocPosition = viewState.previousTocPosition,
                     lastKnownPosition = viewState.lastKnownPosition,
                     chapterPageInfo = viewState.chapterPageInfo,
+                    chapterReadingTimeInfo = viewState.chapterReadingTimeInfo,
                     currentTime = viewState.currentTime,
                     intentDispatcher = intentDispatcher,
                     loader = movableLoader,
@@ -216,6 +221,7 @@ private fun ReaderContent(
     previousTocPosition: PositionUiModel?,
     lastKnownPosition: PositionUiModel?,
     chapterPageInfo: ChapterPageInfo?,
+    chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     currentTime: String,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
@@ -255,6 +261,7 @@ private fun ReaderContent(
             position = ProgressBarPosition.TOP,
             lastKnownPosition = lastKnownPosition,
             chapterPageInfo = chapterPageInfo,
+            chapterReadingTimeInfo = chapterReadingTimeInfo,
             currentTime = currentTime,
         )
 
@@ -393,6 +400,7 @@ private fun ReaderContent(
             position = ProgressBarPosition.BOTTOM,
             lastKnownPosition = lastKnownPosition,
             chapterPageInfo = chapterPageInfo,
+            chapterReadingTimeInfo = chapterReadingTimeInfo,
             currentTime = currentTime,
         )
     }
@@ -404,6 +412,7 @@ private fun AnimatedProgressBar(
     areControlsVisible: Boolean,
     position: ProgressBarPosition,
     lastKnownPosition: PositionUiModel?,
+    chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     chapterPageInfo: ChapterPageInfo?,
     currentTime: String,
 ) {
@@ -420,6 +429,7 @@ private fun AnimatedProgressBar(
         ReadingProgressBar(
             totalProgression = lastKnownPosition?.totalProgression,
             chapterPageInfo = chapterPageInfo,
+            chapterReadingTimeInfo = chapterReadingTimeInfo,
             chapterTitle = lastKnownPosition?.title,
             chapterProgressDisplayMode = settings.chapterProgressDisplayMode,
             chapterProgression = lastKnownPosition?.progression,
@@ -427,6 +437,7 @@ private fun AnimatedProgressBar(
             showTotalProgress = settings.showTotalProgress,
             progressIndicatorMode = settings.progressIndicatorMode,
             currentTime = currentTime,
+            showReadingTime = settings.showReadingTime,
         )
     }
 }
@@ -547,6 +558,7 @@ private fun ChapterNavigationUndoSnackbar(
 private fun ReadingProgressBar(
     totalProgression: Double?,
     chapterPageInfo: ChapterPageInfo?,
+    chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     chapterTitle: String?,
     chapterProgressDisplayMode: ChapterProgressDisplayMode,
     chapterProgression: Double?,
@@ -554,6 +566,7 @@ private fun ReadingProgressBar(
     showTotalProgress: Boolean,
     progressIndicatorMode: ProgressIndicatorMode,
     currentTime: String,
+    showReadingTime: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val totalProgress = totalProgression?.toFloat() ?: 0f
@@ -650,14 +663,36 @@ private fun ReadingProgressBar(
                     )
                 }
 
-                // Show total book progress percentage if enabled (aligned to end)
-                if (showTotalProgress) {
-                    Text(
-                        text = "$totalProgressPercent%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                    )
+                // Right side: reading time and/or total progress
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // Show estimated reading time if enabled
+                    if (showReadingTime && chapterReadingTimeInfo != null) {
+                        val readingTimeText = if (chapterReadingTimeInfo.remainingMinutes < 1) {
+                            stringResource(StringRes.reader_time_remaining_less_than_minute)
+                        } else {
+                            stringResource(
+                                StringRes.reader_time_remaining_minutes,
+                                chapterReadingTimeInfo.remainingMinutes,
+                            )
+                        }
+                        Text(
+                            text = readingTimeText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    // Show total book progress percentage if enabled
+                    if (showTotalProgress) {
+                        Text(
+                            text = "$totalProgressPercent%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
