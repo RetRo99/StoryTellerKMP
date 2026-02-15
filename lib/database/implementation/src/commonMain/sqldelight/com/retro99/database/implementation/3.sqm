@@ -1,0 +1,19 @@
+-- Migration from version 3 to version 4
+-- Adds reading_session table for tracking reading statistics
+
+CREATE TABLE IF NOT EXISTS reading_session (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    book_uuid TEXT NOT NULL,
+    book_title TEXT NOT NULL,
+    book_type TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    pages_read INTEGER,
+    start_progression REAL,
+    end_progression REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reading_session_book ON reading_session(book_uuid);
+CREATE INDEX IF NOT EXISTS idx_reading_session_start_time ON reading_session(start_time);
+

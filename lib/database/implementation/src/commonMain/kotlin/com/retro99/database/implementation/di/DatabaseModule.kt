@@ -6,6 +6,7 @@ import com.retro99.database.api.books.AuthorsDatabase
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.PositionDatabase
 import com.retro99.database.api.favorites.FavoritesDatabase
+import com.retro99.database.api.statistics.ReadingSessionDatabase
 import com.retro99.database.implementation.AppDatabase
 import com.retro99.database.implementation.dao.books.AuthorsDatabaseImpl
 import com.retro99.database.implementation.dao.books.AuthorsSqlDelightDao
@@ -13,6 +14,8 @@ import com.retro99.database.implementation.dao.books.BooksDatabaseImpl
 import com.retro99.database.implementation.dao.books.BooksSqlDelightDao
 import com.retro99.database.implementation.dao.favorites.FavoritesDatabaseImpl
 import com.retro99.database.implementation.dao.favorites.FavoritesSqlDelightDao
+import com.retro99.database.implementation.dao.statistics.ReadingSessionDatabaseImpl
+import com.retro99.database.implementation.dao.statistics.ReadingSessionSqlDelightDao
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
@@ -68,11 +71,26 @@ class DatabaseModule {
     }
 
     @Single
+    internal fun provideReadingSessionSqlDelightDao(
+        database: AppDatabase,
+    ): ReadingSessionSqlDelightDao {
+        return ReadingSessionSqlDelightDao(database)
+    }
+
+    @Single
+    internal fun provideReadingSessionDatabase(
+        dao: ReadingSessionSqlDelightDao,
+    ): ReadingSessionDatabase {
+        return ReadingSessionDatabaseImpl(dao)
+    }
+
+    @Single
     internal fun provideDataClearables(
         booksDatabase: BooksDatabase,
         favoritesDatabase: FavoritesDatabase,
         authorsDatabase: AuthorsDatabase,
+        readingSessionDatabase: ReadingSessionDatabase,
     ): List<DataClearable> {
-        return listOf(booksDatabase, favoritesDatabase, authorsDatabase)
+        return listOf(booksDatabase, favoritesDatabase, authorsDatabase, readingSessionDatabase)
     }
 }

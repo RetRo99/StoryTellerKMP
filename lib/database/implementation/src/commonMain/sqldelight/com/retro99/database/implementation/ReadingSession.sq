@@ -1,0 +1,97 @@
+-- ============================================
+-- READING_SESSION TABLE
+-- Tracks individual reading sessions for statistics
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS reading_session (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    book_uuid TEXT NOT NULL,
+    book_title TEXT NOT NULL,
+    book_type TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    pages_read INTEGER,
+    start_progression REAL,
+    end_progression REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reading_session_book ON reading_session(book_uuid);
+CREATE INDEX IF NOT EXISTS idx_reading_session_start_time ON reading_session(start_time);
+
+-- Queries
+insertSession:
+INSERT INTO reading_session(
+    book_uuid, book_title, book_type, start_time, end_time, duration_ms,
+    pages_read, start_progression, end_progression
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getAllSessions:
+SELECT * FROM reading_session ORDER BY start_time DESC;
+
+getSessionsByBookUuid:
+SELECT * FROM reading_session WHERE book_uuid = ? ORDER BY start_time DESC;
+
+getSessionsInDateRange:
+SELECT * FROM reading_session
+WHERE start_time >= ? AND start_time <= ?
+ORDER BY start_time DESC;
+
+getTotalReadingTimeMs:
+SELECT COALESCE(SUM(duration_ms), 0) FROM reading_session;
+
+getTotalReadingTimeMsInDateRange:
+SELECT COALESCE(SUM(duration_ms), 0) FROM reading_session
+WHERE start_time >= ? AND start_time <= ?;
+
+getSessionCountInDateRange:
+SELECT COUNT(*) FROM reading_session
+WHERE start_time >= ? AND start_time <= ?;
+
+getDistinctBooksReadInDateRange:
+SELECT COUNT(DISTINCT book_uuid) FROM reading_session
+WHERE start_time >= ? AND start_time <= ?;
+
+getRecentSessions:
+SELECT * FROM reading_session ORDER BY start_time DESC LIMIT ?;
+
+-- Get daily reading time for the last N days (for charts)
+getDailyReadingTime:
+SELECT
+    (start_time / 86400000) * 86400000 AS day_start,
+    SUM(duration_ms) AS total_duration_ms
+FROM reading_session
+WHERE start_time >= ?
+GROUP BY day_start
+ORDER BY day_start ASC;
+
+-- Get reading time by book type
+getReadingTimeByBookType:
+SELECT book_type, SUM(duration_ms) AS total_duration_ms
+FROM reading_session
+WHERE start_time >= ? AND start_time <= ?
+GROUP BY book_type;
+
+-- Get most read books
+getMostReadBooks:
+SELECT book_uuid, book_title, SUM(duration_ms) AS total_duration_ms, COUNT(*) AS session_count
+FROM reading_session
+WHERE start_time >= ? AND start_time <= ?
+GROUP BY book_uuid
+ORDER BY total_duration_ms DESC
+LIMIT ?;
+
+-- Get reading streak data (days with reading activity)
+getReadingDays:
+SELECT DISTINCT (start_time / 86400000) AS day_number
+FROM reading_session
+WHERE start_time >= ?
+ORDER BY day_number DESC;
+
+deleteSession:
+DELETE FROM reading_session WHERE id = ?;
+
+deleteAllSessions:
+DELETE FROM reading_session;
+
