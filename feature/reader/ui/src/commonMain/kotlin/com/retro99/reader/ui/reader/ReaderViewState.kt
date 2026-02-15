@@ -13,6 +13,7 @@ data class ReaderViewState(
     val bookType: BookType,
     val bookUuid: String,
     val bookTitle: String = "",
+    val bookCoverUrl: String? = null,
     val localFilePath: String? = null,
     val publication: EpubPublication? = null,
     val positionConflict: PositionConflictUiModel? = null,

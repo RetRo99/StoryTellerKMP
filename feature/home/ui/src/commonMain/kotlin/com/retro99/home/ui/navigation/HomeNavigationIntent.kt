@@ -6,5 +6,6 @@ sealed interface HomeNavigationIntent : BaseIntent {
     data object OnBackClicked : HomeNavigationIntent
     data class NavigateTo(val destination: HomeDestination) : HomeNavigationIntent
     data class SwitchTab(val tab: HomeTab) : HomeNavigationIntent
+    data class UpdateBubblePosition(val side: BubbleSide, val yFraction: Float) : HomeNavigationIntent
 }
 

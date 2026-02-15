@@ -11,6 +11,7 @@ import com.retro99.base.result.CompletableResult
 import com.retro99.reader.data.model.toApiModel
 import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
+import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.data.source.ReaderRemoteSource
 import com.retro99.reader.domain.ReaderRepository
@@ -130,6 +131,18 @@ internal class ReaderDataRepository(
 
     override suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
         return localSource.deleteEbookCache(bookUuid, bookType)
+    }
+
+    override fun getCurrentlyReading(): CurrentlyReadingDomainModel? {
+        return localSource.getCurrentlyReading()
+    }
+
+    override fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel) {
+        localSource.setCurrentlyReading(currentlyReading)
+    }
+
+    override fun clearCurrentlyReading() {
+        localSource.clearCurrentlyReading()
     }
 
     private fun logError(error: AppError, message: String) {

@@ -9,10 +9,14 @@ import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
+import com.retro99.books.domain.model.BookType
+import com.retro99.reader.data.model.CurrentlyReadingLocalModel
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
+import com.retro99.reader.data.model.toDomain
+import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.model.toLocalModel
-import com.retro99.books.domain.model.BookType
+import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,6 +77,19 @@ class ReaderLocalDataSource(
 
     override suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
         return fileDownloader.deleteEbookCache(bookUuid, bookType)
+    }
+
+    override fun getCurrentlyReading(): CurrentlyReadingDomainModel? {
+        return preferences.getObject<CurrentlyReadingLocalModel>(PreferencesKey.CurrentlyReading)
+            ?.toDomain()
+    }
+
+    override fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel) {
+        preferences.putObject(PreferencesKey.CurrentlyReading, currentlyReading.toLocal())
+    }
+
+    override fun clearCurrentlyReading() {
+        preferences.remove(PreferencesKey.CurrentlyReading)
     }
 
     private fun loadReaderSettings(): ReaderSettingsLocalModel {

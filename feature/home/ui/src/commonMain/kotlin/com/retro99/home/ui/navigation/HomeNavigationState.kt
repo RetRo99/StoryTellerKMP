@@ -9,12 +9,16 @@ package com.retro99.home.ui.navigation
  * @property currentTab The currently selected tab in the bottom navigation.
  * @property backStacks A map of back stacks, one for each tab. Each back stack
  *   starts with the tab's start destination.
+ * @property currentlyReading The book that the user was last reading for at least 1 minute.
+ * @property bubblePosition The persisted position of the continue reading bubble. Null until loaded.
  */
 data class HomeNavigationState(
     val currentTab: HomeTab = HomeTab.DEFAULT,
     val backStacks: Map<HomeTab, List<HomeDestination>> = HomeTab.entries.associateWith {
         listOf(it.startDestination)
     },
+    val currentlyReading: CurrentlyReadingUiModel? = null,
+    val bubblePosition: BubblePositionModel? = null,
 ) {
     /**
      * Returns the current back stack for the selected tab.
