@@ -67,5 +67,8 @@ sealed interface HomeDestination : BottomSheetDestination, BottomBarDestination 
 
     @Serializable
     data object AppSettings : HomeDestination
+
+    @Serializable
+    data object Statistics : HomeDestination
 }
 

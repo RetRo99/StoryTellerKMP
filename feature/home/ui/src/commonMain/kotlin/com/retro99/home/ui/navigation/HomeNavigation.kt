@@ -19,6 +19,7 @@ import com.retro99.home.ui.appsettings.AppSettingsScreen
 import com.retro99.home.ui.series.SeriesListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
 import com.retro99.settings.ui.SettingsScreen
+import com.retro99.statistics.ui.StatisticsScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -156,6 +157,17 @@ fun HomeNavigation(
                     entry<HomeDestination.AppSettings> {
                         AppSettingsScreen(
                             onLogout = onLogout,
+                            onNavigateToStatistics = {
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(HomeDestination.Statistics),
+                                )
+                            },
+                        )
+                    }
+
+                    entry<HomeDestination.Statistics> {
+                        StatisticsScreen(
+                            onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
                         )
                     }
                 },
