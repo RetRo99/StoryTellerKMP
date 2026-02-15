@@ -13,6 +13,7 @@ import com.retro99.books.domain.model.BookType
  *
  * @param bookUuid The unique identifier of the book
  * @param bookTitle The title of the book
+ * @param bookCoverUrl The URL of the book cover image
  * @param localEbookPath The local file path where the ebook is ready to be opened
  * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
  * @param initialSettings The initial reader settings to apply
@@ -21,6 +22,7 @@ import com.retro99.books.domain.model.BookType
 data class ReaderInitializationData(
     val bookUuid: String,
     val bookTitle: String,
+    val bookCoverUrl: String?,
     val localEbookPath: String,
     val bookType: BookType,
     val initialSettings: ReaderSettingsDomainModel,

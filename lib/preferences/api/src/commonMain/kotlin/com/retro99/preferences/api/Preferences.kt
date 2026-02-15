@@ -35,4 +35,6 @@ sealed class PreferencesKey(val name: String) {
     data object ReaderSettings : PreferencesKey("ReaderSettings")
     data object DatabaseSchemaVersion : PreferencesKey("DatabaseSchemaVersion")
     data object FileLoggingEnabled : PreferencesKey("FileLoggingEnabled")
+    data object CurrentlyReading : PreferencesKey("CurrentlyReading")
+    data object BubblePosition : PreferencesKey("BubblePosition")
 }

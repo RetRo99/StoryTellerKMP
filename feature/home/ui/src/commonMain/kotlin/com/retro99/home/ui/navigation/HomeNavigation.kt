@@ -1,5 +1,7 @@
 package com.retro99.home.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -8,6 +10,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import com.retro99.base.ui.BaseScreen
 // import com.retro99.books.ui.authors.detail.AuthorDetailScreen
@@ -32,20 +35,22 @@ fun HomeNavigation(
     BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
         val currentDestination = state.currentBackStack.lastOrNull()
         val showBottomBar = (currentDestination as? BottomBarDestination)?.showBottomBar != false
+        val isInReader = currentDestination is HomeDestination.Reader
+        val currentlyReading = state.currentlyReading
 
-        Scaffold(
-            modifier = modifier,
-            bottomBar = {
-                if (showBottomBar) {
-                    HomeBottomNavigationBar(
-                        currentTab = state.currentTab,
-                        onTabSelected = { tab ->
-                            intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
-                        },
-                    )
-                }
-            },
-        ) { paddingValues ->
+        Box(modifier = modifier.fillMaxSize()) {
+            Scaffold(
+                bottomBar = {
+                    if (showBottomBar) {
+                        HomeBottomNavigationBar(
+                            currentTab = state.currentTab,
+                            onTabSelected = { tab ->
+                                intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
+                            },
+                        )
+                    }
+                },
+            ) { paddingValues ->
             BottomSheetNavDisplay(
                 backStack = state.currentBackStack,
                 onBack = { intentDispatcher(HomeNavigationIntent.OnBackClicked) },
@@ -172,6 +177,36 @@ fun HomeNavigation(
                     }
                 },
             )
+        }
+
+            // Draggable floating bubble for Continue Reading
+            // Only show when position is loaded (not null) to avoid flicker
+            val bubblePosition = state.bubblePosition
+            if (!isInReader && currentlyReading != null && bubblePosition != null) {
+                DraggableFloatingBubble(
+                    modifier = Modifier.fillMaxSize(),
+                    initialSide = bubblePosition.toBubbleSide(),
+                    initialYFraction = bubblePosition.yFraction,
+                    edgePadding = 16f,
+                    onPositionChanged = { side, yFraction ->
+                        intentDispatcher(HomeNavigationIntent.UpdateBubblePosition(side, yFraction))
+                    },
+                ) {
+                    ContinueReadingBubble(
+                        currentlyReading = currentlyReading,
+                        onClick = {
+                            intentDispatcher(
+                                HomeNavigationIntent.NavigateTo(
+                                    HomeDestination.Reader(
+                                        bookUuid = currentlyReading.bookUuid,
+                                        bookType = currentlyReading.bookType,
+                                    ),
+                                ),
+                            )
+                        },
+                    )
+                }
+            }
         }
     }
 }

@@ -2,9 +2,10 @@ package com.retro99.reader.data.source
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import com.retro99.books.domain.model.BookType
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
-import com.retro99.books.domain.model.BookType
+import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -71,5 +72,24 @@ interface ReaderLocalSource {
      * @return True if the file was deleted successfully
      */
     suspend fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean
+
+    /**
+     * Gets the currently reading book info.
+     *
+     * @return The currently reading book info or null if none
+     */
+    fun getCurrentlyReading(): CurrentlyReadingDomainModel?
+
+    /**
+     * Sets the currently reading book.
+     *
+     * @param currentlyReading The book info to set as currently reading
+     */
+    fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel)
+
+    /**
+     * Clears the currently reading book.
+     */
+    fun clearCurrentlyReading()
 }
 

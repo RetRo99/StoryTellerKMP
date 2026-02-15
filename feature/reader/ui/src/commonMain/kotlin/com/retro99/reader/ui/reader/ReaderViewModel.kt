@@ -15,10 +15,12 @@ import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderInitializationData
+import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
 import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
@@ -56,6 +58,7 @@ class ReaderViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val saveReadingSessionUseCase: SaveReadingSessionUseCase,
+    @Provided private val setCurrentlyReadingUseCase: SetCurrentlyReadingUseCase,
     @Provided private val publicationService: EpubPublicationService,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
@@ -296,6 +299,7 @@ class ReaderViewModel(
                 state.copy(
                     bookUuid = data.bookUuid,
                     bookTitle = data.bookTitle,
+                    bookCoverUrl = data.bookCoverUrl,
                     publication = publication,
                     bookType = bookType,
                     positionConflict = conflict,
@@ -489,6 +493,19 @@ class ReaderViewModel(
                 )
             }
 
+            // Update currently reading book if session was long enough (≥ 1 minute)
+            if (readingDurationMs >= MINIMUM_READING_DURATION_MS && currentState.bookTitle.isNotEmpty()) {
+                setCurrentlyReadingUseCase(
+                    CurrentlyReadingDomainModel(
+                        bookUuid = bookUuid,
+                        bookType = currentState.bookType,
+                        bookTitle = currentState.bookTitle,
+                        coverUrl = currentState.bookCoverUrl,
+                        totalProgression = currentState.lastKnownPosition?.totalProgression,
+                    )
+                )
+            }
+
             onClose()
         }
     }
@@ -643,5 +660,8 @@ class ReaderViewModel(
 
         /** Interval for updating the current time display (1 minute) */
         private const val TIME_UPDATE_INTERVAL_MS = 60_000L
+
+        /** Minimum reading duration to update "currently reading" book (1 minute) */
+        private const val MINIMUM_READING_DURATION_MS = 60_000L
     }
 }
