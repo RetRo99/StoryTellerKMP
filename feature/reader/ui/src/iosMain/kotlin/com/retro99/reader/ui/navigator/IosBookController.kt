@@ -4,7 +4,7 @@ import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.di.ReaderScope
-import com.retro99.reader.ui.model.ChapterWordCountInfo
+import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -56,6 +56,12 @@ class IosBookController(
      */
     private var lastPageTurnSentenceId: String? = null
 
+    /**
+     * Cache for chapter word counts, keyed by chapter href.
+     * Word count is static per chapter, so we only fetch it once per chapter.
+     */
+    private val chapterWordCountCache = mutableMapOf<String, Int>()
+
     init {
         setupCallbacks()
         // Only inject double-tap detection script for ReadAloud books
@@ -66,17 +72,26 @@ class IosBookController(
 
     private fun setupCallbacks() {
         bridge.setOnPositionChangedCallback { locator ->
-            _currentLocator.tryEmit(
-                LocatorState(
-                    href = locator.href,
-                    type = locator.type,
-                    title = locator.title,
-                    progression = locator.progression,
-                    position = locator.position,
-                    totalProgression = locator.totalProgression,
-                    fragments = null,
-                ),
-            )
+            controllerScope.launch {
+                // Get or fetch chapter word count (cached per chapter)
+                val cachedWordCount = getOrFetchChapterWordCount(locator.href)
+
+                // Fetch chapter info with page position and word count
+                val chapterInfo = fetchChapterInfo(cachedWordCount)
+
+                _currentLocator.emit(
+                    LocatorState(
+                        href = locator.href,
+                        type = locator.type,
+                        title = locator.title,
+                        progression = locator.progression,
+                        position = locator.position,
+                        totalProgression = locator.totalProgression,
+                        fragments = null,
+                        chapterInfo = chapterInfo,
+                    ),
+                )
+            }
         }
 
         // Set up callback for double-tap events from JavaScript
@@ -91,6 +106,58 @@ class IosBookController(
                 )
             }
         }
+    }
+
+    /**
+     * Fetches the chapter info from the WebView.
+     * This is called on every locator change since page info depends on scroll position.
+     * Word count is passed in from the cache.
+     */
+    private suspend fun fetchChapterInfo(cachedWordCount: Int?): ChapterInfo? {
+        val script = ChapterPageCalculator.getPageCalculationScript()
+
+        val rawResult: String? = suspendCancellableCoroutine { continuation ->
+            bridge.evaluateJavaScript(script) { result ->
+                continuation.resume(result)
+            }
+        }
+
+        if (rawResult == null) {
+            return null
+        }
+
+        return ChapterPageCalculator.parsePageResult(rawResult, cachedWordCount)
+    }
+
+    /**
+     * Gets the cached word count for a chapter, or fetches it if not cached.
+     * Word count is static per chapter, so we only fetch it once.
+     */
+    private suspend fun getOrFetchChapterWordCount(href: String): Int? {
+        // Return cached value if available
+        chapterWordCountCache[href]?.let { return it }
+
+        // Fetch and cache the word count
+        val script = ChapterWordCountCalculator.getWordCountScript()
+
+        val rawResult: String? = suspendCancellableCoroutine { continuation ->
+            bridge.evaluateJavaScript(script) { result ->
+                continuation.resume(result)
+            }
+        }
+
+        if (rawResult == null) {
+            return null
+        }
+
+        val wordCount = ChapterWordCountCalculator.parseWordCountResult(rawResult)
+
+        // Cache the result
+        if (wordCount != null) {
+            chapterWordCountCache[href] = wordCount
+        }
+
+        return wordCount
     }
 
     /**
@@ -206,20 +273,10 @@ class IosBookController(
         return SentenceVisibilityChecker.parseVisibilityResult(rawResult, elementId)
     }
 
-    override suspend fun getChapterPageInfo(): com.retro99.reader.ui.model.ChapterPageInfo? {
-        val script = ChapterPageCalculator.getPageCalculationScript()
-
-        val rawResult: String? = suspendCancellableCoroutine { continuation ->
-            bridge.evaluateJavaScript(script) { result ->
-                continuation.resume(result)
-            }
-        }
-
-        if (rawResult == null) {
-            return null
-        }
-
-        return ChapterPageCalculator.parsePageResult(rawResult)
+    override suspend fun getChapterPageInfo(): ChapterInfo? {
+        // For manual refresh, we don't have the href, so we can't include cached word count
+        // This is fine since this method is mainly used for page info after settings changes
+        return fetchChapterInfo(cachedWordCount = null)
     }
 
     override suspend fun getVisibleSentenceId(): String? {
@@ -236,22 +293,6 @@ class IosBookController(
         }
 
         return VisibleSentenceDetector.parseResult(rawResult)
-    }
-
-    override suspend fun getChapterWordCount(): ChapterWordCountInfo? {
-        val script = ChapterWordCountCalculator.getWordCountScript()
-
-        val rawResult: String? = suspendCancellableCoroutine { continuation ->
-            bridge.evaluateJavaScript(script) { result ->
-                continuation.resume(result)
-            }
-        }
-
-        if (rawResult == null) {
-            return null
-        }
-
-        return ChapterWordCountCalculator.parseWordCountResult(rawResult)
     }
 
     override fun close() {

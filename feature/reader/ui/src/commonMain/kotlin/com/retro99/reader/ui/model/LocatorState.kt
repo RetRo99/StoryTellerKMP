@@ -1,18 +1,20 @@
 package com.retro99.reader.ui.model
 
 /**
- * Represents the current page within a chapter based on the actual viewport display.
+ * Combined information about the current chapter including page position and word count.
  *
- * Unlike the EPUB position (which is based on fixed 1024-character blocks),
- * this represents the actual displayed page that changes based on font size,
- * margins, and viewport dimensions.
+ * This class combines page info (which changes on every page turn) with word count
+ * (which is static per chapter and cached). The page info is based on the actual
+ * viewport display, unlike the EPUB position which uses fixed 1024-character blocks.
  *
  * @param currentPage The current page number within the chapter (1-based)
  * @param totalPages The total number of pages in the current chapter
+ * @param totalWords The total number of words in the chapter (null if not yet fetched)
  */
-data class ChapterPageInfo(
+data class ChapterInfo(
     val currentPage: Int,
     val totalPages: Int,
+    val totalWords: Int? = null,
 )
 
 /**
@@ -29,7 +31,7 @@ data class ChapterPageInfo(
  * @param position The position index, if available
  * @param totalProgression The total progression through the publication (0.0 to 1.0)
  * @param fragments The list of fragment identifiers (e.g., sentence IDs)
- * @param chapterPageInfo The current page info within the chapter based on viewport display
+ * @param chapterInfo Combined chapter info including page position and word count
  */
 data class LocatorState(
     val href: String,
@@ -39,7 +41,7 @@ data class LocatorState(
     val position: Int?,
     val totalProgression: Double?,
     val fragments: List<String>?,
-    val chapterPageInfo: ChapterPageInfo? = null,
+    val chapterInfo: ChapterInfo? = null,
 )
 
 /**

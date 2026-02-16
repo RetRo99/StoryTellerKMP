@@ -1,15 +1,6 @@
 package com.retro99.reader.ui.model
 
 /**
- * Information about the word count of the current chapter.
- *
- * @param totalWords The total number of words in the chapter
- */
-data class ChapterWordCountInfo(
-    val totalWords: Int,
-)
-
-/**
  * Information about the estimated reading time for the current chapter.
  *
  * @param remainingMinutes The estimated minutes remaining to finish the chapter

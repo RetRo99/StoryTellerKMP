@@ -57,7 +57,7 @@ import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
-import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -146,7 +146,7 @@ private fun ReaderScreenContent(
                     isTocVisible = viewState.isTocVisible,
                     previousTocPosition = viewState.previousTocPosition,
                     lastKnownPosition = viewState.lastKnownPosition,
-                    chapterPageInfo = viewState.chapterPageInfo,
+                    chapterInfo = viewState.chapterInfo,
                     chapterReadingTimeInfo = viewState.chapterReadingTimeInfo,
                     currentTime = viewState.currentTime,
                     intentDispatcher = intentDispatcher,
@@ -220,7 +220,7 @@ private fun ReaderContent(
     isTocVisible: Boolean,
     previousTocPosition: PositionUiModel?,
     lastKnownPosition: PositionUiModel?,
-    chapterPageInfo: ChapterPageInfo?,
+    chapterInfo: ChapterInfo?,
     chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     currentTime: String,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
@@ -428,7 +428,7 @@ private fun AnimatedProgressBar(
     ) {
         ReadingProgressBar(
             totalProgression = lastKnownPosition?.totalProgression,
-            chapterPageInfo = chapterPageInfo,
+            chapterInfo = chapterInfo,
             chapterReadingTimeInfo = chapterReadingTimeInfo,
             chapterTitle = lastKnownPosition?.title,
             chapterProgressDisplayMode = settings.chapterProgressDisplayMode,
@@ -557,7 +557,7 @@ private fun ChapterNavigationUndoSnackbar(
 @Composable
 private fun ReadingProgressBar(
     totalProgression: Double?,
-    chapterPageInfo: ChapterPageInfo?,
+    chapterInfo: ChapterInfo?,
     chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     chapterTitle: String?,
     chapterProgressDisplayMode: ChapterProgressDisplayMode,
@@ -625,9 +625,9 @@ private fun ReadingProgressBar(
                     }
 
                     ChapterProgressDisplayMode.RELATIVE -> {
-                        chapterPageInfo?.let { pageInfo ->
+                        chapterInfo?.let { info ->
                             if (isNotEmpty()) append(" ")
-                            append("(${pageInfo.currentPage}/${pageInfo.totalPages})")
+                            append("(${info.currentPage}/${info.totalPages})")
                         }
                     }
 

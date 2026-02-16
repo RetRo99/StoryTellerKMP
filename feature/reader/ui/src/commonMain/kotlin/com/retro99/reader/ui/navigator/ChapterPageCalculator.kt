@@ -1,7 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.analytics.api.Analytics
-import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -83,18 +83,19 @@ object ChapterPageCalculator : KoinComponent {
      * Parses the JSON result from the page calculation JavaScript.
      *
      * @param json The raw JSON string from JavaScript evaluation
-     * @return The parsed chapter page info, or null on error
+     * @param cachedWordCount Optional cached word count to include in the result
+     * @return The parsed chapter info, or null on error
      */
-    fun parsePageResult(json: String): ChapterPageInfo? {
+    fun parsePageResult(json: String, cachedWordCount: Int? = null): ChapterInfo? {
         return try {
-            parsePageResultInternal(json)
+            parsePageResultInternal(json, cachedWordCount)
         } catch (e: Exception) {
             analytics.logException(e, "Failed to parse page result, json: $json")
             null
         }
     }
 
-    private fun parsePageResultInternal(json: String): ChapterPageInfo? {
+    private fun parsePageResultInternal(json: String, cachedWordCount: Int?): ChapterInfo? {
         val data = jsonParser.decodeFromString<PageCalculationResult>(json)
 
         if (data.status != "success") {
@@ -104,9 +105,10 @@ object ChapterPageCalculator : KoinComponent {
         val currentPage = data.currentPage ?: return null
         val totalPages = data.totalPages ?: return null
 
-        return ChapterPageInfo(
+        return ChapterInfo(
             currentPage = currentPage,
-            totalPages = (totalPages - 1).coerceAtLeast(1)
+            totalPages = (totalPages - 1).coerceAtLeast(1),
+            totalWords = cachedWordCount,
         )
     }
 }

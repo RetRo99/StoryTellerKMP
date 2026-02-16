@@ -3,9 +3,8 @@ package com.retro99.reader.ui.reader
 import com.retro99.base.nowMillis
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.ui.di.ReaderScope
-import com.retro99.reader.ui.model.ChapterPageInfo
+import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
-import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.reader.ReadingSpeedTracker.Companion.MAX_PAGE_DWELL_MS
 import com.retro99.reader.ui.reader.ReadingSpeedTracker.Companion.MIN_PAGE_DWELL_MS
@@ -46,7 +45,7 @@ class ReadingSpeedTracker(
 ) {
 
     /** Cached word count for the current chapter */
-    private var cachedChapterWordCount: ChapterWordCountInfo? = null
+    private var cachedChapterWordCount: Int? = null
 
     /** The href of the chapter for which we have cached data */
     private var cachedChapterHref: String? = null
@@ -106,6 +105,7 @@ class ReadingSpeedTracker(
                     calculateReadingTime(
                         chapterHref = locator.href,
                         progression = locator.progression,
+                        chapterInfo = locator.chapterInfo,
                         fallbackWpm = settings.readingSpeedWpm,
                     )
                 }
@@ -114,30 +114,36 @@ class ReadingSpeedTracker(
 
     /**
      * Calculates reading time for the current position.
+     * Uses the enriched LocatorState which includes chapterInfo.
      */
-    private suspend fun calculateReadingTime(
+    private fun calculateReadingTime(
         chapterHref: String,
         progression: Double?,
+        chapterInfo: ChapterInfo?,
         fallbackWpm: Int,
     ): ChapterReadingTimeInfo? {
         val currentTimeMs = nowMillis()
-        val chapterPageInfo = bookController.getChapterPageInfo()
-        val currentPage = chapterPageInfo?.currentPage ?: 1
-        val totalPages = chapterPageInfo?.totalPages ?: 1
+        val currentPage = chapterInfo?.currentPage ?: 1
+        val totalPages = chapterInfo?.totalPages ?: 1
+        val totalWords = chapterInfo?.totalWords
 
-        // Fetch word count and reset tracking if chapter changed
+        // Update cached word count and reset tracking if chapter changed
         if (chapterHref != cachedChapterHref) {
-            cachedChapterWordCount = bookController.getChapterWordCount()
+            cachedChapterWordCount = totalWords
             cachedChapterHref = chapterHref
             // Reset all reading session tracking for new chapter
             resetReadingSession(currentTimeMs, currentPage)
             // Calculate words per page for this chapter
-            val totalWords = cachedChapterWordCount?.totalWords ?: 0
+            val wordCount = cachedChapterWordCount ?: 0
+            cachedWordsPerPage = if (totalPages > 0) wordCount.toDouble() / totalPages else 0.0
+        } else if (totalWords != null && cachedChapterWordCount == null) {
+            // Word count arrived after initial locator emission
+            cachedChapterWordCount = totalWords
             cachedWordsPerPage = if (totalPages > 0) totalWords.toDouble() / totalPages else 0.0
         }
 
         // Calculate dynamic reading speed based on actual page turns
-        if (chapterPageInfo != null && cachedWordsPerPage > 0) {
+        if (chapterInfo != null && cachedWordsPerPage > 0) {
             calculatedWordsPerMinute = calculateDynamicReadingSpeed(
                 currentTimeMs = currentTimeMs,
                 currentPage = currentPage,
@@ -145,7 +151,7 @@ class ReadingSpeedTracker(
         }
 
         return buildReadingTimeInfo(
-            chapterPageInfo = chapterPageInfo,
+            chapterInfo = chapterInfo,
             chapterProgression = progression,
             wordsPerMinute = calculatedWordsPerMinute ?: fallbackWpm,
         )
@@ -177,20 +183,18 @@ class ReadingSpeedTracker(
      * Uses page-based calculation when available for more precise estimation.
      */
     private fun buildReadingTimeInfo(
-        chapterPageInfo: ChapterPageInfo?,
+        chapterInfo: ChapterInfo?,
         chapterProgression: Double?,
         wordsPerMinute: Int,
     ): ChapterReadingTimeInfo? {
-        val wordCountInfo = cachedChapterWordCount
-        if (wordCountInfo == null || wordsPerMinute <= 0) {
+        val totalWords = cachedChapterWordCount
+        if (totalWords == null || wordsPerMinute <= 0) {
             return null
         }
 
-        val totalWords = wordCountInfo.totalWords
-
         // Use page-based calculation if available (more precise)
-        val remainingWords = if (chapterPageInfo != null && cachedWordsPerPage > 0) {
-            val remainingPages = (chapterPageInfo.totalPages - chapterPageInfo.currentPage)
+        val remainingWords = if (chapterInfo != null && cachedWordsPerPage > 0) {
+            val remainingPages = (chapterInfo.totalPages - chapterInfo.currentPage)
                 .coerceAtLeast(0)
             (remainingPages * cachedWordsPerPage).toInt()
         } else if (chapterProgression != null) {
