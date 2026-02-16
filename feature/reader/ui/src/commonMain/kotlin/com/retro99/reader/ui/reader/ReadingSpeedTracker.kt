@@ -65,6 +65,13 @@ class ReadingSpeedTracker(
     private var calculatedWordsPerMinute: Int? = null
 
     /**
+     * Established reading speed that persists across chapter changes.
+     * This is updated when we have a confident measurement and is used as the
+     * starting point when entering a new chapter.
+     */
+    private var establishedWordsPerMinute: Int? = null
+
+    /**
      * Flow of reading time information that updates on each page turn.
      *
      * Emits null when:
@@ -136,14 +143,24 @@ class ReadingSpeedTracker(
     }
 
     /**
-     * Resets all reading session tracking state.
+     * Resets chapter-specific reading session tracking state.
+     *
+     * Preserves the established reading speed across chapter changes so the user
+     * doesn't fall back to the default WPM every time they switch chapters.
+     * The established speed will be blended with new measurements from the current chapter.
      */
     private fun resetReadingSession(currentTimeMs: Long, currentPage: Int) {
+        // Save current calculated WPM as established before resetting
+        calculatedWordsPerMinute?.let { currentWpm ->
+            establishedWordsPerMinute = currentWpm
+        }
+
         activeReadingTimeMs = 0L
         lastPageTurnTimeMs = currentTimeMs
         lastRecordedPage = currentPage
         totalPagesRead = 0
-        calculatedWordsPerMinute = null
+        // Start new chapter with established speed (will be blended with new measurements)
+        calculatedWordsPerMinute = establishedWordsPerMinute
     }
 
     /**
@@ -243,10 +260,27 @@ class ReadingSpeedTracker(
             return calculatedWordsPerMinute
         }
 
-        val calculatedWpm = (wordsRead / activeMinutes).toInt()
+        val rawWpm = (wordsRead / activeMinutes).toInt()
+
+        // Blend with established reading speed if available
+        // This provides smoothing and prevents jarring changes between chapters
+        val blendedWpm = establishedWordsPerMinute?.let { established ->
+            // Weight new measurement more as we accumulate more reading time in this chapter
+            // After ~1 minute of reading, new measurement has ~50% weight
+            val newMeasurementWeight = (activeMinutes / (activeMinutes + 1.0)).coerceIn(0.0, 0.8)
+            val establishedWeight = 1.0 - newMeasurementWeight
+            (established * establishedWeight + rawWpm * newMeasurementWeight).toInt()
+        } ?: rawWpm
 
         // Clamp to reasonable bounds (50-1000 WPM) to filter out outliers
-        return calculatedWpm.coerceIn(MIN_REASONABLE_WPM, MAX_REASONABLE_WPM)
+        val finalWpm = blendedWpm.coerceIn(MIN_REASONABLE_WPM, MAX_REASONABLE_WPM)
+
+        // Update established speed when we have confident measurement (enough reading time)
+        if (activeReadingTimeMs >= CONFIDENT_READING_TIME_MS) {
+            establishedWordsPerMinute = finalWpm
+        }
+
+        return finalWpm
     }
 
     private companion object {
@@ -263,6 +297,13 @@ class ReadingSpeedTracker(
 
         /** Minimum active reading time (ms) before calculating dynamic reading speed */
         const val MIN_READING_TIME_FOR_SPEED_CALC_MS = 10_000L // 10 seconds
+
+        /**
+         * Reading time (ms) required before we consider the measurement confident enough
+         * to update the established reading speed. This prevents short bursts of reading
+         * from overwriting a well-established reading speed.
+         */
+        const val CONFIDENT_READING_TIME_MS = 30_000L // 30 seconds
 
         /** Minimum pages read before calculating dynamic reading speed */
         const val MIN_PAGES_FOR_SPEED_CALC = 1
