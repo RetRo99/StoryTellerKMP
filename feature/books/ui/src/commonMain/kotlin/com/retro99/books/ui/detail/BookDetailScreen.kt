@@ -90,10 +90,11 @@ import resources.translations.general_cancel
 fun BookDetailScreen(
     bookUuid: String,
     onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
+    onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookDetailViewModel = koinViewModel {
-        parametersOf(bookUuid, onNavigateToReader, onBack)
+        parametersOf(bookUuid, onNavigateToReader, onNavigateToSeriesDetail, onBack)
     },
 ) {
     BaseScreen(
