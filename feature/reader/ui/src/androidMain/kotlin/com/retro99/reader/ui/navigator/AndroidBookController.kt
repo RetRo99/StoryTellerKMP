@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -167,6 +168,7 @@ class AndroidBookController internal constructor() : BookController {
      * Flow of current reading position/locator changes.
      * Converts Readium's Locator to the common LocatorState model.
      * Enriches the state with chapter info (page position and cached word count).
+     * Delays the first emission by 500ms.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     override val currentLocator: Flow<LocatorState> = _navigator.flatMapLatest { navigator ->
@@ -190,6 +192,8 @@ class AndroidBookController internal constructor() : BookController {
                 chapterInfo = chapterInfo,
             )
         } ?: flowOf()
+    }.onStart {
+        delay(500)
     }.onEach {
         cancelPendingPageTurn()
     }
