@@ -8,23 +8,19 @@ import com.retro99.analytics.api.ReaderAnalyticsEvent
 import com.retro99.base.formatCurrentTime
 import com.retro99.base.now
 import com.retro99.base.nowMillis
-import com.retro99.base.result.AppError
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
+import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderInitializationData
-import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
-import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import com.retro99.reader.ui.di.ReaderScope
-import com.retro99.reader.ui.model.ChapterReadingTimeInfo
-import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -35,6 +31,7 @@ import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.service.EpubPublicationService
+import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -96,6 +93,10 @@ class ReaderViewModel(
         }
     }
 
+    private val readingSpeedTracker: ReadingSpeedTracker by lazy {
+        readerScope.get<ReadingSpeedTracker>()
+    }
+
     /** Job for the time update coroutine, cancelled when showCurrentTime is disabled */
     private var timeUpdateJob: Job? = null
 
@@ -104,12 +105,6 @@ class ReaderViewModel(
 
     /** Tracks the previous playing state to detect play/pause transitions */
     private var wasPlaying: Boolean = false
-
-    /** Cached word count for the current chapter (to avoid re-fetching on every position change) */
-    private var cachedChapterWordCount: ChapterWordCountInfo? = null
-
-    /** The href of the chapter for which we have cached word count */
-    private var cachedChapterHref: String? = null
 
     init {
         initializeReader()
@@ -226,44 +221,29 @@ class ReaderViewModel(
                 )
                 updatePosition(positionUiModel)
 
-                // Fetch chapter page info for the current viewport
-                // Only needed when using RELATIVE display mode (viewport-based page numbers)
                 val currentSettings = currentState.currentSettings
-                if (currentSettings?.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
+                val needsPageInfoForDisplay =
+                    currentSettings?.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE
+
+                // Fetch chapter page info for RELATIVE display mode
+                if (needsPageInfoForDisplay) {
                     val chapterPageInfo = bookController.getChapterPageInfo()
                     updateState { it.copy(chapterPageInfo = chapterPageInfo) }
-                }
-
-                // Calculate reading time if enabled and not a ReadAloud book
-                if (currentSettings?.showReadingTime == true && !currentState.isReadAloud) {
-                    updateReadingTimeInfo(locator.href, locator.progression, currentSettings)
                 }
             }
             .launchIn(viewModelScope)
     }
 
     /**
-     * Updates the reading time info for the current chapter.
-     * Fetches word count if the chapter has changed, then calculates remaining time.
+     * Observes reading time info from the ReadingSpeedTracker.
+     * The tracker handles all the logic internally (settings, page info, word count).
      */
-    private suspend fun updateReadingTimeInfo(
-        chapterHref: String,
-        progression: Double?,
-        settings: ReaderSettingsUiModel,
-    ) {
-        // Fetch word count if chapter changed
-        if (chapterHref != cachedChapterHref) {
-            cachedChapterWordCount = bookController.getChapterWordCount()
-            cachedChapterHref = chapterHref
-        }
-
-        val readingTimeInfo = ChapterReadingTimeInfo.calculate(
-            wordCountInfo = cachedChapterWordCount,
-            chapterProgression = progression,
-            wordsPerMinute = settings.readingSpeedWpm,
-        )
-
-        updateState { it.copy(chapterReadingTimeInfo = readingTimeInfo) }
+    private fun observeReadingTimeInfo() {
+        readingSpeedTracker.readingTimeInfo
+            .onEach { readingTimeInfo ->
+                updateState { it.copy(chapterReadingTimeInfo = readingTimeInfo) }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
@@ -349,6 +329,7 @@ class ReaderViewModel(
             }
             // Start observing after publication is ready
             observeBookLocationChanges()
+            observeReadingTimeInfo()
             observeSettingsChanges()
             // Fetch initial chapter page info after WebView renders
             // Only needed when using RELATIVE display mode (viewport-based page numbers)
