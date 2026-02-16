@@ -7,6 +7,8 @@ import com.retro99.reader.ui.model.ChapterPageInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.ChapterWordCountInfo
 import com.retro99.reader.ui.navigator.BookController
+import com.retro99.reader.ui.reader.ReadingSpeedTracker.Companion.MAX_PAGE_DWELL_MS
+import com.retro99.reader.ui.reader.ReadingSpeedTracker.Companion.MIN_PAGE_DWELL_MS
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -204,10 +206,11 @@ class ReadingSpeedTracker(
     /**
      * Calculates the user's actual reading speed based on pages read and active reading time.
      *
-     * This method tracks only "active" reading time by detecting idle periods.
-     * If the time since the last page turn exceeds [IDLE_THRESHOLD_MS], the user is
-     * considered to have been idle (app backgrounded, screen off, stepped away, etc.)
-     * and that time is not counted toward the reading speed calculation.
+     * This method tracks only "active" reading time by enforcing a dwell-time window.
+     * A page turn only counts toward reading speed if the time spent on the page is
+     * between [MIN_PAGE_DWELL_MS] and [MAX_PAGE_DWELL_MS].
+     * - Below the minimum: treated as fast navigation/skimming
+     * - Above the maximum: treated as idle (app backgrounded, stepped away, etc.)
      *
      * Backward navigation (pagesMoved < 0) is also excluded from active reading time,
      * as the user is re-reading or navigating rather than progressing through new content.
@@ -225,16 +228,16 @@ class ReadingSpeedTracker(
 
         // Only process if the page actually changed
         if (pagesMoved != 0) {
-            // Check if this was an idle period (user paused, app backgrounded, etc.)
-            val wasIdle = timeSinceLastPageTurn > IDLE_THRESHOLD_MS
+            val isWithinDwellWindow =
+                timeSinceLastPageTurn in MIN_PAGE_DWELL_MS..MAX_PAGE_DWELL_MS
 
-            if (wasIdle || pagesMoved < 0) {
-                // User was idle or went backward - don't count this time toward reading speed
+            if (!isWithinDwellWindow || pagesMoved < 0) {
+                // User was idle, navigated too fast, or went backward - don't count this time.
                 // Just update the tracking state without adding to active time.
                 // Backward navigation is excluded because:
                 // 1. The user is re-reading content, not progressing
                 // 2. We can't accurately measure reading speed during navigation
-                // 3. Including this time would artificially lower the calculated WPM
+                // 3. Including this time would artificially skew the calculated WPM
                 lastPageTurnTimeMs = currentTimeMs
                 lastRecordedPage = currentPage
             } else {
@@ -285,15 +288,16 @@ class ReadingSpeedTracker(
 
     private companion object {
         /**
-         * Idle threshold in milliseconds.
-         * If more than this time passes between page turns, we consider the user
-         * to have been idle (app backgrounded, screen off, stepped away, etc.)
-         * and don't count that time toward reading speed.
-         *
-         * 2 minutes is chosen as a reasonable threshold - most readers turn pages
-         * more frequently than this, and longer gaps likely indicate distraction.
+         * Minimum time in milliseconds a user must spend on a page for it to count
+         * toward reading speed. Shorter gaps are treated as fast navigation/skimming.
          */
-        const val IDLE_THRESHOLD_MS = 2 * 60 * 1000L // 2 minutes
+        const val MIN_PAGE_DWELL_MS = 10 * 1000L // 10 seconds
+
+        /**
+         * Maximum time in milliseconds a user can spend on a page for it to count
+         * toward reading speed. Longer gaps are treated as idle time.
+         */
+        const val MAX_PAGE_DWELL_MS = 3 * 60 * 1000L // 3 minutes
 
         /** Minimum active reading time (ms) before calculating dynamic reading speed */
         const val MIN_READING_TIME_FOR_SPEED_CALC_MS = 10_000L // 10 seconds
