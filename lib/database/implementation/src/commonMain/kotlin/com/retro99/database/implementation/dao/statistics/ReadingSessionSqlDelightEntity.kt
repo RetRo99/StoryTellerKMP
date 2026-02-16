@@ -16,5 +16,6 @@ data class ReadingSessionSqlDelightEntity(
     override val pagesRead: Int?,
     override val startProgression: Double?,
     override val endProgression: Double?,
+    override val readingSpeedWpm: Int?,
 ) : ReadingSessionEntity
 

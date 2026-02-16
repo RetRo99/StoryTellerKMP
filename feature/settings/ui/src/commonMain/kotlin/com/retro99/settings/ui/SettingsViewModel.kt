@@ -151,6 +151,13 @@ class SettingsViewModel(
             ) {
                 it.copy(showCurrentTime = intent.showCurrentTime)
             }
+
+            is SettingsIntent.OnShowReadingTimeChanged -> updateReaderSetting(
+                "show_reading_time",
+                intent.showReadingTime.toString(),
+            ) {
+                it.copy(showReadingTime = intent.showReadingTime)
+            }
         }
     }
 

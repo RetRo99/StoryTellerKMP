@@ -11,6 +11,9 @@ import com.retro99.reader.ui.reader.ReadingSpeedTracker.Companion.MAX_PAGE_DWELL
 import com.retro99.reader.ui.reader.ReadingSpeedTracker.Companion.MIN_PAGE_DWELL_MS
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -72,6 +75,10 @@ class ReadingSpeedTracker(
      * starting point when entering a new chapter.
      */
     private var establishedWordsPerMinute: Int? = null
+
+    /** Emits the established (confident) reading speed for persistence. */
+    private val _establishedReadingSpeedWpm = MutableStateFlow<Int?>(null)
+    val establishedReadingSpeedWpm: StateFlow<Int?> = _establishedReadingSpeedWpm.asStateFlow()
 
     /**
      * Flow of reading time information that updates on each page turn.
@@ -281,6 +288,9 @@ class ReadingSpeedTracker(
         // Update established speed when we have confident measurement (enough reading time)
         if (activeReadingTimeMs >= CONFIDENT_READING_TIME_MS) {
             establishedWordsPerMinute = finalWpm
+            if (_establishedReadingSpeedWpm.value != finalWpm) {
+                _establishedReadingSpeedWpm.value = finalWpm
+            }
         }
 
         return finalWpm

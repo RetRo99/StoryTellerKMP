@@ -17,5 +17,6 @@ data class ReadingSessionDomainModel(
     val pagesRead: Int?,
     val startProgression: Double?,
     val endProgression: Double?,
+    val readingSpeedWpm: Int,
 )
 

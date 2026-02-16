@@ -12,6 +12,7 @@ import kotlinx.datetime.toLocalDateTime
 import resources.translations.statistics_day_number
 import resources.translations.statistics_hours_minutes
 import resources.translations.statistics_minutes
+import resources.translations.statistics_session_speed
 
 data class ReadingStatisticsUiModel(
     val totalReadingTimeFormatted: TextWrapper,
@@ -52,6 +53,7 @@ data class ReadingSessionUiModel(
     val durationMs: Long,
     val durationFormatted: TextWrapper,
     val dateFormatted: String,
+    val readingSpeedFormatted: TextWrapper,
 )
 
 fun ReadingStatisticsDomainModel.toUiModel(): ReadingStatisticsUiModel {
@@ -124,7 +126,12 @@ fun ReadingSessionDomainModel.toSessionUiModel(): ReadingSessionUiModel {
         durationMs = durationMs,
         durationFormatted = formatDuration(durationMs),
         dateFormatted = formatSessionDate(startTime),
+        readingSpeedFormatted = formatReadingSpeed(readingSpeedWpm),
     )
+}
+
+private fun formatReadingSpeed(wpm: Int): TextWrapper {
+    return TextWrapper.Resource(StringRes.statistics_session_speed, wpm)
 }
 
 private fun formatSessionDate(timestamp: Long): String {

@@ -43,5 +43,8 @@ sealed interface SettingsIntent : BaseIntent {
 
     // Show current time intent
     data class OnShowCurrentTimeChanged(val showCurrentTime: Boolean) : SettingsIntent
+
+    // Show reading time intent
+    data class OnShowReadingTimeChanged(val showReadingTime: Boolean) : SettingsIntent
 }
 

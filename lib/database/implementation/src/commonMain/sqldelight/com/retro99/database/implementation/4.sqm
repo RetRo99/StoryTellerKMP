@@ -1,0 +1,4 @@
+-- Migration from version 4 to version 5
+-- Adds reading_speed_wpm to reading_session for per-session speed tracking
+
+ALTER TABLE reading_session ADD COLUMN reading_speed_wpm INTEGER;
