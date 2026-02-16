@@ -192,6 +192,9 @@ class ReadingSpeedTracker(
      * considered to have been idle (app backgrounded, screen off, stepped away, etc.)
      * and that time is not counted toward the reading speed calculation.
      *
+     * Backward navigation (pagesMoved < 0) is also excluded from active reading time,
+     * as the user is re-reading or navigating rather than progressing through new content.
+     *
      * @param currentTimeMs Current timestamp in milliseconds
      * @param currentPage Current page number (1-based)
      * @return Calculated words per minute, or previous value/null if not enough data
@@ -208,16 +211,19 @@ class ReadingSpeedTracker(
             // Check if this was an idle period (user paused, app backgrounded, etc.)
             val wasIdle = timeSinceLastPageTurn > IDLE_THRESHOLD_MS
 
-            if (wasIdle) {
-                // User was idle - don't count this time toward reading speed
-                // Just update the tracking state without adding to active time
+            if (wasIdle || pagesMoved < 0) {
+                // User was idle or went backward - don't count this time toward reading speed
+                // Just update the tracking state without adding to active time.
+                // Backward navigation is excluded because:
+                // 1. The user is re-reading content, not progressing
+                // 2. We can't accurately measure reading speed during navigation
+                // 3. Including this time would artificially lower the calculated WPM
                 lastPageTurnTimeMs = currentTimeMs
                 lastRecordedPage = currentPage
-                // Don't count pages read after idle - we can't know how fast they read them
             } else {
-                // Active reading - count this time and pages
+                // Active forward reading - count this time and pages
                 activeReadingTimeMs += timeSinceLastPageTurn
-                totalPagesRead += pagesMoved.coerceAtLeast(0) // Only count forward progress
+                totalPagesRead += pagesMoved
                 lastPageTurnTimeMs = currentTimeMs
                 lastRecordedPage = currentPage
             }
