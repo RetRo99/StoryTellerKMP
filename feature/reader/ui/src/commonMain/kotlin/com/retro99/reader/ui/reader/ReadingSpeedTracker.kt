@@ -22,12 +22,13 @@ import org.koin.core.annotation.Scoped
  * This class encapsulates all reading time and speed calculation logic:
  * - Observes book location changes and settings automatically
  * - Caches word count per chapter (fetched once when chapter changes)
- * - Tracks reading session start time and page for speed calculation
+ * - Tracks reading session with idle detection for accurate speed calculation
  * - Calculates dynamic words-per-minute based on actual reading behavior
  * - Exposes a Flow of reading time info that updates on each page turn
  *
- * The dynamic speed calculation works by measuring how many pages the user
- * has read since starting the chapter and how much time has elapsed.
+ * The dynamic speed calculation works by measuring active reading time only.
+ * It detects idle periods (user pausing, app backgrounded, screen off) and
+ * excludes them from the calculation to avoid artificially low WPM values.
  *
  * Note: Reading time is only calculated for regular ebooks, not ReadAloud books
  * (books with media overlays), as those have audio-based progress tracking.
@@ -48,11 +49,17 @@ class ReadingSpeedTracker(
     /** Cached words per page for the current chapter */
     private var cachedWordsPerPage: Double = 0.0
 
-    /** Timestamp when the user started reading the current chapter */
-    private var chapterReadingStartTimeMs: Long = 0L
+    /** Accumulated active reading time in milliseconds (excludes idle periods) */
+    private var activeReadingTimeMs: Long = 0L
 
-    /** The page number when the user started reading the current chapter (1-based) */
-    private var chapterReadingStartPage: Int = 1
+    /** Timestamp of the last page turn (used to detect idle periods) */
+    private var lastPageTurnTimeMs: Long = 0L
+
+    /** The page number at the last recorded page turn */
+    private var lastRecordedPage: Int = 0
+
+    /** Total pages read during active reading (excludes pages after idle) */
+    private var totalPagesRead: Int = 0
 
     /** Dynamically calculated reading speed based on user's actual reading behavior */
     private var calculatedWordsPerMinute: Int? = null
@@ -106,10 +113,8 @@ class ReadingSpeedTracker(
         if (chapterHref != cachedChapterHref) {
             cachedChapterWordCount = bookController.getChapterWordCount()
             cachedChapterHref = chapterHref
-            // Reset reading session tracking for new chapter
-            chapterReadingStartTimeMs = currentTimeMs
-            chapterReadingStartPage = currentPage
-            calculatedWordsPerMinute = null
+            // Reset all reading session tracking for new chapter
+            resetReadingSession(currentTimeMs, currentPage)
             // Calculate words per page for this chapter
             val totalWords = cachedChapterWordCount?.totalWords ?: 0
             cachedWordsPerPage = if (totalPages > 0) totalWords.toDouble() / totalPages else 0.0
@@ -128,6 +133,17 @@ class ReadingSpeedTracker(
             chapterProgression = progression,
             wordsPerMinute = calculatedWordsPerMinute ?: fallbackWpm,
         )
+    }
+
+    /**
+     * Resets all reading session tracking state.
+     */
+    private fun resetReadingSession(currentTimeMs: Long, currentPage: Int) {
+        activeReadingTimeMs = 0L
+        lastPageTurnTimeMs = currentTimeMs
+        lastRecordedPage = currentPage
+        totalPagesRead = 0
+        calculatedWordsPerMinute = null
     }
 
     /**
@@ -169,7 +185,12 @@ class ReadingSpeedTracker(
     }
 
     /**
-     * Calculates the user's actual reading speed based on pages read and time elapsed.
+     * Calculates the user's actual reading speed based on pages read and active reading time.
+     *
+     * This method tracks only "active" reading time by detecting idle periods.
+     * If the time since the last page turn exceeds [IDLE_THRESHOLD_MS], the user is
+     * considered to have been idle (app backgrounded, screen off, stepped away, etc.)
+     * and that time is not counted toward the reading speed calculation.
      *
      * @param currentTimeMs Current timestamp in milliseconds
      * @param currentPage Current page number (1-based)
@@ -179,31 +200,62 @@ class ReadingSpeedTracker(
         currentTimeMs: Long,
         currentPage: Int,
     ): Int? {
-        val elapsedTimeMs = currentTimeMs - chapterReadingStartTimeMs
-        val pagesRead = currentPage - chapterReadingStartPage
+        val timeSinceLastPageTurn = currentTimeMs - lastPageTurnTimeMs
+        val pagesMoved = currentPage - lastRecordedPage
 
-        // Need at least 10 seconds and 1 page read to calculate meaningful speed
-        // This avoids wild fluctuations from quick scrolling or initial page loads
-        if (elapsedTimeMs < MIN_READING_TIME_FOR_SPEED_CALC_MS || pagesRead < MIN_PAGES_FOR_SPEED_CALC) {
+        // Only process if the page actually changed
+        if (pagesMoved != 0) {
+            // Check if this was an idle period (user paused, app backgrounded, etc.)
+            val wasIdle = timeSinceLastPageTurn > IDLE_THRESHOLD_MS
+
+            if (wasIdle) {
+                // User was idle - don't count this time toward reading speed
+                // Just update the tracking state without adding to active time
+                lastPageTurnTimeMs = currentTimeMs
+                lastRecordedPage = currentPage
+                // Don't count pages read after idle - we can't know how fast they read them
+            } else {
+                // Active reading - count this time and pages
+                activeReadingTimeMs += timeSinceLastPageTurn
+                totalPagesRead += pagesMoved.coerceAtLeast(0) // Only count forward progress
+                lastPageTurnTimeMs = currentTimeMs
+                lastRecordedPage = currentPage
+            }
+        }
+
+        // Need minimum active reading time and pages to calculate meaningful speed
+        if (activeReadingTimeMs < MIN_READING_TIME_FOR_SPEED_CALC_MS ||
+            totalPagesRead < MIN_PAGES_FOR_SPEED_CALC
+        ) {
             return calculatedWordsPerMinute // Return previous calculated value or null
         }
 
-        val wordsRead = (pagesRead * cachedWordsPerPage).toInt()
-        val elapsedMinutes = elapsedTimeMs / 60_000.0
+        val wordsRead = (totalPagesRead * cachedWordsPerPage).toInt()
+        val activeMinutes = activeReadingTimeMs / 60_000.0
 
-        if (elapsedMinutes <= 0 || wordsRead <= 0) {
+        if (activeMinutes <= 0 || wordsRead <= 0) {
             return calculatedWordsPerMinute
         }
 
-        val calculatedWpm = (wordsRead / elapsedMinutes).toInt()
+        val calculatedWpm = (wordsRead / activeMinutes).toInt()
 
         // Clamp to reasonable bounds (50-1000 WPM) to filter out outliers
-        // Very slow might indicate user paused, very fast might indicate scrolling
         return calculatedWpm.coerceIn(MIN_REASONABLE_WPM, MAX_REASONABLE_WPM)
     }
 
     private companion object {
-        /** Minimum time (ms) before calculating dynamic reading speed */
+        /**
+         * Idle threshold in milliseconds.
+         * If more than this time passes between page turns, we consider the user
+         * to have been idle (app backgrounded, screen off, stepped away, etc.)
+         * and don't count that time toward reading speed.
+         *
+         * 2 minutes is chosen as a reasonable threshold - most readers turn pages
+         * more frequently than this, and longer gaps likely indicate distraction.
+         */
+        const val IDLE_THRESHOLD_MS = 2 * 60 * 1000L // 2 minutes
+
+        /** Minimum active reading time (ms) before calculating dynamic reading speed */
         const val MIN_READING_TIME_FOR_SPEED_CALC_MS = 10_000L // 10 seconds
 
         /** Minimum pages read before calculating dynamic reading speed */
