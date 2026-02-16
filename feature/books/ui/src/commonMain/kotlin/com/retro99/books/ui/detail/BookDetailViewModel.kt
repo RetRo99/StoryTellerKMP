@@ -30,6 +30,7 @@ import org.koin.core.annotation.Provided
 class BookDetailViewModel(
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
+    @InjectedParam private val onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     @InjectedParam private val onBack: () -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
     @Provided private val downloadMediaUseCase: DownloadMediaUseCase,
@@ -70,7 +71,10 @@ class BookDetailViewModel(
             }
 
             is BookDetailIntent.OnSeriesClicked -> {
-                // TODO: Navigate to series
+                val series = viewState.value.book?.series?.find { it.uuid == intent.seriesUuid }
+                if (series != null) {
+                    onNavigateToSeriesDetail(series.uuid, series.name)
+                }
             }
 
             BookDetailIntent.OnReadEbookClicked -> {

@@ -150,6 +150,16 @@ fun HomeNavigation(
                                     )
                                 )
                             },
+                            onNavigateToSeriesDetail = { seriesUuid, seriesName ->
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(
+                                        HomeDestination.SeriesDetail(
+                                            seriesUuid = seriesUuid,
+                                            seriesName = seriesName,
+                                        )
+                                    )
+                                )
+                            },
                             onBack = { intentDispatcher(HomeNavigationIntent.GoBack) },
                         )
                     }
