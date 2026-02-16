@@ -109,6 +109,8 @@ import resources.translations.settings_section_typography
 import resources.translations.settings_section_typography_description
 import resources.translations.settings_show_current_time
 import resources.translations.settings_show_current_time_description
+import resources.translations.settings_show_reading_time
+import resources.translations.settings_show_reading_time_description
 import resources.translations.settings_show_total_progress
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
@@ -327,6 +329,13 @@ private fun SettingsScreenContent(
             ShowCurrentTimeSwitch(
                 isEnabled = viewState.showCurrentTime,
                 onToggle = { intentDispatcher(SettingsIntent.OnShowCurrentTimeChanged(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ShowReadingTimeSwitch(
+                isEnabled = viewState.showReadingTime,
+                onToggle = { intentDispatcher(SettingsIntent.OnShowReadingTimeChanged(it)) },
             )
         }
 
@@ -990,6 +999,37 @@ private fun ShowCurrentTimeSwitch(
         }
         Text(
             text = stringResource(StringRes.settings_show_current_time_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Switch to toggle remaining reading time display in the progress bar.
+ */
+@Composable
+private fun ShowReadingTimeSwitch(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_show_reading_time),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onToggle,
+            )
+        }
+        Text(
+            text = stringResource(StringRes.settings_show_reading_time_description),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

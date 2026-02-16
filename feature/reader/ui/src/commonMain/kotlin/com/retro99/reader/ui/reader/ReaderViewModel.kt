@@ -34,8 +34,10 @@ import com.retro99.reader.ui.service.EpubPublicationService
 import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -247,6 +249,22 @@ class ReaderViewModel(
     }
 
     /**
+     * Persists a confident reading speed measurement to settings.
+     */
+    private fun observeReadingSpeedPersistence() {
+        readingSpeedTracker.establishedReadingSpeedWpm
+            .filterNotNull()
+            .distinctUntilChanged()
+            .combine(getReaderSettingsUseCase()) { wpm, settings -> wpm to settings }
+            .onEach { (wpm, settings) ->
+                if (settings.readingSpeedWpm != wpm) {
+                    saveReaderSettingsUseCase(settings.copy(readingSpeedWpm = wpm))
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    /**
      * Refreshes the chapter page info after a delay to allow the WebView to re-layout.
      * This is called after settings changes (font size, margins, etc.) and on initial load.
      */
@@ -330,6 +348,7 @@ class ReaderViewModel(
             // Start observing after publication is ready
             observeBookLocationChanges()
             observeReadingTimeInfo()
+            observeReadingSpeedPersistence()
             observeSettingsChanges()
             // Fetch initial chapter page info after WebView renders
             // Only needed when using RELATIVE display mode (viewport-based page numbers)
@@ -489,6 +508,9 @@ class ReaderViewModel(
             }
             val progressPercent = currentState.lastKnownPosition?.totalProgression
                 ?.let { (it * 100).toInt() } ?: 0
+            val sessionReadingSpeedWpm = readingSpeedTracker.establishedReadingSpeedWpm.value
+                ?: currentState.currentSettings?.readingSpeedWpm
+                ?: 250
 
             analytics.logEvent(
                 ReaderAnalyticsEvent.BookClosed(
@@ -508,6 +530,7 @@ class ReaderViewModel(
                     endTime = endTime,
                     durationMs = readingDurationMs,
                     endProgression = currentState.lastKnownPosition?.totalProgression,
+                    readingSpeedWpm = sessionReadingSpeedWpm,
                 )
             }
 

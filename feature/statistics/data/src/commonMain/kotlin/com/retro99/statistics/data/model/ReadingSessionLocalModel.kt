@@ -1,7 +1,7 @@
 package com.retro99.statistics.data.model
 
-import com.retro99.database.api.statistics.ReadingSessionEntity
 import com.retro99.books.domain.model.BookType
+import com.retro99.database.api.statistics.ReadingSessionEntity
 import com.retro99.statistics.domain.model.ReadingSessionDomainModel
 
 /**
@@ -18,7 +18,10 @@ data class ReadingSessionLocalModel(
     override val pagesRead: Int?,
     override val startProgression: Double?,
     override val endProgression: Double?,
+    override val readingSpeedWpm: Int?,
 ) : ReadingSessionEntity
+
+private const val DEFAULT_SESSION_READING_SPEED_WPM = 250
 
 fun ReadingSessionLocalModel.toDomain(): ReadingSessionDomainModel {
     return ReadingSessionDomainModel(
@@ -32,6 +35,7 @@ fun ReadingSessionLocalModel.toDomain(): ReadingSessionDomainModel {
         pagesRead = pagesRead,
         startProgression = startProgression,
         endProgression = endProgression,
+        readingSpeedWpm = readingSpeedWpm ?: DEFAULT_SESSION_READING_SPEED_WPM,
     )
 }
 
@@ -47,6 +51,7 @@ fun ReadingSessionDomainModel.toLocal(): ReadingSessionLocalModel {
         pagesRead = pagesRead,
         startProgression = startProgression,
         endProgression = endProgression,
+        readingSpeedWpm = readingSpeedWpm,
     )
 }
 
@@ -62,6 +67,7 @@ fun ReadingSessionEntity.toDomain(): ReadingSessionDomainModel {
         pagesRead = pagesRead,
         startProgression = startProgression,
         endProgression = endProgression,
+        readingSpeedWpm = readingSpeedWpm ?: DEFAULT_SESSION_READING_SPEED_WPM,
     )
 }
 

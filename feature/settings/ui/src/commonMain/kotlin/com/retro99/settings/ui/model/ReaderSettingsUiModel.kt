@@ -35,6 +35,8 @@ data class ReaderSettingsUiModel(
     val fullscreenMode: Boolean = false,
     // Whether to show current time in the progress bar
     val showCurrentTime: Boolean = true,
+    // Whether to show estimated remaining reading time in the progress bar
+    val showReadingTime: Boolean = true,
 )
 
 enum class ReaderThemeUiModel {

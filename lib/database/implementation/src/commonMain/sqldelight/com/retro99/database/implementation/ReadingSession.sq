@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS reading_session (
     duration_ms INTEGER NOT NULL,
     pages_read INTEGER,
     start_progression REAL,
-    end_progression REAL
+    end_progression REAL,
+    reading_speed_wpm INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_reading_session_book ON reading_session(book_uuid);
@@ -23,9 +24,9 @@ CREATE INDEX IF NOT EXISTS idx_reading_session_start_time ON reading_session(sta
 insertSession:
 INSERT INTO reading_session(
     book_uuid, book_title, book_type, start_time, end_time, duration_ms,
-    pages_read, start_progression, end_progression
+    pages_read, start_progression, end_progression, reading_speed_wpm
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllSessions:
 SELECT * FROM reading_session ORDER BY start_time DESC;

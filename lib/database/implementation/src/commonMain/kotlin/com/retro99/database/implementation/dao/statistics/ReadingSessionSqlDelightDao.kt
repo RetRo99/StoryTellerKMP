@@ -28,6 +28,7 @@ internal class ReadingSessionSqlDelightDao(
                 pages_read = session.pagesRead?.toLong(),
                 start_progression = session.startProgression,
                 end_progression = session.endProgression,
+                reading_speed_wpm = session.readingSpeedWpm?.toLong(),
             )
         }
     }
@@ -46,6 +47,7 @@ internal class ReadingSessionSqlDelightDao(
                     pagesRead = row.pages_read?.toInt(),
                     startProgression = row.start_progression,
                     endProgression = row.end_progression,
+                    readingSpeedWpm = row.reading_speed_wpm?.toInt(),
                 )
             }
         }
@@ -65,6 +67,7 @@ internal class ReadingSessionSqlDelightDao(
                     pagesRead = row.pages_read?.toInt(),
                     startProgression = row.start_progression,
                     endProgression = row.end_progression,
+                    readingSpeedWpm = row.reading_speed_wpm?.toInt(),
                 )
             }
         }
@@ -84,6 +87,7 @@ internal class ReadingSessionSqlDelightDao(
                     pagesRead = row.pages_read?.toInt(),
                     startProgression = row.start_progression,
                     endProgression = row.end_progression,
+                    readingSpeedWpm = row.reading_speed_wpm?.toInt(),
                 )
             }
         }
@@ -127,6 +131,7 @@ internal class ReadingSessionSqlDelightDao(
                     pagesRead = row.pages_read?.toInt(),
                     startProgression = row.start_progression,
                     endProgression = row.end_progression,
+                    readingSpeedWpm = row.reading_speed_wpm?.toInt(),
                 )
             }
         }

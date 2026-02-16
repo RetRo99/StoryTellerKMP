@@ -60,6 +60,12 @@ data class ReaderSettingsLocalModel(
     // Whether to show current time in the progress bar
     @SerialName("show_current_time")
     val showCurrentTime: Boolean = true,
+    // Whether to show estimated reading time for the current chapter
+    @SerialName("show_reading_time")
+    val showReadingTime: Boolean = true,
+    // Reading speed in words per minute (used for reading time estimation)
+    @SerialName("reading_speed_wpm")
+    val readingSpeedWpm: Int = ReaderSettingsDomainModel.DEFAULT_READING_SPEED_WPM,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -112,6 +118,8 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         },
         fullscreenMode = fullscreenMode,
         showCurrentTime = showCurrentTime,
+        showReadingTime = showReadingTime,
+        readingSpeedWpm = readingSpeedWpm,
     )
 }
 
@@ -137,5 +145,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         progressBarPosition = progressBarPosition.name,
         fullscreenMode = fullscreenMode,
         showCurrentTime = showCurrentTime,
+        showReadingTime = showReadingTime,
+        readingSpeedWpm = readingSpeedWpm,
     )
 }

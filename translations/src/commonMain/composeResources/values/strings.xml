@@ -198,6 +198,8 @@
     <string name="settings_fullscreen_mode_description">Hide status bar while reading</string>
     <string name="settings_show_current_time">Show Current Time</string>
     <string name="settings_show_current_time_description">Display current time in the progress bar</string>
+    <string name="settings_show_reading_time">Show Reading Time</string>
+    <string name="settings_show_reading_time_description">Display remaining chapter time in the progress bar</string>
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
@@ -239,4 +241,5 @@
     <string name="statistics_sessions_total">%1$d total sessions</string>
     <string name="statistics_sessions_no_sessions">No reading sessions yet</string>
     <string name="statistics_sessions_recent">Recent Sessions</string>
+    <string name="statistics_session_speed">Speed: %1$d wpm</string>
 </resources>
