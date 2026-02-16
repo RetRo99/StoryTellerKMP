@@ -1,7 +1,6 @@
 package com.retro99.reader.ui.navigator
 
-import com.retro99.reader.ui.model.ChapterPageInfo
-import com.retro99.reader.ui.model.ChapterWordCountInfo
+import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -122,15 +121,19 @@ interface BookController : AutoCloseable {
     suspend fun checkSentenceVisibility(elementId: String): SentenceVisibilityResult
 
     /**
-     * Gets the current page info within the chapter based on the actual viewport display.
+     * Gets the current chapter info (page position and word count) based on the actual viewport display.
      *
      * Unlike the EPUB position (which is based on fixed 1024-character blocks),
      * this returns the actual displayed page that changes based on font size,
      * margins, and viewport dimensions.
      *
-     * @return The current page info, or null if it cannot be determined
+     * Note: This is also included in the [currentLocator] flow emissions, but this
+     * method can be used for manual refresh after settings changes when the layout
+     * may have changed without a navigation event.
+     *
+     * @return The current chapter info, or null if it cannot be determined
      */
-    suspend fun getChapterPageInfo(): ChapterPageInfo?
+    suspend fun getChapterPageInfo(): ChapterInfo?
 
     /**
      * Gets the ID of the first visible sentence element in the current viewport.
@@ -144,14 +147,4 @@ interface BookController : AutoCloseable {
      * @return The element ID of the first visible sentence, or null if not found
      */
     suspend fun getVisibleSentenceId(): String?
-
-    /**
-     * Gets the word count of the current chapter.
-     *
-     * This is used to estimate reading time for the current chapter.
-     * The word count is calculated by counting words in the chapter's text content.
-     *
-     * @return The word count info, or null if it cannot be determined
-     */
-    suspend fun getChapterWordCount(): ChapterWordCountInfo?
 }

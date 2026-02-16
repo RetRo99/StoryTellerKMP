@@ -1,7 +1,6 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.analytics.api.Analytics
-import com.retro99.reader.ui.model.ChapterWordCountInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -70,9 +69,9 @@ object ChapterWordCountCalculator : KoinComponent {
      * Parses the JSON result from the word count JavaScript.
      *
      * @param json The raw JSON string from JavaScript evaluation
-     * @return The parsed chapter word count info, or null on error
+     * @return The word count, or null on error
      */
-    fun parseWordCountResult(json: String): ChapterWordCountInfo? {
+    fun parseWordCountResult(json: String): Int? {
         return try {
             parseWordCountResultInternal(json)
         } catch (e: Exception) {
@@ -81,18 +80,14 @@ object ChapterWordCountCalculator : KoinComponent {
         }
     }
 
-    private fun parseWordCountResultInternal(json: String): ChapterWordCountInfo? {
+    private fun parseWordCountResultInternal(json: String): Int? {
         val data = jsonParser.decodeFromString<WordCountResult>(json)
 
         if (data.status != "success") {
             return null
         }
 
-        val wordCount = data.wordCount ?: return null
-
-        return ChapterWordCountInfo(
-            totalWords = wordCount
-        )
+        return data.wordCount
     }
 }
 

@@ -204,11 +204,6 @@ class ReaderViewModel(
                 val uiSettings = settings.toUiModel()
                 bookController.setSettings(uiSettings)
                 updateState { it.copy(currentSettings = uiSettings) }
-                // Refresh chapter page info after settings change (layout may have changed)
-                // Only needed when using RELATIVE display mode (viewport-based page numbers)
-                if (uiSettings.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
-                    refreshChapterPageInfo()
-                }
             }
             .launchIn(viewModelScope)
     }
@@ -223,15 +218,9 @@ class ReaderViewModel(
                 )
                 updatePosition(positionUiModel)
 
-                val currentSettings = currentState.currentSettings
-                val needsPageInfoForDisplay =
-                    currentSettings?.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE
-
-                // Fetch chapter page info for RELATIVE display mode
-                if (needsPageInfoForDisplay) {
-                    val chapterPageInfo = bookController.getChapterPageInfo()
-                    updateState { it.copy(chapterPageInfo = chapterPageInfo) }
-                }
+                // Update chapter info from the enriched locator state
+                // (word count is used internally by ReadingSpeedTracker via the locator flow)
+                updateState { it.copy(chapterInfo = locator.chapterInfo) }
             }
             .launchIn(viewModelScope)
     }
@@ -262,19 +251,6 @@ class ReaderViewModel(
                 }
             }
             .launchIn(viewModelScope)
-    }
-
-    /**
-     * Refreshes the chapter page info after a delay to allow the WebView to re-layout.
-     * This is called after settings changes (font size, margins, etc.) and on initial load.
-     */
-    private fun refreshChapterPageInfo() {
-        viewModelScope.launch {
-            // Delay to allow WebView to re-layout after settings change
-            delay(CHAPTER_PAGE_INFO_REFRESH_DELAY_MS)
-            val chapterPageInfo = bookController.getChapterPageInfo()
-            updateState { it.copy(chapterPageInfo = chapterPageInfo) }
-        }
     }
 
     private fun observeAudioPlaybackState() {
@@ -350,11 +326,6 @@ class ReaderViewModel(
             observeReadingTimeInfo()
             observeReadingSpeedPersistence()
             observeSettingsChanges()
-            // Fetch initial chapter page info after WebView renders
-            // Only needed when using RELATIVE display mode (viewport-based page numbers)
-            if (settings.chapterProgressDisplayMode == ChapterProgressDisplayMode.RELATIVE) {
-                refreshChapterPageInfo()
-            }
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()

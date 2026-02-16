@@ -1,8 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.ui.di.ReaderScope
-import com.retro99.reader.ui.model.ChapterPageInfo
-import com.retro99.reader.ui.model.ChapterWordCountInfo
+import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReadAloudHighlightColor
@@ -80,6 +79,12 @@ class AndroidBookController internal constructor() : BookController {
      * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
      */
     private var lastPageTurnSentenceId: String? = null
+
+    /**
+     * Cache for chapter word counts, keyed by chapter href.
+     * Word count is static per chapter, so we only fetch it once per chapter.
+     */
+    private val chapterWordCountCache = mutableMapOf<String, Int>()
 
     /**
      * Cancels any pending page turn and resets the tracking state.
@@ -161,22 +166,68 @@ class AndroidBookController internal constructor() : BookController {
     /**
      * Flow of current reading position/locator changes.
      * Converts Readium's Locator to the common LocatorState model.
+     * Enriches the state with chapter info (page position and cached word count).
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     override val currentLocator: Flow<LocatorState> = _navigator.flatMapLatest { navigator ->
         navigator?.currentLocator?.map { locator ->
+            val href = locator.href.toString()
+
+            // Get or fetch chapter word count (cached per chapter)
+            val cachedWordCount = getOrFetchChapterWordCount(href)
+
+            // Fetch chapter info with page position and word count
+            val chapterInfo = fetchChapterInfo(cachedWordCount)
+
             LocatorState(
-                href = locator.href.toString(),
+                href = href,
                 type = locator.mediaType.toString(),
                 title = locator.title,
                 progression = locator.locations.progression,
                 position = locator.locations.position,
                 totalProgression = locator.locations.totalProgression,
                 fragments = locator.locations.fragments,
+                chapterInfo = chapterInfo,
             )
-        } ?: flowOf() // or emptyFlow()
+        } ?: flowOf()
     }.onEach {
         cancelPendingPageTurn()
+    }
+
+    /**
+     * Fetches the chapter info from the WebView.
+     * This is called on every locator change since page info depends on scroll position.
+     * Word count is passed in from the cache.
+     */
+    private suspend fun fetchChapterInfo(cachedWordCount: Int?): ChapterInfo? {
+        val nav = _navigator.value ?: return null
+        val script = ChapterPageCalculator.getPageCalculationScript()
+        val rawResult = nav.evaluateJavascript(script) ?: return null
+        val cleanJson = cleanWebViewJson(rawResult)
+        return ChapterPageCalculator.parsePageResult(cleanJson, cachedWordCount)
+    }
+
+    /**
+     * Gets the cached word count for a chapter, or fetches it if not cached.
+     * Word count is static per chapter, so we only fetch it once.
+     */
+    private suspend fun getOrFetchChapterWordCount(href: String): Int? {
+        // Return cached value if available
+        chapterWordCountCache[href]?.let { return it }
+
+        // Fetch and cache the word count
+        val nav = _navigator.value ?: return null
+        val script = ChapterWordCountCalculator.getWordCountScript()
+        val rawResult = nav.evaluateJavascript(script) ?: return null
+        val cleanJson = cleanWebViewJson(rawResult)
+        val wordCount = ChapterWordCountCalculator.parseWordCountResult(cleanJson)
+
+        // Cache the result
+        if (wordCount != null) {
+            chapterWordCountCache[href] = wordCount
+        }
+
+        return wordCount
     }
 
     override fun goToNextPage() {
@@ -277,14 +328,10 @@ class AndroidBookController internal constructor() : BookController {
         return SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
     }
 
-    override suspend fun getChapterPageInfo(): ChapterPageInfo? {
-        val nav = _navigator.value ?: return null
-
-        val script = ChapterPageCalculator.getPageCalculationScript()
-        val rawResult = nav.evaluateJavascript(script) ?: return null
-
-        val cleanJson = cleanWebViewJson(rawResult)
-        return ChapterPageCalculator.parsePageResult(cleanJson)
+    override suspend fun getChapterPageInfo(): ChapterInfo? {
+        // For manual refresh, we don't have the href, so we can't include cached word count
+        // This is fine since this method is mainly used for page info after settings changes
+        return fetchChapterInfo(cachedWordCount = null)
     }
 
     override suspend fun getVisibleSentenceId(): String? {
@@ -295,16 +342,6 @@ class AndroidBookController internal constructor() : BookController {
 
         val cleanJson = cleanWebViewJson(rawResult)
         return VisibleSentenceDetector.parseResult(cleanJson)
-    }
-
-    override suspend fun getChapterWordCount(): ChapterWordCountInfo? {
-        val nav = _navigator.value ?: return null
-
-        val script = ChapterWordCountCalculator.getWordCountScript()
-        val rawResult = nav.evaluateJavascript(script) ?: return null
-
-        val cleanJson = cleanWebViewJson(rawResult)
-        return ChapterWordCountCalculator.parseWordCountResult(cleanJson)
     }
 
     /**
