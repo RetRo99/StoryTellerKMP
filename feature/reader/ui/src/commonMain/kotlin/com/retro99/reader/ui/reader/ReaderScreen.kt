@@ -260,7 +260,7 @@ private fun ReaderContent(
             areControlsVisible = areControlsVisible,
             position = ProgressBarPosition.TOP,
             lastKnownPosition = lastKnownPosition,
-            chapterPageInfo = chapterPageInfo,
+            chapterInfo = chapterInfo,
             chapterReadingTimeInfo = chapterReadingTimeInfo,
             currentTime = currentTime,
         )
@@ -399,7 +399,7 @@ private fun ReaderContent(
             areControlsVisible = areControlsVisible,
             position = ProgressBarPosition.BOTTOM,
             lastKnownPosition = lastKnownPosition,
-            chapterPageInfo = chapterPageInfo,
+            chapterInfo = chapterInfo,
             chapterReadingTimeInfo = chapterReadingTimeInfo,
             currentTime = currentTime,
         )
@@ -413,7 +413,7 @@ private fun AnimatedProgressBar(
     position: ProgressBarPosition,
     lastKnownPosition: PositionUiModel?,
     chapterReadingTimeInfo: ChapterReadingTimeInfo?,
-    chapterPageInfo: ChapterPageInfo?,
+    chapterInfo: ChapterInfo?,
     currentTime: String,
 ) {
     val isVisible = when (settings.showProgressBar) {
