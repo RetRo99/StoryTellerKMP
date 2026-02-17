@@ -1,7 +1,10 @@
 package com.retro99.books.data
 
+import com.github.michaelbull.result.Err
 import com.retro99.base.repository.BaseRepository
+import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
 import com.retro99.base.result.mapCatching
 import com.retro99.books.data.model.toDomain
 import com.retro99.books.data.model.toLocal
@@ -58,5 +61,10 @@ internal class BooksDataRepository(
                 localSource.saveBook(domainBook.toLocal())
             },
         )
+    }
+
+    override suspend fun saveBook(book: BookDomainModel): CompletableResult {
+        // TODO: Implement upload to Storyteller server
+        return Err(AppError.UnknownError(Throwable("Uploading books to Storyteller is not yet supported")))
     }
 }

@@ -4,6 +4,7 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.books.domain.BooksRepository
 import com.retro99.books.domain.model.BookDomainModel
@@ -31,6 +32,15 @@ internal class ImportedBooksDataRepository(
             } else {
                 Err(AppError.UnknownError(Throwable("Imported book not found: $uuid")))
             }
+        }
+    }
+
+    override suspend fun saveBook(book: BookDomainModel): CompletableResult {
+        return when (book) {
+            is BookDomainModel.LocalBook -> localSource.saveImportedBook(book)
+            is BookDomainModel.StorytellerBook -> Err(
+                AppError.UnknownError(Throwable("Cannot save StorytellerBook to imported books repository"))
+            )
         }
     }
 }
