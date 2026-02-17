@@ -36,7 +36,7 @@ internal class BooksDataRepository(
                 }
             },
             saveToCache = { domainBooks ->
-                localSource.saveBooks(domainBooks.map { it.toLocal() })
+                localSource.saveBooks(domainBooks.filterIsInstance<BookDomainModel.StorytellerBook>().map { it.toLocal() })
             },
         )
     }
