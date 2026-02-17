@@ -10,6 +10,8 @@ sealed class BookDomainModel {
     abstract val description: String?
     abstract val coverUrl: String?
 
+    abstract val series: List<SeriesDomainModel>
+
     /**
      * Book from the Storyteller server with full metadata and media files.
      */
@@ -31,7 +33,7 @@ sealed class BookDomainModel {
         val authors: List<PersonDomainModel>,
         val narrators: List<PersonDomainModel>,
         val creators: List<PersonDomainModel>,
-        val series: List<SeriesDomainModel>,
+        override val series: List<SeriesDomainModel>,
         val tags: List<TagDomainModel>,
         val collections: List<CollectionDomainModel>,
         val status: StatusDomainModel?,
@@ -53,6 +55,8 @@ sealed class BookDomainModel {
         val fileSize: Long,
         val importedAt: String,
         val lastOpenedAt: String?,
-    ) : BookDomainModel()
+    ) : BookDomainModel() {
+        override val series: List<SeriesDomainModel> = emptyList()
+    }
 }
 

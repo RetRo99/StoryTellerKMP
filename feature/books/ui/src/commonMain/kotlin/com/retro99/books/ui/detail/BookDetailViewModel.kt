@@ -275,11 +275,7 @@ class BookDetailViewModel(
         }
 
         // Otherwise, start the download
-        val filePath = when (bookType) {
-            BookType.EBOOK -> book.ebookFilepath
-            BookType.AUDIOBOOK -> book.audiobookFilepath
-            BookType.READALOUD -> book.readaloudFilepath
-        } ?: return
+        val filePath = book.filePath(bookType) ?: return
 
         analytics.logEvent(
             BookAnalyticsEvent.BookDownloadStarted(
