@@ -10,6 +10,7 @@ data class BooksListViewState(
     val favoriteBookUuids: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
+    val isImporting: Boolean = false,
     val error: AppError? = null,
 ) {
     val filteredBooks: List<BookUiModel>

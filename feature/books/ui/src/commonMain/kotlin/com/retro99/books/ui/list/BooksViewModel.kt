@@ -12,6 +12,7 @@ import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.usecase.GetBooksUseCase
+import com.retro99.books.domain.usecase.ImportEpubUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.BookUiModel
@@ -30,6 +31,7 @@ class BooksViewModel(
     @Provided private val getBooksUseCase: GetBooksUseCase,
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeAllFavoritesUseCase: ObserveAllFavoritesUseCase,
+    @Provided private val importEpubUseCase: ImportEpubUseCase,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
@@ -47,6 +49,7 @@ class BooksViewModel(
             BooksListIntent.OnSearchToggled -> toggleSearch()
             is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book)
             is BooksListIntent.OnFavoriteClicked -> toggleFavorite(intent.bookUuid)
+            is BooksListIntent.OnImportBook -> importBook(intent.fileBytes, intent.fileName)
         }
     }
 
@@ -136,6 +139,20 @@ class BooksViewModel(
         favoriteUuids: Set<String>,
     ): List<BookUiModel> {
         return books.sortedByDescending { it.uuid in favoriteUuids }
+    }
+
+    private fun importBook(fileBytes: ByteArray, fileName: String) {
+        viewModelScope.launch {
+            updateState { it.copy(isImporting = true) }
+            importEpubUseCase(fileBytes, fileName)
+                .onSuccess { book ->
+                    analytics.logEvent(BookAnalyticsEvent.BookImported(bookUuid = book.uuid))
+                }
+                .onFailure { error ->
+                    error.log(analytics, "BooksViewModel: Failed to import book")
+                }
+            updateState { it.copy(isImporting = false) }
+        }
     }
 }
 

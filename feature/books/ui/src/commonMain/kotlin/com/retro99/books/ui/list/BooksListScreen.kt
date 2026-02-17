@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,18 +25,25 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.books.ui.components.BookItemCard
 import com.retro99.books.ui.components.BookSearchBar
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.translations.StringRes
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -68,20 +76,44 @@ private fun BooksListScreenContent(
     intentDispatcher: IntentDispatcher<BooksListIntent>,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
+    val filePickerLauncher = rememberFilePickerLauncher(
+        type = PickerType.File(extensions = listOf("epub")),
+        mode = PickerMode.Single,
+    ) { file ->
+        file?.let {
+            scope.launch {
+                val bytes = it.readBytes()
+                intentDispatcher(BooksListIntent.OnImportBook(bytes, it.name))
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { intentDispatcher(BooksListIntent.OnSearchToggled) },
-            ) {
-                Icon(
-                    imageVector = if (viewState.isSearchVisible) {
-                        Icons.Filled.Close
-                    } else {
-                        Icons.Filled.Search
-                    },
-                    contentDescription = null,
-                )
+            Column(horizontalAlignment = Alignment.End) {
+                SmallFloatingActionButton(
+                    onClick = { filePickerLauncher.launch() },
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                FloatingActionButton(
+                    onClick = { intentDispatcher(BooksListIntent.OnSearchToggled) },
+                ) {
+                    Icon(
+                        imageVector = if (viewState.isSearchVisible) {
+                            Icons.Filled.Close
+                        } else {
+                            Icons.Filled.Search
+                        },
+                        contentDescription = null,
+                    )
+                }
             }
         },
     ) { paddingValues ->
