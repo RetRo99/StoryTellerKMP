@@ -9,6 +9,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.fragment.app.FragmentActivity
 import com.retro99.home.ui.deeplink.DeepLinkHandler
 import com.retro99.parrot.App
+import com.retro99.reader.ui.fragment.EpubFragmentFactoryHelper
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import org.koin.android.ext.android.inject
 
@@ -18,8 +19,20 @@ class MainActivity : FragmentActivity() {
     private val deepLinkHandler: DeepLinkHandler by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Set a dummy fragment factory BEFORE super.onCreate() to prevent crashes when
+        // Android tries to restore EpubNavigatorFragment after process death.
+        // EpubNavigatorFragment requires factory instantiation (no default constructor),
+        // so without this, the app would crash with Fragment$InstantiationException.
+        // This is the official Readium approach used in their test app.
+        supportFragmentManager.fragmentFactory = EpubFragmentFactoryHelper.createDummyFactory()
+
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Remove any restored EpubNavigatorFragment BEFORE onResume is called.
+        // The dummy fragment throws RestorationNotSupportedException in onResume,
+        // so we must remove it immediately after restoration.
+        EpubFragmentFactoryHelper.removeRestoredFragment(supportFragmentManager)
 
         // Register permission handler before setContent
         notificationPermissionHandler.register(this)
