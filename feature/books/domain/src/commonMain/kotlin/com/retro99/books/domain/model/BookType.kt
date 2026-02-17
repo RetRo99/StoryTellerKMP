@@ -21,20 +21,11 @@ enum class BookType(val value: String) {
      * ReadAloud book - EPUB with embedded media overlays
      * that synchronize professional audio narration with text.
      */
-    READALOUD("readaloud"),
-
-    /**
-     * Locally imported EPUB file.
-     * Similar to EBOOK but without server sync, statistics, or audio features.
-     */
-    IMPORTED("imported"),
-    ;
+    READALOUD("readaloud");
 
     /**
      * Whether this book type is a locally imported file (not from server).
      */
-    val isLocal: Boolean get() = this == IMPORTED
-
     companion object {
         fun fromValue(value: String): BookType =
             entries.find { it.value == value.lowercase() } ?: EBOOK

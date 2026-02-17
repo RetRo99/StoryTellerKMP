@@ -74,7 +74,6 @@ class InitializeReaderUseCase(
             BookType.READALOUD -> book.readaloud?.filepath
             BookType.AUDIOBOOK -> book.audiobook?.filepath
             BookType.EBOOK -> book.ebook?.filepath
-            BookType.IMPORTED -> null // Should not happen for StorytellerBook
         } ?: return@coroutineScope Err(
             AppError.UnknownError(Throwable("Book has no $bookType file"))
         )
@@ -120,7 +119,7 @@ class InitializeReaderUseCase(
                 bookTitle = book.title,
                 bookCoverUrl = book.coverUrl,
                 localEbookPath = book.filePath,
-                bookType = BookType.IMPORTED,
+                bookType = BookType.EBOOK,
                 initialSettings = settings,
                 // TODO: Add progress tracking for imported books
                 progressResult = ReadingProgressResult.Resolved(null),
