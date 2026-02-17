@@ -4,7 +4,10 @@ import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -90,21 +93,19 @@ internal actual fun EpubReaderViewInternal(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Use lifecycle observer to properly clean up the fragment.
-    // We remove the fragment during ON_STOP (before onSaveInstanceState) to prevent
-    // Android from trying to restore it on app restart, which would fail because
-    // EpubNavigatorFragment requires factory instantiation and has no default constructor.
+    // We remove the fragment during ON_DESTROY to clean up resources while keeping
+    // the fragment visible during lock/unlock (ON_STOP/ON_START cycles).
     DisposableEffect(bookUuid, lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
+            if (event == Lifecycle.Event.ON_DESTROY) {
                 // Release media overlay player resources
                 navigatorController?.close()
-                // Remove fragment before onSaveInstanceState to prevent restoration issues
                 val existingFragment = activity.supportFragmentManager
                     .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                 if (existingFragment != null) {
                     // Use commitNow to ensure the fragment is removed synchronously
                     // before onSaveInstanceState is called
-                    activity.supportFragmentManager.commitNow {
+                    activity.supportFragmentManager.commitNow(allowStateLoss = true) {
                         remove(existingFragment)
                     }
                 }
