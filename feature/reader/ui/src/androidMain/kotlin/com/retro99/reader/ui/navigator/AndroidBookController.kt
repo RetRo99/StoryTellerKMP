@@ -67,6 +67,12 @@ class AndroidBookController internal constructor() : BookController {
     private var pendingPageTurnJob: Job? = null
 
     /**
+     * Queue of actions to execute when the navigator becomes available.
+     * Actions are executed in order and cleared after execution.
+     */
+    private val pendingActions = mutableListOf<(EpubNavigatorFragment) -> Unit>()
+
+    /**
      * Current reader settings, used for highlight color.
      */
     private var highLightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW
@@ -115,8 +121,35 @@ class AndroidBookController internal constructor() : BookController {
     override var hasMediaOverlays: Boolean = false
         private set
 
-    private val navigator: EpubNavigatorFragment
-        get() = _navigator.value ?: error("Navigator not initialized")
+    /**
+     * Returns the navigator if initialized, null otherwise.
+     */
+    private val navigator: EpubNavigatorFragment?
+        get() = _navigator.value
+
+    /**
+     * Safely executes an action with the navigator if it's initialized.
+     * If the navigator is not yet initialized, the action is queued and will be
+     * executed when [init] is called.
+     */
+    private fun withNavigator(action: (EpubNavigatorFragment) -> Unit) {
+        val nav = navigator
+        if (nav != null) {
+            action(nav)
+        } else {
+            pendingActions.add(action)
+        }
+    }
+
+    /*
+     * Suspend version of [withNavigatorOrNull] for use in coroutines.
+     * Returns null if the navigator hasn't been initialized yet.
+     */
+    private inline fun <T> withNavigatorOrNull(
+        action: (EpubNavigatorFragment) -> T
+    ): T? {
+        return navigator?.let(action)
+    }
 
     fun init(
         navigator: EpubNavigatorFragment,
@@ -124,10 +157,24 @@ class AndroidBookController internal constructor() : BookController {
     ) {
         _navigator.value = navigator
         this.hasMediaOverlays = hasMediaOverlays
+
+        // Execute any pending actions that were queued before initialization
+        executePendingActions(navigator)
+
         // Only inject double-tap detection script for ReadAloud books
         if (hasMediaOverlays) {
             injectDoubleTapDetectionScript()
         }
+    }
+
+    /**
+     * Executes all pending actions and clears the queue.
+     */
+    private fun executePendingActions(navigator: EpubNavigatorFragment) {
+        pendingActions.forEach { action ->
+            action(navigator)
+        }
+        pendingActions.clear()
     }
 
     /**
@@ -142,7 +189,7 @@ class AndroidBookController internal constructor() : BookController {
             // Small delay to ensure WebView content is loaded
             delay(SCRIPT_INJECTION_DELAY_MS)
             val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
-            _navigator.value?.evaluateJavascript(script)
+            withNavigatorOrNull { it.evaluateJavascript(script) }
         }
     }
 
@@ -154,7 +201,7 @@ class AndroidBookController internal constructor() : BookController {
     fun onSentenceDoubleTap(fragmentId: String) {
         controllerScope.launch {
             // Access navigator state on Main thread for thread safety
-            val currentHref = _navigator.value?.currentLocator?.value?.href?.toString()
+            val currentHref = withNavigatorOrNull { it.currentLocator.value?.href?.toString() }
             _sentenceDoubleTapEvents.emit(
                 SentenceDoubleTapEvent(
                     fragmentId = fragmentId,
@@ -204,11 +251,13 @@ class AndroidBookController internal constructor() : BookController {
      * Word count is passed in from the cache.
      */
     private suspend fun fetchChapterInfo(cachedWordCount: Int?): ChapterInfo? {
-        val nav = _navigator.value ?: return null
-        val script = ChapterPageCalculator.getPageCalculationScript()
-        val rawResult = nav.evaluateJavascript(script) ?: return null
-        val cleanJson = cleanWebViewJson(rawResult)
-        return ChapterPageCalculator.parsePageResult(cleanJson, cachedWordCount)
+        return withNavigatorOrNull { nav ->
+            val script = ChapterPageCalculator.getPageCalculationScript()
+            val rawResult =
+                nav.evaluateJavascript(script) ?: return@withNavigatorOrNull null
+            val cleanJson = cleanWebViewJson(rawResult)
+            ChapterPageCalculator.parsePageResult(cleanJson, cachedWordCount)
+        }
     }
 
     /**
@@ -220,43 +269,45 @@ class AndroidBookController internal constructor() : BookController {
         chapterWordCountCache[href]?.let { return it }
 
         // Fetch and cache the word count
-        val nav = _navigator.value ?: return null
-        val script = ChapterWordCountCalculator.getWordCountScript()
-        val rawResult = nav.evaluateJavascript(script) ?: return null
-        val cleanJson = cleanWebViewJson(rawResult)
-        val wordCount = ChapterWordCountCalculator.parseWordCountResult(cleanJson)
+        return withNavigatorOrNull { nav ->
+            val script = ChapterWordCountCalculator.getWordCountScript()
+            val rawResult = nav.evaluateJavascript(script)
+                ?: return@withNavigatorOrNull null
+            val cleanJson = cleanWebViewJson(rawResult)
+            val wordCount = ChapterWordCountCalculator.parseWordCountResult(cleanJson)
 
-        // Cache the result
-        if (wordCount != null) {
-            chapterWordCountCache[href] = wordCount
+            // Cache the result
+            if (wordCount != null) {
+                chapterWordCountCache[href] = wordCount
+            }
+
+            wordCount
         }
-
-        return wordCount
     }
 
     override fun goToNextPage() {
-        navigator.goForward()
+        withNavigator { it.goForward() }
     }
 
     override fun goToPreviousPage() {
-        navigator.goBackward()
+        withNavigator { it.goBackward() }
     }
 
     override fun goToChapter(href: String) {
         val url = Url(href) ?: return
         val link = Link(href = url)
-        navigator.go(link)
+        withNavigator { it.go(link) }
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
         highLightColor = settings.highlightColor
         highlightStyle = settings.highlightStyle
-        _navigator.value?.submitPreferences(settings.toEpubPreferences())
+        withNavigator { it.submitPreferences(settings.toEpubPreferences()) }
     }
 
     override fun goToPosition(position: PositionUiModel) {
         val locator = position.toAndroidLocator() ?: return
-        navigator.go(locator)
+        withNavigator { it.go(locator) }
     }
 
     /**
@@ -272,32 +323,35 @@ class AndroidBookController internal constructor() : BookController {
         locator: LocatorState,
         sentenceDurationMs: Long,
     ) {
-        val decorableNavigator = _navigator.value as? DecorableNavigator ?: return
-        val androidLocator = locator.toAndroidLocator() ?: return
-        val fragmentId = locator.fragments?.firstOrNull()
+        withNavigatorOrNull { nav ->
+            val decorableNavigator =
+                nav as? DecorableNavigator ?: return@withNavigatorOrNull
+            val androidLocator = locator.toAndroidLocator() ?: return@withNavigatorOrNull
+            val fragmentId = locator.fragments?.firstOrNull()
 
-        // First navigate to the locator to ensure the sentence is visible
-        navigator.go(androidLocator)
+            // First navigate to the locator to ensure the sentence is visible
+            nav.go(androidLocator)
 
-        // Apply highlight decorations
-        val decorations = createDecorations(androidLocator)
-        decorableNavigator.applyDecorations(decorations, READALOUD_DECORATION_GROUP)
+            // Apply highlight decorations
+            val decorations = createDecorations(androidLocator)
+            decorableNavigator.applyDecorations(decorations, READALOUD_DECORATION_GROUP)
 
-        // Cancel any pending page turn from a previous sentence
-        cancelPendingPageTurn()
+            // Cancel any pending page turn from a previous sentence
+            cancelPendingPageTurn()
 
-        // Check visibility and schedule page turn if sentence spans pages
-        if (fragmentId != null) {
-            val visibility = checkSentenceVisibility(fragmentId)
-            if (visibility.needsPageTurn) {
-                // Calculate delay based on visible fraction
-                val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
-                    .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
+            // Check visibility and schedule page turn if sentence spans pages
+            if (fragmentId != null) {
+                val visibility = checkSentenceVisibility(fragmentId)
+                if (visibility.needsPageTurn) {
+                    // Calculate delay based on visible fraction
+                    val delayMs = (visibility.visibleFraction * sentenceDurationMs).toLong()
+                        .coerceAtLeast(MIN_PAGE_TURN_DELAY_MS)
 
-                lastPageTurnSentenceId = fragmentId
-                pendingPageTurnJob = controllerScope.launch {
-                    delay(delayMs)
-                    navigator.goForward()
+                    lastPageTurnSentenceId = fragmentId
+                    pendingPageTurnJob = controllerScope.launch {
+                        delay(delayMs)
+                        withNavigator { it.goForward() }
+                    }
                 }
             }
         }
@@ -319,17 +373,16 @@ class AndroidBookController internal constructor() : BookController {
      * @return The visibility result including visible fraction and whether page turn is needed
      */
     override suspend fun checkSentenceVisibility(elementId: String): SentenceVisibilityResult {
-        val nav = _navigator.value
-            ?: return SentenceVisibilityResult.FULLY_VISIBLE
+        return withNavigatorOrNull { nav ->
+            val script = SentenceVisibilityChecker.getVisibilityCheckScript(elementId)
 
-        val script = SentenceVisibilityChecker.getVisibilityCheckScript(elementId)
+            // Execute JS to get the element's geometry relative to the viewport
+            val rawResult = nav.evaluateJavascript(script)
+                ?: return@withNavigatorOrNull SentenceVisibilityResult.FULLY_VISIBLE
 
-        // Execute JS to get the element's geometry relative to the viewport
-        val rawResult = nav.evaluateJavascript(script)
-            ?: return SentenceVisibilityResult.FULLY_VISIBLE
-
-        val cleanJson = cleanWebViewJson(rawResult)
-        return SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
+            val cleanJson = cleanWebViewJson(rawResult)
+            SentenceVisibilityChecker.parseVisibilityResult(cleanJson, elementId)
+        } ?: SentenceVisibilityResult.FULLY_VISIBLE
     }
 
     override suspend fun getChapterPageInfo(): ChapterInfo? {
@@ -339,13 +392,14 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     override suspend fun getVisibleSentenceId(): String? {
-        val nav = _navigator.value ?: return null
+        return withNavigatorOrNull { nav ->
+            val script = VisibleSentenceDetector.getScript()
+            val rawResult = nav.evaluateJavascript(script)
+                ?: return@withNavigatorOrNull null
 
-        val script = VisibleSentenceDetector.getScript()
-        val rawResult = nav.evaluateJavascript(script) ?: return null
-
-        val cleanJson = cleanWebViewJson(rawResult)
-        return VisibleSentenceDetector.parseResult(cleanJson)
+            val cleanJson = cleanWebViewJson(rawResult)
+            VisibleSentenceDetector.parseResult(cleanJson)
+        }
     }
 
     /**
@@ -414,6 +468,7 @@ class AndroidBookController internal constructor() : BookController {
 
     override fun close() {
         pendingPageTurnJob?.cancel()
+        pendingActions.clear()
         // Note: No need to call getRemoveDoubleTapDetectorScript() here.
         // The WebView and its JavaScript context will be destroyed when the
         // fragment is removed, so the event listener will be cleaned up automatically.
