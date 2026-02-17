@@ -3,6 +3,7 @@ package com.retro99.books.domain.usecase
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
+import io.github.vinceglb.filekit.core.PlatformFile
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
@@ -14,17 +15,15 @@ class ImportEpubUseCase(
     @Provided private val fileImportManager: FileImportManager,
 ) {
     /**
-     * Imports an EPUB file from the given bytes.
+     * Imports an EPUB file from the given platform file.
      *
-     * @param fileBytes The raw bytes of the EPUB file
-     * @param fileName The original file name
+     * @param platformFile The platform file from the file picker
      * @return The imported book domain model, or an error if import fails
      */
     suspend operator fun invoke(
-        fileBytes: ByteArray,
-        fileName: String,
+        platformFile: PlatformFile,
     ): AppResult<BookDomainModel.LocalBook> {
-        return fileImportManager.importEpubFile(fileBytes, fileName)
+        return fileImportManager.importEpubFile(platformFile)
     }
 }
 

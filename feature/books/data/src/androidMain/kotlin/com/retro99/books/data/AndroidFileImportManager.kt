@@ -10,12 +10,14 @@ import com.retro99.base.result.AppResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
+import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -37,22 +39,28 @@ class AndroidFileImportManager(
         get() = File(context.filesDir, "imported_covers").apply { mkdirs() }
 
     override suspend fun importEpubFile(
-        fileBytes: ByteArray,
-        fileName: String,
+        platformFile: PlatformFile,
     ): AppResult<BookDomainModel.LocalBook> = withContext(Dispatchers.IO) {
         try {
             val uuid = UUID.randomUUID().toString()
 
-            if (fileBytes.isEmpty()) {
+            // Copy file using streams to avoid loading entire file into memory
+            val destFile = File(importedBooksDir, "$uuid.epub")
+            context.contentResolver.openInputStream(platformFile.uri)?.use { inputStream ->
+                FileOutputStream(destFile).use { outputStream ->
+                    inputStream.copyTo(outputStream, bufferSize = 8192)
+                }
+            } ?: return@withContext Err(
+                AppError.UnknownError(Throwable("Could not open input stream for file"))
+            )
+
+            val fileSize = destFile.length()
+            if (fileSize == 0L) {
+                destFile.delete()
                 return@withContext Err(
-                    AppError.UnknownError(Throwable("File bytes are empty"))
+                    AppError.UnknownError(Throwable("File is empty"))
                 )
             }
-
-            // Write bytes to app storage
-            val destFile = File(importedBooksDir, "$uuid.epub")
-            destFile.writeBytes(fileBytes)
-            val fileSize = destFile.length()
 
             // Extract metadata
             metadataExtractor.extractMetadata(destFile.absolutePath).andThen { metadata ->

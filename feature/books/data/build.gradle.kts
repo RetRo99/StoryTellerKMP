@@ -31,6 +31,7 @@ kotlin {
             implementation(projects.lib.database.api)
             implementation(projects.lib.analytics.api)
             implementation(projects.feature.books.domain)
+            implementation(libs.filekit.core)
         }
 
         androidMain.dependencies {
