@@ -1,4 +1,4 @@
-package com.retro99.reader.data
+package com.retro99.books.data
 
 /**
  * Metadata extracted from an EPUB file.

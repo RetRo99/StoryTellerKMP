@@ -1,4 +1,4 @@
-package com.retro99.reader.data
+package com.retro99.books.data
 
 import android.content.Context
 import android.graphics.Bitmap

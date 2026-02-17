@@ -25,10 +25,18 @@ kotlin {
             api(libs.koin.annotations)
             implementation(libs.coroutines)
             implementation(libs.serialization)
+            api(libs.datetime)
             implementation(projects.base)
             implementation(projects.lib.network.api)
             implementation(projects.lib.database.api)
+            implementation(projects.lib.analytics.api)
             implementation(projects.feature.books.domain)
+        }
+
+        androidMain.dependencies {
+            implementation(libs.readium.shared)
+            implementation(libs.readium.streamer)
+            implementation(libs.koin.android)
         }
     }
 }

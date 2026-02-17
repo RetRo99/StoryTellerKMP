@@ -1,4 +1,4 @@
-package com.retro99.reader.data
+package com.retro99.books.data
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -6,6 +6,7 @@ import com.github.michaelbull.result.andThen
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
+import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -156,7 +157,7 @@ class IosFileImportManager(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 private fun writeBytesToFile(bytes: ByteArray, filePath: String) {
     val fileManager = NSFileManager.defaultManager
     if (!fileManager.fileExistsAtPath(filePath)) {
