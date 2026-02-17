@@ -1,4 +1,4 @@
-package com.retro99.reader.data
+package com.retro99.books.domain
 
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.model.BookDomainModel
