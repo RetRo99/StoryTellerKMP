@@ -2,6 +2,7 @@ package com.retro99.books.domain
 
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.model.BookDomainModel
+import io.github.vinceglb.filekit.core.PlatformFile
 
 /**
  * Manager for importing EPUB files into the app.
@@ -9,21 +10,19 @@ import com.retro99.books.domain.model.BookDomainModel
  */
 interface FileImportManager {
     /**
-     * Imports an EPUB file from the given bytes.
+     * Imports an EPUB file from the given platform file.
      *
      * This method:
-     * 1. Writes the file bytes to app's internal storage
+     * 1. Copies the file to app's internal storage using streams (memory efficient)
      * 2. Extracts metadata (title, author, cover) from the EPUB
      * 3. Saves the cover image to storage
      * 4. Creates and saves a LocalBook to the database
      *
-     * @param fileBytes The raw bytes of the EPUB file (from file picker)
-     * @param fileName The original file name
+     * @param platformFile The platform file from the file picker
      * @return The imported book domain model, or an error if import fails
      */
     suspend fun importEpubFile(
-        fileBytes: ByteArray,
-        fileName: String,
+        platformFile: PlatformFile,
     ): AppResult<BookDomainModel.LocalBook>
 
     /**

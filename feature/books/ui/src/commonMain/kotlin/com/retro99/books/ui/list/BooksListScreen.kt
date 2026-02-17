@@ -29,7 +29,6 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,7 +42,6 @@ import com.retro99.books.ui.components.BookItemCard
 import com.retro99.books.ui.components.BookSearchBar
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.translations.StringRes
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -76,16 +74,12 @@ private fun BooksListScreenContent(
     intentDispatcher: IntentDispatcher<BooksListIntent>,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
     val filePickerLauncher = rememberFilePickerLauncher(
         type = PickerType.File(extensions = listOf("epub")),
         mode = PickerMode.Single,
     ) { file ->
         file?.let {
-            scope.launch {
-                val bytes = it.readBytes()
-                intentDispatcher(BooksListIntent.OnImportBook(bytes, it.name))
-            }
+            intentDispatcher(BooksListIntent.OnImportBook(it))
         }
     }
 

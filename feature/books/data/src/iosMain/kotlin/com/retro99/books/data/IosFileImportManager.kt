@@ -8,6 +8,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
+import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -22,6 +23,7 @@ import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileHandle
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
+import platform.Foundation.NSURL
 import platform.Foundation.NSUUID
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.closeFile
@@ -79,26 +81,34 @@ class IosFileImportManager(
 
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun importEpubFile(
-        fileBytes: ByteArray,
-        fileName: String,
+        platformFile: PlatformFile,
     ): AppResult<BookDomainModel.LocalBook> = withContext(Dispatchers.IO) {
         try {
             val uuid = NSUUID().UUIDString
+            val fileManager = NSFileManager.defaultManager
 
-            if (fileBytes.isEmpty()) {
+            // Copy file using NSFileManager to avoid loading entire file into memory
+            val destPath = "$importedBooksDir/$uuid.epub"
+            val sourceUrl = platformFile.nsUrl
+            val destUrl = NSURL.fileURLWithPath(destPath)
+
+            val copySuccess = fileManager.copyItemAtURL(sourceUrl, destUrl, error = null)
+            if (!copySuccess) {
                 return@withContext Err(
-                    AppError.UnknownError(Throwable("File bytes are empty"))
+                    AppError.UnknownError(Throwable("Failed to copy file"))
                 )
             }
 
-            // Write bytes to app storage
-            val destPath = "$importedBooksDir/$uuid.epub"
-            writeBytesToFile(fileBytes, destPath)
-
             // Get file size
-            val fileManager = NSFileManager.defaultManager
             val attributes = fileManager.attributesOfItemAtPath(destPath, error = null)
             val fileSize = (attributes?.get("NSFileSize") as? Long) ?: 0L
+
+            if (fileSize == 0L) {
+                fileManager.removeItemAtPath(destPath, error = null)
+                return@withContext Err(
+                    AppError.UnknownError(Throwable("File is empty"))
+                )
+            }
 
             // Extract metadata
             metadataExtractor.extractMetadata(destPath).andThen { metadata ->

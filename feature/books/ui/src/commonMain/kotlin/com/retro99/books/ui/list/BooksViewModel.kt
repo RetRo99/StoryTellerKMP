@@ -49,7 +49,7 @@ class BooksViewModel(
             BooksListIntent.OnSearchToggled -> toggleSearch()
             is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book)
             is BooksListIntent.OnFavoriteClicked -> toggleFavorite(intent.bookUuid)
-            is BooksListIntent.OnImportBook -> importBook(intent.fileBytes, intent.fileName)
+            is BooksListIntent.OnImportBook -> importBook(intent.file)
         }
     }
 
@@ -141,10 +141,10 @@ class BooksViewModel(
         return books.sortedByDescending { it.uuid in favoriteUuids }
     }
 
-    private fun importBook(fileBytes: ByteArray, fileName: String) {
+    private fun importBook(file: io.github.vinceglb.filekit.core.PlatformFile) {
         viewModelScope.launch {
             updateState { it.copy(isImporting = true) }
-            importEpubUseCase(fileBytes, fileName)
+            importEpubUseCase(file)
                 .onSuccess { book ->
                     analytics.logEvent(BookAnalyticsEvent.BookImported(bookUuid = book.uuid))
                 }
