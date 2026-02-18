@@ -4,14 +4,18 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
-import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repository interface for reader-related operations.
+ * Repository interface for app-wide reader operations.
+ * These operations are not server-specific and apply globally.
+ *
+ * This follows the separation of concerns principle:
+ * - Server-specific operations (position sync) use ServerReaderRepository via AuthenticatedRepositoryProvider
+ * - App-wide operations (settings, caching, currently reading) use this interface
  */
-interface ReaderRepository {
+interface ReaderSettingsRepository {
 
     /**
      * Prepares an ebook for reading by downloading it if necessary.
@@ -27,41 +31,6 @@ interface ReaderRepository {
         ebookFilePath: String,
         bookType: BookType,
     ): AppResult<String>
-
-    /**
-     * Gets the reading progress for a book.
-     * Uses remote with cache fallback strategy.
-     *
-     * @param serverId The ID of the server the book belongs to
-     * @param bookUuid The UUID of the book
-     * @return The reading progress or null if not found
-     */
-    suspend fun getReadingProgress(serverId: String, bookUuid: String): AppResult<PositionDomainModel?>
-
-    /**
-     * Gets the locally cached reading progress for a book.
-     *
-     * @param serverId The ID of the server the book belongs to
-     * @param bookUuid The UUID of the book
-     * @return The local reading progress or null if not found
-     */
-    suspend fun getLocalReadingProgress(serverId: String, bookUuid: String): AppResult<PositionDomainModel?>
-
-    /**
-     * Gets the remote reading progress for a book.
-     *
-     * @param serverId The ID of the server the book belongs to
-     * @param bookUuid The UUID of the book
-     * @return The remote reading progress or null if not found
-     */
-    suspend fun getRemoteReadingProgress(serverId: String, bookUuid: String): AppResult<PositionDomainModel?>
-
-    /**
-     * Saves the reading progress for a book.
-     *
-     * @param progress The reading progress to save
-     */
-    suspend fun saveReadingProgress(progress: PositionDomainModel): CompletableResult
 
     /**
      * Gets the reader settings.

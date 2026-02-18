@@ -4,8 +4,13 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 
 /**
- * Server-aware reader repository interface for reading progress sync.
- * Each server type implements this with its own API.
+ * Server-aware reader repository interface for reading progress.
+ * Each server type implements this with its own API and local caching strategy.
+ *
+ * This interface owns both local and remote position data:
+ * - Remote operations sync with the server (Storyteller, etc.)
+ * - Local operations manage the local cache
+ * - Combined operations coordinate between local and remote
  */
 interface ServerReaderRepository {
     /**
@@ -13,21 +18,46 @@ interface ServerReaderRepository {
      */
     val serverId: String
 
+    // ==================== Combined Operations ====================
+
     /**
-     * Gets the reading position for a book from the server.
+     * Gets the reading position for a book.
+     * Uses remote-first with local cache fallback strategy.
      *
      * @param bookUuid The UUID of the book
-     * @return The position from the server, or null if not found
+     * @return The position (preferring remote, falling back to local cache)
      */
     suspend fun getPosition(bookUuid: String): AppResult<ServerPosition?>
 
     /**
-     * Updates the reading position for a book on the server.
+     * Saves the reading position for a book.
+     * Saves to local cache first, then syncs to remote server.
      *
      * @param bookUuid The UUID of the book
      * @param position The position to save
      */
-    suspend fun updatePosition(bookUuid: String, position: ServerPosition): CompletableResult
+    suspend fun savePosition(bookUuid: String, position: ServerPosition): CompletableResult
+
+    // ==================== Local-only Operations ====================
+
+    /**
+     * Gets the locally cached reading position for a book.
+     *
+     * @param bookUuid The UUID of the book
+     * @return The local position or null if not cached
+     */
+    suspend fun getLocalPosition(bookUuid: String): AppResult<ServerPosition?>
+
+    // ==================== Remote-only Operations ====================
+
+    /**
+     * Gets the reading position for a book directly from the remote server.
+     * Does not use or update the local cache.
+     *
+     * @param bookUuid The UUID of the book
+     * @return The position from the server, or null if not found
+     */
+    suspend fun getRemotePosition(bookUuid: String): AppResult<ServerPosition?>
 }
 
 /**

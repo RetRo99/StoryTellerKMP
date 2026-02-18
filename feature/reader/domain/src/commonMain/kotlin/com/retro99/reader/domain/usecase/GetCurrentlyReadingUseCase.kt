@@ -1,6 +1,6 @@
 package com.retro99.reader.domain.usecase
 
-import com.retro99.reader.domain.ReaderRepository
+import com.retro99.reader.domain.ReaderSettingsRepository
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
@@ -11,10 +11,10 @@ import org.koin.core.annotation.Provided
  */
 @Factory
 class GetCurrentlyReadingUseCase(
-    @Provided private val readerRepository: ReaderRepository,
+    @Provided private val readerSettingsRepository: ReaderSettingsRepository,
 ) {
     operator fun invoke(): CurrentlyReadingDomainModel? {
-        return readerRepository.getCurrentlyReading()
+        return readerSettingsRepository.getCurrentlyReading()
     }
 }
 

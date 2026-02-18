@@ -1,6 +1,6 @@
 package com.retro99.reader.domain.usecase
 
-import com.retro99.reader.domain.ReaderRepository
+import com.retro99.reader.domain.ReaderSettingsRepository
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.MediaCacheStatusDomainModel
 import org.koin.core.annotation.Factory
@@ -8,7 +8,7 @@ import org.koin.core.annotation.Provided
 
 @Factory
 class GetMediaCacheStatusUseCase(
-    @Provided private val readerRepository: ReaderRepository,
+    @Provided private val readerSettingsRepository: ReaderSettingsRepository,
 ) {
     /**
      * Checks the cache status for all media types of a book.
@@ -18,9 +18,9 @@ class GetMediaCacheStatusUseCase(
      */
     suspend operator fun invoke(bookUuid: String): MediaCacheStatusDomainModel {
         return MediaCacheStatusDomainModel(
-            isEbookCached = readerRepository.isEbookCached(bookUuid, BookType.EBOOK),
-            isAudiobookCached = readerRepository.isEbookCached(bookUuid, BookType.AUDIOBOOK),
-            isReadaloudCached = readerRepository.isEbookCached(bookUuid, BookType.READALOUD),
+            isEbookCached = readerSettingsRepository.isEbookCached(bookUuid, BookType.EBOOK),
+            isAudiobookCached = readerSettingsRepository.isEbookCached(bookUuid, BookType.AUDIOBOOK),
+            isReadaloudCached = readerSettingsRepository.isEbookCached(bookUuid, BookType.READALOUD),
         )
     }
 }
