@@ -151,6 +151,8 @@ internal class ReaderDataRepository(
             is AppError.DatabaseError -> error.throwable
             is AppError.UnknownError -> error.throwable
             is AppError.ApiError -> Exception("API Error ${error.code}: ${error.message}")
+            is AppError.AuthError -> Exception("Auth Error: ${error.message}")
+            is AppError.NotFoundError -> Exception("Not Found: ${error.message}")
         }
         analytics.logException(throwable, message)
     }

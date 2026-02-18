@@ -24,7 +24,7 @@ kotlin {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
             implementation(libs.serialization)
-            implementation(libs.coroutines.core)
+            implementation(libs.coroutines)
             implementation(libs.datetime)
             implementation(libs.ktor.client.core)
             implementation(projects.base)

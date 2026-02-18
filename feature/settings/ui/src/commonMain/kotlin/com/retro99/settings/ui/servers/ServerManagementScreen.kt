@@ -272,7 +272,7 @@ private fun AddServerDialog(
     var url by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(ServerType.Storyteller) }
+    var selectedType: ServerType by remember { mutableStateOf(ServerType.Storyteller) }
     var typeDropdownExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -296,7 +296,7 @@ private fun AddServerDialog(
                     onExpandedChange = { typeDropdownExpanded = it },
                 ) {
                     OutlinedTextField(
-                        value = selectedType.name,
+                        value = selectedType.displayName,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Server Type") },
@@ -309,9 +309,9 @@ private fun AddServerDialog(
                         expanded = typeDropdownExpanded,
                         onDismissRequest = { typeDropdownExpanded = false },
                     ) {
-                        ServerType.entries.forEach { type ->
+                        listOf(ServerType.Storyteller, ServerType.Local).forEach { type ->
                             DropdownMenuItem(
-                                text = { Text(type.name) },
+                                text = { Text(type.displayName) },
                                 onClick = {
                                     selectedType = type
                                     typeDropdownExpanded = false

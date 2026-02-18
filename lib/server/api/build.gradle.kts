@@ -22,7 +22,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.base)
             implementation(libs.serialization)
-            implementation(libs.coroutines.core)
+            implementation(libs.coroutines)
             api(libs.ktor.client.core)
         }
     }

@@ -11,14 +11,17 @@ import com.retro99.server.api.ServerTokenProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -45,9 +48,10 @@ class StorytellerNetworkClient(
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<T> = performRequest(typeInfo) {
+        val token = tokenProvider.getToken(serverId)
         httpClient.get(buildUrl(path, queryBuilder)) {
             headers(headers)
-            addAuthHeader()
+            addAuthHeader(token)
         }
     }
 
@@ -58,11 +62,31 @@ class StorytellerNetworkClient(
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<T> = performRequest(typeInfo) {
+        val token = tokenProvider.getToken(serverId)
         httpClient.post(buildUrl(path, queryBuilder)) {
             headers(headers)
-            addAuthHeader()
+            addAuthHeader(token)
             body?.let { setBody(it) }
             contentType(ContentType.Application.Json)
+        }
+    }
+
+    override suspend fun <T> postFormWithTypeInfo(
+        path: String,
+        typeInfo: TypeInfo,
+        formData: Map<String, String>,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit,
+    ): AppResult<T> = performRequest(typeInfo) {
+        val token = tokenProvider.getToken(serverId)
+        httpClient.submitForm(
+            url = buildUrl(path, queryBuilder),
+            formParameters = Parameters.build {
+                formData.forEach { (key, value) -> append(key, value) }
+            }
+        ) {
+            headers(headers)
+            addAuthHeader(token)
         }
     }
 
@@ -73,9 +97,10 @@ class StorytellerNetworkClient(
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<T> = performRequest(typeInfo) {
+        val token = tokenProvider.getToken(serverId)
         httpClient.delete(buildUrl(path, queryBuilder)) {
             headers(headers)
-            addAuthHeader()
+            addAuthHeader(token)
             body?.let { setBody(it) }
             contentType(ContentType.Application.Json)
         }
@@ -87,9 +112,10 @@ class StorytellerNetworkClient(
         headers: HeadersBuilder.() -> Unit,
     ): AppResult<ByteArray> = withContext(Dispatchers.IO) {
         try {
+            val token = tokenProvider.getToken(serverId)
             val response = httpClient.get(buildUrl(path, queryBuilder)) {
                 headers(headers)
-                addAuthHeader()
+                addAuthHeader(token)
             }
             if (response.status.isSuccess()) {
                 val bytes = response.bodyAsChannel().readRemaining().readByteArray()
@@ -102,6 +128,16 @@ class StorytellerNetworkClient(
         } catch (e: Exception) {
             Err(AppError.NetworkError(e))
         }
+    }
+
+    override suspend fun downloadFileToPath(
+        path: String,
+        destinationPath: String,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit,
+    ): AppResult<String> {
+        // TODO: Implement file download to path
+        return Err(AppError.UnknownError(NotImplementedError("File download to path not yet implemented")))
     }
 
     override suspend fun downloadFileToPathWithProgress(
@@ -119,9 +155,9 @@ class StorytellerNetworkClient(
         // HttpClient is shared, don't close it here
     }
 
-    private suspend fun io.ktor.client.request.HttpRequestBuilder.addAuthHeader() {
-        tokenProvider.getToken(serverId)?.let { token ->
-            header(HttpHeaders.Authorization, "Bearer $token")
+    private fun io.ktor.client.request.HttpRequestBuilder.addAuthHeader(token: String?) {
+        token?.let {
+            header(HttpHeaders.Authorization, "Bearer $it")
         }
     }
 

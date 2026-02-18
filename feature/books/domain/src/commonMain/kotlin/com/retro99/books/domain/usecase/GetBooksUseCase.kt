@@ -2,6 +2,7 @@ package com.retro99.books.domain.usecase
 
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
+import com.github.michaelbull.result.map as resultMap
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.BooksRepository
 import com.retro99.books.domain.model.BookDomainModel
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map as flowMap
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
@@ -48,8 +50,8 @@ class GetBooksUseCase(
 
     private fun <T, R> Flow<AppResult<T>>.mapToFlow(
         transform: (T) -> R
-    ): Flow<AppResult<R>> = kotlinx.coroutines.flow.map { result ->
-        result.map(transform)
+    ): Flow<AppResult<R>> = this.flowMap { result: AppResult<T> ->
+        result.resultMap { value: T -> transform(value) }
     }
 }
 
