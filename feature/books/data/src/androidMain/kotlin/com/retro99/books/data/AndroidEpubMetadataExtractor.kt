@@ -87,6 +87,14 @@ class AndroidEpubMetadataExtractor(
                     null
                 }
 
+                // Detect media overlays (readaloud capability)
+                val hasMediaOverlays = try {
+                    publication.hasMediaOverlays()
+                } catch (e: Exception) {
+                    analytics.logException(e, "AndroidEpubMetadataExtractor: Failed to detect media overlays")
+                    false
+                }
+
                 // Close the publication after extracting metadata
                 publication.close()
 
@@ -96,6 +104,7 @@ class AndroidEpubMetadataExtractor(
                         author = author,
                         description = description,
                         coverBytes = coverBytes,
+                        hasMediaOverlays = hasMediaOverlays,
                     )
                 )
             } catch (e: CancellationException) {

@@ -1,6 +1,7 @@
 package com.retro99.books.data.model
 
 import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.books.domain.model.BookType
 import com.retro99.database.api.importedbooks.ImportedBookEntity
 
 /**
@@ -16,6 +17,7 @@ data class ImportedBookLocalModel(
     override val fileSize: Long,
     override val importedAt: String,
     override val lastOpenedAt: String?,
+    override val bookType: String,
 ) : ImportedBookEntity
 
 fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
@@ -28,6 +30,7 @@ fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
     fileSize = fileSize,
     importedAt = importedAt,
     lastOpenedAt = lastOpenedAt,
+    bookType = BookType.fromValue(bookType),
 )
 
 fun BookDomainModel.LocalBook.toLocalModel() = ImportedBookLocalModel(
@@ -40,5 +43,6 @@ fun BookDomainModel.LocalBook.toLocalModel() = ImportedBookLocalModel(
     fileSize = fileSize,
     importedAt = importedAt,
     lastOpenedAt = lastOpenedAt,
+    bookType = bookType.value,
 )
 

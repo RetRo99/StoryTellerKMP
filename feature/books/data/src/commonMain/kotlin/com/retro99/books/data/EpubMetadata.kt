@@ -8,6 +8,7 @@ data class EpubMetadata(
     val author: String?,
     val description: String?,
     val coverBytes: ByteArray?,
+    val hasMediaOverlays: Boolean,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -18,6 +19,7 @@ data class EpubMetadata(
         if (title != other.title) return false
         if (author != other.author) return false
         if (description != other.description) return false
+        if (hasMediaOverlays != other.hasMediaOverlays) return false
         if (coverBytes != null) {
             if (other.coverBytes == null) return false
             if (!coverBytes.contentEquals(other.coverBytes)) return false
@@ -30,6 +32,7 @@ data class EpubMetadata(
         var result = title.hashCode()
         result = 31 * result + (author?.hashCode() ?: 0)
         result = 31 * result + (description?.hashCode() ?: 0)
+        result = 31 * result + hasMediaOverlays.hashCode()
         result = 31 * result + (coverBytes?.contentHashCode() ?: 0)
         return result
     }

@@ -15,6 +15,30 @@ import java.io.ByteArrayOutputStream
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
+ * Checks if this publication has media overlays (audio narration).
+ *
+ * This function checks three indicators:
+ * 1. **Duration metadata**: Must be > 0 (not just non-null), as some EPUBs have duration=0.0 without actual audio
+ * 2. **Audio resources**: Presence of audio files in the publication
+ * 3. **SMIL resources**: Presence of SMIL files (Synchronized Multimedia Integration Language)
+ *
+ * Returns true if ANY of these conditions are met.
+ *
+ * @return true if the publication has media overlays, false otherwise
+ */
+private fun Publication.hasMediaOverlays(): Boolean {
+    val duration = metadata.duration
+    val hasDuration = duration != null && duration > 0.0
+    val hasAudioResource = resources.any { it.mediaType?.isAudio == true }
+    val hasSmilResource = resources.any {
+        it.mediaType?.toString()?.contains("smil") == true ||
+                it.href.toString().endsWith(".smil")
+    }
+
+    return hasDuration || hasAudioResource || hasSmilResource
+}
+
+/**
  * Android implementation of EpubPublication.
  * Wraps Readium's Publication object.
  */
@@ -30,23 +54,10 @@ actual class EpubPublication(
 
     /**
      * Whether this publication has media overlays (audio narration).
-     * Checks Readium's publication metadata for media overlay information.
-     *
-     * Note: duration must be > 0, not just non-null, because some EPUBs have
-     * duration=0.0 set even without actual audio content.
+     * Uses the extension function from ReadiumPublicationExt.kt for consistent detection logic.
      */
     actual val hasMediaOverlays: Boolean
-        get() {
-            val duration = publication.metadata.duration
-            val hasDuration = duration != null && duration > 0.0
-            val hasAudioResource = publication.resources.any { it.mediaType?.isAudio == true }
-            val hasSmilResource = publication.resources.any {
-                it.mediaType?.toString()?.contains("smil") == true ||
-                        it.href.toString().endsWith(".smil")
-            }
-
-            return hasDuration || hasAudioResource || hasSmilResource
-        }
+        get() = publication.hasMediaOverlays()
 
     /**
      * The table of contents for this publication.

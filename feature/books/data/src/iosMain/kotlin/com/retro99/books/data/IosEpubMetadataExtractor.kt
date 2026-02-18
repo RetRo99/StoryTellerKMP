@@ -31,6 +31,7 @@ class IosEpubMetadataExtractor : EpubMetadataExtractor {
                 author = author,
                 description = null,
                 coverBytes = null,
+                hasMediaOverlays = false, // TODO: Implement proper detection via Swift bridge
             )
         )
     }

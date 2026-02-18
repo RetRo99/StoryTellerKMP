@@ -55,6 +55,7 @@ sealed class BookDomainModel {
         val fileSize: Long,
         val importedAt: String,
         val lastOpenedAt: String?,
+        val bookType: BookType,
     ) : BookDomainModel() {
         override val series: List<SeriesDomainModel> = emptyList()
     }

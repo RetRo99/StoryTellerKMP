@@ -31,6 +31,7 @@ internal class ImportedBooksSqlDelightDao(
                 file_size = book.fileSize,
                 imported_at = book.importedAt,
                 last_opened_at = book.lastOpenedAt,
+                book_type = book.bookType,
             )
         }
     }
@@ -88,6 +89,7 @@ internal class ImportedBooksSqlDelightDao(
         fileSize = file_size,
         importedAt = imported_at,
         lastOpenedAt = last_opened_at,
+        bookType = book_type,
     )
 }
 
@@ -104,5 +106,6 @@ private data class ImportedBookEntityImpl(
     override val fileSize: Long,
     override val importedAt: String,
     override val lastOpenedAt: String?,
+    override val bookType: String,
 ) : ImportedBookEntity
 

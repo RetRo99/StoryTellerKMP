@@ -8,6 +8,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.books.domain.model.BookType
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -41,7 +42,7 @@ class IosFileImportManager(
     @Provided private val importedBooksLocalSource: ImportedBooksLocalSource,
 ) : FileImportManager {
 
-    private val importedBooksDir: String
+    private val ebooksDir: String
         @OptIn(ExperimentalForeignApi::class)
         get() {
             val paths = NSSearchPathForDirectoriesInDomains(
@@ -50,14 +51,14 @@ class IosFileImportManager(
                 true,
             )
             val documentsDir = paths.firstOrNull() as? String ?: ""
-            val importedPath = "$documentsDir/imported_books"
+            val ebooksPath = "$documentsDir/ebooks"
             NSFileManager.defaultManager.createDirectoryAtPath(
-                importedPath,
+                ebooksPath,
                 withIntermediateDirectories = true,
                 attributes = null,
                 error = null,
             )
-            return importedPath
+            return ebooksPath
         }
 
     private val coversDir: String
@@ -87,12 +88,12 @@ class IosFileImportManager(
             val uuid = NSUUID().UUIDString
             val fileManager = NSFileManager.defaultManager
 
-            // Copy file using NSFileManager to avoid loading entire file into memory
-            val destPath = "$importedBooksDir/$uuid.epub"
+            // First, copy to temporary location to extract metadata
+            val tempPath = "$ebooksDir/$uuid.epub.tmp"
             val sourceUrl = platformFile.nsUrl
-            val destUrl = NSURL.fileURLWithPath(destPath)
+            val tempUrl = NSURL.fileURLWithPath(tempPath)
 
-            val copySuccess = fileManager.copyItemAtURL(sourceUrl, destUrl, error = null)
+            val copySuccess = fileManager.copyItemAtURL(sourceUrl, tempUrl, error = null)
             if (!copySuccess) {
                 return@withContext Err(
                     AppError.UnknownError(Throwable("Failed to copy file"))
@@ -100,18 +101,36 @@ class IosFileImportManager(
             }
 
             // Get file size
-            val attributes = fileManager.attributesOfItemAtPath(destPath, error = null)
+            val attributes = fileManager.attributesOfItemAtPath(tempPath, error = null)
             val fileSize = (attributes?.get("NSFileSize") as? Long) ?: 0L
 
             if (fileSize == 0L) {
-                fileManager.removeItemAtPath(destPath, error = null)
+                fileManager.removeItemAtPath(tempPath, error = null)
                 return@withContext Err(
                     AppError.UnknownError(Throwable("File is empty"))
                 )
             }
 
-            // Extract metadata
-            metadataExtractor.extractMetadata(destPath).andThen { metadata ->
+            // Extract metadata to determine book type
+            metadataExtractor.extractMetadata(tempPath).andThen { metadata ->
+                // Determine book type based on media overlays
+                val bookType = if (metadata.hasMediaOverlays) {
+                    BookType.READALOUD
+                } else {
+                    BookType.EBOOK
+                }
+
+                // Move to final location with proper naming
+                val destPath = "$ebooksDir/${uuid}_${bookType.value}.epub"
+                val destUrl = NSURL.fileURLWithPath(destPath)
+                val moveSuccess = fileManager.moveItemAtURL(tempUrl, destUrl, error = null)
+                if (!moveSuccess) {
+                    fileManager.removeItemAtPath(tempPath, error = null)
+                    return@andThen Err(
+                        AppError.UnknownError(Throwable("Failed to move file to final location"))
+                    )
+                }
+
                 // Save cover if available
                 val coverPath = metadata.coverBytes?.let { coverBytes ->
                     val coverFilePath = "$coversDir/$uuid.png"
@@ -129,6 +148,7 @@ class IosFileImportManager(
                     fileSize = fileSize,
                     importedAt = Clock.System.now().toString(),
                     lastOpenedAt = null,
+                    bookType = bookType,
                 )
 
                 // Save to database
@@ -145,25 +165,40 @@ class IosFileImportManager(
 
     @OptIn(ExperimentalForeignApi::class)
     override fun getImportedBookPath(uuid: String): String? {
-        val path = "$importedBooksDir/$uuid.epub"
-        return if (NSFileManager.defaultManager.fileExistsAtPath(path)) path else null
+        val fileManager = NSFileManager.defaultManager
+
+        // Check both ebook and readaloud types
+        val ebookPath = "$ebooksDir/${uuid}_${BookType.EBOOK.value}.epub"
+        if (fileManager.fileExistsAtPath(ebookPath)) return ebookPath
+
+        val readaloudPath = "$ebooksDir/${uuid}_${BookType.READALOUD.value}.epub"
+        if (fileManager.fileExistsAtPath(readaloudPath)) return readaloudPath
+
+        return null
     }
 
     @OptIn(ExperimentalForeignApi::class)
     override fun deleteImportedBookFiles(uuid: String): Boolean {
         val fileManager = NSFileManager.defaultManager
-        val epubPath = "$importedBooksDir/$uuid.epub"
+
+        // Try to delete both possible file types
+        val ebookPath = "$ebooksDir/${uuid}_${BookType.EBOOK.value}.epub"
+        val readaloudPath = "$ebooksDir/${uuid}_${BookType.READALOUD.value}.epub"
         val coverPath = "$coversDir/$uuid.png"
 
-        val epubDeleted = if (fileManager.fileExistsAtPath(epubPath)) {
-            fileManager.removeItemAtPath(epubPath, error = null)
+        val ebookDeleted = if (fileManager.fileExistsAtPath(ebookPath)) {
+            fileManager.removeItemAtPath(ebookPath, error = null)
+        } else true
+
+        val readaloudDeleted = if (fileManager.fileExistsAtPath(readaloudPath)) {
+            fileManager.removeItemAtPath(readaloudPath, error = null)
         } else true
 
         val coverDeleted = if (fileManager.fileExistsAtPath(coverPath)) {
             fileManager.removeItemAtPath(coverPath, error = null)
         } else true
 
-        return epubDeleted && coverDeleted
+        return ebookDeleted && readaloudDeleted && coverDeleted
     }
 }
 

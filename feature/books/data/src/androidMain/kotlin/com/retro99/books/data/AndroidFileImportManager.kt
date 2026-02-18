@@ -10,6 +10,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.books.domain.model.BookType
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,8 +33,8 @@ class AndroidFileImportManager(
     @Provided private val analytics: Analytics,
 ) : FileImportManager {
 
-    private val importedBooksDir: File
-        get() = File(context.filesDir, "imported_books").apply { mkdirs() }
+    private val ebooksDir: File
+        get() = File(context.filesDir, "ebooks").apply { mkdirs() }
 
     private val coversDir: File
         get() = File(context.filesDir, "imported_covers").apply { mkdirs() }
@@ -44,26 +45,41 @@ class AndroidFileImportManager(
         try {
             val uuid = UUID.randomUUID().toString()
 
-            // Copy file using streams to avoid loading entire file into memory
-            val destFile = File(importedBooksDir, "$uuid.epub")
+            // First, copy to temporary location to extract metadata
+            val tempFile = File(context.cacheDir, "$uuid.epub.tmp")
             context.contentResolver.openInputStream(platformFile.uri)?.use { inputStream ->
-                FileOutputStream(destFile).use { outputStream ->
+                FileOutputStream(tempFile).use { outputStream ->
                     inputStream.copyTo(outputStream, bufferSize = 8192)
                 }
             } ?: return@withContext Err(
                 AppError.UnknownError(Throwable("Could not open input stream for file"))
             )
 
-            val fileSize = destFile.length()
+            val fileSize = tempFile.length()
             if (fileSize == 0L) {
-                destFile.delete()
+                tempFile.delete()
                 return@withContext Err(
                     AppError.UnknownError(Throwable("File is empty"))
                 )
             }
 
-            // Extract metadata
-            metadataExtractor.extractMetadata(destFile.absolutePath).andThen { metadata ->
+            // Extract metadata to determine book type
+            metadataExtractor.extractMetadata(tempFile.absolutePath).andThen { metadata ->
+                // Determine book type based on media overlays
+                val bookType = if (metadata.hasMediaOverlays) {
+                    BookType.READALOUD
+                } else {
+                    BookType.EBOOK
+                }
+
+                // Move to final location with proper naming
+                val destFile = File(ebooksDir, "${uuid}_${bookType.value}.epub")
+                if (!tempFile.renameTo(destFile)) {
+                    // If rename fails, try copy and delete
+                    tempFile.copyTo(destFile, overwrite = true)
+                    tempFile.delete()
+                }
+
                 // Save cover if available
                 val coverPath = metadata.coverBytes?.let { coverBytes ->
                     val coverFile = File(coversDir, "$uuid.png")
@@ -81,6 +97,7 @@ class AndroidFileImportManager(
                     fileSize = fileSize,
                     importedAt = Clock.System.now().toString(),
                     lastOpenedAt = null,
+                    bookType = bookType,
                 )
 
                 // Save to database
@@ -97,18 +114,27 @@ class AndroidFileImportManager(
     }
 
     override fun getImportedBookPath(uuid: String): String? {
-        val file = File(importedBooksDir, "$uuid.epub")
-        return if (file.exists()) file.absolutePath else null
+        // Check both ebook and readaloud types
+        val ebookFile = File(ebooksDir, "${uuid}_${BookType.EBOOK.value}.epub")
+        if (ebookFile.exists()) return ebookFile.absolutePath
+
+        val readaloudFile = File(ebooksDir, "${uuid}_${BookType.READALOUD.value}.epub")
+        if (readaloudFile.exists()) return readaloudFile.absolutePath
+
+        return null
     }
 
     override fun deleteImportedBookFiles(uuid: String): Boolean {
-        val epubFile = File(importedBooksDir, "$uuid.epub")
+        // Try to delete both possible file types
+        val ebookFile = File(ebooksDir, "${uuid}_${BookType.EBOOK.value}.epub")
+        val readaloudFile = File(ebooksDir, "${uuid}_${BookType.READALOUD.value}.epub")
         val coverFile = File(coversDir, "$uuid.png")
 
-        val epubDeleted = if (epubFile.exists()) epubFile.delete() else true
+        val ebookDeleted = if (ebookFile.exists()) ebookFile.delete() else true
+        val readaloudDeleted = if (readaloudFile.exists()) readaloudFile.delete() else true
         val coverDeleted = if (coverFile.exists()) coverFile.delete() else true
 
-        return epubDeleted && coverDeleted
+        return ebookDeleted && readaloudDeleted && coverDeleted
     }
 }
 
