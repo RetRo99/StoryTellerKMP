@@ -54,7 +54,7 @@ data class ServerBook(
 )
 
 data class ServerBookSeries(
-    val id: String,
+    val id: String?,
     val name: String,
     val sequence: Float?,
 )

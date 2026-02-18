@@ -93,15 +93,17 @@ internal fun ServerBook.toEntity(): BookEntity {
             )
         },
         creators = emptyList(),
-        series = series.map { s ->
-            SimpleSeriesEntity(
-                uuid = s.id,
-                name = s.name,
-                featured = null,
-                position = s.sequence?.toDouble(),
-                createdAt = null,
-                updatedAt = null,
-            )
+        series = series.mapNotNull { s ->
+            s.id?.let { id ->
+                SimpleSeriesEntity(
+                    uuid = id,
+                    name = s.name,
+                    featured = null,
+                    position = s.sequence?.toDouble(),
+                    createdAt = null,
+                    updatedAt = null,
+                )
+            }
         },
         tags = emptyList(),
         collections = emptyList(),
