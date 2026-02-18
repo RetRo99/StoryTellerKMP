@@ -33,6 +33,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
         fileSize = fileSize,
         importedAt = importedAt,
         lastOpenedAt = lastOpenedAt,
+        bookType = bookType,
     )
 }
 

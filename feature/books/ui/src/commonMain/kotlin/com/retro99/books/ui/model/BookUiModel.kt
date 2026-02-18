@@ -78,10 +78,11 @@ sealed class BookUiModel {
         val fileSize: Long,
         val importedAt: String,
         val lastOpenedAt: String?,
+        val bookType: BookType,
     ) : BookUiModel() {
-        override val hasEbook: Boolean = true
+        override val hasEbook: Boolean = bookType == BookType.EBOOK
         override val hasAudiobook: Boolean = false
-        override val hasReadaloud: Boolean = false
+        override val hasReadaloud: Boolean = bookType == BookType.READALOUD
         override val series: List<SeriesUiModel> = emptyList()
         override val statusName: String? = null
         override val authors: List<String> = listOfNotNull(author)
@@ -90,9 +91,9 @@ sealed class BookUiModel {
         override val rating: Float? = null
 
         override fun filePath(bookType: BookType): String? = when (bookType) {
-            BookType.EBOOK -> filePath
+            BookType.EBOOK -> if (this.bookType == BookType.EBOOK) filePath else null
             BookType.AUDIOBOOK -> null
-            BookType.READALOUD -> null
+            BookType.READALOUD -> if (this.bookType == BookType.READALOUD) filePath else null
         }
     }
 }
