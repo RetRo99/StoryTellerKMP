@@ -6,10 +6,10 @@ import com.retro99.server.api.ServerConfig
 import com.retro99.server.api.ServerNetworkClientFactory
 import com.retro99.server.api.ServerType
 import com.retro99.server.storyteller.source.ServerBooksLocalSource
-import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
+import org.koin.core.annotation.Single
 
-@Factory
+@Single(binds = [ServerBooksRepositoryFactory::class])
 class StorytellerBooksRepositoryFactory(
     @Provided private val networkClientFactory: ServerNetworkClientFactory,
     @Provided private val localSource: ServerBooksLocalSource,

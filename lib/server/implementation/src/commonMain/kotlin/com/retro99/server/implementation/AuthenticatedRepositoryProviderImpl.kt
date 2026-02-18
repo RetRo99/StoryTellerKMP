@@ -1,11 +1,13 @@
 package com.retro99.server.implementation
 
+import co.touchlab.kermit.Logger
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBooksRepository
 import com.retro99.server.api.ServerBooksRepositoryFactory
 import com.retro99.server.api.ServerRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import org.koin.core.annotation.Single
 
 @Single(binds = [AuthenticatedRepositoryProvider::class])
@@ -14,10 +16,19 @@ class AuthenticatedRepositoryProviderImpl(
     private val repositoryFactory: ServerBooksRepositoryFactory,
 ) : AuthenticatedRepositoryProvider {
 
+    private val logger = Logger.withTag("čič-AuthenticatedRepositoryProvider")
+
     override fun observeBooksRepositories(): Flow<List<ServerBooksRepository>> {
-        return serverRegistry.observeAuthenticatedServers().map { servers ->
-            servers.map { server -> repositoryFactory.create(server) }
-        }
+        return serverRegistry.observeAuthenticatedServers()
+            .onEach { servers ->
+                logger.d { "observeAuthenticatedServers emitted ${servers.size} servers: ${servers.map { it.name }}" }
+            }
+            .map { servers ->
+                servers.map { server ->
+                    logger.d { "Creating repository for server: ${server.name} (${server.id})" }
+                    repositoryFactory.create(server)
+                }
+            }
     }
 
     override suspend fun getBooksRepositories(): List<ServerBooksRepository> {

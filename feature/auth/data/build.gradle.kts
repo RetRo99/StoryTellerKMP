@@ -23,10 +23,9 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
-            implementation(libs.serialization)
             implementation(projects.base)
             implementation(projects.feature.auth.domain)
-            implementation(projects.lib.preferences.api)
+            implementation(projects.lib.server.api)
         }
     }
 }

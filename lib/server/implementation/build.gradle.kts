@@ -26,6 +26,7 @@ kotlin {
             implementation(libs.serialization)
             implementation(libs.coroutines)
             implementation(libs.datetime)
+            implementation(libs.kermit)
             implementation(projects.base)
             implementation(projects.lib.server.api)
             implementation(projects.lib.preferences.api)
