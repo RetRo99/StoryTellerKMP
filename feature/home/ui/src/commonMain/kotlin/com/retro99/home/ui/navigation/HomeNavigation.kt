@@ -200,6 +200,7 @@ fun HomeNavigation(
                     entry<HomeDestination.AppSettings> {
                         AppSettingsScreen(
                             onLogout = onLogout,
+                            onLogin = onLogout, // Navigate to login screen (same as logout)
                             onNavigateToStatistics = {
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(HomeDestination.Statistics)

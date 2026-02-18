@@ -1,10 +1,14 @@
 package com.retro99.home.ui.appsettings
 
+import androidx.lifecycle.viewModelScope
 import com.retro99.analytics.api.FileLogger
+import com.retro99.auth.domain.usecase.ObserveHasAuthenticatedRemoteServersUseCase
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.base.ui.sharing.FileSharer
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 
@@ -13,6 +17,7 @@ class AppSettingsViewModel(
     @Provided private val fileLogger: FileLogger,
     @Provided private val fileSharer: FileSharer,
     @Provided private val preferences: Preferences,
+    @Provided private val observeHasAuthenticatedRemoteServersUseCase: ObserveHasAuthenticatedRemoteServersUseCase,
 ) : BaseViewModel<AppSettingsViewState, AppSettingsIntent>(
     AppSettingsViewState(
         isLoggingEnabled = preferences.getBoolean(
@@ -25,6 +30,18 @@ class AppSettingsViewModel(
         ),
     ),
 ) {
+
+    init {
+        observeAuthenticatedServers()
+    }
+
+    private fun observeAuthenticatedServers() {
+        observeHasAuthenticatedRemoteServersUseCase()
+            .onEach { hasRemoteServers ->
+                updateState { it.copy(hasAuthenticatedRemoteServers = hasRemoteServers) }
+            }
+            .launchIn(viewModelScope)
+    }
 
     override fun onIntent(intent: AppSettingsIntent) {
         when (intent) {
