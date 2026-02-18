@@ -1,0 +1,40 @@
+package com.retro99.server.api
+
+/**
+ * Describes what features a server type supports.
+ * Used to conditionally show/hide UI features.
+ */
+data class ServerCapabilities(
+    val supportsEbooks: Boolean,
+    val supportsAudiobooks: Boolean,
+    val supportsReadAloud: Boolean,
+    val supportsReadingProgress: Boolean,
+    val supportsCollections: Boolean,
+    val supportsSeries: Boolean,
+    val supportsSearch: Boolean,
+    val supportsUserLibrary: Boolean,
+)
+
+fun ServerType.getCapabilities(): ServerCapabilities = when (this) {
+    ServerType.Storyteller -> ServerCapabilities(
+        supportsEbooks = true,
+        supportsAudiobooks = true,
+        supportsReadAloud = true,
+        supportsReadingProgress = true,
+        supportsCollections = true,
+        supportsSeries = true,
+        supportsSearch = true,
+        supportsUserLibrary = true,
+    )
+    ServerType.Local -> ServerCapabilities(
+        supportsEbooks = true,
+        supportsAudiobooks = false,
+        supportsReadAloud = false,
+        supportsReadingProgress = true,
+        supportsCollections = false,
+        supportsSeries = false,
+        supportsSearch = true,
+        supportsUserLibrary = false,
+    )
+}
+
