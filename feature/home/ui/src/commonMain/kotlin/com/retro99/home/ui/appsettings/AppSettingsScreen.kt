@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DeleteSweep
@@ -65,6 +66,7 @@ fun AppSettingsScreen(
     onLogout: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     modifier: Modifier = Modifier,
+    onLogin: () -> Unit = onLogout, // Default to logout callback for backward compatibility
     viewModel: AppSettingsViewModel = koinViewModel(),
 ) {
     BaseScreen(
@@ -74,6 +76,7 @@ fun AppSettingsScreen(
         AppSettingsScreenContent(
             viewState = viewState,
             onLogout = onLogout,
+            onLogin = onLogin,
             onNavigateToStatistics = onNavigateToStatistics,
             intentDispatcher = intentDispatcher,
         )
@@ -84,6 +87,7 @@ fun AppSettingsScreen(
 private fun AppSettingsScreenContent(
     viewState: AppSettingsViewState,
     onLogout: () -> Unit,
+    onLogin: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     intentDispatcher: IntentDispatcher<AppSettingsIntent>,
     modifier: Modifier = Modifier,
@@ -187,13 +191,22 @@ private fun AppSettingsScreenContent(
                 title = stringResource(StringRes.app_settings_section_account),
             )
 
-            SettingsItem(
-                icon = Icons.AutoMirrored.Filled.Logout,
-                title = stringResource(StringRes.app_settings_logout),
-                description = stringResource(StringRes.app_settings_logout_description),
-                onClick = onLogout,
-                isDestructive = true,
-            )
+            if (viewState.hasAuthenticatedRemoteServers) {
+                SettingsItem(
+                    icon = Icons.AutoMirrored.Filled.Logout,
+                    title = stringResource(StringRes.app_settings_logout),
+                    description = stringResource(StringRes.app_settings_logout_description),
+                    onClick = onLogout,
+                    isDestructive = true,
+                )
+            } else {
+                SettingsItem(
+                    icon = Icons.AutoMirrored.Filled.Login,
+                    title = "Login to Server",
+                    description = "Connect to a remote server to sync your books",
+                    onClick = onLogin,
+                )
+            }
 
             HorizontalDivider()
 
