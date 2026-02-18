@@ -29,6 +29,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(projects.base)
             implementation(projects.lib.server.api)
+            implementation(projects.lib.network.implementation)
         }
     }
 }
