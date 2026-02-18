@@ -1,6 +1,12 @@
 package com.retro99.base.server
 
 /**
+ * Constant for the local server ID.
+ * Used to identify the local/imported books server.
+ */
+const val LOCAL_SERVER_ID = "local"
+
+/**
  * Represents the type of media server.
  * Each type has different API endpoints, authentication methods, and capabilities.
  */
@@ -13,7 +19,7 @@ enum class ServerType(
         displayName = "Storyteller",
     ),
     Local(
-        identifier = "local",
+        identifier = LOCAL_SERVER_ID,
         displayName = "Local",
     );
 

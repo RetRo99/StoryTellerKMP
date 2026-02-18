@@ -2,6 +2,7 @@ package com.retro99.server.local
 
 import com.github.michaelbull.result.Ok
 import com.retro99.base.result.AppResult
+import com.retro99.base.server.LOCAL_SERVER_ID
 import com.retro99.server.api.ServerAuthenticator
 import com.retro99.server.api.ServerCredentials
 import com.retro99.server.api.ServerType
@@ -49,14 +50,13 @@ class LocalAuthenticator : ServerAuthenticator {
             ServerValidationResult(
                 isValid = true,
                 serverVersion = "1.0",
-                serverName = "Local Files",
+                serverName = LOCAL_SERVER_NAME,
                 errorMessage = null,
             )
         )
     }
 
     companion object {
-        const val LOCAL_SERVER_ID = "local"
         const val LOCAL_SERVER_NAME = "Local Files"
     }
 }

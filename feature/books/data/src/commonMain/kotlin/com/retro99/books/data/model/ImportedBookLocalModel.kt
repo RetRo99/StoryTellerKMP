@@ -1,5 +1,6 @@
 package com.retro99.books.data.model
 
+import com.retro99.base.server.LOCAL_SERVER_ID
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.books.domain.model.BookType
 import com.retro99.database.api.importedbooks.ImportedBookEntity
@@ -19,12 +20,6 @@ data class ImportedBookLocalModel(
     override val lastOpenedAt: String?,
     override val bookType: String,
 ) : ImportedBookEntity
-
-/**
- * Constant for the local server ID.
- * This must match the ID used in LocalAuthenticator.LOCAL_SERVER_ID.
- */
-const val LOCAL_SERVER_ID = "local"
 
 fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
     uuid = uuid,
