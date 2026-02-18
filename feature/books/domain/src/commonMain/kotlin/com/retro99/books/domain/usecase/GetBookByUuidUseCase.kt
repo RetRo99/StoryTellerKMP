@@ -119,7 +119,18 @@ private fun ServerBook.toBookDomainModel(): BookDomainModel {
             createdAt = null,
             updatedAt = null,
         ) else null,
-        readaloud = null,
+        readaloud = if (hasReadaloud) com.retro99.books.domain.model.ReadaloudDomainModel(
+            uuid = "$uuid-readaloud",
+            filepath = "readaloud",
+            missing = null,
+            status = null,
+            currentStage = null,
+            stageProgress = null,
+            queuePosition = null,
+            restartPending = null,
+            createdAt = null,
+            updatedAt = null,
+        ) else null,
     )
 }
 

@@ -110,7 +110,7 @@ internal fun ServerBook.toEntity(): BookEntity {
         status = null,
         ebook = if (hasEbook) SimpleMediaFileEntity(uuid, "ebook") else null,
         audiobook = if (hasAudiobook) SimpleMediaFileEntity(uuid, "audiobook") else null,
-        readaloud = null,
+        readaloud = if (hasReadaloud) SimpleReadaloudEntity(uuid) else null,
     )
 }
 
@@ -121,6 +121,21 @@ internal data class SimpleMediaFileEntity(
     override val uuid: String = "$bookUuid-$type"
     override val filepath: String? = null
     override val missing: Int? = null
+    override val createdAt: String? = null
+    override val updatedAt: String? = null
+}
+
+internal data class SimpleReadaloudEntity(
+    override val bookUuid: String,
+) : ReadaloudEntity {
+    override val uuid: String = "$bookUuid-readaloud"
+    override val filepath: String? = "readaloud"
+    override val missing: Int? = null
+    override val status: String? = null
+    override val currentStage: String? = null
+    override val stageProgress: Double? = null
+    override val queuePosition: Int? = null
+    override val restartPending: Boolean? = null
     override val createdAt: String? = null
     override val updatedAt: String? = null
 }
@@ -146,6 +161,7 @@ internal fun BookEntity.toServerBook(baseUrl: String?): ServerBook {
         },
         hasEbook = ebook != null,
         hasAudiobook = audiobook != null,
+        hasReadaloud = readaloud != null,
     )
 }
 

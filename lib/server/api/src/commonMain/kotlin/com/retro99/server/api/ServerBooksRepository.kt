@@ -50,6 +50,7 @@ data class ServerBook(
     val series: List<ServerBookSeries>,
     val hasEbook: Boolean,
     val hasAudiobook: Boolean,
+    val hasReadaloud: Boolean,
     val metadata: Map<String, Any?> = emptyMap(),
 )
 

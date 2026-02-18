@@ -64,6 +64,7 @@ private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook
         series = emptyList(),
         hasEbook = bookType == com.retro99.books.domain.model.BookType.EBOOK,
         hasAudiobook = false,
+        hasReadaloud = bookType == com.retro99.books.domain.model.BookType.READALOUD,
         metadata = mapOf(
             "filePath" to filePath,
             "fileSize" to fileSize,

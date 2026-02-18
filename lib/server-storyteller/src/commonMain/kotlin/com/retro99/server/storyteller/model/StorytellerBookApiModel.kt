@@ -58,6 +58,15 @@ data class StorytellerBookApiModel(
 
     @SerialName("audiobook")
     val audiobook: StorytellerMediaFileApiModel? = null,
+
+    @SerialName("readaloud")
+    val readaloud: StorytellerReadaloudApiModel? = null,
+)
+
+@Serializable
+data class StorytellerReadaloudApiModel(
+    @SerialName("filepath")
+    val filepath: String? = null,
 )
 
 @Serializable
@@ -120,6 +129,7 @@ fun StorytellerBookApiModel.toDomain(
         },
         hasEbook = ebook?.filepath != null,
         hasAudiobook = audiobook?.filepath != null,
+        hasReadaloud = readaloud?.filepath != null,
     )
 }
 
