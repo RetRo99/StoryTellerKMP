@@ -1,5 +1,6 @@
 package com.retro99.books.domain.usecase
 
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.map as resultMap
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.map as flowMap
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
@@ -25,23 +27,37 @@ class GetBooksUseCase(
     @Provided private val repositoryProvider: AuthenticatedRepositoryProvider,
     @Provided private val localRepositories: List<BooksRepository>, // Local/imported books
 ) {
+    private val logger = Logger.withTag("čič-GetBooksUseCase")
+
     operator fun invoke(): Flow<AppResult<List<BookDomainModel>>> {
+        logger.d { "GetBooksUseCase invoked, localRepositories count: ${localRepositories.size}" }
         return repositoryProvider.observeBooksRepositories()
+            .onEach { serverRepositories ->
+                logger.d { "Received ${serverRepositories.size} server repositories" }
+            }
             .flatMapLatest { serverRepositories ->
                 // Combine server repositories with local repositories
                 val serverFlows = serverRepositories.map { repo ->
-                    repo.getBooks().mapToFlow { books ->
+                    logger.d { "Getting books from server repo: ${repo.serverId}" }
+                    repo.getBooks().onEach { result ->
+                        logger.d { "Server ${repo.serverId} books result: $result" }
+                    }.mapToFlow { books ->
+                        logger.d { "Server ${repo.serverId} returned ${books.size} books" }
                         books.map { it.toBookDomainModel() }
                     }
                 }
                 val localFlows = localRepositories.map { it.getBooks() }
                 val allFlows = serverFlows + localFlows
 
+                logger.d { "Total flows: ${allFlows.size} (${serverFlows.size} server + ${localFlows.size} local)" }
+
                 if (allFlows.isEmpty()) {
+                    logger.d { "No flows, returning empty list" }
                     flowOf(Ok(emptyList()))
                 } else {
                     combine(allFlows) { results ->
                         val allBooks = results.flatMap { it.getOrElse { emptyList() } }
+                        logger.d { "Combined ${allBooks.size} total books from ${results.size} sources" }
                         Ok(allBooks.sortedBy { it.title.lowercase() })
                     }
                 }

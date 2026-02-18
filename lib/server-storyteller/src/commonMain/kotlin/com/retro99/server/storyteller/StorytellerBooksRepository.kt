@@ -1,7 +1,10 @@
 package com.retro99.server.storyteller
 
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.map
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
@@ -26,26 +29,41 @@ class StorytellerBooksRepository(
     private val localSource: ServerBooksLocalSource,
 ) : ServerBooksRepository, BaseRepository {
 
+    private val logger = Logger.withTag("čič-StorytellerBooksRepository")
+
     override val serverId: String = networkClient.serverId
     private val baseUrl: String? = networkClient.baseUrl
 
+    init {
+        logger.d { "StorytellerBooksRepository created for server: $serverId, baseUrl: $baseUrl" }
+    }
+
     override fun getBooks(): Flow<AppResult<List<ServerBook>>> {
+        logger.d { "getBooks() called for server: $serverId" }
         return cachedRemoteFlow(
             cacheSource = {
+                logger.d { "Fetching from cache for server: $serverId" }
                 localSource.getBooks(serverId).mapCatching { books ->
+                    logger.d { "Cache returned ${books?.size ?: 0} books" }
                     // Re-apply cover URLs since they're not stored in cache
                     books?.map { it.withCoverUrl(baseUrl) }
                 }
             },
             remoteSource = {
+                logger.d { "Fetching from remote: $baseUrl/api/v2/books" }
                 networkClient.get<List<StorytellerBookApiModel>>(
                     path = "/api/v2/books"
-                ).map { books ->
+                ).onSuccess { books ->
+                    logger.d { "Remote returned ${books.size} books" }
+                }.onFailure { error ->
+                    logger.e { "Remote fetch failed: $error" }
+                }.map { books ->
                     books.map { it.toDomain(serverId, baseUrl) }
                         .sortedBy { it.title.lowercase() }
                 }
             },
             saveToCache = { books ->
+                logger.d { "Saving ${books.size} books to cache" }
                 localSource.saveBooks(serverId, books)
             },
         )

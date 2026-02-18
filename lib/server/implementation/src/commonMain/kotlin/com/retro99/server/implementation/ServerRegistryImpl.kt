@@ -1,5 +1,6 @@
 package com.retro99.server.implementation
 
+import co.touchlab.kermit.Logger
 import com.retro99.preferences.api.Preferences
 import com.retro99.server.api.ServerAuthState
 import com.retro99.server.api.ServerConfig
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -22,6 +24,8 @@ import kotlin.uuid.Uuid
 class ServerRegistryImpl(
     private val preferences: Preferences,
 ) : ServerRegistry {
+
+    private val logger = Logger.withTag("čič-ServerRegistry")
 
     private val mutex = Mutex()
 
@@ -100,9 +104,14 @@ class ServerRegistryImpl(
 
     override fun observeAuthenticatedServers(): Flow<List<ServerConfig>> {
         return combine(_servers, _credentials) { servers, creds ->
+            logger.d { "observeAuthenticatedServers: ${servers.size} servers, ${creds.size} credentials" }
+            logger.d { "Servers: ${servers.values.map { it.name }}" }
+            logger.d { "Credentials for: ${creds.keys}" }
             servers.values.filter { server ->
                 creds.containsKey(server.id)
-            }.toList()
+            }.toList().also {
+                logger.d { "Authenticated servers: ${it.size} - ${it.map { s -> s.name }}" }
+            }
         }
     }
 
