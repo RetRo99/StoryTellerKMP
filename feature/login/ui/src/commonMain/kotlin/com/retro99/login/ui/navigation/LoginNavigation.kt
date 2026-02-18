@@ -1,6 +1,7 @@
 package com.retro99.login.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
@@ -18,6 +19,12 @@ fun LoginNavigation(
     viewModel: LoginNavigationViewModel = koinViewModel(),
 ) {
     BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
+        LaunchedEffect(state.skipLoginComplete) {
+            if (state.skipLoginComplete) {
+                onLoginSuccess()
+            }
+        }
+
         NavDisplay(
             backStack = state.backStack,
             onBack = {
@@ -35,7 +42,9 @@ fun LoginNavigation(
                         onSignInClick = {
                             intentDispatcher(LoginNavigationIntent.NavigateTo(LoginDestination.Login))
                         },
-                        onSkipLoginClick = onLoginSuccess,
+                        onSkipLoginClick = {
+                            intentDispatcher(LoginNavigationIntent.OnSkipLoginClicked)
+                        },
                     )
                 }
 

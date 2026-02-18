@@ -1,6 +1,7 @@
 package com.retro99.login.ui.navigation
 
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.login.domain.usecase.SkipLoginUseCase
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Named
 import org.koin.core.annotation.Provided
@@ -8,6 +9,7 @@ import org.koin.core.annotation.Provided
 @KoinViewModel
 class LoginNavigationViewModel(
     @Provided @Named("isDebug") isDebug: Boolean,
+    @Provided private val skipLoginUseCase: SkipLoginUseCase,
 ) : BaseViewModel<LoginNavigationState, LoginNavigationIntent>(
     LoginNavigationState(isDebug = isDebug),
 ) {
@@ -23,6 +25,13 @@ class LoginNavigationViewModel(
             is LoginNavigationIntent.NavigateTo -> {
                 updateState { state ->
                     state.copy(backStack = state.backStack + intent.destination)
+                }
+            }
+
+            LoginNavigationIntent.OnSkipLoginClicked -> {
+                skipLoginUseCase()
+                updateState { state ->
+                    state.copy(skipLoginComplete = true)
                 }
             }
         }
