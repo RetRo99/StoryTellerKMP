@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS imported_books (
     file_path TEXT NOT NULL,
     file_size INTEGER NOT NULL,
     imported_at TEXT NOT NULL,
-    last_opened_at TEXT
+    last_opened_at TEXT,
+    book_type TEXT NOT NULL DEFAULT 'ebook'
 );
 
 CREATE INDEX IF NOT EXISTS idx_imported_books_title ON imported_books(title);
@@ -19,8 +20,8 @@ CREATE INDEX IF NOT EXISTS idx_imported_books_imported_at ON imported_books(impo
 
 -- Queries for imported books
 upsertImportedBook:
-INSERT OR REPLACE INTO imported_books(uuid, title, author, description, cover_path, file_path, file_size, imported_at, last_opened_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO imported_books(uuid, title, author, description, cover_path, file_path, file_size, imported_at, last_opened_at, book_type)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllImportedBooks:
 SELECT * FROM imported_books ORDER BY imported_at DESC;

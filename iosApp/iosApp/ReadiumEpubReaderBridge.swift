@@ -365,13 +365,27 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         guard let publication = self.publication else {
             return false
         }
-        // Check if publication has SMIL resources
-        // Use description to get the URL string to avoid SwiftSoup conflict
-        let hasSmil = publication.resources.contains(where: { link in
-            let hrefString: String = link.href.description
-            return hrefString.hasSuffix(".smil")
+
+        // Check three indicators for media overlays:
+        // 1. Duration metadata (must be > 0, not just non-null)
+        let duration = publication.metadata.duration
+        let hasDuration = duration != nil && duration! > 0.0
+
+        // 2. Audio resources
+        let hasAudioResource = publication.resources.contains(where: { link in
+            link.mediaType?.matches(.mp3) == true ||
+            link.mediaType?.matches(.mp4) == true ||
+            link.mediaType?.matches(.aac) == true ||
+            link.mediaType?.matches(.ogg) == true
         })
-        return hasSmil
+
+        // 3. SMIL resources
+        let hasSmilResource = publication.resources.contains(where: { link in
+            let hrefString: String = link.href.description
+            return link.mediaType?.matches(.smil) == true || hrefString.hasSuffix(".smil")
+        })
+
+        return hasDuration || hasAudioResource || hasSmilResource
     }
 
     func initializeMediaOverlays(onReady: @escaping () -> Void) {

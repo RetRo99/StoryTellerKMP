@@ -13,5 +13,6 @@ interface ImportedBookEntity {
     val fileSize: Long
     val importedAt: String
     val lastOpenedAt: String?
+    val bookType: String
 }
 

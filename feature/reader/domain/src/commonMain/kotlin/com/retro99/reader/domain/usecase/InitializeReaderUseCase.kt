@@ -119,7 +119,7 @@ class InitializeReaderUseCase(
                 bookTitle = book.title,
                 bookCoverUrl = book.coverUrl,
                 localEbookPath = book.filePath,
-                bookType = BookType.EBOOK,
+                bookType = book.bookType,
                 initialSettings = settings,
                 // TODO: Add progress tracking for imported books
                 progressResult = ReadingProgressResult.Resolved(null),

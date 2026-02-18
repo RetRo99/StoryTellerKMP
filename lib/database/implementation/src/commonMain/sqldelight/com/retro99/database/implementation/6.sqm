@@ -1,0 +1,5 @@
+-- Migration from version 6 to version 7
+-- Adds book_type column to imported_books table to track EBOOK vs READALOUD
+
+ALTER TABLE imported_books ADD COLUMN book_type TEXT NOT NULL DEFAULT 'ebook';
+
