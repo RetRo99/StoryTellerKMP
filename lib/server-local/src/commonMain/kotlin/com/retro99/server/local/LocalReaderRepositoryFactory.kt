@@ -11,7 +11,7 @@ import org.koin.core.annotation.Single
 /**
  * Factory for creating LocalReaderRepository instances.
  */
-@Single
+@Single(binds = [ServerReaderRepositoryFactory::class])
 class LocalReaderRepositoryFactory(
     @Provided private val localSource: ServerPositionLocalSource,
 ) : ServerReaderRepositoryFactory {

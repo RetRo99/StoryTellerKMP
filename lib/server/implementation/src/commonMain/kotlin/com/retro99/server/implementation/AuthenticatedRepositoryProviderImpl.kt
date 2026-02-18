@@ -3,9 +3,7 @@ package com.retro99.server.implementation
 import co.touchlab.kermit.Logger
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBooksRepository
-import com.retro99.server.api.ServerBooksRepositoryFactory
 import com.retro99.server.api.ServerReaderRepository
-import com.retro99.server.api.ServerReaderRepositoryFactory
 import com.retro99.server.api.ServerRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,8 +13,8 @@ import org.koin.core.annotation.Single
 @Single(binds = [AuthenticatedRepositoryProvider::class])
 class AuthenticatedRepositoryProviderImpl(
     private val serverRegistry: ServerRegistry,
-    private val booksRepositoryFactory: ServerBooksRepositoryFactory,
-    private val readerRepositoryFactory: ServerReaderRepositoryFactory,
+    private val booksRepositoryFactory: CompositeServerBooksRepositoryFactory,
+    private val readerRepositoryFactory: CompositeServerReaderRepositoryFactory,
 ) : AuthenticatedRepositoryProvider {
 
     private val logger = Logger.withTag("čič-AuthenticatedRepositoryProvider")

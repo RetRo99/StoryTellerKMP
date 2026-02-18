@@ -10,8 +10,10 @@ import org.koin.core.annotation.Single
 
 /**
  * Factory for creating LocalBooksRepository instances.
+ * Binds to ServerBooksRepositoryFactory so it can be collected into a list
+ * by CompositeServerBooksRepositoryFactory.
  */
-@Single
+@Single(binds = [ServerBooksRepositoryFactory::class])
 class LocalBooksRepositoryFactory(
     @Provided private val localSource: ImportedBooksLocalSource,
 ) : ServerBooksRepositoryFactory {
