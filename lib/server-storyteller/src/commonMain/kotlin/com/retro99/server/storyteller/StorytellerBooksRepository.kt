@@ -1,7 +1,10 @@
 package com.retro99.server.storyteller
 
+import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.map
+import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
 import com.retro99.server.api.ServerBook
 import com.retro99.server.api.ServerBooksRepository
 import com.retro99.server.api.ServerNetworkClient
@@ -37,6 +40,11 @@ class StorytellerBooksRepository(
             book.toDomain(serverId, networkClient.baseUrl)
         }
         emit(result)
+    }
+
+    override suspend fun saveBook(book: ServerBook): CompletableResult {
+        // TODO: Implement upload to Storyteller server when API supports it
+        return Err(AppError.UnknownError(NotImplementedError("Uploading books to Storyteller is not yet supported")))
     }
 
     override suspend fun searchBooks(query: String): AppResult<List<ServerBook>> {

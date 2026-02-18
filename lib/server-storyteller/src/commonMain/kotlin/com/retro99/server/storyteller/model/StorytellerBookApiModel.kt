@@ -2,6 +2,7 @@ package com.retro99.server.storyteller.model
 
 import com.retro99.base.url.CoverUrlBuilder
 import com.retro99.server.api.ServerBook
+import com.retro99.server.api.ServerBookSeries
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -112,6 +113,14 @@ fun StorytellerBookApiModel.toDomain(
         description = description,
         coverUrl = CoverUrlBuilder.buildCoverUrl(baseUrl, uuid),
         authors = authors.map { it.name },
+        narrators = narrators.map { it.name },
+        series = series.map {
+            ServerBookSeries(
+                id = it.id.toString(),
+                name = it.name,
+                sequence = it.sequence,
+            )
+        },
         hasEbook = ebook?.filepath != null,
         hasAudiobook = audiobook?.filepath != null,
     )
