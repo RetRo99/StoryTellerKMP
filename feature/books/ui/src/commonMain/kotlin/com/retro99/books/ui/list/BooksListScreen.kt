@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
@@ -20,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -45,6 +48,7 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.books_importing
 import resources.translations.books_series_with_position
 
 @Composable
@@ -81,6 +85,10 @@ private fun BooksListScreenContent(
         file?.let {
             intentDispatcher(BooksListIntent.OnImportBook(it))
         }
+    }
+
+    if (viewState.isImporting) {
+        ImportingDialog()
     }
 
     Scaffold(
@@ -179,4 +187,33 @@ private fun BooksListScreenContent(
             }
         }
     }
+}
+
+@Composable
+private fun ImportingDialog(
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        onDismissRequest = { /* Non-dismissible while importing */ },
+        modifier = modifier,
+        confirmButton = { /* No buttons - auto-dismisses when done */ },
+        title = {
+            Text(
+                text = stringResource(StringRes.books_importing),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        },
+    )
 }
