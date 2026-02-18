@@ -2,6 +2,7 @@ package com.retro99.auth.domain.usecase
 
 import com.github.michaelbull.result.Ok
 import com.retro99.base.result.CompletableResult
+import com.retro99.base.server.ServerType
 import com.retro99.database.api.DatabaseCleaner
 import com.retro99.server.api.ServerRegistry
 import org.koin.core.annotation.Factory
@@ -24,10 +25,17 @@ class LogoutUseCase(
     }
 
     /**
-     * Logout from all servers.
+     * Logout from all remote servers (excludes local server).
      */
     suspend fun logoutAll(): CompletableResult {
-        serverRegistry.clearAllCredentials()
+        // Get all servers and clear credentials only for non-local servers
+        val servers = serverRegistry.getAllServers()
+        servers
+            .filter { it.type != ServerType.Local }
+            .forEach { server ->
+                serverRegistry.clearCredentials(server.id)
+            }
+
         databaseCleaner.clearAllData()
         return Ok(Unit)
     }
