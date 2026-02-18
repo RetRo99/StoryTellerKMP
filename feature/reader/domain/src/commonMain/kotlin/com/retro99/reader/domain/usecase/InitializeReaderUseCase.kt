@@ -56,7 +56,7 @@ class InitializeReaderUseCase(
 
             bookResult.flatMap { book ->
                 when (book) {
-                    is BookDomainModel.LocalBook -> initializeImportedBook(book)
+                    is BookDomainModel.LocalBook -> initializeImportedBook(book, bookType)
                     is BookDomainModel.StorytellerBook -> initializeStorytellerBook(book, bookType)
                 }
             }
@@ -107,10 +107,25 @@ class InitializeReaderUseCase(
     /**
      * Initializes the reader for an imported book.
      * Imported books are already stored locally, so no download is needed.
+     *
+     * @param book The imported book to initialize
+     * @param requestedBookType The book type requested by the caller (should match book.bookType)
      */
     private suspend fun initializeImportedBook(
         book: BookDomainModel.LocalBook,
+        requestedBookType: BookType,
     ): AppResult<ReaderInitializationData> {
+        // Validate that the requested book type matches the stored book type
+        if (requestedBookType != book.bookType) {
+            return Err(
+                AppError.UnknownError(
+                    Throwable(
+                        "Book type mismatch: requested $requestedBookType but book is ${book.bookType}"
+                    )
+                )
+            )
+        }
+
         val settings = getReaderSettingsUseCase().first()
 
         return Ok(
