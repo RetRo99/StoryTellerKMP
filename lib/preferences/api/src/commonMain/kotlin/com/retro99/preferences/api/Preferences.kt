@@ -39,4 +39,5 @@ sealed class PreferencesKey(val name: String) {
     data object RegisteredServers : PreferencesKey("RegisteredServers")
     data object ServerCredentials : PreferencesKey("ServerCredentials")
     data object ActiveServerId : PreferencesKey("ActiveServerId")
+    data object SkippedLogin : PreferencesKey("SkippedLogin")
 }

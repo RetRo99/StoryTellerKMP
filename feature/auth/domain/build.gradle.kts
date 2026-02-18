@@ -27,6 +27,7 @@ kotlin {
             implementation(projects.lib.network.api)
             implementation(projects.lib.database.api)
             implementation(projects.lib.server.api)
+            implementation(projects.lib.preferences.api)
         }
     }
 }
