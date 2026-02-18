@@ -35,6 +35,7 @@ fun LoginNavigation(
                         onSignInClick = {
                             intentDispatcher(LoginNavigationIntent.NavigateTo(LoginDestination.Login))
                         },
+                        onSkipLoginClick = onLoginSuccess,
                     )
                 }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import org.jetbrains.compose.resources.stringResource
 import resources.translations.welcome_build_debug
 import resources.translations.welcome_build_release
 import resources.translations.welcome_sign_in_button
+import resources.translations.welcome_skip_login
 import resources.translations.welcome_subtitle
 import resources.translations.welcome_title
 
@@ -27,6 +29,7 @@ import resources.translations.welcome_title
 fun WelcomeScreen(
     isDebug: Boolean,
     onSignInClick: () -> Unit,
+    onSkipLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -75,6 +78,13 @@ fun WelcomeScreen(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onSkipLoginClick,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(StringRes.welcome_skip_login))
+        }
     }
 }
 
