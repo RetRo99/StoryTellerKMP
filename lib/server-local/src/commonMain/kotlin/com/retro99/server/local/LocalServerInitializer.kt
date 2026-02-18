@@ -38,8 +38,11 @@ class LocalServerInitializer(
                 type = ServerType.Local,
                 baseUrl = "local://", // Local files don't need a URL
             )
+        }
 
-            // Save dummy credentials so it appears as "authenticated"
+        // Always ensure credentials exist for Local server
+        // This handles the case where server exists but credentials were cleared
+        if (!serverRegistry.isAuthenticated(LOCAL_SERVER_ID)) {
             serverRegistry.saveCredentials(
                 ServerCredentials(
                     serverId = LOCAL_SERVER_ID,
