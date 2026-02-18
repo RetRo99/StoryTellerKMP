@@ -39,6 +39,7 @@ kotlin {
             implementation(projects.feature.settings.domain)
             implementation(projects.feature.reader.domain)
             implementation(projects.lib.analytics.api)
+            implementation(projects.lib.server.api)
         }
     }
 }
