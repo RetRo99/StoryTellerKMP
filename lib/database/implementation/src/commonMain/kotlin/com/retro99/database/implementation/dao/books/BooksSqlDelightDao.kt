@@ -33,6 +33,7 @@ internal class BooksSqlDelightDao(
         withContext(Dispatchers.IO) {
             bookQueries.upsertBook(
                 uuid = book.uuid,
+                server_id = book.serverId,
                 id = book.id,
                 title = book.title,
                 subtitle = book.subtitle,
@@ -53,6 +54,7 @@ internal class BooksSqlDelightDao(
             bookQueries.getAllBooks().executeAsList().map { row ->
                 BookSqlDelightEntity(
                     uuid = row.uuid,
+                    serverId = row.server_id,
                     id = row.id,
                     title = row.title,
                     subtitle = row.subtitle,
@@ -74,6 +76,51 @@ internal class BooksSqlDelightDao(
             bookQueries.getBookByUuid(uuid).executeAsOneOrNull()?.let { row ->
                 BookSqlDelightEntity(
                     uuid = row.uuid,
+                    serverId = row.server_id,
+                    id = row.id,
+                    title = row.title,
+                    subtitle = row.subtitle,
+                    language = row.language,
+                    publicationDate = row.publication_date,
+                    description = row.description,
+                    rating = row.rating?.toFloat(),
+                    suffix = row.suffix,
+                    statusUuid = row.status_uuid,
+                    createdAt = row.created_at,
+                    updatedAt = row.updated_at,
+                )
+            }
+        }
+    }
+
+    suspend fun getBooksByServer(serverId: String): List<BookSqlDelightEntity> {
+        return withContext(Dispatchers.IO) {
+            bookQueries.getBooksByServer(serverId).executeAsList().map { row ->
+                BookSqlDelightEntity(
+                    uuid = row.uuid,
+                    serverId = row.server_id,
+                    id = row.id,
+                    title = row.title,
+                    subtitle = row.subtitle,
+                    language = row.language,
+                    publicationDate = row.publication_date,
+                    description = row.description,
+                    rating = row.rating?.toFloat(),
+                    suffix = row.suffix,
+                    statusUuid = row.status_uuid,
+                    createdAt = row.created_at,
+                    updatedAt = row.updated_at,
+                )
+            }
+        }
+    }
+
+    suspend fun getBookByServerAndUuid(serverId: String, uuid: String): BookSqlDelightEntity? {
+        return withContext(Dispatchers.IO) {
+            bookQueries.getBookByServerAndUuid(serverId, uuid).executeAsOneOrNull()?.let { row ->
+                BookSqlDelightEntity(
+                    uuid = row.uuid,
+                    serverId = row.server_id,
                     id = row.id,
                     title = row.title,
                     subtitle = row.subtitle,
@@ -102,9 +149,21 @@ internal class BooksSqlDelightDao(
         }
     }
 
+    suspend fun deleteBooksByServer(serverId: String) {
+        withContext(Dispatchers.IO) {
+            bookQueries.deleteBooksByServer(serverId)
+        }
+    }
+
     suspend fun getBooksCount(): Long {
         return withContext(Dispatchers.IO) {
             bookQueries.getBooksCount().executeAsOne()
+        }
+    }
+
+    suspend fun getBooksCountByServer(serverId: String): Long {
+        return withContext(Dispatchers.IO) {
+            bookQueries.getBooksCountByServer(serverId).executeAsOne()
         }
     }
 

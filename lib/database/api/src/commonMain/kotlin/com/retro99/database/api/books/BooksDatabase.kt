@@ -16,11 +16,32 @@ interface BooksDatabase : PositionDatabase, DataClearable {
 
     suspend fun getBookByUuid(uuid: String): BookEntity?
 
+    /**
+     * Get all books for a specific server.
+     */
+    suspend fun getBooksByServer(serverId: String): List<BookEntity>
+
+    /**
+     * Get a specific book by UUID and server ID.
+     * More precise than getBookByUuid when the same UUID might exist on multiple servers.
+     */
+    suspend fun getBookByServerAndUuid(serverId: String, uuid: String): BookEntity?
+
     suspend fun deleteAllBooks()
 
     suspend fun deleteBook(uuid: String)
 
+    /**
+     * Delete all books for a specific server.
+     */
+    suspend fun deleteBooksByServer(serverId: String)
+
     suspend fun getBooksCount(): Int
+
+    /**
+     * Get book count for a specific server.
+     */
+    suspend fun getBooksCountByServer(serverId: String): Int
 
     // ==================== PERSON OPERATIONS ====================
 
