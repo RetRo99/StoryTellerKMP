@@ -9,7 +9,7 @@ import com.retro99.server.storyteller.source.ServerBooksLocalSource
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
-@Single(binds = [ServerBooksRepositoryFactory::class])
+@Single
 class StorytellerBooksRepositoryFactory(
     @Provided private val networkClientFactory: ServerNetworkClientFactory,
     @Provided private val localSource: ServerBooksLocalSource,
