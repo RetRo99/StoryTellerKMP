@@ -30,6 +30,7 @@ kotlin {
             implementation(projects.base)
             implementation(projects.lib.server.api)
             implementation(projects.lib.network.implementation)
+            implementation(projects.lib.database.api)
         }
     }
 }
