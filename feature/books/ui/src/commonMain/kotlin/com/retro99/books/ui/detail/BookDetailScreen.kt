@@ -305,6 +305,7 @@ private fun MediaActionButtons(
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
+    val isLocalBook = book is BookUiModel.LocalBook
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
@@ -314,6 +315,7 @@ private fun MediaActionButtons(
                 icon = Icons.AutoMirrored.Outlined.MenuBook,
                 label = stringResource(StringRes.books_media_ebook),
                 downloadState = ebookDownloadState,
+                isLocalBook = isLocalBook,
                 onReadClick = { intentDispatcher(BookDetailIntent.OnReadEbookClicked) },
                 onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.EBOOK)) },
                 onDeleteClick = {
@@ -326,6 +328,7 @@ private fun MediaActionButtons(
 //                icon = Icons.Outlined.Headphones,
 //                label = stringResource(StringRes.books_media_audio),
 //                downloadState = audiobookDownloadState,
+//                isLocalBook = isLocalBook,
 //                onReadClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
 //                onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.AUDIOBOOK)) },
 //                onDeleteClick = {
@@ -338,6 +341,7 @@ private fun MediaActionButtons(
                 icon = Icons.Outlined.RecordVoiceOver,
                 label = stringResource(StringRes.books_media_readaloud),
                 downloadState = readaloudDownloadState,
+                isLocalBook = isLocalBook,
                 onReadClick = { intentDispatcher(BookDetailIntent.OnReadReadaloudClicked) },
                 onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.READALOUD)) },
                 onDeleteClick = {
@@ -353,16 +357,19 @@ private fun MediaButton(
     icon: ImageVector,
     label: String,
     downloadState: DownloadState,
+    isLocalBook: Boolean,
     onReadClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDownloading = downloadState is DownloadState.Downloading
-    val isCached = downloadState is DownloadState.Cached
-    downloadState is DownloadState.Idle ||
-            downloadState is DownloadState.Failed
-    val downloadProgress = (downloadState as? DownloadState.Downloading)?.progress
+    // Local books are always "ready" - they don't need downloading
+    val effectiveState = if (isLocalBook) DownloadState.Cached else downloadState
+    val isDownloading = effectiveState is DownloadState.Downloading
+    val isCached = effectiveState is DownloadState.Cached
+    effectiveState is DownloadState.Idle ||
+            effectiveState is DownloadState.Failed
+    val downloadProgress = (effectiveState as? DownloadState.Downloading)?.progress
 
     ElevatedCard(
         onClick = {
@@ -489,17 +496,20 @@ private fun MediaButton(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // Don't show delete option for local books - they are the source files
+                    if (!isLocalBook) {
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = stringResource(StringRes.books_media_delete),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .clickable(onClick = onDeleteClick)
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
+                        Text(
+                            text = stringResource(StringRes.books_media_delete),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable(onClick = onDeleteClick)
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        )
+                    }
                 }
 
                 else -> {
