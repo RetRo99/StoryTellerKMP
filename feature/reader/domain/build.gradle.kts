@@ -25,6 +25,7 @@ kotlin {
             implementation(libs.coroutines)
             implementation(projects.base)
             implementation(projects.feature.books.domain)
+            implementation(projects.lib.server.api)
         }
     }
 }

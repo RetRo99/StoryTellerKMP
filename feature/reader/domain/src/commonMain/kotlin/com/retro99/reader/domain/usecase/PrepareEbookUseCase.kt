@@ -1,14 +1,14 @@
 package com.retro99.reader.domain.usecase
 
 import com.retro99.base.result.AppResult
-import com.retro99.reader.domain.ReaderRepository
+import com.retro99.reader.domain.ReaderSettingsRepository
 import com.retro99.books.domain.model.BookType
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
 @Factory
 class PrepareEbookUseCase(
-    @Provided private val readerRepository: ReaderRepository,
+    @Provided private val readerSettingsRepository: ReaderSettingsRepository,
 ) {
     /**
      * Prepares the ebook file for reading.
@@ -24,7 +24,7 @@ class PrepareEbookUseCase(
         ebookFilePath: String,
         bookType: BookType,
     ): AppResult<String> {
-        return readerRepository.prepareEbook(bookUuid, ebookFilePath, bookType)
+        return readerSettingsRepository.prepareEbook(bookUuid, ebookFilePath, bookType)
     }
 }
 

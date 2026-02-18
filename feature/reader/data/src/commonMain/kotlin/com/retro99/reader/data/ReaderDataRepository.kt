@@ -2,34 +2,28 @@ package com.retro99.reader.data
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onFailure
 import com.retro99.analytics.api.Analytics
-import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
-import com.retro99.reader.data.model.toServerPosition
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.data.source.ReaderLocalSource
-import com.retro99.reader.domain.ReaderRepository
+import com.retro99.reader.domain.ReaderSettingsRepository
 import com.retro99.books.domain.model.BookType
-import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
-import com.retro99.server.api.AuthenticatedRepositoryProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
-@Single(binds = [ReaderRepository::class])
+@Single(binds = [ReaderSettingsRepository::class])
 internal class ReaderDataRepository(
     @Provided private val localSource: ReaderLocalSource,
-    @Provided private val repositoryProvider: AuthenticatedRepositoryProvider,
     @Provided private val analytics: Analytics,
-) : ReaderRepository, BaseRepository {
+) : ReaderSettingsRepository {
 
     override suspend fun prepareEbook(
         bookUuid: String,
@@ -51,78 +45,6 @@ internal class ReaderDataRepository(
                         "Ebook not cached. Use BookDownloadManager to download first."
                     )
                 )
-            )
-        }
-    }
-
-    override suspend fun getReadingProgress(
-        serverId: String,
-        bookUuid: String,
-    ): AppResult<PositionDomainModel?> {
-        return remoteWithCacheFallback(
-            remoteSource = {
-                getRemoteReadingProgress(serverId, bookUuid)
-            },
-            cacheSource = {
-                localSource.getReadingProgress(bookUuid).map { it?.toDomain(serverId) }
-            },
-            saveToCache = { position ->
-                localSource.saveReadingProgress(position.toLocal())
-            },
-        ).onFailure { error ->
-            logError(error, "Failed to get reading progress: serverId=$serverId, bookUuid=$bookUuid")
-        }
-    }
-
-    override suspend fun getLocalReadingProgress(
-        serverId: String,
-        bookUuid: String,
-    ): AppResult<PositionDomainModel?> {
-        return localSource.getReadingProgress(bookUuid).map { it?.toDomain(serverId) }
-            .onFailure { error ->
-                logError(error, "Failed to get local reading progress: serverId=$serverId, bookUuid=$bookUuid")
-            }
-    }
-
-    override suspend fun getRemoteReadingProgress(
-        serverId: String,
-        bookUuid: String,
-    ): AppResult<PositionDomainModel?> {
-        val readerRepository = repositoryProvider.getReaderRepository(serverId)
-            ?: return Err(AppError.NotFoundError("Server not found or not authenticated: $serverId"))
-
-        return readerRepository.getPosition(bookUuid)
-            .map { it?.toDomain() }
-            .onFailure { error ->
-                logError(error, "Failed to get remote reading progress: serverId=$serverId, bookUuid=$bookUuid")
-            }
-    }
-
-    override suspend fun saveReadingProgress(
-        progress: PositionDomainModel,
-    ): CompletableResult {
-        // Save to local cache first
-        localSource.saveReadingProgress(progress.toLocal()).onFailure { error ->
-            logError(
-                error,
-                "Failed to save reading progress locally: bookUuid=${progress.bookUuid}"
-            )
-        }
-
-        // Then sync to remote (serverId is in the progress model)
-        val readerRepository = repositoryProvider.getReaderRepository(progress.serverId)
-        if (readerRepository == null) {
-            // If server not found, just return success since local save succeeded
-            return Ok(Unit)
-        }
-
-        return readerRepository.updatePosition(
-            bookUuid = progress.bookUuid,
-            position = progress.toServerPosition(),
-        ).onFailure { error ->
-            logError(
-                error,
-                "Failed to sync reading progress to remote: serverId=${progress.serverId}, bookUuid=${progress.bookUuid}"
             )
         }
     }
