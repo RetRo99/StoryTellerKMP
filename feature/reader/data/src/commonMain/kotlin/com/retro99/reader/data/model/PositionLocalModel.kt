@@ -21,9 +21,10 @@ data class PositionLocalModel(
     override val position: Int?,
 ) : PositionEntity
 
-fun PositionLocalModel.toDomain(): PositionDomainModel {
+fun PositionLocalModel.toDomain(serverId: String): PositionDomainModel {
     return PositionDomainModel(
         bookUuid = bookUuid,
+        serverId = serverId,
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
@@ -42,6 +43,7 @@ fun PositionLocalModel.toDomain(): PositionDomainModel {
 }
 
 fun PositionDomainModel.toLocal(): PositionLocalModel {
+    // Note: serverId is not stored locally - it's passed through the call chain
     return PositionLocalModel(
         bookUuid = bookUuid,
         timestamp = timestamp,

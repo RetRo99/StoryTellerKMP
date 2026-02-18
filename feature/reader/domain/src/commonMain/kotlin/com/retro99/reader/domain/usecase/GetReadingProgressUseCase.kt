@@ -10,8 +10,8 @@ import org.koin.core.annotation.Provided
 class GetReadingProgressUseCase(
     @Provided private val readerRepository: ReaderRepository,
 ) {
-    suspend operator fun invoke(bookUuid: String): AppResult<PositionDomainModel?> {
-        return readerRepository.getReadingProgress(bookUuid)
+    suspend operator fun invoke(serverId: String, bookUuid: String): AppResult<PositionDomainModel?> {
+        return readerRepository.getReadingProgress(serverId, bookUuid)
     }
 }
 

@@ -85,7 +85,7 @@ class InitializeReaderUseCase(
                 getReaderSettingsUseCase().first()
             }
             val progressDeferred = async {
-                getReadingProgressWithConflictUseCase(book.uuid)
+                getReadingProgressWithConflictUseCase(book.serverId, book.uuid)
             }
 
             val settings = settingsDeferred.await()
