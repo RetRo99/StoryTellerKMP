@@ -2,7 +2,7 @@ package com.retro99.server.implementation
 
 import com.retro99.server.api.ServerRegistry
 import com.retro99.server.api.ServerTokenProvider
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.koin.core.annotation.Single
 
 @Single(binds = [ServerTokenProvider::class])

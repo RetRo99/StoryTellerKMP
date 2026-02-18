@@ -1,8 +1,8 @@
 package com.retro99.settings.ui.servers
 
 import androidx.lifecycle.viewModelScope
-import com.retro99.base.result.onErr
-import com.retro99.base.result.onOk
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.server.api.ServerAuthState
 import com.retro99.server.api.ServerAuthenticatorFactory
@@ -121,7 +121,7 @@ class ServerManagementViewModel(
         viewModelScope.launch {
             val authenticator = authenticatorFactory.create(serverType)
             authenticator.validateServer(url)
-                .onOk { result ->
+                .onSuccess { result ->
                     updateState {
                         it.copy(
                             validationResult = if (result.isValid) {
@@ -134,7 +134,7 @@ class ServerManagementViewModel(
                         )
                     }
                 }
-                .onErr { error ->
+                .onFailure { error ->
                     updateState {
                         it.copy(
                             validationResult = ServerValidationUiResult.Invalid(
@@ -162,11 +162,11 @@ class ServerManagementViewModel(
             // Then try to login
             val authenticator = authenticatorFactory.create(type)
             authenticator.login(url, username, password)
-                .onOk { credentials ->
+                .onSuccess { credentials ->
                     serverRegistry.saveCredentials(credentials.copy(serverId = server.id))
                     dismissAddServerDialog()
                 }
-                .onErr { error ->
+                .onFailure { error ->
                     // Server was added but login failed
                     updateState {
                         it.copy(

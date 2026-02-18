@@ -62,6 +62,7 @@ internal class BooksRoomDataSource(
     private fun BookEntity.toLocalModel(): BookLocalModel {
         return BookLocalModel(
             uuid = uuid,
+            serverId = serverId,
             id = id,
             title = title,
             subtitle = subtitle,

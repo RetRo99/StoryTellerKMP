@@ -15,7 +15,7 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.http.Parameters
 import io.ktor.http.isSuccess
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.koin.core.annotation.Factory
 
 @Factory

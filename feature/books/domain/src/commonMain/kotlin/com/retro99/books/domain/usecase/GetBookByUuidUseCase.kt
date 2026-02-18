@@ -3,6 +3,7 @@ package com.retro99.books.domain.usecase
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
+import com.github.michaelbull.result.map as resultMap
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.BooksRepository
@@ -13,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.map as flowMap
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
@@ -29,26 +30,33 @@ class GetBookByUuidUseCase(
         return repositoryProvider.observeBooksRepositories()
             .flatMapLatest { serverRepositories ->
                 // Combine server repositories with local repositories
-                val serverFlows = serverRepositories.map { repo ->
-                    repo.getBook(uuid).map { result ->
-                        result.map { it.toBookDomainModel() }
-                    }
+                val serverFlows: List<Flow<AppResult<BookDomainModel>>> = serverRepositories.map { repo ->
+                    repo.getBook(uuid).mapResult { serverBook -> serverBook.toBookDomainModel() }
                 }
-                val localFlows = localRepositories.map { it.getBook(uuid) }
-                val allFlows = serverFlows + localFlows
+                val localFlows: List<Flow<AppResult<BookDomainModel>>> = localRepositories.map { it.getBook(uuid) }
+                val allFlows: List<Flow<AppResult<BookDomainModel>>> = serverFlows + localFlows
 
                 if (allFlows.isEmpty()) {
                     flowOf(Err(AppError.NotFoundError("No repositories available")))
                 } else {
-                    combine(allFlows) { results ->
+                    combine(allFlows) { results: Array<AppResult<BookDomainModel>> ->
                         // Return first successful result
                         results.mapNotNull { it.getOrElse { null } }.firstOrNull()
-                    }.map { book ->
+                    }.flowMap { book: BookDomainModel? ->
                         book?.let { Ok(it) }
                             ?: Err(AppError.NotFoundError("Book not found: $uuid"))
                     }
                 }
             }
+    }
+
+    /**
+     * Maps the result inside a Flow using the Result.map function.
+     */
+    private fun <T, R> Flow<AppResult<T>>.mapResult(
+        transform: (T) -> R
+    ): Flow<AppResult<R>> = this.flowMap { result ->
+        result.resultMap { transform(it) }
     }
 }
 

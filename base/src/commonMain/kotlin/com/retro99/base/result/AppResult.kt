@@ -40,6 +40,16 @@ sealed class AppError(open val message: String?) {
     data class UnknownError(val throwable: Throwable) : AppError(throwable.message)
 
     /**
+     * Authentication error (e.g., invalid credentials, expired token).
+     */
+    data class AuthError(override val message: String?) : AppError(message)
+
+    /**
+     * Resource not found error.
+     */
+    data class NotFoundError(override val message: String?) : AppError(message)
+
+    /**
      * Converts this AppError to a Throwable for logging purposes.
      */
     fun toThrowable(): Throwable = when (this) {
@@ -47,6 +57,8 @@ sealed class AppError(open val message: String?) {
         is DatabaseError -> throwable
         is UnknownError -> throwable
         is ApiError -> Exception("API Error $code: $message")
+        is AuthError -> Exception("Auth Error: $message")
+        is NotFoundError -> Exception("Not Found: $message")
     }
 
     fun toStringRes(): StringResource {
@@ -70,6 +82,10 @@ sealed class AppError(open val message: String?) {
             }
 
             is UnknownError -> StringRes.error_unknown
+
+            is AuthError -> StringRes.error_api_generic
+
+            is NotFoundError -> StringRes.error_api_generic
         }
     }
 }

@@ -6,6 +6,7 @@ import com.retro99.database.api.books.BookEntity
 
 data class BookLocalModel(
     override val uuid: String,
+    override val serverId: String,
     override val id: Long,
     override val title: String,
     override val subtitle: String?,
@@ -57,9 +58,10 @@ fun BookLocalModel.toDomain(baseUrl: String?): BookDomainModel.StorytellerBook {
     )
 }
 
-fun BookDomainModel.StorytellerBook.toLocal(): BookLocalModel {
+fun BookDomainModel.StorytellerBook.toLocal(serverId: String = "default"): BookLocalModel {
     return BookLocalModel(
         uuid = uuid,
+        serverId = serverId,
         id = id,
         title = title,
         subtitle = subtitle,
