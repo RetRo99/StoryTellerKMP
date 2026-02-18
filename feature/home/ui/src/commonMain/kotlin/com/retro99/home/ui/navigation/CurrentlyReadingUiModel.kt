@@ -8,6 +8,7 @@ import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
  * Used to display the floating "Continue Reading" button.
  */
 data class CurrentlyReadingUiModel(
+    val serverId: String,
     val bookUuid: String,
     val bookType: BookType,
     val bookTitle: String,
@@ -26,6 +27,7 @@ data class CurrentlyReadingUiModel(
  */
 fun CurrentlyReadingDomainModel.toUiModel(): CurrentlyReadingUiModel {
     return CurrentlyReadingUiModel(
+        serverId = serverId,
         bookUuid = bookUuid,
         bookType = bookType,
         bookTitle = bookTitle,

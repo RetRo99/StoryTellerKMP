@@ -44,6 +44,7 @@ private fun Publication.hasMediaOverlays(): Boolean {
  */
 actual class EpubPublication(
     internal val publication: Publication,
+    actual val serverId: String,
     actual val bookUuid: String,
     actual val initialSettings: ReaderSettingsUiModel,
     actual val bookType: BookType = BookType.EBOOK,

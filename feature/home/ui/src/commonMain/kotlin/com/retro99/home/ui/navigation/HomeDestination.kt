@@ -32,7 +32,10 @@ sealed interface HomeDestination : NavKey, BottomSheetDestination, BottomBarDest
 //    data object AuthorsList : HomeDestination
 
     @Serializable
-    data class BookDetail(val bookUuid: String) : HomeDestination
+    data class BookDetail(
+        val serverId: String,
+        val bookUuid: String,
+    ) : HomeDestination
 
     @Serializable
     data class SeriesDetail(
@@ -48,6 +51,7 @@ sealed interface HomeDestination : NavKey, BottomSheetDestination, BottomBarDest
 
     @Serializable
     data class Reader(
+        val serverId: String,
         val bookUuid: String,
         val bookType: BookType,
     ) : HomeDestination {

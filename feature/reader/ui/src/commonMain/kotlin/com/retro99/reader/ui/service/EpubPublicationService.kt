@@ -19,6 +19,7 @@ interface EpubPublicationService {
      * Opens an EPUB publication from the given file path.
      *
      * @param filePath The local file path to the EPUB file
+     * @param serverId The ID of the server this book belongs to
      * @param bookUuid The unique identifier of the book
      * @param initialSettings The initial reader settings to apply when opening the publication
      * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
@@ -27,6 +28,7 @@ interface EpubPublicationService {
      */
     suspend fun openPublication(
         filePath: String,
+        serverId: String,
         bookUuid: String,
         initialSettings: ReaderSettingsUiModel,
         bookType: BookType = BookType.EBOOK,

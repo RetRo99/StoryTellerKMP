@@ -83,13 +83,14 @@ private const val CONTROLS_AUTO_HIDE_DELAY_MS = 5000L
 
 @Composable
 fun ReaderScreen(
+    serverId: String,
     bookUuid: String,
     bookType: BookType,
     onClose: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = koinViewModel {
-        parametersOf(bookUuid, bookType, onClose, onSettingsClick)
+        parametersOf(serverId, bookUuid, bookType, onClose, onSettingsClick)
     },
 ) {
     // Intercept hardware back press to ensure audio progress is saved before navigation

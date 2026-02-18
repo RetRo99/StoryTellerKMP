@@ -76,9 +76,21 @@ class ServerRegistryImpl(
         name: String,
         type: ServerType,
         baseUrl: String,
+    ): ServerConfig = addServerWithId(
+        id = Uuid.random().toString(),
+        name = name,
+        type = type,
+        baseUrl = baseUrl,
+    )
+
+    override suspend fun addServerWithId(
+        id: String,
+        name: String,
+        type: ServerType,
+        baseUrl: String,
     ): ServerConfig = mutex.withLock {
         val config = ServerConfig(
-            id = Uuid.random().toString(),
+            id = id,
             name = name,
             type = type,
             baseUrl = baseUrl.trimEnd('/'),

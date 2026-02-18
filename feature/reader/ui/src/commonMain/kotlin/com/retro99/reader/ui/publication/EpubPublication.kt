@@ -12,6 +12,12 @@ import com.retro99.reader.ui.model.TocItemUiModel
  */
 expect class EpubPublication {
     /**
+     * The ID of the server this book belongs to.
+     * Used for deep link navigation from audio notifications.
+     */
+    val serverId: String
+
+    /**
      * The unique identifier of the book.
      * Used for deep link navigation from audio notifications.
      */

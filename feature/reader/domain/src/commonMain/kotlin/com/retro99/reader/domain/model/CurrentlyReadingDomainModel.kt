@@ -7,6 +7,7 @@ import com.retro99.books.domain.model.BookType
  * A book qualifies when it has been read for at least the minimum required duration.
  */
 data class CurrentlyReadingDomainModel(
+    val serverId: String,
     val bookUuid: String,
     val bookType: BookType,
     val bookTitle: String,

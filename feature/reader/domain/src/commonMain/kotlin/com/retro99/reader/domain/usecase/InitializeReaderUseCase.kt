@@ -42,17 +42,19 @@ class InitializeReaderUseCase(
     /**
      * Initializes the reader for the given book.
      *
+     * @param serverId The ID of the server the book belongs to
      * @param bookUuid The UUID of the book to open in the reader
      * @param bookType The type of book to open (EBOOK, AUDIOBOOK, READALOUD, or IMPORTED)
      * @return [ReaderInitializationData] containing everything needed to open the publication,
      *         or an error if initialization fails
      */
     suspend operator fun invoke(
+        serverId: String,
         bookUuid: String,
         bookType: BookType,
     ): AppResult<ReaderInitializationData> =
         coroutineScope {
-            val bookResult = getBookByUuidUseCase(bookUuid).first()
+            val bookResult = getBookByUuidUseCase(serverId, bookUuid).first()
 
             bookResult.flatMap { book ->
                 when (book) {
@@ -92,6 +94,7 @@ class InitializeReaderUseCase(
 
             Ok(
                 ReaderInitializationData(
+                    serverId = book.serverId,
                     bookUuid = book.uuid,
                     bookTitle = book.title,
                     bookCoverUrl = book.coverUrl,
@@ -130,6 +133,7 @@ class InitializeReaderUseCase(
 
         return Ok(
             ReaderInitializationData(
+                serverId = book.serverId,
                 bookUuid = book.uuid,
                 bookTitle = book.title,
                 bookCoverUrl = book.coverUrl,

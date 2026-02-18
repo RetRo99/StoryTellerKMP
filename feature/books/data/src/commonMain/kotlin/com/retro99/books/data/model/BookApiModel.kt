@@ -80,9 +80,10 @@ data class BookApiModel(
     val readaloud: ReadaloudApiModel? = null,
 )
 
-fun BookApiModel.toDomain(baseUrl: String?): BookDomainModel.StorytellerBook {
+fun BookApiModel.toDomain(serverId: String, baseUrl: String?): BookDomainModel.StorytellerBook {
     return BookDomainModel.StorytellerBook(
         uuid = uuid,
+        serverId = serverId,
         title = title,
         id = id,
         language = language,

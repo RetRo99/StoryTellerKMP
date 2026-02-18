@@ -6,6 +6,7 @@ import com.retro99.books.domain.model.SeriesDomainModel
 fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
     is BookDomainModel.StorytellerBook -> BookUiModel.StorytellerBook(
         uuid = uuid,
+        serverId = serverId,
         title = title,
         subtitle = subtitle,
         coverUrl = coverUrl,
@@ -25,6 +26,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
 
     is BookDomainModel.LocalBook -> BookUiModel.LocalBook(
         uuid = uuid,
+        serverId = serverId,
         title = title,
         description = description,
         coverUrl = coverUrl,

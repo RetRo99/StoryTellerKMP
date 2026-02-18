@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CurrentlyReadingLocalModel(
+    val serverId: String,
     val bookUuid: String,
     val bookType: String,
     val bookTitle: String,
@@ -18,6 +19,7 @@ data class CurrentlyReadingLocalModel(
 
 fun CurrentlyReadingLocalModel.toDomain(): CurrentlyReadingDomainModel {
     return CurrentlyReadingDomainModel(
+        serverId = serverId,
         bookUuid = bookUuid,
         bookType = BookType.fromValue(bookType),
         bookTitle = bookTitle,
@@ -28,6 +30,7 @@ fun CurrentlyReadingLocalModel.toDomain(): CurrentlyReadingDomainModel {
 
 fun CurrentlyReadingDomainModel.toLocal(): CurrentlyReadingLocalModel {
     return CurrentlyReadingLocalModel(
+        serverId = serverId,
         bookUuid = bookUuid,
         bookType = bookType.value,
         bookTitle = bookTitle,

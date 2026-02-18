@@ -26,13 +26,13 @@ class LocalServerInitializer(
     }
 
     private suspend fun ensureLocalServerRegistered() {
-        // Check if Local server already exists
-        val existingServers = serverRegistry.getAllServers()
-        val localServer = existingServers.find { it.type == ServerType.Local }
+        // Check if Local server already exists by its fixed ID
+        val existingServer = serverRegistry.getServer(LocalAuthenticator.LOCAL_SERVER_ID)
 
-        if (localServer == null) {
-            // Register the Local server
-            val config = serverRegistry.addServer(
+        if (existingServer == null) {
+            // Register the Local server with a fixed ID
+            serverRegistry.addServerWithId(
+                id = LocalAuthenticator.LOCAL_SERVER_ID,
                 name = LocalAuthenticator.LOCAL_SERVER_NAME,
                 type = ServerType.Local,
                 baseUrl = "local://", // Local files don't need a URL
@@ -41,7 +41,7 @@ class LocalServerInitializer(
             // Save dummy credentials so it appears as "authenticated"
             serverRegistry.saveCredentials(
                 ServerCredentials(
-                    serverId = config.id,
+                    serverId = LocalAuthenticator.LOCAL_SERVER_ID,
                     username = "local",
                     accessToken = "local-access",
                     refreshToken = null,

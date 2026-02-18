@@ -32,6 +32,7 @@ data class BookLocalModel(
 fun BookLocalModel.toDomain(baseUrl: String?): BookDomainModel.StorytellerBook {
     return BookDomainModel.StorytellerBook(
         uuid = uuid,
+        serverId = serverId,
         title = title,
         id = id,
         language = language,
@@ -58,7 +59,7 @@ fun BookLocalModel.toDomain(baseUrl: String?): BookDomainModel.StorytellerBook {
     )
 }
 
-fun BookDomainModel.StorytellerBook.toLocal(serverId: String = "default"): BookLocalModel {
+fun BookDomainModel.StorytellerBook.toLocal(): BookLocalModel {
     return BookLocalModel(
         uuid = uuid,
         serverId = serverId,
