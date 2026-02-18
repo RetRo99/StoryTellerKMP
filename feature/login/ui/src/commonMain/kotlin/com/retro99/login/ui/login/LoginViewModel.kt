@@ -7,6 +7,7 @@ import com.github.michaelbull.result.fold
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.AuthAnalyticsEvent
 import com.retro99.base.result.log
+import com.retro99.base.server.ServerType
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.login.domain.usecase.LoginUseCase
 import kotlinx.coroutines.flow.launchIn
@@ -69,6 +70,8 @@ class LoginViewModel(
 
     private fun handleSignInClicked() {
         val url = urlState.text.toString()
+        // TODO: Allow user to select server type in the future
+        val serverType = ServerType.Storyteller
 
         // Log login attempt (hash URL for privacy)
         analytics.logEvent(
@@ -81,7 +84,7 @@ class LoginViewModel(
             val username = usernameState.text.toString()
             val password = passwordState.text.toString()
 
-            loginUseCase(url, username, password).fold(
+            loginUseCase(serverType, url, username, password).fold(
                 success = {
                     analytics.setUserId(username.hashCode().toString())
                     analytics.logEvent(AuthAnalyticsEvent.LoginSucceeded)

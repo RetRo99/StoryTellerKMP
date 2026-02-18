@@ -30,12 +30,13 @@ inline fun <reified T> Preferences.getObject(key: PreferencesKey): T? {
 }
 
 sealed class PreferencesKey(val name: String) {
-    data object ServerUrl : PreferencesKey("ServerUrl")
-    data object Credentials : PreferencesKey("Credentials")
     data object ReaderSettings : PreferencesKey("ReaderSettings")
     data object DatabaseSchemaVersion : PreferencesKey("DatabaseSchemaVersion")
     data object FileLoggingEnabled : PreferencesKey("FileLoggingEnabled")
     data object CurrentlyReading : PreferencesKey("CurrentlyReading")
     data object BubblePosition : PreferencesKey("BubblePosition")
     data object OpenLastBookOnLaunch : PreferencesKey("OpenLastBookOnLaunch")
+    data object RegisteredServers : PreferencesKey("RegisteredServers")
+    data object ServerCredentials : PreferencesKey("ServerCredentials")
+    data object ActiveServerId : PreferencesKey("ActiveServerId")
 }

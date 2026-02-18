@@ -3,10 +3,8 @@ package com.retro99.statistics.data.source
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.base.result.runCatchingAsAppError
-import com.retro99.database.api.statistics.BookReadingStatsEntity
-import com.retro99.database.api.statistics.DailyReadingTimeEntity
 import com.retro99.database.api.statistics.ReadingSessionDatabase
-import com.retro99.database.api.statistics.ReadingSessionEntity
+import com.retro99.server.api.ServerRegistry
 import com.retro99.statistics.data.model.toDomain
 import com.retro99.statistics.data.model.toLocal
 import com.retro99.statistics.domain.model.BookReadingStatsDomainModel
@@ -14,12 +12,11 @@ import com.retro99.statistics.domain.model.DailyReadingTimeDomainModel
 import com.retro99.statistics.domain.model.ReadingSessionDomainModel
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
-import retro99.network.api.BaseUrlProvider
 
 @Single(binds = [StatisticsLocalSource::class])
 internal class StatisticsLocalDataSource(
     @Provided private val database: ReadingSessionDatabase,
-    @Provided private val baseUrlProvider: BaseUrlProvider,
+    @Provided private val serverRegistry: ServerRegistry,
 ) : StatisticsLocalSource {
 
     override suspend fun insertSession(session: ReadingSessionDomainModel): CompletableResult {
@@ -106,7 +103,7 @@ internal class StatisticsLocalDataSource(
         endTime: Long,
         limit: Int,
     ): AppResult<List<BookReadingStatsDomainModel>> {
-        val baseUrl = baseUrlProvider.getBaseUrl()
+        val baseUrl = serverRegistry.getActiveServer()?.baseUrl
         return runCatchingAsAppError {
             database.getMostReadBooks(startTime, endTime, limit).map { it.toDomain(baseUrl) }
         }

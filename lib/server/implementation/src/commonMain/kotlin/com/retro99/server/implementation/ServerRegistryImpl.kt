@@ -2,6 +2,9 @@ package com.retro99.server.implementation
 
 import co.touchlab.kermit.Logger
 import com.retro99.preferences.api.Preferences
+import com.retro99.preferences.api.PreferencesKey
+import com.retro99.preferences.api.getObject
+import com.retro99.preferences.api.putObject
 import com.retro99.server.api.ServerAuthState
 import com.retro99.server.api.ServerConfig
 import com.retro99.server.api.ServerCredentials
@@ -11,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,6 +35,31 @@ class ServerRegistryImpl(
     private val _servers = MutableStateFlow<Map<String, ServerConfig>>(emptyMap())
     private val _credentials = MutableStateFlow<Map<String, ServerCredentials>>(emptyMap())
     private val _activeServerId = MutableStateFlow<String?>(null)
+
+    init {
+        loadFromPreferences()
+    }
+
+    private fun loadFromPreferences() {
+        // Load servers
+        val servers = preferences.getObject<List<ServerConfig>>(PreferencesKey.RegisteredServers)
+        if (servers != null) {
+            _servers.value = servers.associateBy { it.id }
+            logger.d { "Loaded ${servers.size} servers from preferences" }
+        }
+
+        // Load credentials
+        val credentials = preferences.getObject<List<ServerCredentials>>(PreferencesKey.ServerCredentials)
+        if (credentials != null) {
+            _credentials.value = credentials.associateBy { it.serverId }
+            logger.d { "Loaded ${credentials.size} credentials from preferences" }
+        }
+
+        // Load active server
+        val activeId = preferences.getStringOrNull(PreferencesKey.ActiveServerId)
+        _activeServerId.value = activeId
+        logger.d { "Loaded active server: $activeId" }
+    }
 
     // ==================== Server Management ====================
 
@@ -192,15 +219,25 @@ class ServerRegistryImpl(
     // ==================== Persistence ====================
 
     private fun persistServers() {
-        // TODO: Save servers map to preferences
+        val serversList = _servers.value.values.toList()
+        preferences.putObject(PreferencesKey.RegisteredServers, serversList)
+        logger.d { "Persisted ${serversList.size} servers" }
     }
 
     private fun persistCredentials() {
-        // TODO: Save credentials map to encrypted preferences
+        val credentialsList = _credentials.value.values.toList()
+        preferences.putObject(PreferencesKey.ServerCredentials, credentialsList)
+        logger.d { "Persisted ${credentialsList.size} credentials" }
     }
 
     private fun persistActiveServer() {
-        // TODO: Save active server ID to preferences
+        val activeId = _activeServerId.value
+        if (activeId != null) {
+            preferences.putString(PreferencesKey.ActiveServerId, activeId)
+        } else {
+            preferences.remove(PreferencesKey.ActiveServerId)
+        }
+        logger.d { "Persisted active server: $activeId" }
     }
 }
 

@@ -8,8 +8,12 @@ import org.koin.core.annotation.Provided
 class LogoutUseCase(
     @Provided private val settingsRepository: SettingsRepository,
 ) {
-    suspend operator fun invoke() {
-        settingsRepository.logout()
+    /**
+     * Logout from a specific server or all servers.
+     * @param serverId If provided, logout from that specific server. If null, logout from all servers.
+     */
+    suspend operator fun invoke(serverId: String? = null) {
+        settingsRepository.logout(serverId)
     }
 }
 
