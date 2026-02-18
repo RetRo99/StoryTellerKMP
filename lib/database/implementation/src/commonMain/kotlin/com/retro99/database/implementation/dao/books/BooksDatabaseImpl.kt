@@ -46,6 +46,24 @@ internal class BooksDatabaseImpl(
         return sqlDelightDao.getBooksCount().toInt()
     }
 
+    override suspend fun getBooksByServer(serverId: String): List<BookEntity> {
+        val books = sqlDelightDao.getBooksByServer(serverId)
+        return books.map { book -> loadBookWithRelations(book) }
+    }
+
+    override suspend fun getBookByServerAndUuid(serverId: String, uuid: String): BookEntity? {
+        val book = sqlDelightDao.getBookByServerAndUuid(serverId, uuid) ?: return null
+        return loadBookWithRelations(book)
+    }
+
+    override suspend fun deleteBooksByServer(serverId: String) {
+        sqlDelightDao.deleteBooksByServer(serverId)
+    }
+
+    override suspend fun getBooksCountByServer(serverId: String): Int {
+        return sqlDelightDao.getBooksCountByServer(serverId).toInt()
+    }
+
     // ==================== PERSON OPERATIONS ====================
 
     override suspend fun upsertPerson(person: PersonEntity) {
@@ -339,6 +357,7 @@ internal class BooksDatabaseImpl(
 
         return BookEntityImpl(
             uuid = book.uuid,
+            serverId = book.serverId,
             id = book.id,
             title = book.title,
             subtitle = book.subtitle,
@@ -436,6 +455,7 @@ internal class BooksDatabaseImpl(
     private fun BookEntity.toSqlDelightEntity(): BookSqlDelightEntity {
         return BookSqlDelightEntity(
             uuid = uuid,
+            serverId = serverId,
             id = id,
             title = title,
             subtitle = subtitle,
@@ -465,6 +485,7 @@ internal class BooksDatabaseImpl(
 
 private data class BookEntityImpl(
     override val uuid: String,
+    override val serverId: String,
     override val id: Long,
     override val title: String,
     override val subtitle: String?,

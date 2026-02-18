@@ -7,6 +7,7 @@ package com.retro99.database.api.books
  */
 interface BookEntity {
     val uuid: String
+    val serverId: String // Track which server this book belongs to
     val id: Long
     val title: String
     val subtitle: String?

@@ -1,0 +1,7 @@
+-- Migration from version 7 to version 8
+-- Adds server_id column to books table to track which server each book belongs to
+
+ALTER TABLE books ADD COLUMN server_id TEXT NOT NULL DEFAULT 'legacy';
+
+CREATE INDEX IF NOT EXISTS idx_books_server_id ON books(server_id);
+

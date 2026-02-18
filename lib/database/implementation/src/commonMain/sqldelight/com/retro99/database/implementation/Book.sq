@@ -4,6 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS books (
     uuid TEXT NOT NULL PRIMARY KEY,
+    server_id TEXT NOT NULL DEFAULT 'legacy',
     id INTEGER NOT NULL,
     title TEXT NOT NULL,
     subtitle TEXT,
@@ -20,11 +21,12 @@ CREATE TABLE IF NOT EXISTS books (
 CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
 CREATE INDEX IF NOT EXISTS idx_books_rating ON books(rating);
 CREATE INDEX IF NOT EXISTS idx_books_status ON books(status_uuid);
+CREATE INDEX IF NOT EXISTS idx_books_server_id ON books(server_id);
 
 -- Queries for books
 upsertBook:
-INSERT OR REPLACE INTO books(uuid, id, title, subtitle, language, publication_date, description, rating, suffix, status_uuid, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO books(uuid, server_id, id, title, subtitle, language, publication_date, description, rating, suffix, status_uuid, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllBooks:
 SELECT * FROM books ORDER BY title ASC;
@@ -32,14 +34,26 @@ SELECT * FROM books ORDER BY title ASC;
 getBookByUuid:
 SELECT * FROM books WHERE uuid = ?;
 
+getBooksByServer:
+SELECT * FROM books WHERE server_id = ? ORDER BY title ASC;
+
+getBookByServerAndUuid:
+SELECT * FROM books WHERE server_id = ? AND uuid = ?;
+
 deleteAllBooks:
 DELETE FROM books;
 
 deleteBook:
 DELETE FROM books WHERE uuid = ?;
 
+deleteBooksByServer:
+DELETE FROM books WHERE server_id = ?;
+
 getBooksCount:
 SELECT COUNT(*) FROM books;
+
+getBooksCountByServer:
+SELECT COUNT(*) FROM books WHERE server_id = ?;
 
 getBooksByRating:
 SELECT * FROM books WHERE rating >= ? ORDER BY rating DESC;
