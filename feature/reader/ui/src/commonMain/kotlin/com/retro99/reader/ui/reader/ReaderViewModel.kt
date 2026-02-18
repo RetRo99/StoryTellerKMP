@@ -402,6 +402,7 @@ class ReaderViewModel(
         val audioTimestamp = currentState.currentAudioPositionMs.takeIf { it > 0 }
         val positionDomainModel = PositionDomainModel(
             bookUuid = bookUuid,
+            serverId = serverId,
             timestamp = nowMillis(),
             createdAt = position.createdAt,
             updatedAt = now,
@@ -646,6 +647,7 @@ class ReaderViewModel(
         val now = now().toString()
         val positionDomainModel = PositionDomainModel(
             bookUuid = bookUuid,
+            serverId = serverId,
             timestamp = nowMillis(),
             createdAt = lastPosition.createdAt,
             updatedAt = now,

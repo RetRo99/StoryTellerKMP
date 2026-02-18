@@ -25,17 +25,18 @@ class GetReadingProgressWithConflictUseCase(
     /**
      * Gets the reading progress for a book with conflict detection.
      *
+     * @param serverId The ID of the server the book belongs to
      * @param bookUuid The UUID of the book
      * @return [ReadingProgressResult.Resolved] if no conflict or positions are the same,
      *         [ReadingProgressResult.Conflict] if user needs to choose between positions
      */
-    suspend operator fun invoke(bookUuid: String): AppResult<ReadingProgressResult> =
+    suspend operator fun invoke(serverId: String, bookUuid: String): AppResult<ReadingProgressResult> =
         coroutineScope {
             val localDeferred = async {
-                readerRepository.getLocalReadingProgress(bookUuid)
+                readerRepository.getLocalReadingProgress(serverId, bookUuid)
             }
             val remoteDeferred = async {
-                readerRepository.getRemoteReadingProgress(bookUuid)
+                readerRepository.getRemoteReadingProgress(serverId, bookUuid)
             }
 
             val localPosition = localDeferred.await().getOrElse { null }

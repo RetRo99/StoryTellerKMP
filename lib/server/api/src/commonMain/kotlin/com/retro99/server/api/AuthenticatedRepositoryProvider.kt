@@ -29,5 +29,11 @@ interface AuthenticatedRepositoryProvider {
      * @return null if no active server or not authenticated
      */
     suspend fun getActiveBooksRepository(): ServerBooksRepository?
+
+    /**
+     * Get reader repository for a specific server.
+     * @return null if server doesn't exist or is not authenticated
+     */
+    suspend fun getReaderRepository(serverId: String): ServerReaderRepository?
 }
 

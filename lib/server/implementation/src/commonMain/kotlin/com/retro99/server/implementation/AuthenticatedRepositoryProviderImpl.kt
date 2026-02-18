@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBooksRepository
 import com.retro99.server.api.ServerBooksRepositoryFactory
+import com.retro99.server.api.ServerReaderRepository
+import com.retro99.server.api.ServerReaderRepositoryFactory
 import com.retro99.server.api.ServerRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -13,7 +15,8 @@ import org.koin.core.annotation.Single
 @Single(binds = [AuthenticatedRepositoryProvider::class])
 class AuthenticatedRepositoryProviderImpl(
     private val serverRegistry: ServerRegistry,
-    private val repositoryFactory: ServerBooksRepositoryFactory,
+    private val booksRepositoryFactory: ServerBooksRepositoryFactory,
+    private val readerRepositoryFactory: ServerReaderRepositoryFactory,
 ) : AuthenticatedRepositoryProvider {
 
     private val logger = Logger.withTag("čič-AuthenticatedRepositoryProvider")
@@ -26,14 +29,14 @@ class AuthenticatedRepositoryProviderImpl(
             .map { servers ->
                 servers.map { server ->
                     logger.d { "Creating repository for server: ${server.name} (${server.id})" }
-                    repositoryFactory.create(server)
+                    booksRepositoryFactory.create(server)
                 }
             }
     }
 
     override suspend fun getBooksRepositories(): List<ServerBooksRepository> {
         val servers = serverRegistry.getAuthenticatedServers()
-        return servers.map { repositoryFactory.create(it) }
+        return servers.map { booksRepositoryFactory.create(it) }
     }
 
     override suspend fun getBooksRepository(serverId: String): ServerBooksRepository? {
@@ -41,7 +44,7 @@ class AuthenticatedRepositoryProviderImpl(
             return null
         }
         val server = serverRegistry.getServer(serverId) ?: return null
-        return repositoryFactory.create(server)
+        return booksRepositoryFactory.create(server)
     }
 
     override suspend fun getActiveBooksRepository(): ServerBooksRepository? {
@@ -49,7 +52,15 @@ class AuthenticatedRepositoryProviderImpl(
         if (!serverRegistry.isAuthenticated(activeServer.id)) {
             return null
         }
-        return repositoryFactory.create(activeServer)
+        return booksRepositoryFactory.create(activeServer)
+    }
+
+    override suspend fun getReaderRepository(serverId: String): ServerReaderRepository? {
+        if (!serverRegistry.isAuthenticated(serverId)) {
+            return null
+        }
+        val server = serverRegistry.getServer(serverId) ?: return null
+        return readerRepositoryFactory.create(server)
     }
 }
 

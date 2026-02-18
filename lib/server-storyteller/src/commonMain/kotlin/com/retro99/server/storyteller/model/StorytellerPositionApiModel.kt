@@ -1,13 +1,17 @@
-package com.retro99.reader.data.model
+package com.retro99.server.storyteller.model
 
-import com.retro99.reader.domain.model.PositionDomainModel
+import com.retro99.server.api.ServerPosition
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Storyteller API model for reading position.
+ * This matches the Storyteller server's /api/v2/books/{uuid}/positions endpoint.
+ */
 @Serializable
-data class PositionApiModel(
+data class StorytellerPositionApiModel(
     @SerialName("locator")
-    val locator: LocatorApiModel? = null,
+    val locator: StorytellerLocatorApiModel? = null,
 
     @SerialName("timestamp")
     val timestamp: Long? = null,
@@ -20,7 +24,7 @@ data class PositionApiModel(
 )
 
 @Serializable
-data class LocatorApiModel(
+data class StorytellerLocatorApiModel(
     @SerialName("href")
     val href: String? = null,
 
@@ -34,11 +38,11 @@ data class LocatorApiModel(
     val target: Int? = null,
 
     @SerialName("locations")
-    val locations: LocationsApiModel? = null,
+    val locations: StorytellerLocationsApiModel? = null,
 )
 
 @Serializable
-data class LocationsApiModel(
+data class StorytellerLocationsApiModel(
     @SerialName("audioTimestampMs")
     val audioTimestampMs: Long? = null,
 
@@ -62,21 +66,19 @@ data class LocationsApiModel(
 )
 
 /**
- * Flattens the nested API model structure into a flat domain model.
+ * Converts Storyteller API model to server-agnostic ServerPosition.
  */
-fun PositionApiModel.toDomain(bookUuid: String, serverId: String): PositionDomainModel {
-    return PositionDomainModel(
+fun StorytellerPositionApiModel.toServerPosition(bookUuid: String, serverId: String): ServerPosition {
+    return ServerPosition(
         bookUuid = bookUuid,
         serverId = serverId,
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        // Locator fields
         locatorHref = locator?.href,
         locatorType = locator?.type,
         locatorTitle = locator?.title,
         locatorTarget = locator?.target,
-        // Location fields
         audioTimestampMs = locator?.locations?.audioTimestampMs,
         chapterIndex = locator?.locations?.chapterIndex,
         progression = locator?.locations?.progression,
@@ -88,19 +90,19 @@ fun PositionApiModel.toDomain(bookUuid: String, serverId: String): PositionDomai
 }
 
 /**
- * Converts a flat domain model back to the nested API model structure.
+ * Converts server-agnostic ServerPosition to Storyteller API model.
  */
-fun PositionDomainModel.toApiModel(): PositionApiModel {
-    return PositionApiModel(
+fun ServerPosition.toStorytellerApiModel(): StorytellerPositionApiModel {
+    return StorytellerPositionApiModel(
         timestamp = timestamp,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        locator = LocatorApiModel(
+        locator = StorytellerLocatorApiModel(
             href = locatorHref,
             type = locatorType,
             title = locatorTitle,
             target = locatorTarget,
-            locations = LocationsApiModel(
+            locations = StorytellerLocationsApiModel(
                 audioTimestampMs = audioTimestampMs,
                 chapterIndex = chapterIndex,
                 progression = progression,
