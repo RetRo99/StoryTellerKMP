@@ -100,15 +100,17 @@ private fun ServerBook.toBookDomainModel(): BookDomainModel {
             )
         },
         creators = emptyList(),
-        series = series.map {
-            com.retro99.books.domain.model.SeriesDomainModel(
-                uuid = it.id,
-                name = it.name,
-                featured = null,
-                position = it.sequence?.toDouble(),
-                createdAt = null,
-                updatedAt = null,
-            )
+        series = series.mapNotNull { s ->
+            s.id?.let { id ->
+                com.retro99.books.domain.model.SeriesDomainModel(
+                    uuid = id,
+                    name = s.name,
+                    featured = null,
+                    position = s.sequence?.toDouble(),
+                    createdAt = null,
+                    updatedAt = null,
+                )
+            }
         },
         tags = emptyList(),
         collections = emptyList(),

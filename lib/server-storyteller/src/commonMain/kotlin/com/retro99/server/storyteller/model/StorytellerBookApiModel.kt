@@ -14,9 +14,6 @@ data class StorytellerBookApiModel(
     @SerialName("title")
     val title: String,
 
-    @SerialName("id")
-    val id: Long,
-
     @SerialName("language")
     val language: String? = null,
 
@@ -66,7 +63,7 @@ data class StorytellerBookApiModel(
 @Serializable
 data class StorytellerPersonApiModel(
     @SerialName("id")
-    val id: Long,
+    val id: Long? = null,
 
     @SerialName("name")
     val name: String,
@@ -75,7 +72,7 @@ data class StorytellerPersonApiModel(
 @Serializable
 data class StorytellerSeriesApiModel(
     @SerialName("id")
-    val id: Long,
+    val id: Long? = null,
 
     @SerialName("name")
     val name: String,
@@ -87,7 +84,7 @@ data class StorytellerSeriesApiModel(
 @Serializable
 data class StorytellerTagApiModel(
     @SerialName("id")
-    val id: Long,
+    val id: Long? = null,
 
     @SerialName("name")
     val name: String,
@@ -116,7 +113,7 @@ fun StorytellerBookApiModel.toDomain(
         narrators = narrators.map { it.name },
         series = series.map {
             ServerBookSeries(
-                id = it.id.toString(),
+                id = it.id?.toString(),
                 name = it.name,
                 sequence = it.sequence,
             )
