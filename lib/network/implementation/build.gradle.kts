@@ -29,6 +29,7 @@ kotlin {
             implementation(libs.coroutines)
             implementation(projects.base)
             implementation(projects.lib.network.api)
+            implementation(projects.lib.server.api)
             implementation(projects.lib.preferences.api)
             implementation(projects.feature.auth.domain)
             implementation(projects.lib.analytics.api)

@@ -21,6 +21,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.base)
+            api(projects.lib.network.api)
             implementation(libs.serialization)
             implementation(libs.coroutines)
             api(libs.ktor.client.core)

@@ -8,7 +8,7 @@ import com.retro99.base.result.CompletableResult
 import com.retro99.server.api.ServerBook
 import com.retro99.server.api.ServerBooksRepository
 import com.retro99.server.api.ServerNetworkClient
-import com.retro99.server.api.get
+import retro99.network.api.get
 import com.retro99.server.storyteller.model.StorytellerBookApiModel
 import com.retro99.server.storyteller.model.toDomain
 import kotlinx.coroutines.flow.Flow
@@ -51,7 +51,7 @@ class StorytellerBooksRepository(
         return networkClient.get<List<StorytellerBookApiModel>>(
             path = "/api/v2/books",
             queryBuilder = {
-                param("search", query)
+                "search" to query
             }
         ).map { books ->
             books.map { it.toDomain(serverId, networkClient.baseUrl) }
