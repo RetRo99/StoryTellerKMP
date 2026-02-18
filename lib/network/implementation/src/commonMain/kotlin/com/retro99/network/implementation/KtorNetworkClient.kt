@@ -37,19 +37,22 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.SerializationException
-import org.koin.core.annotation.Provided
-import org.koin.core.annotation.Single
-import retro99.network.api.BaseUrlProvider
 import retro99.network.api.NetworkClient
 import retro99.network.api.QueryParamsScope
 
 private const val CONNECT_TIMEOUT_MS = 30_000L // 30 seconds
 
-@Single(binds = [NetworkClient::class])
+/**
+ * Ktor-based implementation of NetworkClient.
+ *
+ * @param httpClient The Ktor HttpClient to use for requests
+ * @param baseUrlProvider A function that returns the base URL for requests
+ * @param analytics Analytics for logging errors
+ */
 class KtorNetworkClient(
-    @Provided private val httpClient: HttpClient,
-    @Provided private val baseUrlProvider: BaseUrlProvider,
-    @Provided private val analytics: Analytics,
+    private val httpClient: HttpClient,
+    private val baseUrlProvider: () -> String?,
+    private val analytics: Analytics,
 ) : NetworkClient {
 
     override suspend fun <T> getWithTypeInfo(
@@ -217,7 +220,7 @@ class KtorNetworkClient(
         val queryParamsScope = QueryParamsScope()
         queryBuilder(queryParamsScope)
 
-        val baseUrl = baseUrlProvider.getBaseUrl()
+        val baseUrl = baseUrlProvider()
             ?: error("Server URL not configured. Please login first.")
 
         val urlBuilder = URLBuilder(baseUrl).apply {

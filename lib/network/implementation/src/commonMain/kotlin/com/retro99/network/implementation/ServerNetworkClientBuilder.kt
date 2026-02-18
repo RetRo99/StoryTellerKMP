@@ -4,7 +4,6 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.server.api.ServerNetworkClient
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
-import retro99.network.api.BaseUrlProvider
 import retro99.network.api.NetworkClient
 
 /**
@@ -35,13 +34,11 @@ class ServerNetworkClientBuilder(
     ): ServerNetworkClient {
         val httpClient = serverHttpClientFactory.create(tokenProvider, tokenRefresher)
 
-        val staticBaseUrlProvider = object : BaseUrlProvider {
-            override fun getBaseUrl(): String = baseUrl
-            override fun setBaseUrl(url: String) {}
-            override fun clearBaseUrl() {}
-        }
-
-        val networkClient = KtorNetworkClient(httpClient, staticBaseUrlProvider, analytics)
+        val networkClient = KtorNetworkClient(
+            httpClient = httpClient,
+            baseUrlProvider = { baseUrl },
+            analytics = analytics,
+        )
 
         return DelegatingServerNetworkClient(
             serverId = serverId,

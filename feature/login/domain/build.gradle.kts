@@ -24,7 +24,6 @@ kotlin {
             api(libs.koin.annotations)
             implementation(libs.coroutines)
             implementation(projects.base)
-            implementation(projects.lib.network.api)
             implementation(projects.feature.auth.domain)
         }
     }

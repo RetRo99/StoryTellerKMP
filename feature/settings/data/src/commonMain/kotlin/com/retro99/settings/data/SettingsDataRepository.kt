@@ -10,8 +10,12 @@ internal class SettingsDataRepository(
     @Provided private val serverRegistry: ServerRegistry,
 ) : SettingsRepository {
 
-    override suspend fun logout() {
-        serverRegistry.clearAllCredentials()
+    override suspend fun logout(serverId: String?) {
+        if (serverId != null) {
+            serverRegistry.clearCredentials(serverId)
+        } else {
+            serverRegistry.clearAllCredentials()
+        }
     }
 }
 

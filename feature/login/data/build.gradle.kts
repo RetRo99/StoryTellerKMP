@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.koinCompilerPlugin)
-    alias(libs.plugins.kotlinxSerialization)
 }
 
 version = "1.0"
@@ -24,11 +23,8 @@ kotlin {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
             implementation(libs.coroutines)
-            implementation(libs.serialization)
             implementation(projects.base)
             implementation(projects.lib.analytics.api)
-            implementation(projects.lib.network.api)
-            implementation(projects.lib.preferences.api)
             implementation(projects.lib.server.api)
             implementation(projects.feature.login.domain)
         }
