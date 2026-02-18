@@ -1,0 +1,77 @@
+package com.retro99.server.local
+
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.retro99.base.result.AppError
+import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
+import com.retro99.books.data.source.ImportedBooksLocalSource
+import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.server.api.ServerBook
+import com.retro99.server.api.ServerBooksRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+/**
+ * Local implementation of ServerBooksRepository.
+ * Reads books from the local imported books database.
+ */
+class LocalBooksRepository(
+    private val localSource: ImportedBooksLocalSource,
+    override val serverId: String,
+) : ServerBooksRepository {
+
+    override fun getBooks(): Flow<AppResult<List<ServerBook>>> {
+        return localSource.observeAllImportedBooks().map { books ->
+            Ok(books.map { it.toServerBook(serverId) })
+        }
+    }
+
+    override fun getBook(uuid: String): Flow<AppResult<ServerBook>> {
+        return localSource.observeAllImportedBooks().map { books ->
+            val book = books.find { it.uuid == uuid }
+            if (book != null) {
+                Ok(book.toServerBook(serverId))
+            } else {
+                Err(AppError.NotFoundError("Book not found: $uuid"))
+            }
+        }
+    }
+
+    override suspend fun saveBook(book: ServerBook): CompletableResult {
+        // Local books are saved through the import flow, not through this method
+        return Err(AppError.UnknownError(NotImplementedError("Use importEpubFile to add local books")))
+    }
+
+    override suspend fun searchBooks(query: String): AppResult<List<ServerBook>> {
+        // Search is handled at the UI layer for local books
+        return Ok(emptyList())
+    }
+}
+
+/**
+ * Convert a LocalBook to ServerBook for unified handling.
+ */
+private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook {
+    return ServerBook(
+        uuid = uuid,
+        serverId = serverId,
+        title = title,
+        description = description,
+        coverUrl = coverUrl,
+        authors = listOfNotNull(author),
+        narrators = emptyList(),
+        series = emptyList(),
+        hasEbook = bookType == com.retro99.books.domain.model.BookType.EBOOK,
+        hasAudiobook = false,
+        metadata = mapOf(
+            "filePath" to filePath,
+            "fileSize" to fileSize,
+            "importedAt" to importedAt,
+            "lastOpenedAt" to lastOpenedAt,
+            "bookType" to bookType.value,
+            "isLocal" to true,
+        ),
+    )
+}
+

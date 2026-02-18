@@ -8,20 +8,26 @@ import org.koin.core.annotation.Single
 
 /**
  * Factory for creating server-specific authenticators.
- * Currently only supports Storyteller servers.
+ * Supports Storyteller and Local servers.
  */
 @Single(binds = [ServerAuthenticatorFactory::class])
 class StorytellerAuthenticatorFactory(
     @Provided private val storytellerAuthenticator: StorytellerAuthenticator,
+    @Provided private val authenticators: List<ServerAuthenticator>,
 ) : ServerAuthenticatorFactory {
 
+    private val authenticatorMap: Map<ServerType, ServerAuthenticator> by lazy {
+        authenticators.associateBy { it.serverType }
+    }
+
     override fun create(serverType: ServerType): ServerAuthenticator {
+        // First check the map for dynamically registered authenticators
+        authenticatorMap[serverType]?.let { return it }
+
+        // Fallback for known types
         return when (serverType) {
             ServerType.Storyteller -> storytellerAuthenticator
             ServerType.Local -> throw IllegalArgumentException("Local server type does not require authentication")
-            // Add other server types here as they are implemented
-            // ServerType.Audiobookshelf -> audiobookshelfAuthenticator
-            // ServerType.CalibreWeb -> calibreWebAuthenticator
         }
     }
 }
