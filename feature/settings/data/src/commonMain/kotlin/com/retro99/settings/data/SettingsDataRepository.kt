@@ -1,5 +1,6 @@
 package com.retro99.settings.data
 
+import com.retro99.base.server.ServerType
 import com.retro99.server.api.ServerRegistry
 import com.retro99.settings.domain.SettingsRepository
 import org.koin.core.annotation.Provided
@@ -14,7 +15,13 @@ internal class SettingsDataRepository(
         if (serverId != null) {
             serverRegistry.clearCredentials(serverId)
         } else {
-            serverRegistry.clearAllCredentials()
+            // Logout from all remote servers (excludes local server)
+            val servers = serverRegistry.getAllServers()
+            servers
+                .filter { it.type != ServerType.Local }
+                .forEach { server ->
+                    serverRegistry.clearCredentials(server.id)
+                }
         }
     }
 }
