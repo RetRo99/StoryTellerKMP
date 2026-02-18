@@ -5,6 +5,11 @@ import com.github.michaelbull.result.map as resultMap
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.model.BookDomainModel
+import com.retro99.books.domain.model.BookType
+import com.retro99.books.domain.model.MediaFileDomainModel
+import com.retro99.books.domain.model.PersonDomainModel
+import com.retro99.books.domain.model.ReadaloudDomainModel
+import com.retro99.books.domain.model.SeriesDomainModel
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBook
 import kotlinx.coroutines.flow.Flow
@@ -51,86 +56,108 @@ class GetBookByUuidUseCase(
 
 /**
  * Maps a ServerBook to BookDomainModel.
+ * Returns LocalBook if metadata indicates it's a local book, otherwise StorytellerBook.
  */
 private fun ServerBook.toBookDomainModel(): BookDomainModel {
-    return BookDomainModel.StorytellerBook(
-        uuid = uuid,
-        serverId = serverId,
-        title = title,
-        description = description,
-        coverUrl = coverUrl,
-        id = 0L,
-        language = null,
-        createdAt = null,
-        updatedAt = null,
-        publicationDate = null,
-        rating = null,
-        suffix = null,
-        subtitle = null,
-        ebookCoverUrl = null,
-        audiobookCoverUrl = null,
-        authors = authors.map {
-            com.retro99.books.domain.model.PersonDomainModel(
-                uuid = it,
-                id = null,
-                name = it,
-                fileAs = null,
-                createdAt = null,
-                updatedAt = null,
-            )
-        },
-        narrators = narrators.map {
-            com.retro99.books.domain.model.PersonDomainModel(
-                uuid = it,
-                id = null,
-                name = it,
-                fileAs = null,
-                createdAt = null,
-                updatedAt = null,
-            )
-        },
-        creators = emptyList(),
-        series = series.mapNotNull { s ->
-            s.id?.let { id ->
-                com.retro99.books.domain.model.SeriesDomainModel(
-                    uuid = id,
-                    name = s.name,
-                    featured = null,
-                    position = s.sequence?.toDouble(),
+    // Check if this is a local book based on metadata
+    val isLocal = metadata["isLocal"] == true
+
+    return if (isLocal) {
+        BookDomainModel.LocalBook(
+            uuid = uuid,
+            serverId = serverId,
+            title = title,
+            description = description,
+            coverUrl = coverUrl,
+            author = authors.firstOrNull(),
+            filePath = metadata["filePath"] as? String ?: "",
+            fileSize = (metadata["fileSize"] as? Number)?.toLong() ?: 0L,
+            importedAt = metadata["importedAt"] as? String ?: "",
+            lastOpenedAt = metadata["lastOpenedAt"] as? String,
+            bookType = (metadata["bookType"] as? String)?.let {
+                BookType.fromValue(it)
+            } ?: BookType.EBOOK,
+        )
+    } else {
+        BookDomainModel.StorytellerBook(
+            uuid = uuid,
+            serverId = serverId,
+            title = title,
+            description = description,
+            coverUrl = coverUrl,
+            id = 0L,
+            language = null,
+            createdAt = null,
+            updatedAt = null,
+            publicationDate = null,
+            rating = null,
+            suffix = null,
+            subtitle = null,
+            ebookCoverUrl = null,
+            audiobookCoverUrl = null,
+            authors = authors.map {
+                PersonDomainModel(
+                    uuid = it,
+                    id = null,
+                    name = it,
+                    fileAs = null,
                     createdAt = null,
                     updatedAt = null,
                 )
-            }
-        },
-        tags = emptyList(),
-        collections = emptyList(),
-        status = null,
-        ebook = if (hasEbook) com.retro99.books.domain.model.MediaFileDomainModel(
-            uuid = "$uuid-ebook",
-            filepath = "ebook",
-            missing = null,
-            createdAt = null,
-            updatedAt = null,
-        ) else null,
-        audiobook = if (hasAudiobook) com.retro99.books.domain.model.MediaFileDomainModel(
-            uuid = "$uuid-audiobook",
-            filepath = "audiobook",
-            missing = null,
-            createdAt = null,
-            updatedAt = null,
-        ) else null,
-        readaloud = if (hasReadaloud) com.retro99.books.domain.model.ReadaloudDomainModel(
-            uuid = "$uuid-readaloud",
-            filepath = "readaloud",
-            missing = null,
+            },
+            narrators = narrators.map {
+                PersonDomainModel(
+                    uuid = it,
+                    id = null,
+                    name = it,
+                    fileAs = null,
+                    createdAt = null,
+                    updatedAt = null,
+                )
+            },
+            creators = emptyList(),
+            series = series.mapNotNull { s ->
+                s.id?.let { id ->
+                    SeriesDomainModel(
+                        uuid = id,
+                        name = s.name,
+                        featured = null,
+                        position = s.sequence?.toDouble(),
+                        createdAt = null,
+                        updatedAt = null,
+                    )
+                }
+            },
+            tags = emptyList(),
+            collections = emptyList(),
             status = null,
-            currentStage = null,
-            stageProgress = null,
-            queuePosition = null,
-            restartPending = null,
-            createdAt = null,
-            updatedAt = null,
-        ) else null,
-    )
+            ebook = if (hasEbook) MediaFileDomainModel(
+                uuid = "$uuid-ebook",
+                filepath = "ebook",
+                missing = null,
+                createdAt = null,
+                updatedAt = null,
+            ) else null,
+            audiobook = if (hasAudiobook) MediaFileDomainModel(
+                uuid = "$uuid-audiobook",
+                filepath = "audiobook",
+                missing = null,
+                createdAt = null,
+                updatedAt = null,
+            ) else null,
+            readaloud = if (hasReadaloud) ReadaloudDomainModel(
+                uuid = "$uuid-readaloud",
+                filepath = "readaloud",
+                missing = null,
+                status = null,
+                currentStage = null,
+                stageProgress = null,
+                queuePosition = null,
+                restartPending = null,
+                createdAt = null,
+                updatedAt = null,
+            ) else null,
+        )
+    }
 }
 
