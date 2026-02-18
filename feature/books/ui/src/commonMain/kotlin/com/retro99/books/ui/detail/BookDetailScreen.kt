@@ -88,13 +88,14 @@ import resources.translations.general_cancel
 
 @Composable
 fun BookDetailScreen(
+    serverId: String,
     bookUuid: String,
-    onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
+    onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType) -> Unit,
     onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookDetailViewModel = koinViewModel {
-        parametersOf(bookUuid, onNavigateToReader, onNavigateToSeriesDetail, onBack)
+        parametersOf(serverId, bookUuid, onNavigateToReader, onNavigateToSeriesDetail, onBack)
     },
 ) {
     BaseScreen(

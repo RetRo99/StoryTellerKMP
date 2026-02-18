@@ -48,6 +48,7 @@ class MediaSessionManager(
     private var coverArtwork: ByteArray? = null
 
     // Book identification for deep link navigation
+    private var serverId: String? = null
     private var bookUuid: String? = null
     private var bookType: BookType? = null
 
@@ -125,12 +126,13 @@ class MediaSessionManager(
      * directly to the reader screen. Otherwise, falls back to the launcher intent.
      */
     private fun createSessionActivityIntent(): PendingIntent {
+        val server = serverId
         val uuid = bookUuid
         val type = bookType
 
-        val intent = if (uuid != null && type != null) {
+        val intent = if (server != null && uuid != null && type != null) {
             // Create deep link intent to navigate directly to reader
-            val deepLinkUri = DeepLinkUriBuilder.buildReaderUri(uuid, type.value)
+            val deepLinkUri = DeepLinkUriBuilder.buildReaderUri(server, uuid, type.value)
             Intent(Intent.ACTION_VIEW, deepLinkUri.toUri()).apply {
                 setPackage(context.packageName)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -165,10 +167,12 @@ class MediaSessionManager(
      * Should be called before [initialize] or the session activity will need to be updated
      * by calling [updateSessionActivity].
      *
+     * @param serverId The ID of the server the book belongs to
      * @param bookUuid The unique identifier of the book
      * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
      */
-    fun setBookInfo(bookUuid: String, bookType: BookType) {
+    fun setBookInfo(serverId: String, bookUuid: String, bookType: BookType) {
+        this.serverId = serverId
         this.bookUuid = bookUuid
         this.bookType = bookType
         // Update the session activity if the session is already initialized

@@ -20,8 +20,15 @@ data class ImportedBookLocalModel(
     override val bookType: String,
 ) : ImportedBookEntity
 
+/**
+ * Constant for the local server ID.
+ * This must match the ID used in LocalAuthenticator.LOCAL_SERVER_ID.
+ */
+const val LOCAL_SERVER_ID = "local"
+
 fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
     uuid = uuid,
+    serverId = LOCAL_SERVER_ID,
     title = title,
     author = author,
     description = description,

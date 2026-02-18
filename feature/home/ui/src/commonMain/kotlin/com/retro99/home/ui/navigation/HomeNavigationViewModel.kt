@@ -83,6 +83,7 @@ class HomeNavigationViewModel(
         // Emit navigation event to open the reader
         emitNavigationEvent(
             HomeNavigationEvent.NavigateToReaderReplacing(
+                serverId = currentlyReading.serverId,
                 bookUuid = currentlyReading.bookUuid,
                 bookType = currentlyReading.bookType,
                 tab = HomeTab.Books,
@@ -122,6 +123,7 @@ class HomeNavigationViewModel(
                 // Emit navigation event to open the reader
                 emitNavigationEvent(
                     HomeNavigationEvent.NavigateToReaderReplacing(
+                        serverId = destination.serverId,
                         bookUuid = destination.bookUuid,
                         bookType = destination.bookType,
                         tab = HomeTab.Books,
@@ -151,7 +153,11 @@ class HomeNavigationViewModel(
             is HomeNavigationIntent.OpenReader -> {
                 emitNavigationEvent(
                     HomeNavigationEvent.NavigateTo(
-                        HomeDestination.Reader(intent.bookUuid, intent.bookType)
+                        HomeDestination.Reader(
+                            serverId = intent.serverId,
+                            bookUuid = intent.bookUuid,
+                            bookType = intent.bookType,
+                        )
                     )
                 )
             }

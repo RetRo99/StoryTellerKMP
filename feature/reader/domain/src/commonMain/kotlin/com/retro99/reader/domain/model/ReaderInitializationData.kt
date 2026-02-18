@@ -11,6 +11,7 @@ import com.retro99.books.domain.model.BookType
  * - Loading reader settings
  * - Detecting reading progress conflicts
  *
+ * @param serverId The ID of the server this book belongs to
  * @param bookUuid The unique identifier of the book
  * @param bookTitle The title of the book
  * @param bookCoverUrl The URL of the book cover image
@@ -20,6 +21,7 @@ import com.retro99.books.domain.model.BookType
  * @param progressResult The reading progress result, which may contain a conflict
  */
 data class ReaderInitializationData(
+    val serverId: String,
     val bookUuid: String,
     val bookTitle: String,
     val bookCoverUrl: String?,

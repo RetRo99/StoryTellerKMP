@@ -41,6 +41,7 @@ sealed interface HomeNavigationEvent {
      * Used for deep links and "open last book on launch".
      */
     data class NavigateToReaderReplacing(
+        val serverId: String,
         val bookUuid: String,
         val bookType: BookType,
         val tab: HomeTab = HomeTab.Books,

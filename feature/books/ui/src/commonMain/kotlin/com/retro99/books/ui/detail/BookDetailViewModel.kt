@@ -28,8 +28,9 @@ import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class BookDetailViewModel(
+    @InjectedParam private val serverId: String,
     @InjectedParam private val bookUuid: String,
-    @InjectedParam private val onNavigateToReader: (bookUuid: String, bookType: BookType) -> Unit,
+    @InjectedParam private val onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType) -> Unit,
     @InjectedParam private val onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     @InjectedParam private val onBack: () -> Unit,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
@@ -153,13 +154,13 @@ class BookDetailViewModel(
         }
 
         if (downloadState is DownloadState.Cached) {
-            onNavigateToReader(bookUuid, bookType)
+            onNavigateToReader(serverId, bookUuid, bookType)
         }
         // If not cached, user should click download first
     }
 
     private fun fetchBook() {
-        getBookByUuidUseCase(bookUuid)
+        getBookByUuidUseCase(serverId, bookUuid)
             .onStart {
                 updateState { it.copy(isLoading = true, error = null) }
             }

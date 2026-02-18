@@ -29,6 +29,7 @@ class IosEpubPublicationService(
 
     override suspend fun openPublication(
         filePath: String,
+        serverId: String,
         bookUuid: String,
         initialSettings: ReaderSettingsUiModel,
         bookType: BookType,
@@ -49,6 +50,7 @@ class IosEpubPublicationService(
                 onSuccess = {
                     val publication = EpubPublication(
                         currentBridge,
+                        serverId,
                         bookUuid,
                         initialSettings,
                         bookType,

@@ -23,6 +23,10 @@ sealed interface HomeNavigationIntent : BaseIntent {
     /**
      * Navigate to reader from the continue reading bubble.
      */
-    data class OpenReader(val bookUuid: String, val bookType: BookType) : HomeNavigationIntent
+    data class OpenReader(
+        val serverId: String,
+        val bookUuid: String,
+        val bookType: BookType,
+    ) : HomeNavigationIntent
 }
 

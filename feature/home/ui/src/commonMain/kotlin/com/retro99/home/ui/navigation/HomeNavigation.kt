@@ -58,7 +58,11 @@ fun HomeNavigation(
                 is HomeNavigationEvent.NavigateToReaderReplacing -> {
                     navigationState.switchTab(event.tab)
                     navigationState.navigateToReplacing(
-                        HomeDestination.Reader(event.bookUuid, event.bookType),
+                        HomeDestination.Reader(
+                            serverId = event.serverId,
+                            bookUuid = event.bookUuid,
+                            bookType = event.bookType,
+                        ),
                         event.tab,
                     )
                 }
@@ -103,7 +107,10 @@ fun HomeNavigation(
                             onNavigateToBookDetail = { book ->
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.BookDetail(book.uuid)
+                                        HomeDestination.BookDetail(
+                                            serverId = book.serverId,
+                                            bookUuid = book.uuid,
+                                        )
                                     )
                                 )
                             },
@@ -132,7 +139,10 @@ fun HomeNavigation(
                             onNavigateToBookDetail = { book ->
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.BookDetail(book.uuid)
+                                        HomeDestination.BookDetail(
+                                            serverId = book.serverId,
+                                            bookUuid = book.uuid,
+                                        )
                                     )
                                 )
                             },
@@ -142,11 +152,16 @@ fun HomeNavigation(
 
                     entry<HomeDestination.BookDetail> { destination ->
                         BookDetailScreen(
+                            serverId = destination.serverId,
                             bookUuid = destination.bookUuid,
-                            onNavigateToReader = { bookUuid, bookType ->
+                            onNavigateToReader = { serverId, bookUuid, bookType ->
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.Reader(bookUuid, bookType)
+                                        HomeDestination.Reader(
+                                            serverId = serverId,
+                                            bookUuid = bookUuid,
+                                            bookType = bookType,
+                                        )
                                     )
                                 )
                             },
@@ -166,6 +181,7 @@ fun HomeNavigation(
 
                     entry<HomeDestination.Reader> { destination ->
                         ReaderScreen(
+                            serverId = destination.serverId,
                             bookUuid = destination.bookUuid,
                             bookType = destination.bookType,
                             onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
@@ -219,6 +235,7 @@ fun HomeNavigation(
                     onClick = {
                         intentDispatcher(
                             HomeNavigationIntent.OpenReader(
+                                serverId = currentlyReading.serverId,
                                 bookUuid = currentlyReading.bookUuid,
                                 bookType = currentlyReading.bookType,
                             )

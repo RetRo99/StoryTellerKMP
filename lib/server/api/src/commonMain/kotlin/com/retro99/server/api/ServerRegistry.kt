@@ -31,6 +31,18 @@ interface ServerRegistry {
     ): ServerConfig
 
     /**
+     * Add a new server with a specific ID.
+     * Used for special servers like Local that need a fixed ID.
+     * @return The created ServerConfig with the specified ID
+     */
+    suspend fun addServerWithId(
+        id: String,
+        name: String,
+        type: ServerType,
+        baseUrl: String,
+    ): ServerConfig
+
+    /**
      * Update an existing server's configuration.
      */
     suspend fun updateServer(config: ServerConfig)

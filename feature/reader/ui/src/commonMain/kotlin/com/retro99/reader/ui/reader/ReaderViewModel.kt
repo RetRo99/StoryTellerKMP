@@ -50,6 +50,7 @@ import org.koin.mp.KoinPlatform.getKoin
 
 @KoinViewModel
 class ReaderViewModel(
+    @InjectedParam private val serverId: String,
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val bookType: BookType,
     @InjectedParam private val onClose: () -> Unit,
@@ -274,7 +275,7 @@ class ReaderViewModel(
 
     private fun initializeReader() {
         viewModelScope.launch {
-            initializeReaderUseCase(bookUuid, bookType)
+            initializeReaderUseCase(serverId, bookUuid, bookType)
                 .onSuccess { data ->
                     openPublication(data)
                 }
@@ -292,6 +293,7 @@ class ReaderViewModel(
 
         publicationService.openPublication(
             filePath = data.localEbookPath,
+            serverId = data.serverId,
             bookUuid = data.bookUuid,
             initialSettings = settings,
             bookType = bookType,
@@ -509,6 +511,7 @@ class ReaderViewModel(
             if (readingDurationMs >= MINIMUM_READING_DURATION_MS && currentState.bookTitle.isNotEmpty()) {
                 setCurrentlyReadingUseCase(
                     CurrentlyReadingDomainModel(
+                        serverId = serverId,
                         bookUuid = bookUuid,
                         bookType = currentState.bookType,
                         bookTitle = currentState.bookTitle,

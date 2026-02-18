@@ -5,7 +5,6 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.map as resultMap
 import com.retro99.base.result.AppResult
-import com.retro99.books.domain.BooksRepository
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBook
@@ -19,43 +18,37 @@ import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
 /**
- * Use case for getting all books from all authenticated servers plus local imported books.
+ * Use case for getting all books from all authenticated servers.
+ * Local books are included via LocalBooksRepository (Local server type).
  * Automatically updates when servers are added/removed or auth state changes.
  */
 @Factory
 class GetBooksUseCase(
     @Provided private val repositoryProvider: AuthenticatedRepositoryProvider,
-    @Provided private val localRepositories: List<BooksRepository>, // Local/imported books
 ) {
-    private val logger = Logger.withTag("čič-GetBooksUseCase")
+    private val logger = Logger.withTag("GetBooksUseCase")
 
     operator fun invoke(): Flow<AppResult<List<BookDomainModel>>> {
-        logger.d { "GetBooksUseCase invoked, localRepositories count: ${localRepositories.size}" }
         return repositoryProvider.observeBooksRepositories()
-            .onEach { serverRepositories ->
-                logger.d { "Received ${serverRepositories.size} server repositories" }
+            .onEach { repositories ->
+                logger.d { "Received ${repositories.size} repositories" }
             }
-            .flatMapLatest { serverRepositories ->
-                // Combine server repositories with local repositories
-                val serverFlows = serverRepositories.map { repo ->
-                    logger.d { "Getting books from server repo: ${repo.serverId}" }
+            .flatMapLatest { repositories ->
+                val flows = repositories.map { repo ->
+                    logger.d { "Getting books from repo: ${repo.serverId}" }
                     repo.getBooks().onEach { result ->
-                        logger.d { "Server ${repo.serverId} books result: $result" }
+                        logger.d { "Repo ${repo.serverId} books result: $result" }
                     }.mapToFlow { books ->
-                        logger.d { "Server ${repo.serverId} returned ${books.size} books" }
+                        logger.d { "Repo ${repo.serverId} returned ${books.size} books" }
                         books.map { it.toBookDomainModel() }
                     }
                 }
-                val localFlows = localRepositories.map { it.getBooks() }
-                val allFlows = serverFlows + localFlows
 
-                logger.d { "Total flows: ${allFlows.size} (${serverFlows.size} server + ${localFlows.size} local)" }
-
-                if (allFlows.isEmpty()) {
-                    logger.d { "No flows, returning empty list" }
+                if (flows.isEmpty()) {
+                    logger.d { "No repositories, returning empty list" }
                     flowOf(Ok(emptyList()))
                 } else {
-                    combine(allFlows) { results ->
+                    combine(flows) { results ->
                         val allBooks = results.flatMap { it.getOrElse { emptyList() } }
                         logger.d { "Combined ${allBooks.size} total books from ${results.size} sources" }
                         Ok(allBooks.sortedBy { it.title.lowercase() })
@@ -78,6 +71,7 @@ class GetBooksUseCase(
 private fun ServerBook.toBookDomainModel(): BookDomainModel {
     return BookDomainModel.StorytellerBook(
         uuid = uuid,
+        serverId = serverId,
         title = title,
         description = description,
         coverUrl = coverUrl,

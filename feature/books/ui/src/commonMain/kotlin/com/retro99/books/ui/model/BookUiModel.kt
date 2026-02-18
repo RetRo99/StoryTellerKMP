@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class BookUiModel {
     abstract val uuid: String
+    abstract val serverId: String
     abstract val title: String
     abstract val description: String?
     abstract val coverUrl: String?
@@ -41,6 +42,7 @@ sealed class BookUiModel {
     @Serializable
     data class StorytellerBook(
         override val uuid: String,
+        override val serverId: String,
         override val title: String,
         override val description: String?,
         override val coverUrl: String?,
@@ -70,6 +72,7 @@ sealed class BookUiModel {
     @Serializable
     data class LocalBook(
         override val uuid: String,
+        override val serverId: String,
         override val title: String,
         override val description: String?,
         override val coverUrl: String?,

@@ -14,10 +14,12 @@ sealed interface DeepLinkDestination {
     /**
      * Navigate to the reader screen for a specific book.
      *
+     * @param serverId The ID of the server the book belongs to
      * @param bookUuid The unique identifier of the book
      * @param bookType The type of book (EBOOK, AUDIOBOOK, or READALOUD)
      */
     data class Reader(
+        val serverId: String,
         val bookUuid: String,
         val bookType: BookType,
     ) : DeepLinkDestination
@@ -95,12 +97,14 @@ class DeepLinkHandler {
         if (queryString == null) return null
 
         val params = parseQueryParams(queryString)
+        val serverId = params[DeepLinkUriBuilder.PARAM_SERVER_ID] ?: return null
         val bookUuid = params[DeepLinkUriBuilder.PARAM_BOOK_UUID] ?: return null
         val bookTypeValue = params[DeepLinkUriBuilder.PARAM_BOOK_TYPE] ?: return null
 
         val bookType = BookType.entries.find { it.value == bookTypeValue } ?: return null
 
         return DeepLinkDestination.Reader(
+            serverId = serverId,
             bookUuid = bookUuid,
             bookType = bookType,
         )
@@ -126,12 +130,13 @@ class DeepLinkHandler {
         /**
          * Builds a deep link URI for the reader screen.
          *
+         * @param serverId The ID of the server the book belongs to
          * @param bookUuid The unique identifier of the book
          * @param bookType The type of book
          * @return The deep link URI string
          */
-        fun buildReaderUri(bookUuid: String, bookType: BookType): String {
-            return DeepLinkUriBuilder.buildReaderUri(bookUuid, bookType.value)
+        fun buildReaderUri(serverId: String, bookUuid: String, bookType: BookType): String {
+            return DeepLinkUriBuilder.buildReaderUri(serverId, bookUuid, bookType.value)
         }
     }
 }

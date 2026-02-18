@@ -13,18 +13,20 @@ object DeepLinkUriBuilder {
 
     const val SCHEME = "parrot://"
     const val PATH_READER = "reader"
+    const val PARAM_SERVER_ID = "serverId"
     const val PARAM_BOOK_UUID = "bookUuid"
     const val PARAM_BOOK_TYPE = "bookType"
 
     /**
      * Builds a deep link URI for the reader screen.
      *
+     * @param serverId The ID of the server the book belongs to
      * @param bookUuid The unique identifier of the book
      * @param bookType The type of book as a string (e.g., "ebook", "audiobook", "readaloud")
-     * @return The deep link URI string (e.g., "parrot://reader?bookUuid=xxx&bookType=readaloud")
+     * @return The deep link URI string (e.g., "parrot://reader?serverId=xxx&bookUuid=xxx&bookType=readaloud")
      */
-    fun buildReaderUri(bookUuid: String, bookType: String): String {
-        return "$SCHEME$PATH_READER?$PARAM_BOOK_UUID=$bookUuid&$PARAM_BOOK_TYPE=$bookType"
+    fun buildReaderUri(serverId: String, bookUuid: String, bookType: String): String {
+        return "$SCHEME$PATH_READER?$PARAM_SERVER_ID=$serverId&$PARAM_BOOK_UUID=$bookUuid&$PARAM_BOOK_TYPE=$bookType"
     }
 }
 

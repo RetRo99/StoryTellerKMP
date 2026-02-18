@@ -8,6 +8,7 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
+import com.retro99.books.data.model.LOCAL_SERVER_ID
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.books.domain.model.BookType
@@ -89,6 +90,7 @@ class AndroidFileImportManager(
 
                 val importedBook = BookDomainModel.LocalBook(
                     uuid = uuid,
+                    serverId = LOCAL_SERVER_ID,
                     title = metadata.title,
                     author = metadata.author,
                     description = metadata.description,

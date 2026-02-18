@@ -1,53 +1,42 @@
 package com.retro99.books.domain.usecase
 
 import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.getOrElse
 import com.github.michaelbull.result.map as resultMap
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
-import com.retro99.books.domain.BooksRepository
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBook
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map as flowMap
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
 /**
- * Use case for getting a specific book by UUID from any authenticated server or local storage.
+ * Use case for getting a specific book by UUID from a specific server.
+ * Requires serverId to query the correct server directly.
  */
 @Factory
 class GetBookByUuidUseCase(
     @Provided private val repositoryProvider: AuthenticatedRepositoryProvider,
-    @Provided private val localRepositories: List<BooksRepository>,
 ) {
-    operator fun invoke(uuid: String): Flow<AppResult<BookDomainModel>> {
-        return repositoryProvider.observeBooksRepositories()
-            .flatMapLatest { serverRepositories ->
-                // Combine server repositories with local repositories
-                val serverFlows: List<Flow<AppResult<BookDomainModel>>> = serverRepositories.map { repo ->
-                    repo.getBook(uuid).mapResult { serverBook -> serverBook.toBookDomainModel() }
-                }
-                val localFlows: List<Flow<AppResult<BookDomainModel>>> = localRepositories.map { it.getBook(uuid) }
-                val allFlows: List<Flow<AppResult<BookDomainModel>>> = serverFlows + localFlows
+    /**
+     * Get a book by UUID from a specific server.
+     * @param serverId The ID of the server to query
+     * @param uuid The UUID of the book
+     * @return Flow emitting the book or an error
+     */
+    operator fun invoke(serverId: String, uuid: String): Flow<AppResult<BookDomainModel>> = flow {
+        val repository = repositoryProvider.getBooksRepository(serverId)
+        if (repository == null) {
+            emit(Err(AppError.NotFoundError("Server not found or not authenticated: $serverId")))
+            return@flow
+        }
 
-                if (allFlows.isEmpty()) {
-                    flowOf(Err(AppError.NotFoundError("No repositories available")))
-                } else {
-                    combine(allFlows) { results: Array<AppResult<BookDomainModel>> ->
-                        // Return first successful result
-                        results.mapNotNull { it.getOrElse { null } }.firstOrNull()
-                    }.flowMap { book: BookDomainModel? ->
-                        book?.let { Ok(it) }
-                            ?: Err(AppError.NotFoundError("Book not found: $uuid"))
-                    }
-                }
-            }
+        repository.getBook(uuid)
+            .mapResult { serverBook -> serverBook.toBookDomainModel() }
+            .collect { result -> emit(result) }
     }
 
     /**
@@ -66,6 +55,7 @@ class GetBookByUuidUseCase(
 private fun ServerBook.toBookDomainModel(): BookDomainModel {
     return BookDomainModel.StorytellerBook(
         uuid = uuid,
+        serverId = serverId,
         title = title,
         description = description,
         coverUrl = coverUrl,
