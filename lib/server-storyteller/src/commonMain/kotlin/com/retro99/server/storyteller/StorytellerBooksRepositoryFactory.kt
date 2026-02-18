@@ -9,7 +9,12 @@ import com.retro99.server.storyteller.source.ServerBooksLocalSource
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
-@Single
+/**
+ * Factory for creating StorytellerBooksRepository instances.
+ * Binds to ServerBooksRepositoryFactory so it can be collected into a list
+ * by CompositeServerBooksRepositoryFactory.
+ */
+@Single(binds = [ServerBooksRepositoryFactory::class])
 class StorytellerBooksRepositoryFactory(
     @Provided private val networkClientFactory: ServerNetworkClientFactory,
     @Provided private val localSource: ServerBooksLocalSource,
