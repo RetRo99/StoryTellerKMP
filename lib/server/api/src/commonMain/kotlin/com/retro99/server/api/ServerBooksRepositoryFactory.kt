@@ -5,24 +5,13 @@ package com.retro99.server.api
  */
 interface ServerBooksRepositoryFactory {
     /**
+     * The server type this factory handles.
+     */
+    val serverType: ServerType
+
+    /**
      * Create a BooksRepository for a specific server.
      */
     fun create(serverConfig: ServerConfig): ServerBooksRepository
-
-    /**
-     * Create repositories for all authenticated servers.
-     */
-    suspend fun createForAuthenticatedServers(): List<ServerBooksRepository>
-
-    /**
-     * Invalidate cached repository for a server.
-     * Call this when server credentials change or server is removed.
-     */
-    fun invalidateCache(serverId: String)
-
-    /**
-     * Invalidate all cached repositories.
-     */
-    fun invalidateAllCaches()
 }
 
