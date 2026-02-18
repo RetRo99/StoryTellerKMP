@@ -1,6 +1,7 @@
 package com.retro99.books.domain
 
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
 import com.retro99.books.domain.model.BookDomainModel
 import io.github.vinceglb.filekit.core.PlatformFile
 
@@ -40,5 +41,13 @@ interface FileImportManager {
      * @return True if deletion was successful
      */
     fun deleteImportedBookFiles(uuid: String): Boolean
+
+    /**
+     * Deletes a local book completely - both from database and file storage.
+     *
+     * @param uuid The UUID of the imported book
+     * @return Success if both database entry and files were deleted
+     */
+    suspend fun deleteLocalBook(uuid: String): CompletableResult
 }
 

@@ -16,5 +16,8 @@ sealed interface BookDetailIntent : BaseIntent {
     data object OnDeleteCacheConfirmed : BookDetailIntent
     data object OnDeleteCacheDismissed : BookDetailIntent
     data object OnFavoriteClicked : BookDetailIntent
+    data object OnDeleteLocalBookClicked : BookDetailIntent
+    data object OnDeleteLocalBookConfirmed : BookDetailIntent
+    data object OnDeleteLocalBookDismissed : BookDetailIntent
 }
 

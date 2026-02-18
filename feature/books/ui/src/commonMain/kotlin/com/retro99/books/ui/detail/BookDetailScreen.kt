@@ -27,9 +27,12 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -72,6 +75,10 @@ import org.koin.core.parameter.parametersOf
 import resources.translations.books_delete_cache_confirm
 import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
+import resources.translations.books_delete_local_button
+import resources.translations.books_delete_local_confirm
+import resources.translations.books_delete_local_message
+import resources.translations.books_delete_local_title
 import resources.translations.books_detail_add_favorite
 import resources.translations.books_detail_description
 import resources.translations.books_detail_remove_favorite
@@ -110,6 +117,7 @@ fun BookDetailScreen(
                 audiobookDownloadState = viewState.audiobookDownloadState,
                 readaloudDownloadState = viewState.readaloudDownloadState,
                 deleteConfirmationBookType = viewState.deleteConfirmationBookType,
+                showDeleteLocalBookConfirmation = viewState.showDeleteLocalBookConfirmation,
                 isFavorite = viewState.isFavorite,
                 intentDispatcher = intentDispatcher,
             )
@@ -125,6 +133,7 @@ private fun BookDetailScreenContent(
     audiobookDownloadState: DownloadState,
     readaloudDownloadState: DownloadState,
     deleteConfirmationBookType: BookType?,
+    showDeleteLocalBookConfirmation: Boolean,
     isFavorite: Boolean,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
@@ -134,6 +143,14 @@ private fun BookDetailScreenContent(
             bookType = bookType,
             onConfirm = { intentDispatcher(BookDetailIntent.OnDeleteCacheConfirmed) },
             onDismiss = { intentDispatcher(BookDetailIntent.OnDeleteCacheDismissed) },
+        )
+    }
+
+    if (showDeleteLocalBookConfirmation) {
+        DeleteLocalBookConfirmationDialog(
+            bookTitle = book.title,
+            onConfirm = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookConfirmed) },
+            onDismiss = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookDismissed) },
         )
     }
 
@@ -216,6 +233,16 @@ private fun BookDetailScreenContent(
                 SeriesSection(
                     series = book.series,
                     onSeriesClick = { intentDispatcher(BookDetailIntent.OnSeriesClicked(it)) },
+                )
+            }
+
+            // Delete button for local books
+            if (book is BookUiModel.LocalBook) {
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+                DeleteLocalBookButton(
+                    onClick = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookClicked) },
                 )
             }
 
@@ -669,4 +696,68 @@ private fun DeleteCacheConfirmationDialog(
             }
         },
     )
+}
+
+@Composable
+private fun DeleteLocalBookConfirmationDialog(
+    bookTitle: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+        title = {
+            Text(
+                text = stringResource(StringRes.books_delete_local_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(StringRes.books_delete_local_message, bookTitle),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text = stringResource(StringRes.books_delete_local_confirm),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(StringRes.general_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun DeleteLocalBookButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        ),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Delete,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(StringRes.books_delete_local_button),
+            style = MaterialTheme.typography.labelLarge,
+        )
+    }
 }

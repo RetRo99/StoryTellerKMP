@@ -4,9 +4,11 @@ import android.content.Context
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.andThen
+import com.github.michaelbull.result.map
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
+import com.retro99.base.result.CompletableResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.base.server.LOCAL_SERVER_ID
 import com.retro99.books.domain.FileImportManager
@@ -137,6 +139,14 @@ class AndroidFileImportManager(
         val coverDeleted = if (coverFile.exists()) coverFile.delete() else true
 
         return ebookDeleted && readaloudDeleted && coverDeleted
+    }
+
+    override suspend fun deleteLocalBook(uuid: String): CompletableResult {
+        // First delete from database
+        return importedBooksLocalSource.deleteImportedBook(uuid).map {
+            // Then delete the actual files (best effort - orphaned files can be cleaned up later)
+            deleteImportedBookFiles(uuid)
+        }
     }
 }
 

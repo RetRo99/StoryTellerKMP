@@ -7,6 +7,7 @@ import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.domain.usecase.ObserveFavoriteUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
@@ -40,6 +41,7 @@ class BookDetailViewModel(
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeFavoriteUseCase: ObserveFavoriteUseCase,
+    @Provided private val fileImportManager: FileImportManager,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
     BookDetailViewState(),
@@ -112,6 +114,32 @@ class BookDetailViewModel(
             BookDetailIntent.OnFavoriteClicked -> {
                 toggleFavorite()
             }
+
+            BookDetailIntent.OnDeleteLocalBookClicked -> {
+                updateState { it.copy(showDeleteLocalBookConfirmation = true) }
+            }
+
+            BookDetailIntent.OnDeleteLocalBookConfirmed -> {
+                deleteLocalBook()
+                updateState { it.copy(showDeleteLocalBookConfirmation = false) }
+            }
+
+            BookDetailIntent.OnDeleteLocalBookDismissed -> {
+                updateState { it.copy(showDeleteLocalBookConfirmation = false) }
+            }
+        }
+    }
+
+    private fun deleteLocalBook() {
+        viewModelScope.launch {
+            fileImportManager.deleteLocalBook(bookUuid)
+                .onSuccess {
+                    // Navigate back after successful deletion
+                    onBack()
+                }
+                .onFailure { error ->
+                    error.log(analytics, "BookDetailViewModel: Failed to delete local book")
+                }
         }
     }
 

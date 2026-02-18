@@ -105,6 +105,12 @@
     <string name="books_delete_cache_message">Are you sure you want to delete the downloaded %1$s? You can download it again later.</string>
     <string name="books_delete_cache_confirm">Delete</string>
 
+    <!-- Book Detail - Delete Local Book Dialog -->
+    <string name="books_delete_local_title">Delete Local Book?</string>
+    <string name="books_delete_local_message">Are you sure you want to delete \"%1$s\"? This will permanently remove the book and its files from your device.</string>
+    <string name="books_delete_local_confirm">Delete</string>
+    <string name="books_delete_local_button">Delete Book</string>
+
     <!-- Reader Screen -->
     <string name="reader_toc_title">Table of Contents</string>
 

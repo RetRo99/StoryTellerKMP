@@ -14,5 +14,6 @@ data class BookDetailViewState(
     val readaloudDownloadState: DownloadState = DownloadState.Idle,
     val deleteConfirmationBookType: BookType? = null,
     val isFavorite: Boolean = false,
+    val showDeleteLocalBookConfirmation: Boolean = false,
 )
 
