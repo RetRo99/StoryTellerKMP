@@ -300,6 +300,40 @@ class SmilLoadingManager(
     }
 
     /**
+     * Finds the first chapter with audio starting from the given chapter (inclusive).
+     *
+     * This is useful when the user clicks play on a chapter that may not have audio
+     * (e.g., cover page, table of contents). Instead of failing, we find the first
+     * chapter that actually has audio and play that instead.
+     *
+     * @param chapterHref The chapter href to start searching from (inclusive)
+     * @return The first chapter href that has audio, or null if none found
+     */
+    suspend fun findChapterWithAudio(chapterHref: String): String? {
+        val normalized = quickScanner.normalizeChapterHref(chapterHref)
+        val readingOrder = contentProvider.getReadingOrder()
+            .map { quickScanner.normalizeChapterHref(it) }
+
+        val currentIndex = readingOrder.indexOf(normalized)
+        if (currentIndex < 0) {
+            return null
+        }
+
+        // Ensure all SMIL files are scanned so we know which chapters have audio
+        ensureAllSmilFilesScanned()
+
+        // Find the first chapter with audio starting from current (inclusive)
+        for (i in currentIndex until readingOrder.size) {
+            val chapter = readingOrder[i]
+            if (index.hasSmilForChapter(chapter)) {
+                return chapter
+            }
+        }
+
+        return null
+    }
+
+    /**
      * Finds the next chapter in the reading order that has audio (SMIL files).
      *
      * This is useful when the current chapter (e.g., cover page) doesn't have audio,
@@ -319,15 +353,9 @@ class SmilLoadingManager(
         }
 
         // Ensure all SMIL files are scanned so we know which chapters have audio
-        val allSmilHrefs = contentProvider.getAllSmilHrefs()
-        val unscanned = index.getUnscannedSmilFiles(allSmilHrefs)
-        if (unscanned.isNotEmpty()) {
-            for (smilHref in unscanned) {
-                scanSmilFile(smilHref)
-            }
-        }
+        ensureAllSmilFilesScanned()
 
-        // Find the next chapter with audio
+        // Find the next chapter with audio (exclusive of current)
         for (i in (currentIndex + 1) until readingOrder.size) {
             val chapter = readingOrder[i]
             if (index.hasSmilForChapter(chapter)) {
@@ -336,6 +364,19 @@ class SmilLoadingManager(
         }
 
         return null
+    }
+
+    /**
+     * Ensures all SMIL files have been scanned so we know which chapters have audio.
+     */
+    private suspend fun ensureAllSmilFilesScanned() {
+        val allSmilHrefs = contentProvider.getAllSmilHrefs()
+        val unscanned = index.getUnscannedSmilFiles(allSmilHrefs)
+        if (unscanned.isNotEmpty()) {
+            for (smilHref in unscanned) {
+                scanSmilFile(smilHref)
+            }
+        }
     }
 
     /**
