@@ -4,7 +4,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOne
 import com.retro99.base.nowMillis
-import com.retro99.database.implementation.AppDatabase
+import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -15,9 +15,9 @@ import kotlinx.coroutines.withContext
  * SQLDelight DAO for favorites table operations.
  */
 internal class FavoritesSqlDelightDao(
-    private val database: AppDatabase,
+    private val databaseManager: DatabaseManager,
 ) {
-    private val favoriteQueries = database.favoriteQueries
+    private val favoriteQueries get() = databaseManager.getDatabase().favoriteQueries
 
     suspend fun insertFavorite(bookUuid: String) {
         withContext(Dispatchers.IO) {

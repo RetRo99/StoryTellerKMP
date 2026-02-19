@@ -75,6 +75,8 @@ kotlin {
             implementation(projects.lib.server.implementation)
             implementation(projects.lib.serverStoryteller)
             implementation(projects.lib.serverLocal)
+            implementation(projects.lib.user.api)
+            implementation(projects.lib.user.implementation)
             implementation(projects.feature.auth.domain)
             implementation(projects.feature.auth.data)
             implementation(projects.feature.login.ui)

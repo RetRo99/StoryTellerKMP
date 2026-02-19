@@ -3,7 +3,7 @@ package com.retro99.database.implementation.dao.importedbooks
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.retro99.database.api.importedbooks.ImportedBookEntity
-import com.retro99.database.implementation.AppDatabase
+import com.retro99.database.implementation.DatabaseManager
 import com.retro99.database.implementation.Imported_books
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -15,9 +15,9 @@ import kotlinx.coroutines.withContext
  * SQLDelight DAO for imported books table operations.
  */
 internal class ImportedBooksSqlDelightDao(
-    private val database: AppDatabase,
+    private val databaseManager: DatabaseManager,
 ) {
-    private val queries = database.importedBookQueries
+    private val queries get() = databaseManager.getDatabase().importedBookQueries
 
     suspend fun upsertImportedBook(book: ImportedBookEntity) {
         withContext(Dispatchers.IO) {

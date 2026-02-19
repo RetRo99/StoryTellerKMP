@@ -56,7 +56,7 @@ class PlaybackStateTracker(
     private val foregroundServiceController: ForegroundServiceController,
     private val locatorTracker: LocatorTracker,
 ) {
-    private val logger = Logger.withTag("PlaybackStateTracker")
+    private val logger = Logger.withTag("čič")
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()

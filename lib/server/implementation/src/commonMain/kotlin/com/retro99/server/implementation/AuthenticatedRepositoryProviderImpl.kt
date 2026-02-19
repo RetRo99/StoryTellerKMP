@@ -19,7 +19,7 @@ class AuthenticatedRepositoryProviderImpl(
     private val readerRepositoryFactory: ReaderRepositoryFactory,
 ) : AuthenticatedRepositoryProvider {
 
-    private val logger = Logger.withTag("čič-AuthenticatedRepositoryProvider")
+    private val logger = Logger.withTag("čič")
 
     override fun observeBooksRepositories(): Flow<List<ServerBooksRepository>> {
         return serverRegistry.observeAuthenticatedServers()

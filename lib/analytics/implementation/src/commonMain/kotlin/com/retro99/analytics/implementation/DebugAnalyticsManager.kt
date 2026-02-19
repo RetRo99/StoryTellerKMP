@@ -12,7 +12,7 @@ class DebugAnalyticsManager(
     private val preferences: Preferences,
 ) : Analytics {
 
-    private val logger = Logger.withTag("DebugAnalyticsManager")
+    private val logger = Logger.withTag("čič")
 
     override fun logException(throwable: Throwable, message: String?) {
         logger.e(throwable) {

@@ -1,6 +1,6 @@
 package com.retro99.database.implementation.dao.books
 
-import com.retro99.database.implementation.AppDatabase
+import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -9,23 +9,24 @@ import kotlinx.coroutines.withContext
  * SQLDelight DAO for books table operations.
  */
 internal class BooksSqlDelightDao(
-    private val database: AppDatabase,
+    private val databaseManager: DatabaseManager,
 ) {
-    private val bookQueries = database.bookQueries
-    private val personQueries = database.personQueries
-    private val seriesQueries = database.seriesQueries
-    private val tagQueries = database.tagQueries
-    private val collectionQueries = database.collectionQueries
-    private val statusQueries = database.statusQueries
-    private val bookAuthorQueries = database.bookAuthorQueries
-    private val bookNarratorQueries = database.bookNarratorQueries
-    private val bookCreatorQueries = database.bookCreatorQueries
-    private val bookSeriesQueries = database.bookSeriesQueries
-    private val bookTagQueries = database.bookTagQueries
-    private val bookCollectionQueries = database.bookCollectionQueries
-    private val mediaFileQueries = database.mediaFileQueries
-    private val readaloudQueries = database.readaloudQueries
-    private val positionQueries = database.positionQueries
+    private val database get() = databaseManager.getDatabase()
+    private val bookQueries get() = database.bookQueries
+    private val personQueries get() = database.personQueries
+    private val seriesQueries get() = database.seriesQueries
+    private val tagQueries get() = database.tagQueries
+    private val collectionQueries get() = database.collectionQueries
+    private val statusQueries get() = database.statusQueries
+    private val bookAuthorQueries get() = database.bookAuthorQueries
+    private val bookNarratorQueries get() = database.bookNarratorQueries
+    private val bookCreatorQueries get() = database.bookCreatorQueries
+    private val bookSeriesQueries get() = database.bookSeriesQueries
+    private val bookTagQueries get() = database.bookTagQueries
+    private val bookCollectionQueries get() = database.bookCollectionQueries
+    private val mediaFileQueries get() = database.mediaFileQueries
+    private val readaloudQueries get() = database.readaloudQueries
+    private val positionQueries get() = database.positionQueries
 
     // ==================== BOOK OPERATIONS ====================
 

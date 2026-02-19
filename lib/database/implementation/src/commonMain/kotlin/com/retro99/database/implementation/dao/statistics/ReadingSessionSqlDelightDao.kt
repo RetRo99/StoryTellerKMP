@@ -3,7 +3,7 @@ package com.retro99.database.implementation.dao.statistics
 import com.retro99.database.api.statistics.BookReadingStatsEntity
 import com.retro99.database.api.statistics.DailyReadingTimeEntity
 import com.retro99.database.api.statistics.ReadingSessionEntity
-import com.retro99.database.implementation.AppDatabase
+import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -12,9 +12,9 @@ import kotlinx.coroutines.withContext
  * SQLDelight DAO for reading_session table operations.
  */
 internal class ReadingSessionSqlDelightDao(
-    private val database: AppDatabase,
+    private val databaseManager: DatabaseManager,
 ) {
-    private val queries = database.readingSessionQueries
+    private val queries get() = databaseManager.getDatabase().readingSessionQueries
 
     suspend fun insertSession(session: ReadingSessionEntity) {
         withContext(Dispatchers.IO) {
