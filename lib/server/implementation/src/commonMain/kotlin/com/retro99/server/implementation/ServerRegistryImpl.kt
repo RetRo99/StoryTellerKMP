@@ -10,14 +10,22 @@ import com.retro99.server.api.ServerConfig
 import com.retro99.server.api.ServerCredentials
 import com.retro99.server.api.ServerRegistry
 import com.retro99.server.api.ServerType
+import com.retro99.user.api.UserRegistry
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
+import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -25,40 +33,90 @@ import kotlin.uuid.Uuid
 @Single(binds = [ServerRegistry::class])
 class ServerRegistryImpl(
     private val preferences: Preferences,
+    @Provided private val userRegistry: UserRegistry,
 ) : ServerRegistry {
 
-    private val logger = Logger.withTag("čič-ServerRegistry")
+    private val logger = Logger.withTag("čič")
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val mutex = Mutex()
 
-    // In-memory cache backed by preferences
+    // In-memory cache backed by preferences (scoped to active user)
     private val _servers = MutableStateFlow<Map<String, ServerConfig>>(emptyMap())
     private val _credentials = MutableStateFlow<Map<String, ServerCredentials>>(emptyMap())
     private val _activeServerId = MutableStateFlow<String?>(null)
 
+    // Track current user to detect switches
+    private var currentUserId: String? = null
+
     init {
-        loadFromPreferences()
+        // Load data for initial active user
+        loadForActiveUser()
+
+        // React to user profile changes
+        userRegistry.observeActiveProfile()
+            .map { it?.id }
+            .distinctUntilChanged()
+            .onEach { userId ->
+                if (userId != currentUserId) {
+                    logger.d { "User changed from $currentUserId to $userId, reloading servers" }
+                    reloadForUser(userId)
+                }
+            }
+            .launchIn(scope)
     }
 
-    private fun loadFromPreferences() {
-        // Load servers
-        val servers = preferences.getObject<List<ServerConfig>>(PreferencesKey.RegisteredServers)
+    private fun loadForActiveUser() {
+        val userId = userRegistry.getActiveProfileId()
+        reloadForUser(userId)
+    }
+
+    private fun reloadForUser(userId: String?) {
+        currentUserId = userId
+
+        if (userId == null) {
+            // No active user, clear state
+            _servers.value = emptyMap()
+            _credentials.value = emptyMap()
+            _activeServerId.value = null
+            logger.d { "No active user, cleared server state" }
+            return
+        }
+
+        loadFromPreferences(userId)
+    }
+
+    private fun loadFromPreferences(userId: String) {
+        // Load servers for this user
+        val serversKey = PreferencesKey.UserScoped(userId, "RegisteredServers")
+        val servers = preferences.getObject<List<ServerConfig>>(serversKey)
         if (servers != null) {
             _servers.value = servers.associateBy { it.id }
-            logger.d { "Loaded ${servers.size} servers from preferences" }
+            logger.d { "Loaded ${servers.size} servers for user $userId" }
+        } else {
+            _servers.value = emptyMap()
         }
 
-        // Load credentials
-        val credentials = preferences.getObject<List<ServerCredentials>>(PreferencesKey.ServerCredentials)
+        // Load credentials for this user
+        val credentialsKey = PreferencesKey.UserScoped(userId, "ServerCredentials")
+        val credentials = preferences.getObject<List<ServerCredentials>>(credentialsKey)
         if (credentials != null) {
             _credentials.value = credentials.associateBy { it.serverId }
-            logger.d { "Loaded ${credentials.size} credentials from preferences" }
+            logger.d { "Loaded ${credentials.size} credentials for user $userId" }
+        } else {
+            _credentials.value = emptyMap()
         }
 
-        // Load active server
-        val activeId = preferences.getStringOrNull(PreferencesKey.ActiveServerId)
+        // Load active server for this user
+        val activeServerKey = PreferencesKey.UserScoped(userId, "ActiveServerId")
+        val activeId = preferences.getStringOrNull(activeServerKey)
         _activeServerId.value = activeId
-        logger.d { "Loaded active server: $activeId" }
+        logger.d { "Loaded active server for user $userId: $activeId" }
+    }
+
+    private fun requireUserId(): String {
+        return currentUserId
+            ?: throw IllegalStateException("No active user profile. Cannot access servers.")
     }
 
     // ==================== Server Management ====================
@@ -231,25 +289,31 @@ class ServerRegistryImpl(
     // ==================== Persistence ====================
 
     private fun persistServers() {
+        val userId = currentUserId ?: return
         val serversList = _servers.value.values.toList()
-        preferences.putObject(PreferencesKey.RegisteredServers, serversList)
-        logger.d { "Persisted ${serversList.size} servers" }
+        val key = PreferencesKey.UserScoped(userId, "RegisteredServers")
+        preferences.putObject(key, serversList)
+        logger.d { "Persisted ${serversList.size} servers for user $userId" }
     }
 
     private fun persistCredentials() {
+        val userId = currentUserId ?: return
         val credentialsList = _credentials.value.values.toList()
-        preferences.putObject(PreferencesKey.ServerCredentials, credentialsList)
-        logger.d { "Persisted ${credentialsList.size} credentials" }
+        val key = PreferencesKey.UserScoped(userId, "ServerCredentials")
+        preferences.putObject(key, credentialsList)
+        logger.d { "Persisted ${credentialsList.size} credentials for user $userId" }
     }
 
     private fun persistActiveServer() {
+        val userId = currentUserId ?: return
         val activeId = _activeServerId.value
+        val key = PreferencesKey.UserScoped(userId, "ActiveServerId")
         if (activeId != null) {
-            preferences.putString(PreferencesKey.ActiveServerId, activeId)
+            preferences.putString(key, activeId)
         } else {
-            preferences.remove(PreferencesKey.ActiveServerId)
+            preferences.remove(key)
         }
-        logger.d { "Persisted active server: $activeId" }
+        logger.d { "Persisted active server for user $userId: $activeId" }
     }
 }
 

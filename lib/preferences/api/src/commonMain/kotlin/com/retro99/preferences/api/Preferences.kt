@@ -40,4 +40,16 @@ sealed class PreferencesKey(val name: String) {
     data object ServerCredentials : PreferencesKey("ServerCredentials")
     data object ActiveServerId : PreferencesKey("ActiveServerId")
     data object SkippedLogin : PreferencesKey("SkippedLogin")
+
+    // User profile keys (device-level, not user-scoped)
+    data object UserProfiles : PreferencesKey("UserProfiles")
+    data object ActiveProfileId : PreferencesKey("ActiveProfileId")
+    data object ProfileMigrationVersion : PreferencesKey("ProfileMigrationVersion")
+
+    /**
+     * Dynamic key for user-scoped preferences.
+     * Used to store per-user data like servers, credentials, settings.
+     * Example: UserScoped("abc123", "RegisteredServers") -> "user_abc123_RegisteredServers"
+     */
+    data class UserScoped(val userId: String, val key: String) : PreferencesKey("user_${userId}_$key")
 }

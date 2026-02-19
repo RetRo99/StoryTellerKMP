@@ -31,7 +31,7 @@ import org.koin.core.annotation.Provided
 class GetBooksUseCase(
     @Provided private val repositoryProvider: AuthenticatedRepositoryProvider,
 ) {
-    private val logger = Logger.withTag("GetBooksUseCase")
+    private val logger = Logger.withTag("čič")
 
     operator fun invoke(): Flow<AppResult<List<BookDomainModel>>> {
         return repositoryProvider.observeBooksRepositories()

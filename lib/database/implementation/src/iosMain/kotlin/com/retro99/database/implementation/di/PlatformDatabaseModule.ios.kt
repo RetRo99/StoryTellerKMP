@@ -5,7 +5,9 @@ package com.retro99.database.implementation.di
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.retro99.analytics.api.Analytics
+import com.retro99.database.api.DatabaseNameProvider
 import com.retro99.database.implementation.AppDatabase
+import com.retro99.database.implementation.SqlDriverFactory
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import org.koin.core.annotation.Module
@@ -15,55 +17,74 @@ import platform.Foundation.NSFileManager
 import platform.Foundation.NSLibraryDirectory
 import platform.Foundation.NSUserDomainMask
 
-private const val DATABASE_NAME = "parrot.db"
-
 /**
  * iOS implementation of platform-specific Database module.
- * Provides SQLDelight driver using iOS native driver.
+ * Provides SqlDriverFactory for creating per-user database drivers.
  */
 @Module
 actual class PlatformDatabaseModule {
 
     @Single
-    fun providesSqlDriver(
+    fun providesSqlDriverFactory(
         @Provided preferences: Preferences,
         @Provided analytics: Analytics,
-    ): SqlDriver {
+    ): SqlDriverFactory {
+        return IosSqlDriverFactory(preferences, analytics)
+    }
+}
+
+private class IosSqlDriverFactory(
+    private val preferences: Preferences,
+    private val analytics: Analytics,
+) : SqlDriverFactory {
+
+    override fun createDriver(userId: String): SqlDriver {
+        val databaseName = DatabaseNameProvider.buildDatabaseName(userId)
         val currentSchemaVersion = AppDatabase.Schema.version
-        val storedVersion = preferences.getLong(PreferencesKey.DatabaseSchemaVersion)
+
+        // Use user-scoped schema version key
+        val schemaVersionKey = PreferencesKey.UserScoped(userId, "DatabaseSchemaVersion")
+        val storedVersion = preferences.getLong(schemaVersionKey)
 
         // If schema version changed, delete old database (destructive migration)
         // Data will be re-fetched from server since this is a cache
         if (storedVersion != currentSchemaVersion) {
-            deleteDatabaseFile(analytics)
-            preferences.putLong(PreferencesKey.DatabaseSchemaVersion, currentSchemaVersion)
+            deleteDatabaseFile(databaseName)
+            preferences.putLong(schemaVersionKey, currentSchemaVersion)
         }
 
         return NativeSqliteDriver(
             schema = AppDatabase.Schema,
-            name = DATABASE_NAME,
+            name = databaseName,
         )
     }
 
-    private fun deleteDatabaseFile(analytics: Analytics) {
+    override fun deleteUserDatabase(userId: String): Boolean {
+        val databaseName = DatabaseNameProvider.buildDatabaseName(userId)
+        return deleteDatabaseFile(databaseName)
+    }
+
+    private fun deleteDatabaseFile(databaseName: String): Boolean {
         val fileManager = NSFileManager.defaultManager
         val libraryPaths = fileManager.URLsForDirectory(
             NSLibraryDirectory,
             NSUserDomainMask,
         )
-        val libraryUrl = libraryPaths.firstOrNull() ?: return
+        val libraryUrl = libraryPaths.firstOrNull() ?: return true
 
         @Suppress("UNCHECKED_CAST")
-        val libraryPath = (libraryUrl as platform.Foundation.NSURL).path ?: return
-        val dbPath = "$libraryPath/$DATABASE_NAME"
+        val libraryPath = (libraryUrl as platform.Foundation.NSURL).path ?: return true
+        val dbPath = "$libraryPath/$databaseName"
 
         if (fileManager.fileExistsAtPath(dbPath)) {
-            runCatching { fileManager.removeItemAtPath(dbPath, null) }
+            return runCatching { fileManager.removeItemAtPath(dbPath, null) }
                 .onFailure { e ->
                     // Don't log full path for privacy - only log database name
-                    analytics.logException(e, "Failed to delete database file: $DATABASE_NAME")
+                    analytics.logException(e, "Failed to delete database file: $databaseName")
                 }
+                .isSuccess
         }
+        return true
     }
 }
 

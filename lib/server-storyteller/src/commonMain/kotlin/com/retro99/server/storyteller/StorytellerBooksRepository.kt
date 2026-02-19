@@ -29,7 +29,7 @@ class StorytellerBooksRepository(
     private val localSource: ServerBooksLocalSource,
 ) : ServerBooksRepository, BaseRepository {
 
-    private val logger = Logger.withTag("čič-StorytellerBooksRepository")
+    private val logger = Logger.withTag("čič")
 
     override val serverId: String = networkClient.serverId
     private val baseUrl: String? = networkClient.baseUrl

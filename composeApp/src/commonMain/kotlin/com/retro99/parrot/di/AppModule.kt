@@ -28,21 +28,27 @@ import com.retro99.settings.ui.di.SettingsUiModule
 import com.retro99.statistics.data.di.StatisticsDataModule
 import com.retro99.statistics.domain.di.StatisticsDomainModule
 import com.retro99.statistics.ui.di.StatisticsUiModule
+import com.retro99.user.implementation.di.UserModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 
 @Module(
     includes = [
+        // Core infrastructure modules (order matters - dependencies first)
         AnalyticsModule::class,
-        BaseUiModule::class,
-        BuildConfigModule::class,
+        PreferencesModule::class,
+        UserModule::class,  // Must be before modules that depend on UserRegistry
         DatabaseModule::class,
         NetworkingModule::class,
-        PreferencesModule::class,
         ServerModule::class,
+        // Base modules
+        BaseUiModule::class,
+        BuildConfigModule::class,
+        // Server implementations
         StorytellerModule::class,
         LocalServerModule::class,
+        // Feature modules
         AuthDomainModule::class,
         AuthDataModule::class,
         LoginUiModule::class,

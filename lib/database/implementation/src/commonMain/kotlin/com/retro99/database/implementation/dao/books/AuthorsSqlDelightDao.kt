@@ -1,6 +1,6 @@
 package com.retro99.database.implementation.dao.books
 
-import com.retro99.database.implementation.AppDatabase
+import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -10,9 +10,9 @@ import kotlinx.coroutines.withContext
  * Handles standalone creators from /api/v2/creators endpoint.
  */
 internal class AuthorsSqlDelightDao(
-    private val database: AppDatabase,
+    private val databaseManager: DatabaseManager,
 ) {
-    private val authorQueries = database.authorQueries
+    private val authorQueries get() = databaseManager.getDatabase().authorQueries
 
     suspend fun upsertAuthor(author: PersonSqlDelightEntity) {
         withContext(Dispatchers.IO) {
