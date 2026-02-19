@@ -13,5 +13,13 @@ sealed interface AppSettingsIntent : BaseIntent {
     data object OnAddProfileClicked : AppSettingsIntent
     data class OnAddProfileConfirmed(val name: String) : AppSettingsIntent
     data object OnAddProfileDismissed : AppSettingsIntent
+    data class OnProfileLongPressed(val profileId: String) : AppSettingsIntent
+    data object OnProfileMenuDismissed : AppSettingsIntent
+    data object OnRenameProfileClicked : AppSettingsIntent
+    data class OnRenameProfileConfirmed(val newName: String) : AppSettingsIntent
+    data object OnRenameProfileDismissed : AppSettingsIntent
+    data object OnDeleteProfileClicked : AppSettingsIntent
+    data object OnDeleteProfileConfirmed : AppSettingsIntent
+    data object OnDeleteProfileDismissed : AppSettingsIntent
 }
 

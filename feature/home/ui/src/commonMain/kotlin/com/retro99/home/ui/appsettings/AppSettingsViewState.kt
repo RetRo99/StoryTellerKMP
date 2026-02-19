@@ -11,5 +11,11 @@ data class AppSettingsViewState(
     val userProfiles: List<UserProfile> = emptyList(),
     val activeProfile: UserProfile? = null,
     val showAddProfileDialog: Boolean = false,
-)
+    val selectedProfileForMenu: UserProfile? = null,
+    val showRenameProfileDialog: Boolean = false,
+    val showDeleteProfileDialog: Boolean = false,
+) {
+    val canDeleteSelectedProfile: Boolean
+        get() = userProfiles.size > 1
+}
 

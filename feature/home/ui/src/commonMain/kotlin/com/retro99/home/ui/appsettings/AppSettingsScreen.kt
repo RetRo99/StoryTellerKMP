@@ -1,6 +1,8 @@
 package com.retro99.home.ui.appsettings
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -157,18 +161,48 @@ private fun AppSettingsScreenContent(
             ProfilesRow(
                 profiles = viewState.userProfiles,
                 activeProfile = viewState.activeProfile,
+                selectedProfileForMenu = viewState.selectedProfileForMenu,
                 onProfileSelected = { profileId ->
                     intentDispatcher(AppSettingsIntent.OnProfileSelected(profileId))
+                },
+                onProfileLongPressed = { profileId ->
+                    intentDispatcher(AppSettingsIntent.OnProfileLongPressed(profileId))
                 },
                 onAddProfileClicked = {
                     intentDispatcher(AppSettingsIntent.OnAddProfileClicked)
                 },
+                onMenuDismissed = {
+                    intentDispatcher(AppSettingsIntent.OnProfileMenuDismissed)
+                },
+                onRenameClicked = {
+                    intentDispatcher(AppSettingsIntent.OnRenameProfileClicked)
+                },
+                onDeleteClicked = {
+                    intentDispatcher(AppSettingsIntent.OnDeleteProfileClicked)
+                },
+                canDelete = viewState.canDeleteSelectedProfile,
             )
 
             if (viewState.showAddProfileDialog) {
                 AddProfileDialog(
                     onDismiss = { intentDispatcher(AppSettingsIntent.OnAddProfileDismissed) },
                     onConfirm = { name -> intentDispatcher(AppSettingsIntent.OnAddProfileConfirmed(name)) },
+                )
+            }
+
+            if (viewState.showRenameProfileDialog && viewState.selectedProfileForMenu != null) {
+                RenameProfileDialog(
+                    currentName = viewState.selectedProfileForMenu.name,
+                    onDismiss = { intentDispatcher(AppSettingsIntent.OnRenameProfileDismissed) },
+                    onConfirm = { newName -> intentDispatcher(AppSettingsIntent.OnRenameProfileConfirmed(newName)) },
+                )
+            }
+
+            if (viewState.showDeleteProfileDialog && viewState.selectedProfileForMenu != null) {
+                DeleteProfileConfirmationDialog(
+                    profileName = viewState.selectedProfileForMenu.name,
+                    onDismiss = { intentDispatcher(AppSettingsIntent.OnDeleteProfileDismissed) },
+                    onConfirm = { intentDispatcher(AppSettingsIntent.OnDeleteProfileConfirmed) },
                 )
             }
 
@@ -393,8 +427,14 @@ private fun SettingsToggleItem(
 private fun ProfilesRow(
     profiles: List<UserProfile>,
     activeProfile: UserProfile?,
+    selectedProfileForMenu: UserProfile?,
     onProfileSelected: (String) -> Unit,
+    onProfileLongPressed: (String) -> Unit,
     onAddProfileClicked: () -> Unit,
+    onMenuDismissed: () -> Unit,
+    onRenameClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    canDelete: Boolean,
     modifier: Modifier = Modifier,
 ) {
     LazyRow(
@@ -408,7 +448,13 @@ private fun ProfilesRow(
             ProfileItem(
                 profile = profile,
                 isActive = profile.id == activeProfile?.id,
+                isMenuVisible = selectedProfileForMenu?.id == profile.id,
                 onClick = { onProfileSelected(profile.id) },
+                onLongClick = { onProfileLongPressed(profile.id) },
+                onMenuDismissed = onMenuDismissed,
+                onRenameClicked = onRenameClicked,
+                onDeleteClicked = onDeleteClicked,
+                canDelete = canDelete,
             )
         }
         item(key = "add_profile") {
@@ -417,75 +463,103 @@ private fun ProfilesRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProfileItem(
     profile: UserProfile,
     isActive: Boolean,
+    isMenuVisible: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onMenuDismissed: () -> Unit,
+    onRenameClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    canDelete: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .width(80.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            },
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isActive) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outline
-                        }
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (isActive) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Active profile",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp),
-                    )
+    Box {
+        Card(
+            modifier = modifier
+                .width(80.dp)
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isActive) {
+                    MaterialTheme.colorScheme.primaryContainer
                 } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = profile.name,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isActive) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    MaterialTheme.colorScheme.surfaceVariant
                 },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isActive) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            }
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isActive) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Active profile",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = profile.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isActive) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = isMenuVisible,
+            onDismissRequest = onMenuDismissed,
+        ) {
+            DropdownMenuItem(
+                text = { Text("Rename") },
+                onClick = onRenameClicked,
             )
+            if (canDelete) {
+                DropdownMenuItem(
+                    text = { Text("Delete") },
+                    onClick = onDeleteClicked,
+                )
+            }
         }
     }
 }
@@ -564,6 +638,71 @@ private fun AddProfileDialog(
                 enabled = profileName.isNotBlank(),
             ) {
                 Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun RenameProfileDialog(
+    currentName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var profileName by remember { mutableStateOf(currentName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Rename Profile")
+        },
+        text = {
+            OutlinedTextField(
+                value = profileName,
+                onValueChange = { profileName = it },
+                label = { Text("Profile name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(profileName) },
+                enabled = profileName.isNotBlank(),
+            ) {
+                Text("Rename")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun DeleteProfileConfirmationDialog(
+    profileName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Delete Profile")
+        },
+        text = {
+            Text(text = "Are you sure you want to delete the profile \"$profileName\"? This will remove all associated data.")
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Delete")
             }
         },
         dismissButton = {
