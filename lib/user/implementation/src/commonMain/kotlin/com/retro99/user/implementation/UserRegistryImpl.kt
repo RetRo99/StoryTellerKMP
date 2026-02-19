@@ -24,7 +24,7 @@ class UserRegistryImpl(
     private val preferences: Preferences,
 ) : UserRegistry {
 
-    private val logger = Logger.withTag("čič")
+    private val logger = Logger.withTag("UserRegistry")
 
     private val mutex = Mutex()
 
