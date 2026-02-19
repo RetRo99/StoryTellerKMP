@@ -70,12 +70,31 @@ class AppSettingsViewModel(
             AppSettingsIntent.OnLogsClearedMessageShown -> onLogsClearedMessageShown()
             AppSettingsIntent.OnNoLogsMessageShown -> onNoLogsMessageShown()
             is AppSettingsIntent.OnProfileSelected -> selectProfile(intent.profileId)
+            AppSettingsIntent.OnAddProfileClicked -> showAddProfileDialog()
+            is AppSettingsIntent.OnAddProfileConfirmed -> addProfile(intent.name)
+            AppSettingsIntent.OnAddProfileDismissed -> hideAddProfileDialog()
         }
     }
 
     private fun selectProfile(profileId: String) {
         viewModelScope.launch {
             userRegistry.setActiveProfile(profileId)
+        }
+    }
+
+    private fun showAddProfileDialog() {
+        updateState { it.copy(showAddProfileDialog = true) }
+    }
+
+    private fun hideAddProfileDialog() {
+        updateState { it.copy(showAddProfileDialog = false) }
+    }
+
+    private fun addProfile(name: String) {
+        viewModelScope.launch {
+            val profile = userRegistry.createProfile(name = name)
+            userRegistry.setActiveProfile(profile.id)
+            updateState { it.copy(showAddProfileDialog = false) }
         }
     }
 

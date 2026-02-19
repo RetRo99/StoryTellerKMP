@@ -10,5 +10,8 @@ sealed interface AppSettingsIntent : BaseIntent {
     data object OnLogsClearedMessageShown : AppSettingsIntent
     data object OnNoLogsMessageShown : AppSettingsIntent
     data class OnProfileSelected(val profileId: String) : AppSettingsIntent
+    data object OnAddProfileClicked : AppSettingsIntent
+    data class OnAddProfileConfirmed(val name: String) : AppSettingsIntent
+    data object OnAddProfileDismissed : AppSettingsIntent
 }
 

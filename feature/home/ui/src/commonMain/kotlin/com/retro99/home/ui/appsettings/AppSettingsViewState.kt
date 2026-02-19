@@ -10,5 +10,6 @@ data class AppSettingsViewState(
     val hasAuthenticatedRemoteServers: Boolean = false,
     val userProfiles: List<UserProfile> = emptyList(),
     val activeProfile: UserProfile? = null,
+    val showAddProfileDialog: Boolean = false,
 )
 
