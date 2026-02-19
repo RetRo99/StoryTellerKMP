@@ -8,6 +8,14 @@ import kotlinx.coroutines.flow.Flow
  */
 interface UserRegistry {
 
+    companion object {
+        /**
+         * The default user ID used when no profile is active.
+         * This is also the ID of the default profile created on first launch.
+         */
+        const val DEFAULT_USER_ID = "default"
+    }
+
     // ==================== Profile Management ====================
 
     /**
@@ -22,9 +30,12 @@ interface UserRegistry {
 
     /**
      * Create a new user profile.
-     * @return The created UserProfile with generated ID
+     * @param id Optional ID for the profile. If null, a random UUID will be generated.
+     * @param name The display name for the profile.
+     * @param avatarId Optional avatar ID for the profile.
+     * @return The created UserProfile
      */
-    suspend fun createProfile(name: String, avatarId: Int? = null): UserProfile
+    suspend fun createProfile(id: String? = null, name: String, avatarId: Int? = null): UserProfile
 
     /**
      * Update an existing profile.
@@ -58,6 +69,13 @@ interface UserRegistry {
      * @return The active profile ID or null if no profile is active
      */
     fun getActiveProfileId(): String?
+
+    /**
+     * Get the currently active profile ID, or the default user ID if no profile is active.
+     * This is useful for file paths and preferences that need a user ID even before login.
+     * @return The active profile ID or [DEFAULT_USER_ID] if no profile is active
+     */
+    fun getActiveProfileIdOrDefault(): String = getActiveProfileId() ?: DEFAULT_USER_ID
 
     /**
      * Set the active profile.

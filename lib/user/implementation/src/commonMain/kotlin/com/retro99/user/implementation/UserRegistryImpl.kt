@@ -61,9 +61,10 @@ class UserRegistryImpl(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    override suspend fun createProfile(name: String, avatarId: Int?): UserProfile = mutex.withLock {
+    override suspend fun createProfile(id: String?, name: String, avatarId: Int?): UserProfile = mutex.withLock {
+        val profileId = id ?: Uuid.random().toString()
         val profile = UserProfile(
-            id = Uuid.random().toString(),
+            id = profileId,
             name = name,
             avatarId = avatarId,
             createdAt = Clock.System.now().toEpochMilliseconds(),
@@ -194,6 +195,7 @@ class UserRegistryImpl(
             PreferencesKey.ReaderSettings,
             PreferencesKey.CurrentlyReading,
             PreferencesKey.SkippedLogin,
+            PreferencesKey.BubblePosition,
         )
 
         userScopedKeys.forEach { key ->
