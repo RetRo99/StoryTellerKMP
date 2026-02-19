@@ -36,7 +36,7 @@ class ServerRegistryImpl(
     @Provided private val userRegistry: UserRegistry,
 ) : ServerRegistry {
 
-    private val logger = Logger.withTag("čič")
+    private val logger = Logger.withTag("ServerRegistry")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val mutex = Mutex()
@@ -47,6 +47,7 @@ class ServerRegistryImpl(
     private val _activeServerId = MutableStateFlow<String?>(null)
 
     // Track current user to detect switches
+    @Volatile
     private var currentUserId: String? = null
 
     init {
@@ -54,24 +55,34 @@ class ServerRegistryImpl(
         loadForActiveUser()
 
         // React to user profile changes
+        // Use getActiveProfileId() directly to avoid null emission when profile not yet in map
         userRegistry.observeActiveProfile()
             .map { it?.id }
             .distinctUntilChanged()
             .onEach { userId ->
-                if (userId != currentUserId) {
-                    logger.d { "User changed from $currentUserId to $userId, reloading servers" }
-                    reloadForUser(userId)
-                }
+                reloadForUserIfChanged(userId)
             }
             .launchIn(scope)
     }
 
     private fun loadForActiveUser() {
+        // Called during init - no other coroutines running yet, safe without mutex
         val userId = userRegistry.getActiveProfileId()
-        reloadForUser(userId)
+        reloadForUserInternal(userId)
     }
 
-    private fun reloadForUser(userId: String?) {
+    private suspend fun reloadForUserIfChanged(userId: String?) = mutex.withLock {
+        if (userId != currentUserId) {
+            reloadForUserInternal(userId)
+        }
+    }
+
+    /**
+     * Internal reload - must be called either:
+     * 1. During init (no concurrency)
+     * 2. While holding the mutex
+     */
+    private fun reloadForUserInternal(userId: String?) {
         currentUserId = userId
 
         if (userId == null) {
@@ -79,7 +90,6 @@ class ServerRegistryImpl(
             _servers.value = emptyMap()
             _credentials.value = emptyMap()
             _activeServerId.value = null
-            logger.d { "No active user, cleared server state" }
             return
         }
 
@@ -92,7 +102,6 @@ class ServerRegistryImpl(
         val servers = preferences.getObject<List<ServerConfig>>(serversKey)
         if (servers != null) {
             _servers.value = servers.associateBy { it.id }
-            logger.d { "Loaded ${servers.size} servers for user $userId" }
         } else {
             _servers.value = emptyMap()
         }
@@ -102,7 +111,6 @@ class ServerRegistryImpl(
         val credentials = preferences.getObject<List<ServerCredentials>>(credentialsKey)
         if (credentials != null) {
             _credentials.value = credentials.associateBy { it.serverId }
-            logger.d { "Loaded ${credentials.size} credentials for user $userId" }
         } else {
             _credentials.value = emptyMap()
         }
@@ -111,12 +119,6 @@ class ServerRegistryImpl(
         val activeServerKey = PreferencesKey.UserScoped(userId, PreferencesKey.ActiveServerId.name)
         val activeId = preferences.getStringOrNull(activeServerKey)
         _activeServerId.value = activeId
-        logger.d { "Loaded active server for user $userId: $activeId" }
-    }
-
-    private fun requireUserId(): String {
-        return currentUserId
-            ?: throw IllegalStateException("No active user profile. Cannot access servers.")
     }
 
     // ==================== Server Management ====================
@@ -293,7 +295,6 @@ class ServerRegistryImpl(
         val serversList = _servers.value.values.toList()
         val key = PreferencesKey.UserScoped(userId, PreferencesKey.RegisteredServers.name)
         preferences.putObject(key, serversList)
-        logger.d { "Persisted ${serversList.size} servers for user $userId" }
     }
 
     private fun persistCredentials() {
@@ -301,7 +302,6 @@ class ServerRegistryImpl(
         val credentialsList = _credentials.value.values.toList()
         val key = PreferencesKey.UserScoped(userId, PreferencesKey.ServerCredentials.name)
         preferences.putObject(key, credentialsList)
-        logger.d { "Persisted ${credentialsList.size} credentials for user $userId" }
     }
 
     private fun persistActiveServer() {
@@ -313,7 +313,6 @@ class ServerRegistryImpl(
         } else {
             preferences.remove(key)
         }
-        logger.d { "Persisted active server for user $userId: $activeId" }
     }
 }
 
