@@ -88,7 +88,7 @@ class ServerRegistryImpl(
 
     private fun loadFromPreferences(userId: String) {
         // Load servers for this user
-        val serversKey = PreferencesKey.UserScoped(userId, "RegisteredServers")
+        val serversKey = PreferencesKey.UserScoped(userId, PreferencesKey.RegisteredServers.name)
         val servers = preferences.getObject<List<ServerConfig>>(serversKey)
         if (servers != null) {
             _servers.value = servers.associateBy { it.id }
@@ -98,7 +98,7 @@ class ServerRegistryImpl(
         }
 
         // Load credentials for this user
-        val credentialsKey = PreferencesKey.UserScoped(userId, "ServerCredentials")
+        val credentialsKey = PreferencesKey.UserScoped(userId, PreferencesKey.ServerCredentials.name)
         val credentials = preferences.getObject<List<ServerCredentials>>(credentialsKey)
         if (credentials != null) {
             _credentials.value = credentials.associateBy { it.serverId }
@@ -108,7 +108,7 @@ class ServerRegistryImpl(
         }
 
         // Load active server for this user
-        val activeServerKey = PreferencesKey.UserScoped(userId, "ActiveServerId")
+        val activeServerKey = PreferencesKey.UserScoped(userId, PreferencesKey.ActiveServerId.name)
         val activeId = preferences.getStringOrNull(activeServerKey)
         _activeServerId.value = activeId
         logger.d { "Loaded active server for user $userId: $activeId" }
@@ -291,7 +291,7 @@ class ServerRegistryImpl(
     private fun persistServers() {
         val userId = currentUserId ?: return
         val serversList = _servers.value.values.toList()
-        val key = PreferencesKey.UserScoped(userId, "RegisteredServers")
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.RegisteredServers.name)
         preferences.putObject(key, serversList)
         logger.d { "Persisted ${serversList.size} servers for user $userId" }
     }
@@ -299,7 +299,7 @@ class ServerRegistryImpl(
     private fun persistCredentials() {
         val userId = currentUserId ?: return
         val credentialsList = _credentials.value.values.toList()
-        val key = PreferencesKey.UserScoped(userId, "ServerCredentials")
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.ServerCredentials.name)
         preferences.putObject(key, credentialsList)
         logger.d { "Persisted ${credentialsList.size} credentials for user $userId" }
     }
@@ -307,7 +307,7 @@ class ServerRegistryImpl(
     private fun persistActiveServer() {
         val userId = currentUserId ?: return
         val activeId = _activeServerId.value
-        val key = PreferencesKey.UserScoped(userId, "ActiveServerId")
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.ActiveServerId.name)
         if (activeId != null) {
             preferences.putString(key, activeId)
         } else {

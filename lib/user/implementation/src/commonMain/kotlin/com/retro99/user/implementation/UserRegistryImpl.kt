@@ -188,16 +188,16 @@ class UserRegistryImpl(
     private fun clearUserPreferences(userId: String) {
         // List of keys that are stored per-user
         val userScopedKeys = listOf(
-            "RegisteredServers",
-            "ServerCredentials",
-            "ActiveServerId",
-            "ReaderSettings",
-            "CurrentlyReading",
-            "SkippedLogin",
+            PreferencesKey.RegisteredServers,
+            PreferencesKey.ServerCredentials,
+            PreferencesKey.ActiveServerId,
+            PreferencesKey.ReaderSettings,
+            PreferencesKey.CurrentlyReading,
+            PreferencesKey.SkippedLogin,
         )
 
         userScopedKeys.forEach { key ->
-            preferences.remove(PreferencesKey.UserScoped(userId, key))
+            preferences.remove(PreferencesKey.UserScoped(userId, key.name))
         }
         logger.d { "Cleared preferences for user: $userId" }
     }
