@@ -46,7 +46,7 @@ class LocalServerInitializer(
             .map { it?.id }
             .distinctUntilChanged()
             .onEach {
-                // When user changes, ensure Local server exists for the new user
+                // When user changes, ensure Local server exists for the new user™
                 ensureLocalServerRegistered()
             }
             .launchIn(scope)
@@ -78,6 +78,12 @@ class LocalServerInitializer(
                     expiresAt = null,
                 )
             )
+        }
+
+        // If no active server is set, set Local as the default active server
+        // This ensures new users always have a working server context
+        if (serverRegistry.getActiveServer() == null) {
+            serverRegistry.setActiveServer(LOCAL_SERVER_ID)
         }
     }
 }
