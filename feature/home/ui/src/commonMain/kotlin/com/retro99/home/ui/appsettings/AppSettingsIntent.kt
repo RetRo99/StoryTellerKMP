@@ -9,5 +9,6 @@ sealed interface AppSettingsIntent : BaseIntent {
     data object OnClearLogsClicked : AppSettingsIntent
     data object OnLogsClearedMessageShown : AppSettingsIntent
     data object OnNoLogsMessageShown : AppSettingsIntent
+    data class OnProfileSelected(val profileId: String) : AppSettingsIntent
 }
 

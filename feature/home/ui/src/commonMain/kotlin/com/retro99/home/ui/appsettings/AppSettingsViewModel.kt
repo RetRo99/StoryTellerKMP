@@ -7,8 +7,10 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.base.ui.sharing.FileSharer
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
+import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 
@@ -18,6 +20,7 @@ class AppSettingsViewModel(
     @Provided private val fileSharer: FileSharer,
     @Provided private val preferences: Preferences,
     @Provided private val observeHasAuthenticatedRemoteServersUseCase: ObserveHasAuthenticatedRemoteServersUseCase,
+    @Provided private val userRegistry: UserRegistry,
 ) : BaseViewModel<AppSettingsViewState, AppSettingsIntent>(
     AppSettingsViewState(
         isLoggingEnabled = preferences.getBoolean(
@@ -33,12 +36,27 @@ class AppSettingsViewModel(
 
     init {
         observeAuthenticatedServers()
+        observeUserProfiles()
     }
 
     private fun observeAuthenticatedServers() {
         observeHasAuthenticatedRemoteServersUseCase()
             .onEach { hasRemoteServers ->
                 updateState { it.copy(hasAuthenticatedRemoteServers = hasRemoteServers) }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeUserProfiles() {
+        userRegistry.observeAllProfiles()
+            .onEach { profiles ->
+                updateState { it.copy(userProfiles = profiles) }
+            }
+            .launchIn(viewModelScope)
+
+        userRegistry.observeActiveProfile()
+            .onEach { profile ->
+                updateState { it.copy(activeProfile = profile) }
             }
             .launchIn(viewModelScope)
     }
@@ -51,6 +69,13 @@ class AppSettingsViewModel(
             AppSettingsIntent.OnClearLogsClicked -> clearLogs()
             AppSettingsIntent.OnLogsClearedMessageShown -> onLogsClearedMessageShown()
             AppSettingsIntent.OnNoLogsMessageShown -> onNoLogsMessageShown()
+            is AppSettingsIntent.OnProfileSelected -> selectProfile(intent.profileId)
+        }
+    }
+
+    private fun selectProfile(profileId: String) {
+        viewModelScope.launch {
+            userRegistry.setActiveProfile(profileId)
         }
     }
 
