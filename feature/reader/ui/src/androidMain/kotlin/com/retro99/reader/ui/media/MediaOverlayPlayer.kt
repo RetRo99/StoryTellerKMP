@@ -186,6 +186,27 @@ class MediaOverlayPlayer(
         initialProgression: Double?,
         initialPositionMs: Long?,
     ) {
+        // Find a chapter with audio BEFORE starting the foreground service.
+        // This prevents ForegroundServiceDidNotStartInTimeException when the user
+        // clicks play on a chapter without audio (e.g., cover page, table of contents).
+        val chapterToPlay = if (chapterHref != null) {
+            val chapterWithAudio = smilLoadingManager.findChapterWithAudio(
+                chapterHref.removeFragment().toString(),
+            )
+            if (chapterWithAudio == null) {
+                // No chapters have audio - nothing to play
+                analytics.logException(
+                    IllegalStateException("No chapters with audio found"),
+                    "Cannot play: no audio content available starting from $chapterHref",
+                )
+                return
+            }
+            Url(chapterWithAudio)
+        } else {
+            // No chapter specified - will resume current audio
+            null
+        }
+
         // Request notification permission before starting foreground service (Android 13+)
         // NOTE: We intentionally do NOT set optimistic state (isPlaying=true, BUFFERING)
         // before permission is granted. This prevents UI flicker where the play button
@@ -218,9 +239,18 @@ class MediaOverlayPlayer(
             return
         }
 
-        if (chapterHref != null) {
+        if (chapterToPlay != null) {
             // prepareChapter will handle seeking and then set playWhenReady
-            prepareChapter(chapterHref, initialFragmentId, initialProgression, initialPositionMs)
+            // Note: If we found a different chapter with audio, we ignore the initial
+            // fragment/progression since they were for the original chapter
+            val useInitialPosition = chapterToPlay.toString() == chapterHref?.removeFragment()
+                ?.toString()
+            prepareChapter(
+                chapterToPlay,
+                if (useInitialPosition) initialFragmentId else null,
+                if (useInitialPosition) initialProgression else null,
+                if (useInitialPosition) initialPositionMs else null,
+            )
         } else {
             // No chapter change - seek first (before playback starts), then play
             val positionToSeek = initialPositionMs
