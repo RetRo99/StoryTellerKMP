@@ -26,6 +26,7 @@ kotlin {
             implementation(libs.datetime)
             implementation(projects.base)
             implementation(projects.lib.server.api)
+            implementation(projects.lib.user.api)
             implementation(projects.feature.books.data)
             implementation(projects.feature.books.domain)
         }
