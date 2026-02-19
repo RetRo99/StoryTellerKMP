@@ -44,7 +44,16 @@ class NetworkingModule {
         baseUrlProvider = {
             // Use runBlocking since this is called from non-suspend context
             // This is safe because getActiveServer is a quick in-memory lookup
-            runBlocking { serverRegistry.getActiveServer()?.baseUrl }
+            runBlocking {
+                val baseUrl = serverRegistry.getActiveServer()?.baseUrl
+                // Only return URLs with valid HTTP schemes
+                // Local server uses "local://" which is not a valid HTTP URL
+                if (baseUrl != null && (baseUrl.startsWith("http://") || baseUrl.startsWith("https://"))) {
+                    baseUrl
+                } else {
+                    null
+                }
+            }
         },
         analytics = analytics,
     )

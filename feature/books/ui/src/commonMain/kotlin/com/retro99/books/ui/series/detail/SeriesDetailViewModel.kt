@@ -102,7 +102,7 @@ class SeriesDetailViewModel(
     }
 
     private fun observeBooks() {
-        getBooksBySeriesUseCase(seriesUuid)
+        getBooksBySeriesUseCase(seriesName)
             .onStart {
                 updateState { it.copy(isLoading = true, error = null) }
             }

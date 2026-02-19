@@ -35,5 +35,18 @@ interface AuthenticatedRepositoryProvider {
      * @return null if server doesn't exist or is not authenticated
      */
     suspend fun getReaderRepository(serverId: String): ServerReaderRepository?
+
+    // ==================== Series Repositories ====================
+
+    /**
+     * Observe series repositories for all authenticated servers.
+     * Automatically updates when servers are added/removed or auth state changes.
+     */
+    fun observeSeriesRepositories(): Flow<List<ServerSeriesRepository>>
+
+    /**
+     * Get series repositories for all authenticated servers (suspend version).
+     */
+    suspend fun getSeriesRepositories(): List<ServerSeriesRepository>
 }
 
