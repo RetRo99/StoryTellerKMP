@@ -73,6 +73,14 @@ class AppSettingsViewModel(
             AppSettingsIntent.OnAddProfileClicked -> showAddProfileDialog()
             is AppSettingsIntent.OnAddProfileConfirmed -> addProfile(intent.name)
             AppSettingsIntent.OnAddProfileDismissed -> hideAddProfileDialog()
+            is AppSettingsIntent.OnProfileLongPressed -> onProfileLongPressed(intent.profileId)
+            AppSettingsIntent.OnProfileMenuDismissed -> dismissProfileMenu()
+            AppSettingsIntent.OnRenameProfileClicked -> showRenameProfileDialog()
+            is AppSettingsIntent.OnRenameProfileConfirmed -> renameProfile(intent.newName)
+            AppSettingsIntent.OnRenameProfileDismissed -> hideRenameProfileDialog()
+            AppSettingsIntent.OnDeleteProfileClicked -> showDeleteProfileDialog()
+            AppSettingsIntent.OnDeleteProfileConfirmed -> deleteProfile()
+            AppSettingsIntent.OnDeleteProfileDismissed -> hideDeleteProfileDialog()
         }
     }
 
@@ -95,6 +103,47 @@ class AppSettingsViewModel(
             val profile = userRegistry.createProfile(name = name)
             userRegistry.setActiveProfile(profile.id)
             updateState { it.copy(showAddProfileDialog = false) }
+        }
+    }
+
+    private fun onProfileLongPressed(profileId: String) {
+        val profile = viewState.value.userProfiles.find { it.id == profileId }
+        updateState { it.copy(selectedProfileForMenu = profile) }
+    }
+
+    private fun dismissProfileMenu() {
+        updateState { it.copy(selectedProfileForMenu = null) }
+    }
+
+    private fun showRenameProfileDialog() {
+        updateState { it.copy(showRenameProfileDialog = true) }
+    }
+
+    private fun hideRenameProfileDialog() {
+        updateState { it.copy(showRenameProfileDialog = false, selectedProfileForMenu = null) }
+    }
+
+    private fun renameProfile(newName: String) {
+        val profile = viewState.value.selectedProfileForMenu ?: return
+        viewModelScope.launch {
+            userRegistry.updateProfile(profile.copy(name = newName))
+            updateState { it.copy(showRenameProfileDialog = false, selectedProfileForMenu = null) }
+        }
+    }
+
+    private fun showDeleteProfileDialog() {
+        updateState { it.copy(showDeleteProfileDialog = true) }
+    }
+
+    private fun hideDeleteProfileDialog() {
+        updateState { it.copy(showDeleteProfileDialog = false, selectedProfileForMenu = null) }
+    }
+
+    private fun deleteProfile() {
+        val profileId = viewState.value.selectedProfileForMenu?.id ?: return
+        viewModelScope.launch {
+            userRegistry.deleteProfile(profileId)
+            updateState { it.copy(showDeleteProfileDialog = false, selectedProfileForMenu = null) }
         }
     }
 
