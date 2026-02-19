@@ -33,6 +33,7 @@ kotlin {
             implementation(projects.lib.preferences.api)
             implementation(projects.lib.analytics.api)
             implementation(projects.lib.database.api)
+            implementation(projects.lib.user.api)
             implementation(projects.feature.reader.domain)
             implementation(projects.feature.books.domain)
             implementation(projects.feature.books.data)

@@ -39,9 +39,12 @@ class DefaultUserInitializer(
     private suspend fun ensureDefaultUserExists() {
         // Check if any profiles exist
         if (!userRegistry.hasProfiles()) {
-            // First launch - create default profile
+            // First launch - create default profile with fixed ID
             logger.i { "No user profiles found, creating default profile" }
-            val defaultProfile = userRegistry.createProfile(name = DEFAULT_USER_NAME)
+            val defaultProfile = userRegistry.createProfile(
+                id = UserRegistry.DEFAULT_USER_ID,
+                name = DEFAULT_USER_NAME,
+            )
             userRegistry.setActiveProfile(defaultProfile.id)
             logger.i { "Created and activated default profile: ${defaultProfile.id}" }
             return
@@ -59,7 +62,10 @@ class DefaultUserInitializer(
                 // Edge case: hasProfiles() returned true but getAllProfiles() is empty
                 // This shouldn't happen, but handle it gracefully
                 logger.w { "Inconsistent state: hasProfiles=true but no profiles found" }
-                val defaultProfile = userRegistry.createProfile(name = DEFAULT_USER_NAME)
+                val defaultProfile = userRegistry.createProfile(
+                    id = UserRegistry.DEFAULT_USER_ID,
+                    name = DEFAULT_USER_NAME,
+                )
                 userRegistry.setActiveProfile(defaultProfile.id)
                 logger.i { "Created and activated default profile: ${defaultProfile.id}" }
             }

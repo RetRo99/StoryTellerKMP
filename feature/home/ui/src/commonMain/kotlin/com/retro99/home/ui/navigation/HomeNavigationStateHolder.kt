@@ -154,6 +154,19 @@ class HomeNavigationStateHolder(
         // Add the new destination
         stack.add(destination)
     }
+
+    /**
+     * Reset all back stacks to their root destinations.
+     * Used when switching user profiles to ensure a clean navigation state.
+     */
+    fun resetAllStacks() {
+        HomeTab.entries.forEach { tab ->
+            val stack = backStacks[tab] ?: return@forEach
+            stack.clear()
+            stack.add(tab.startDestination)
+        }
+        currentTab = startTab
+    }
 }
 
 

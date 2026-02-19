@@ -17,6 +17,7 @@ import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.model.toLocalModel
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
+import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,7 @@ class ReaderLocalDataSource(
     @Provided private val fileDownloader: EbookFileDownloader,
     @Provided private val positionDatabase: PositionDatabase,
     @Provided private val databaseExecutor: DatabaseExecutor,
+    @Provided private val userRegistry: UserRegistry,
 ) : ReaderLocalSource {
 
     private val _readerSettings = MutableStateFlow(loadReaderSettings())
@@ -80,16 +82,21 @@ class ReaderLocalDataSource(
     }
 
     override fun getCurrentlyReading(): CurrentlyReadingDomainModel? {
-        return preferences.getObject<CurrentlyReadingLocalModel>(PreferencesKey.CurrentlyReading)
-            ?.toDomain()
+        val userId = userRegistry.getActiveProfileIdOrDefault()
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.CurrentlyReading.name)
+        return preferences.getObject<CurrentlyReadingLocalModel>(key)?.toDomain()
     }
 
     override fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel) {
-        preferences.putObject(PreferencesKey.CurrentlyReading, currentlyReading.toLocal())
+        val userId = userRegistry.getActiveProfileIdOrDefault()
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.CurrentlyReading.name)
+        preferences.putObject(key, currentlyReading.toLocal())
     }
 
     override fun clearCurrentlyReading() {
-        preferences.remove(PreferencesKey.CurrentlyReading)
+        val userId = userRegistry.getActiveProfileIdOrDefault()
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.CurrentlyReading.name)
+        preferences.remove(key)
     }
 
     private fun loadReaderSettings(): ReaderSettingsLocalModel {

@@ -70,6 +70,13 @@ fun HomeNavigation(
         }
     }
 
+    // Reset navigation when user profile changes
+    LaunchedEffect(viewModel) {
+        viewModel.userProfileChanged.collect {
+            navigationState.resetAllStacks()
+        }
+    }
+
     val currentDestination = navigationState.currentDestination
     val showBottomBar = (currentDestination as? BottomBarDestination)?.showBottomBar != false
     val isInReader = currentDestination is HomeDestination.Reader

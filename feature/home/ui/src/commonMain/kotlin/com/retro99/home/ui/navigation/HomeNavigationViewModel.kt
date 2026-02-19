@@ -11,10 +11,14 @@ import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
 import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
+import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -39,6 +43,7 @@ class HomeNavigationViewModel(
     @Provided val analytics: Analytics,
     @Provided private val getCurrentlyReadingUseCase: GetCurrentlyReadingUseCase,
     @Provided private val preferences: Preferences,
+    @Provided private val userRegistry: UserRegistry,
 ) : BaseViewModel<HomeUiState, HomeNavigationIntent>(
     HomeUiState(),
 ) {
@@ -51,11 +56,39 @@ class HomeNavigationViewModel(
      */
     val navigationEvents: SharedFlow<HomeNavigationEvent> = _navigationEvents.asSharedFlow()
 
+    private val _userProfileChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Emits when the active user profile changes.
+     * Used to reset navigation state when switching users.
+     */
+    val userProfileChanged: SharedFlow<Unit> = _userProfileChanged.asSharedFlow()
+
     init {
         observeDeepLinks(deepLinkHandler)
+        observeUserProfileChanges()
         loadCurrentlyReading()
         loadBubblePosition()
         checkOpenLastBookOnLaunch()
+    }
+
+    /**
+     * Observes user profile changes and emits events to reset navigation.
+     * Uses drop(1) to skip the initial emission when the ViewModel is created.
+     */
+    private fun observeUserProfileChanges() {
+        userRegistry.observeActiveProfile()
+            .map { it?.id }
+            .distinctUntilChanged()
+            .drop(1) // Skip initial value to avoid resetting on first load
+            .onEach {
+                // Emit event to reset navigation
+                _userProfileChanged.emit(Unit)
+                // Refresh user-scoped data for the new user
+                loadCurrentlyReading()
+                loadBubblePosition()
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
@@ -92,20 +125,24 @@ class HomeNavigationViewModel(
     }
 
     /**
-     * Loads the bubble position from preferences.
+     * Loads the bubble position from user-scoped preferences.
      */
     private fun loadBubblePosition() {
-        val bubblePosition = preferences.getObject<BubblePositionModel>(PreferencesKey.BubblePosition)
+        val userId = userRegistry.getActiveProfileIdOrDefault()
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.BubblePosition.name)
+        val bubblePosition = preferences.getObject<BubblePositionModel>(key)
             ?: BubblePositionModel.DEFAULT
         updateState { it.copy(bubblePosition = bubblePosition) }
     }
 
     /**
-     * Saves the bubble position to preferences.
+     * Saves the bubble position to user-scoped preferences.
      */
     private fun saveBubblePosition(side: BubbleSide, yFraction: Float) {
+        val userId = userRegistry.getActiveProfileIdOrDefault()
+        val key = PreferencesKey.UserScoped(userId, PreferencesKey.BubblePosition.name)
         val position = BubblePositionModel.fromBubbleSide(side, yFraction)
-        preferences.putObject(PreferencesKey.BubblePosition, position)
+        preferences.putObject(key, position)
         updateState { it.copy(bubblePosition = position) }
     }
 
