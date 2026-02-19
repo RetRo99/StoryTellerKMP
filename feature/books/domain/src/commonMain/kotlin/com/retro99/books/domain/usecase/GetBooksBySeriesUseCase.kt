@@ -12,16 +12,16 @@ import org.koin.core.annotation.Provided
 class GetBooksBySeriesUseCase(
     @Provided private val getBooksUseCase: GetBooksUseCase,
 ) {
-    operator fun invoke(seriesUuid: String): Flow<AppResult<List<BookDomainModel>>> {
+    operator fun invoke(seriesName: String): Flow<AppResult<List<BookDomainModel>>> {
         return getBooksUseCase().map { result ->
             result.map { books ->
                 books.filterIsInstance<BookDomainModel.StorytellerBook>()
                     .filter { book ->
-                        book.series.any { it.uuid == seriesUuid }
+                        book.series.any { it.name.equals(seriesName, ignoreCase = true) }
                     }.sortedWith(
                         compareBy(
                             { book ->
-                                book.series.find { it.uuid == seriesUuid }?.position ?: Int.MAX_VALUE
+                                book.series.find { it.name.equals(seriesName, ignoreCase = true) }?.position ?: Int.MAX_VALUE
                             },
                             { it.title },
                         ),

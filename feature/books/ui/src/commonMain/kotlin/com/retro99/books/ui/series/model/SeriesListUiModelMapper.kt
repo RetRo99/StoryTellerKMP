@@ -6,14 +6,15 @@ import com.retro99.books.domain.model.SeriesDomainModel
 fun SeriesDomainModel.toListUiModel(
     books: List<BookDomainModel>,
 ): SeriesListUiModel {
-    // Find books that belong to this series
+    // Find books that belong to this series by matching series name
+    // (series UUID from /api/v2/series doesn't match the numeric ID in books' series data)
     val seriesBooks = books.filter { book ->
-        book.series.any { it.uuid == uuid }
+        book.series.any { it.name.equals(name, ignoreCase = true) }
     }
     // Sort by position in series, then by title
     val sortedBooks = seriesBooks.sortedWith(
         compareBy(
-            { book -> book.series.find { it.uuid == uuid }?.position ?: Double.MAX_VALUE },
+            { book -> book.series.find { it.name.equals(name, ignoreCase = true) }?.position ?: Double.MAX_VALUE },
             { it.title },
         ),
     )

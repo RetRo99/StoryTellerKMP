@@ -4,9 +4,11 @@ import co.touchlab.kermit.Logger
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.BooksRepositoryFactory
 import com.retro99.server.api.ReaderRepositoryFactory
+import com.retro99.server.api.SeriesRepositoryFactory
 import com.retro99.server.api.ServerBooksRepository
 import com.retro99.server.api.ServerReaderRepository
 import com.retro99.server.api.ServerRegistry
+import com.retro99.server.api.ServerSeriesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -17,6 +19,7 @@ class AuthenticatedRepositoryProviderImpl(
     private val serverRegistry: ServerRegistry,
     private val booksRepositoryFactory: BooksRepositoryFactory,
     private val readerRepositoryFactory: ReaderRepositoryFactory,
+    private val seriesRepositoryFactory: SeriesRepositoryFactory,
 ) : AuthenticatedRepositoryProvider {
 
     private val logger = Logger.withTag("čič")
@@ -61,6 +64,22 @@ class AuthenticatedRepositoryProviderImpl(
         }
         val server = serverRegistry.getServer(serverId) ?: return null
         return readerRepositoryFactory.create(server)
+    }
+
+    // ==================== Series Repositories ====================
+
+    override fun observeSeriesRepositories(): Flow<List<ServerSeriesRepository>> {
+        return serverRegistry.observeAuthenticatedServers()
+            .map { servers ->
+                servers.map { server ->
+                    seriesRepositoryFactory.create(server)
+                }
+            }
+    }
+
+    override suspend fun getSeriesRepositories(): List<ServerSeriesRepository> {
+        val servers = serverRegistry.getAuthenticatedServers()
+        return servers.map { seriesRepositoryFactory.create(it) }
     }
 }
 
