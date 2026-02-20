@@ -11,5 +11,7 @@ interface PositionDatabase : DataClearable {
 
     suspend fun getPositionByBookUuid(bookUuid: String): PositionEntity?
 
+    suspend fun getAllPositions(): List<PositionEntity>
+
     suspend fun deletePosition(bookUuid: String)
 }

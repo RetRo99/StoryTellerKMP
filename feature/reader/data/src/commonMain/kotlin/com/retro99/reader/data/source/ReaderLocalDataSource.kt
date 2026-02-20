@@ -99,6 +99,12 @@ class ReaderLocalDataSource(
         preferences.remove(key)
     }
 
+    override suspend fun getAllPositions(): AppResult<List<PositionLocalModel>> {
+        return databaseExecutor.executeDatabaseOperation {
+            positionDatabase.getAllPositions().map { it.toLocalModel() }
+        }
+    }
+
     private fun loadReaderSettings(): ReaderSettingsLocalModel {
         return preferences.getObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
             ?: ReaderSettingsLocalModel()

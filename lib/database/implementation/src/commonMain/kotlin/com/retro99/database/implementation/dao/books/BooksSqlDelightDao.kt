@@ -587,6 +587,30 @@ internal class BooksSqlDelightDao(
         }
     }
 
+    suspend fun getAllPositions(): List<PositionSqlDelightEntity> {
+        return withContext(Dispatchers.IO) {
+            positionQueries.getAllPositions().executeAsList().map { row ->
+                PositionSqlDelightEntity(
+                    bookUuid = row.book_uuid,
+                    timestamp = row.timestamp,
+                    createdAt = row.created_at,
+                    updatedAt = row.updated_at,
+                    locatorHref = row.locator_href,
+                    locatorType = row.locator_type,
+                    locatorTitle = row.locator_title,
+                    locatorTarget = row.locator_target?.toInt(),
+                    audioTimestampMs = row.audio_timestamp_ms,
+                    chapterIndex = row.chapter_index?.toInt(),
+                    progression = row.progression,
+                    totalChapters = row.total_chapters?.toInt(),
+                    totalDurationMs = row.total_duration_ms,
+                    totalProgression = row.total_progression,
+                    position = row.position?.toInt(),
+                )
+            }
+        }
+    }
+
     // ==================== TRANSACTION SUPPORT ====================
 
     suspend fun <T> transaction(block: suspend () -> T): T {

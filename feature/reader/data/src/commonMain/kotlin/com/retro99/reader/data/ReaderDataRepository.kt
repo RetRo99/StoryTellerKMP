@@ -2,6 +2,7 @@ package com.retro99.reader.data
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onFailure
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppError
@@ -10,6 +11,7 @@ import com.retro99.base.result.CompletableResult
 import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
+import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.domain.ReaderSettingsRepository
 import com.retro99.books.domain.model.BookType
@@ -79,6 +81,12 @@ internal class ReaderDataRepository(
 
     override fun clearCurrentlyReading() {
         localSource.clearCurrentlyReading()
+    }
+
+    override suspend fun getAllPositions(): AppResult<List<PositionDomainModel>> {
+        return localSource.getAllPositions().map { positions ->
+            positions.map { it.toDomain(serverId = "") }
+        }
     }
 
     private fun logError(error: AppError, message: String) {

@@ -1,6 +1,7 @@
 package com.retro99.books.ui.detail
 
 import com.retro99.base.result.AppError
+import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.DownloadState
@@ -15,5 +16,6 @@ data class BookDetailViewState(
     val deleteConfirmationBookType: BookType? = null,
     val isFavorite: Boolean = false,
     val showDeleteLocalBookConfirmation: Boolean = false,
+    val progressInfo: BookProgressInfoUiModel? = null,
 )
 

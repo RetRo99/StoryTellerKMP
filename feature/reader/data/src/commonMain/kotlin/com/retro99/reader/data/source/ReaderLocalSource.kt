@@ -91,5 +91,12 @@ interface ReaderLocalSource {
      * Clears the currently reading book.
      */
     fun clearCurrentlyReading()
+
+    /**
+     * Gets all locally cached reading positions.
+     *
+     * @return List of all cached positions
+     */
+    suspend fun getAllPositions(): AppResult<List<PositionLocalModel>>
 }
 

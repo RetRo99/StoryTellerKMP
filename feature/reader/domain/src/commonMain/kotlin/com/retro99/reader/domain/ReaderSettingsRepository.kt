@@ -4,6 +4,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
+import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.Flow
 
@@ -84,5 +85,13 @@ interface ReaderSettingsRepository {
      * Clears the currently reading book.
      */
     fun clearCurrentlyReading()
+
+    /**
+     * Gets all locally cached reading positions.
+     * Used for displaying progress indicators in book lists.
+     *
+     * @return List of all cached positions
+     */
+    suspend fun getAllPositions(): AppResult<List<PositionDomainModel>>
 }
 
