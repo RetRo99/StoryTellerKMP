@@ -1,9 +1,12 @@
 package com.retro99.books.ui.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Quick toggle filters for the book list.
  * These are simple boolean filters that can be toggled on/off.
  */
+@Serializable
 enum class BookQuickFilter {
     FAVORITES,
     HAS_EBOOK,

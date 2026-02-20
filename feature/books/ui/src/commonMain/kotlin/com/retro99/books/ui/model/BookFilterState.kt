@@ -1,9 +1,12 @@
 package com.retro99.books.ui.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Complete filter state for the book list.
  * Combines quick filters and advanced selection filters.
  */
+@Serializable
 data class BookFilterState(
     // Quick toggle filters
     val activeQuickFilters: Set<BookQuickFilter> = emptySet(),

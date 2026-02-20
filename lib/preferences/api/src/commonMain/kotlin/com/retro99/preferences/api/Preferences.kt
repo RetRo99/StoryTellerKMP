@@ -40,6 +40,7 @@ sealed class PreferencesKey(val name: String) {
     data object ServerCredentials : PreferencesKey("ServerCredentials")
     data object ActiveServerId : PreferencesKey("ActiveServerId")
     data object SkippedLogin : PreferencesKey("SkippedLogin")
+    data object BookListFilterSort : PreferencesKey("BookListFilterSort")
 
     // User profile keys (device-level, not user-scoped)
     data object UserProfiles : PreferencesKey("UserProfiles")
