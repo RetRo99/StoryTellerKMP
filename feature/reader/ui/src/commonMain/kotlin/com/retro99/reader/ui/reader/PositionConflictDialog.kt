@@ -1,37 +1,32 @@
 package com.retro99.reader.ui.reader
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.retro99.books.ui.components.PositionConflictDialogContent
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import resources.translations.reader_conflict_chapter
 import resources.translations.reader_conflict_local_title
-import resources.translations.reader_conflict_message
 import resources.translations.reader_conflict_progress
 import resources.translations.reader_conflict_remote_title
-import resources.translations.reader_conflict_title
-import resources.translations.reader_conflict_use_local
-import resources.translations.reader_conflict_use_remote
 
+/**
+ * Dialog for resolving position conflicts with full position details.
+ * Used in the reader when we have complete position information.
+ */
 @Composable
 fun PositionConflictDialog(
     conflict: PositionConflictUiModel,
@@ -39,50 +34,23 @@ fun PositionConflictDialog(
     onUseRemote: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AlertDialog(
-        onDismissRequest = { /* Don't allow dismiss without choosing */ },
-        modifier = modifier,
-        title = {
-            Text(
-                text = stringResource(StringRes.reader_conflict_title),
-                style = MaterialTheme.typography.headlineSmall,
+    PositionConflictDialogContent(
+        localContent = {
+            PositionCard(
+                title = stringResource(StringRes.reader_conflict_local_title),
+                position = conflict.localPosition,
             )
         },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(StringRes.reader_conflict_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    PositionCard(
-                        title = stringResource(StringRes.reader_conflict_local_title),
-                        position = conflict.localPosition,
-                        modifier = Modifier.weight(1f),
-                    )
-                    PositionCard(
-                        title = stringResource(StringRes.reader_conflict_remote_title),
-                        position = conflict.remotePosition,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+        remoteContent = {
+            PositionCard(
+                title = stringResource(StringRes.reader_conflict_remote_title),
+                position = conflict.remotePosition,
+            )
         },
-        confirmButton = {
-            Row {
-                TextButton(onClick = onUseLocal) {
-                    Text(stringResource(StringRes.reader_conflict_use_local))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = onUseRemote) {
-                    Text(stringResource(StringRes.reader_conflict_use_remote))
-                }
-            }
-        },
+        onUseLocal = onUseLocal,
+        onUseRemote = onUseRemote,
+        onDismissRequest = { /* Don't allow dismiss without choosing */ },
+        modifier = modifier,
     )
 }
 
@@ -142,4 +110,3 @@ private fun PositionCard(
         }
     }
 }
-

@@ -19,5 +19,7 @@ data class BookDetailViewState(
     val progressInfo: BookProgressInfoUiModel? = null,
     val isResolvingConflict: Boolean = false,
     val conflictResolutionError: AppError? = null,
+    /** The book type the user wants to open, shown when there's a conflict to resolve first */
+    val pendingOpenBookType: BookType? = null,
 )
 
