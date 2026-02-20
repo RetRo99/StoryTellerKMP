@@ -56,6 +56,8 @@ import resources.translations.books_cached_indicator
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
+import resources.translations.books_progress_local
+import resources.translations.books_progress_remote
 import resources.translations.books_search_clear
 import resources.translations.books_search_placeholder
 
@@ -164,26 +166,86 @@ fun BookItemCard(
 
                 subtitleContent?.invoke()
 
-                // Progress bar
-                progressInfo?.totalProgression?.let { progress ->
-                    if (progress > 0.0) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            LinearProgressIndicator(
-                                progress = { progress.toFloat() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp)),
-                            )
-                            Text(
-                                text = "${progressInfo.progressPercent}%",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                // Progress bar(s)
+                if (progressInfo != null && progressInfo.hasConflict) {
+                    // Show both local and remote progress bars when there's a conflict
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // Local progress
+                        progressInfo.localProgression?.let { localProgress ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(StringRes.books_progress_local),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(48.dp),
+                                )
+                                LinearProgressIndicator(
+                                    progress = { localProgress.toFloat() },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp)),
+                                )
+                                Text(
+                                    text = "${progressInfo.localProgressPercent}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        // Remote progress
+                        progressInfo.remoteProgression?.let { remoteProgress ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(StringRes.books_progress_remote),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(48.dp),
+                                )
+                                LinearProgressIndicator(
+                                    progress = { remoteProgress.toFloat() },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp)),
+                                )
+                                Text(
+                                    text = "${progressInfo.remoteProgressPercent}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Single progress bar when no conflict
+                    progressInfo?.displayProgression?.let { progress ->
+                        if (progress > 0.0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                LinearProgressIndicator(
+                                    progress = { progress.toFloat() },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp)),
+                                )
+                                Text(
+                                    text = "${progressInfo.progressPercent}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
