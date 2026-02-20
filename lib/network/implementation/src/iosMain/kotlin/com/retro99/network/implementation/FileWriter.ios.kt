@@ -26,6 +26,18 @@ private const val PROGRESS_UPDATE_THRESHOLD = 1024 * 1024L
 @OptIn(ExperimentalForeignApi::class)
 internal actual suspend fun writeChannelToFile(channel: ByteReadChannel, destinationPath: String) {
     val fileManager = NSFileManager.defaultManager
+
+    // Create parent directories if they don't exist
+    val parentPath = destinationPath.substringBeforeLast('/')
+    if (parentPath.isNotEmpty() && !fileManager.fileExistsAtPath(parentPath)) {
+        fileManager.createDirectoryAtPath(
+            parentPath,
+            withIntermediateDirectories = true,
+            attributes = null,
+            error = null,
+        )
+    }
+
     if (!fileManager.fileExistsAtPath(destinationPath)) {
         fileManager.createFileAtPath(destinationPath, contents = null, attributes = null)
     }
@@ -65,6 +77,18 @@ internal actual suspend fun writeChannelToFileWithProgress(
     onProgress: suspend (bytesWritten: Long, totalBytes: Long?) -> Unit,
 ) {
     val fileManager = NSFileManager.defaultManager
+
+    // Create parent directories if they don't exist
+    val parentPath = destinationPath.substringBeforeLast('/')
+    if (parentPath.isNotEmpty() && !fileManager.fileExistsAtPath(parentPath)) {
+        fileManager.createDirectoryAtPath(
+            parentPath,
+            withIntermediateDirectories = true,
+            attributes = null,
+            error = null,
+        )
+    }
+
     if (!fileManager.fileExistsAtPath(destinationPath)) {
         fileManager.createFileAtPath(destinationPath, contents = null, attributes = null)
     }
