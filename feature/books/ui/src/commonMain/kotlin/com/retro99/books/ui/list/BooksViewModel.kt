@@ -17,6 +17,7 @@ import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.toUiModel
+import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -32,6 +33,7 @@ class BooksViewModel(
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeAllFavoritesUseCase: ObserveAllFavoritesUseCase,
     @Provided private val importEpubUseCase: ImportEpubUseCase,
+    @Provided private val getAllBooksProgressInfoUseCase: GetAllBooksProgressInfoUseCase,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
@@ -45,11 +47,34 @@ class BooksViewModel(
 
     override fun onIntent(intent: BooksListIntent) {
         when (intent) {
-            BooksListIntent.OnRefresh -> Unit // Flow automatically refreshes on start
+            BooksListIntent.OnRefresh -> refreshProgressInfo()
             BooksListIntent.OnSearchToggled -> toggleSearch()
             is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book)
             is BooksListIntent.OnFavoriteClicked -> toggleFavorite(intent.bookUuid)
             is BooksListIntent.OnImportBook -> importBook(intent.file)
+        }
+    }
+
+    /**
+     * Refreshes the progress/cache info for all books.
+     * Called on pull-to-refresh to update cache status after downloads.
+     */
+    private fun refreshProgressInfo() {
+        viewModelScope.launch {
+            updateState { it.copy(isRefreshing = true) }
+            val bookUuids = viewState.value.books.map { it.uuid }
+            if (bookUuids.isNotEmpty()) {
+                val progressInfo = getAllBooksProgressInfoUseCase(bookUuids)
+                    .mapValues { (_, info) -> info.toUiModel() }
+                updateState {
+                    it.copy(
+                        bookProgressInfo = progressInfo,
+                        isRefreshing = false,
+                    )
+                }
+            } else {
+                updateState { it.copy(isRefreshing = false) }
+            }
         }
     }
 
@@ -110,10 +135,14 @@ class BooksViewModel(
             .onEach { result ->
                 result
                     .onSuccess { books ->
+                        val uiBooks = books.map { book -> book.toUiModel() }
+                        val bookUuids = books.map { it.uuid }
+                        val progressInfo = getAllBooksProgressInfoUseCase(bookUuids)
+                            .mapValues { (_, info) -> info.toUiModel() }
                         updateState {
-                            val uiBooks = books.map { book -> book.toUiModel() }
                             it.copy(
                                 books = sortBooksByFavorites(uiBooks, it.favoriteBookUuids),
+                                bookProgressInfo = progressInfo,
                                 isLoading = false,
                                 isRefreshing = false,
                                 error = null,

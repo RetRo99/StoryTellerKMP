@@ -32,6 +32,12 @@ class ServerPositionLocalDataSource(
         }
     }
 
+    override suspend fun getAllPositions(): AppResult<List<ServerPosition>> {
+        return databaseExecutor.executeDatabaseOperation {
+            positionDatabase.getAllPositions().map { it.toServerPosition() }
+        }
+    }
+
     override suspend fun deletePosition(bookUuid: String): CompletableResult {
         return databaseExecutor.executeDatabaseOperation {
             positionDatabase.deletePosition(bookUuid)

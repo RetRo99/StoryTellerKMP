@@ -1,6 +1,7 @@
 package com.retro99.books.ui.list
 
 import com.retro99.base.result.AppError
+import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
 
 data class BooksListViewState(
@@ -8,6 +9,7 @@ data class BooksListViewState(
     val searchQuery: String = "",
     val isSearchVisible: Boolean = false,
     val favoriteBookUuids: Set<String> = emptySet(),
+    val bookProgressInfo: Map<String, BookProgressInfoUiModel> = emptyMap(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isImporting: Boolean = false,

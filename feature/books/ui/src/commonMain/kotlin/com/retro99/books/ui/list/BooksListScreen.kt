@@ -159,6 +159,7 @@ private fun BooksListScreenContent(
                             onFavoriteClick = {
                                 intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
                             },
+                            progressInfo = viewState.bookProgressInfo[book.uuid],
                             subtitleContent = {
                                 if (book.series.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(4.dp))

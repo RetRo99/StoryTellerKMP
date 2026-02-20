@@ -220,6 +220,10 @@ internal class BooksDatabaseImpl(
         return sqlDelightDao.getPositionByBookUuid(bookUuid)
     }
 
+    override suspend fun getAllPositions(): List<PositionEntity> {
+        return sqlDelightDao.getAllPositions()
+    }
+
     override suspend fun deletePosition(bookUuid: String) {
         sqlDelightDao.deletePosition(bookUuid)
     }

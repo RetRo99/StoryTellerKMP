@@ -1,6 +1,7 @@
 package com.retro99.books.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -17,12 +19,14 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
@@ -41,9 +45,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.compose.CoilImage
+import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
+import resources.translations.books_cached_indicator
 import resources.translations.books_media_audio
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
@@ -58,6 +64,7 @@ import resources.translations.books_search_placeholder
  * @param onClick Callback when the card is clicked
  * @param onFavoriteClick Callback when the favorite button is clicked
  * @param modifier Modifier for the card
+ * @param progressInfo Optional progress and cache info for the book
  * @param headerContent Optional composable content to display above the title (e.g., series position)
  * @param subtitleContent Optional composable content to display below the author (e.g., series info)
  */
@@ -68,6 +75,7 @@ fun BookItemCard(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    progressInfo: BookProgressInfoUiModel? = null,
     headerContent: @Composable (() -> Unit)? = null,
     subtitleContent: @Composable (() -> Unit)? = null,
 ) {
@@ -82,15 +90,30 @@ fun BookItemCard(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            CoilImage(
-                data = book.coverUrl,
-                cacheKey = book.uuid,
-                modifier = Modifier
-                    .size(width = 80.dp, height = 120.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop,
-                contentDescription = book.title,
-            )
+            // Book cover with optional cache indicator
+            Box {
+                CoilImage(
+                    data = book.coverUrl,
+                    cacheKey = book.uuid,
+                    modifier = Modifier
+                        .size(width = 80.dp, height = 120.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop,
+                    contentDescription = book.title,
+                )
+                // Cache indicator badge
+                if (progressInfo?.hasAnyCached == true) {
+                    Icon(
+                        imageVector = Icons.Outlined.CloudDone,
+                        contentDescription = stringResource(StringRes.books_cached_indicator),
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                            .size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
 
             Column(modifier = Modifier.weight(1f)) {
                 headerContent?.invoke()
@@ -114,6 +137,30 @@ fun BookItemCard(
                 }
 
                 subtitleContent?.invoke()
+
+                // Progress bar
+                progressInfo?.totalProgression?.let { progress ->
+                    if (progress > 0.0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            LinearProgressIndicator(
+                                progress = { progress.toFloat() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp)),
+                            )
+                            Text(
+                                text = "${progressInfo.progressPercent}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 

@@ -25,6 +25,13 @@ interface ServerPositionLocalSource {
     suspend fun savePosition(position: ServerPosition): CompletableResult
 
     /**
+     * Gets all locally cached positions.
+     *
+     * @return List of all cached positions
+     */
+    suspend fun getAllPositions(): AppResult<List<ServerPosition>>
+
+    /**
      * Deletes a position from the local cache.
      *
      * @param bookUuid The UUID of the book

@@ -36,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -64,6 +65,7 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.base.ui.compose.CoilImage
+import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
 import com.retro99.books.domain.model.BookType
@@ -76,6 +78,7 @@ import resources.translations.books_delete_cache_confirm
 import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
 import resources.translations.books_delete_local_button
+import resources.translations.books_reading_progress
 import resources.translations.books_delete_local_confirm
 import resources.translations.books_delete_local_message
 import resources.translations.books_delete_local_title
@@ -119,6 +122,7 @@ fun BookDetailScreen(
                 deleteConfirmationBookType = viewState.deleteConfirmationBookType,
                 showDeleteLocalBookConfirmation = viewState.showDeleteLocalBookConfirmation,
                 isFavorite = viewState.isFavorite,
+                progressInfo = viewState.progressInfo,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -135,6 +139,7 @@ private fun BookDetailScreenContent(
     deleteConfirmationBookType: BookType?,
     showDeleteLocalBookConfirmation: Boolean,
     isFavorite: Boolean,
+    progressInfo: BookProgressInfoUiModel?,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -212,6 +217,17 @@ private fun BookDetailScreenContent(
                 readaloudDownloadState = readaloudDownloadState,
                 intentDispatcher = intentDispatcher,
             )
+
+            // Reading progress section
+            progressInfo?.totalProgression?.let { progress ->
+                if (progress > 0.0) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    ReadingProgressSection(
+                        progress = progress,
+                        progressPercent = progressInfo.progressPercent,
+                    )
+                }
+            }
 
             book.description?.let { description ->
                 Spacer(modifier = Modifier.height(24.dp))
@@ -320,6 +336,42 @@ private fun BookHeader(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ReadingProgressSection(
+    progress: Double,
+    progressPercent: Int,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(StringRes.books_reading_progress),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = "$progressPercent%",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = { progress.toFloat() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
     }
 }
 

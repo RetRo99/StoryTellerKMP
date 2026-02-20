@@ -17,6 +17,7 @@ import com.retro99.reader.domain.model.DownloadState
 import com.retro99.reader.domain.usecase.CancelDownloadUseCase
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
 import com.retro99.reader.domain.usecase.DownloadMediaUseCase
+import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
 import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
@@ -41,6 +42,7 @@ class BookDetailViewModel(
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeFavoriteUseCase: ObserveFavoriteUseCase,
+    @Provided private val getAllBooksProgressInfoUseCase: GetAllBooksProgressInfoUseCase,
     @Provided private val fileImportManager: FileImportManager,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
@@ -195,9 +197,12 @@ class BookDetailViewModel(
             .onEach { result ->
                 result
                     .onSuccess { book ->
+                        val progressInfo = getAllBooksProgressInfoUseCase(listOf(book.uuid))
+                            .values.firstOrNull()?.toUiModel()
                         updateState {
                             it.copy(
                                 book = book.toUiModel(),
+                                progressInfo = progressInfo,
                                 isLoading = false,
                                 error = null,
                             )
