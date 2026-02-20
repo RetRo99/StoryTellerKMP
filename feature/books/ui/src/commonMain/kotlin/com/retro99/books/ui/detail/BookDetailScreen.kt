@@ -109,6 +109,7 @@ import resources.translations.general_back
 import resources.translations.general_cancel
 import resources.translations.reader_conflict_use_local
 import resources.translations.reader_conflict_use_remote
+import com.retro99.books.ui.components.PositionConflictDialog
 
 @Composable
 fun BookDetailScreen(
@@ -139,6 +140,7 @@ fun BookDetailScreen(
                 progressInfo = viewState.progressInfo,
                 isResolvingConflict = viewState.isResolvingConflict,
                 conflictResolutionError = viewState.conflictResolutionError,
+                pendingOpenBookType = viewState.pendingOpenBookType,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -158,6 +160,7 @@ private fun BookDetailScreenContent(
     progressInfo: BookProgressInfoUiModel?,
     isResolvingConflict: Boolean,
     conflictResolutionError: AppError?,
+    pendingOpenBookType: BookType?,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
@@ -186,6 +189,17 @@ private fun BookDetailScreenContent(
             bookTitle = book.title,
             onConfirm = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookConfirmed) },
             onDismiss = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookDismissed) },
+        )
+    }
+
+    // Show conflict resolution dialog when user tries to open a book with conflicting progress
+    if (pendingOpenBookType != null && progressInfo?.hasConflict == true) {
+        PositionConflictDialog(
+            localProgressPercent = progressInfo.localProgressPercent ?: 0,
+            remoteProgressPercent = progressInfo.remoteProgressPercent ?: 0,
+            onUseLocal = { intentDispatcher(BookDetailIntent.OnUseLocalPositionClicked) },
+            onUseRemote = { intentDispatcher(BookDetailIntent.OnUseRemotePositionClicked) },
+            onDismissRequest = { intentDispatcher(BookDetailIntent.OnConflictDialogDismissed) },
         )
     }
 

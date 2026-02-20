@@ -144,6 +144,10 @@ class BookDetailViewModel(
             BookDetailIntent.OnConflictResolutionErrorDismissed -> {
                 updateState { it.copy(conflictResolutionError = null) }
             }
+
+            BookDetailIntent.OnConflictDialogDismissed -> {
+                updateState { it.copy(pendingOpenBookType = null) }
+            }
         }
     }
 
@@ -162,15 +166,21 @@ class BookDetailViewModel(
 
     private fun resolveConflictWithLocal() {
         viewModelScope.launch {
+            val pendingBookType = viewState.value.pendingOpenBookType
             updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
             resolvePositionConflictUseCase.useLocal(serverId, bookUuid)
                 .onSuccess {
                     // Refresh progress info after resolving
                     refreshProgressInfo()
+                    // Navigate to reader if user was trying to open a book
+                    pendingBookType?.let { bookType ->
+                        updateState { it.copy(pendingOpenBookType = null) }
+                        onNavigateToReader(serverId, bookUuid, bookType)
+                    }
                 }
                 .onFailure { error ->
                     error.log(analytics, "BookDetailViewModel: Failed to resolve conflict with local")
-                    updateState { it.copy(conflictResolutionError = error) }
+                    updateState { it.copy(conflictResolutionError = error, pendingOpenBookType = null) }
                 }
             updateState { it.copy(isResolvingConflict = false) }
         }
@@ -178,15 +188,21 @@ class BookDetailViewModel(
 
     private fun resolveConflictWithRemote() {
         viewModelScope.launch {
+            val pendingBookType = viewState.value.pendingOpenBookType
             updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
             resolvePositionConflictUseCase.useRemote(serverId, bookUuid)
                 .onSuccess {
                     // Refresh progress info after resolving
                     refreshProgressInfo()
+                    // Navigate to reader if user was trying to open a book
+                    pendingBookType?.let { bookType ->
+                        updateState { it.copy(pendingOpenBookType = null) }
+                        onNavigateToReader(serverId, bookUuid, bookType)
+                    }
                 }
                 .onFailure { error ->
                     error.log(analytics, "BookDetailViewModel: Failed to resolve conflict with remote")
-                    updateState { it.copy(conflictResolutionError = error) }
+                    updateState { it.copy(conflictResolutionError = error, pendingOpenBookType = null) }
                 }
             updateState { it.copy(isResolvingConflict = false) }
         }
@@ -239,7 +255,12 @@ class BookDetailViewModel(
         }
 
         if (downloadState is DownloadState.Cached) {
-            onNavigateToReader(serverId, bookUuid, bookType)
+            // Check for conflict - show dialog for user to resolve first
+            if (currentState.progressInfo?.hasConflict == true) {
+                updateState { it.copy(pendingOpenBookType = bookType) }
+            } else {
+                onNavigateToReader(serverId, bookUuid, bookType)
+            }
         }
         // If not cached, user should click download first
     }
