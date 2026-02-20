@@ -25,6 +25,13 @@ class RootNavigationViewModel(
         when (intent) {
             RootNavigationIntent.OnLoginSuccess -> handleLoginSuccess()
             RootNavigationIntent.OnLogout -> handleLogout()
+            RootNavigationIntent.OnLoginClicked -> handleLoginClicked()
+        }
+    }
+
+    private fun handleLoginClicked() {
+        updateState { state ->
+            state.copy(backStack = listOf(RootDestination.Login(false)))
         }
     }
 
@@ -34,7 +41,7 @@ class RootNavigationViewModel(
             val destination = if (isLoggedIn) {
                 RootDestination.Home
             } else {
-                RootDestination.Login
+                RootDestination.Login(true)
             }
             updateState { state ->
                 state.copy(backStack = listOf(destination))
@@ -55,7 +62,7 @@ class RootNavigationViewModel(
             analytics.logEvent(AuthAnalyticsEvent.LogoutCompleted)
             analytics.setUserId(null)
             updateState { state ->
-                state.copy(backStack = listOf(RootDestination.Login))
+                state.copy(backStack = listOf(RootDestination.Login(true)))
             }
         }
     }

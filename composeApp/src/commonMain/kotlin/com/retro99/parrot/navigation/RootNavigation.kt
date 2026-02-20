@@ -47,6 +47,9 @@ fun RootNavigation(
                         onLogout = {
                             intentDispatcher(RootNavigationIntent.OnLogout)
                         },
+                        onNavigateToLogin = {
+                            intentDispatcher(RootNavigationIntent.OnLoginClicked)
+                        },
                     )
                 }
             },
