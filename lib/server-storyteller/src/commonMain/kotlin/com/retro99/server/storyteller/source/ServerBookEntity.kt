@@ -57,6 +57,13 @@ internal data class SimpleSeriesEntity(
     override val updatedAt: String?,
 ) : SeriesWithPositionEntity
 
+internal data class SimpleTagEntity(
+    override val uuid: String,
+    override val name: String,
+    override val createdAt: String?,
+    override val updatedAt: String?,
+) : TagEntity
+
 /**
  * Convert ServerBook to BookEntity for caching.
  */
@@ -93,19 +100,24 @@ internal fun ServerBook.toEntity(): BookEntity {
             )
         },
         creators = emptyList(),
-        series = series.mapNotNull { s ->
-            s.id?.let { id ->
-                SimpleSeriesEntity(
-                    uuid = id,
-                    name = s.name,
-                    featured = null,
-                    position = s.sequence?.toDouble(),
-                    createdAt = null,
-                    updatedAt = null,
-                )
-            }
+        series = series.map { s ->
+            SimpleSeriesEntity(
+                uuid = s.id ?: s.name, // Use name as fallback uuid when id is null
+                name = s.name,
+                featured = null,
+                position = s.sequence?.toDouble(),
+                createdAt = null,
+                updatedAt = null,
+            )
         },
-        tags = emptyList(),
+        tags = tags.map { tagName ->
+            SimpleTagEntity(
+                uuid = tagName, // Use name as uuid
+                name = tagName,
+                createdAt = null,
+                updatedAt = null,
+            )
+        },
         collections = emptyList(),
         status = null,
         ebook = if (hasEbook) SimpleMediaFileEntity(uuid, "ebook") else null,
@@ -159,6 +171,7 @@ internal fun BookEntity.toServerBook(baseUrl: String?): ServerBook {
                 sequence = s.position?.toFloat(),
             )
         },
+        tags = tags.map { it.name },
         hasEbook = ebook != null,
         hasAudiobook = audiobook != null,
         hasReadaloud = readaloud != null,

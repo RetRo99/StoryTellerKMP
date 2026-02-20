@@ -48,6 +48,7 @@ data class ServerBook(
     val authors: List<String>,
     val narrators: List<String>,
     val series: List<ServerBookSeries>,
+    val tags: List<String>,
     val hasEbook: Boolean,
     val hasAudiobook: Boolean,
     val hasReadaloud: Boolean,
