@@ -1,6 +1,7 @@
 package com.retro99.books.ui.list
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -32,6 +34,7 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,8 +44,10 @@ import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.books.ui.components.BookFilterChipsRow
 import com.retro99.books.ui.components.BookItemCard
 import com.retro99.books.ui.components.BookSearchBar
+import com.retro99.books.ui.components.BookSortSelector
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
@@ -85,6 +90,13 @@ private fun BooksListScreenContent(
         file?.let {
             intentDispatcher(BooksListIntent.OnImportBook(it))
         }
+    }
+
+    val listState = rememberLazyListState()
+
+    // Scroll to top when sort or filters change
+    LaunchedEffect(viewState.sortConfig, viewState.filterState.activeQuickFilters) {
+        listState.scrollToItem(0)
     }
 
     if (viewState.isImporting) {
@@ -141,7 +153,26 @@ private fun BooksListScreenContent(
                     )
                 }
 
+                BookFilterChipsRow(
+                    activeFilters = viewState.filterState.activeQuickFilters,
+                    onFilterToggle = { filter ->
+                        intentDispatcher(BooksListIntent.OnQuickFilterToggled(filter))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                )
+
+                BookSortSelector(
+                    sortConfig = viewState.sortConfig,
+                    onSortChanged = { sortConfig ->
+                        intentDispatcher(BooksListIntent.OnSortChanged(sortConfig))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -151,6 +182,7 @@ private fun BooksListScreenContent(
                         key = { it.uuid },
                     ) { book ->
                         BookItemCard(
+                            modifier = Modifier.animateItem(),
                             book = book,
                             isFavorite = book.uuid in viewState.favoriteBookUuids,
                             onClick = {

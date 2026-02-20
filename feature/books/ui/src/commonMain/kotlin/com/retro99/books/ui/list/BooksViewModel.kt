@@ -15,6 +15,9 @@ import com.retro99.books.domain.usecase.GetBooksUseCase
 import com.retro99.books.domain.usecase.ImportEpubUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
+import com.retro99.books.ui.model.BookFilterState
+import com.retro99.books.ui.model.BookQuickFilter
+import com.retro99.books.ui.model.BookSortConfig
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.toUiModel
 import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
@@ -49,9 +52,13 @@ class BooksViewModel(
         when (intent) {
             BooksListIntent.OnRefresh -> refreshProgressInfo()
             BooksListIntent.OnSearchToggled -> toggleSearch()
+            BooksListIntent.OnFilterToggled -> toggleFilter()
             is BooksListIntent.OnBookClicked -> onNavigateToBookDetail(intent.book)
             is BooksListIntent.OnFavoriteClicked -> toggleFavorite(intent.bookUuid)
             is BooksListIntent.OnImportBook -> importBook(intent.file)
+            is BooksListIntent.OnQuickFilterToggled -> toggleQuickFilter(intent.filter)
+            BooksListIntent.OnClearAllFilters -> clearAllFilters()
+            is BooksListIntent.OnSortChanged -> updateSort(intent.sortConfig)
         }
     }
 
@@ -89,6 +96,30 @@ class BooksViewModel(
             searchFieldState.edit { delete(0, length) }
         }
         updateState { it.copy(isSearchVisible = !currentlyVisible) }
+    }
+
+    private fun toggleFilter() {
+        updateState { it.copy(isFilterVisible = !it.isFilterVisible) }
+    }
+
+    private fun toggleQuickFilter(filter: BookQuickFilter) {
+        updateState { state ->
+            val currentFilters = state.filterState.activeQuickFilters
+            val newFilters = if (filter in currentFilters) {
+                currentFilters - filter
+            } else {
+                currentFilters + filter
+            }
+            state.copy(filterState = state.filterState.copy(activeQuickFilters = newFilters))
+        }
+    }
+
+    private fun clearAllFilters() {
+        updateState { it.copy(filterState = BookFilterState()) }
+    }
+
+    private fun updateSort(sortConfig: BookSortConfig) {
+        updateState { it.copy(sortConfig = sortConfig) }
     }
 
     private fun observeSearchQuery() {
