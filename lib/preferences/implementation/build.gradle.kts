@@ -27,6 +27,7 @@ kotlin {
             implementation(libs.serialization)
             implementation(projects.base)
             implementation(projects.lib.preferences.api)
+            implementation(projects.lib.user.api)
         }
 
         androidMain.dependencies {

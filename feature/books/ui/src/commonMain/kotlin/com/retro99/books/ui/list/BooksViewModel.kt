@@ -16,10 +16,14 @@ import com.retro99.books.domain.usecase.ImportEpubUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.BookFilterState
+import com.retro99.books.ui.model.BookListSettings
 import com.retro99.books.ui.model.BookQuickFilter
 import com.retro99.books.ui.model.BookSortConfig
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.toUiModel
+import com.retro99.preferences.api.PreferencesKey
+import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -38,11 +42,14 @@ class BooksViewModel(
     @Provided private val importEpubUseCase: ImportEpubUseCase,
     @Provided private val getAllBooksProgressInfoUseCase: GetAllBooksProgressInfoUseCase,
     @Provided private val analytics: Analytics,
+    @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
+    @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
     val searchFieldState = TextFieldState()
 
     init {
+        loadFilterSortSettings()
         observeBooks()
         observeFavorites()
         observeSearchQuery()
@@ -112,14 +119,38 @@ class BooksViewModel(
             }
             state.copy(filterState = state.filterState.copy(activeQuickFilters = newFilters))
         }
+        saveFilterSortSettings()
     }
 
     private fun clearAllFilters() {
         updateState { it.copy(filterState = BookFilterState()) }
+        saveFilterSortSettings()
     }
 
     private fun updateSort(sortConfig: BookSortConfig) {
         updateState { it.copy(sortConfig = sortConfig) }
+        saveFilterSortSettings()
+    }
+
+    private fun loadFilterSortSettings() {
+        val settings = getUserPreferenceUseCase<BookListSettings>(PreferencesKey.BookListFilterSort)
+        if (settings != null) {
+            updateState {
+                it.copy(
+                    filterState = settings.filterState,
+                    sortConfig = settings.sortConfig,
+                )
+            }
+        }
+    }
+
+    private fun saveFilterSortSettings() {
+        val state = viewState.value
+        val settings = BookListSettings(
+            filterState = state.filterState,
+            sortConfig = state.sortConfig,
+        )
+        saveUserPreferenceUseCase(PreferencesKey.BookListFilterSort, settings)
     }
 
     private fun observeSearchQuery() {

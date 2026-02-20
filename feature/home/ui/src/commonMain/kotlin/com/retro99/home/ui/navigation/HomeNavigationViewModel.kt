@@ -8,8 +8,8 @@ import com.retro99.home.ui.deeplink.DeepLinkDestination
 import com.retro99.home.ui.deeplink.DeepLinkHandler
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
-import com.retro99.preferences.api.getObject
-import com.retro99.preferences.api.putObject
+import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
 import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -44,6 +44,8 @@ class HomeNavigationViewModel(
     @Provided private val getCurrentlyReadingUseCase: GetCurrentlyReadingUseCase,
     @Provided private val preferences: Preferences,
     @Provided private val userRegistry: UserRegistry,
+    @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
+    @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
 ) : BaseViewModel<HomeUiState, HomeNavigationIntent>(
     HomeUiState(),
 ) {
@@ -128,9 +130,7 @@ class HomeNavigationViewModel(
      * Loads the bubble position from user-scoped preferences.
      */
     private fun loadBubblePosition() {
-        val userId = userRegistry.getActiveProfileIdOrDefault()
-        val key = PreferencesKey.UserScoped(userId, PreferencesKey.BubblePosition.name)
-        val bubblePosition = preferences.getObject<BubblePositionModel>(key)
+        val bubblePosition = getUserPreferenceUseCase<BubblePositionModel>(PreferencesKey.BubblePosition)
             ?: BubblePositionModel.DEFAULT
         updateState { it.copy(bubblePosition = bubblePosition) }
     }
@@ -139,10 +139,8 @@ class HomeNavigationViewModel(
      * Saves the bubble position to user-scoped preferences.
      */
     private fun saveBubblePosition(side: BubbleSide, yFraction: Float) {
-        val userId = userRegistry.getActiveProfileIdOrDefault()
-        val key = PreferencesKey.UserScoped(userId, PreferencesKey.BubblePosition.name)
         val position = BubblePositionModel.fromBubbleSide(side, yFraction)
-        preferences.putObject(key, position)
+        saveUserPreferenceUseCase(PreferencesKey.BubblePosition, position)
         updateState { it.copy(bubblePosition = position) }
     }
 

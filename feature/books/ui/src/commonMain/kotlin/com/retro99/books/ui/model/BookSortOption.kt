@@ -1,8 +1,11 @@
 package com.retro99.books.ui.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Available sorting options for the book list.
  */
+@Serializable
 enum class BookSortOption {
     TITLE,
     AUTHOR,
@@ -13,6 +16,7 @@ enum class BookSortOption {
 /**
  * Sort direction.
  */
+@Serializable
 enum class SortDirection {
     ASCENDING,
     DESCENDING,
@@ -21,6 +25,7 @@ enum class SortDirection {
 /**
  * Complete sort configuration.
  */
+@Serializable
 data class BookSortConfig(
     val option: BookSortOption = BookSortOption.TITLE,
     val direction: SortDirection = SortDirection.ASCENDING,

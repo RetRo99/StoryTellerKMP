@@ -42,6 +42,8 @@ kotlin {
             implementation(projects.feature.books.domain)
             implementation(projects.feature.reader.domain)
             implementation(projects.lib.analytics.api)
+            implementation(projects.lib.preferences.api)
+            implementation(projects.lib.preferences.implementation)
         }
     }
 }

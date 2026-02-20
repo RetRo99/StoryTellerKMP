@@ -9,6 +9,9 @@ import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
+import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.RemoveUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.data.model.CurrentlyReadingLocalModel
 import com.retro99.reader.data.model.PositionLocalModel
@@ -17,7 +20,6 @@ import com.retro99.reader.data.model.toDomain
 import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.model.toLocalModel
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
-import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,7 +38,9 @@ class ReaderLocalDataSource(
     @Provided private val fileDownloader: EbookFileDownloader,
     @Provided private val positionDatabase: PositionDatabase,
     @Provided private val databaseExecutor: DatabaseExecutor,
-    @Provided private val userRegistry: UserRegistry,
+    @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
+    @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
+    @Provided private val removeUserPreferenceUseCase: RemoveUserPreferenceUseCase,
 ) : ReaderLocalSource {
 
     private val _readerSettings = MutableStateFlow(loadReaderSettings())
@@ -82,21 +86,15 @@ class ReaderLocalDataSource(
     }
 
     override fun getCurrentlyReading(): CurrentlyReadingDomainModel? {
-        val userId = userRegistry.getActiveProfileIdOrDefault()
-        val key = PreferencesKey.UserScoped(userId, PreferencesKey.CurrentlyReading.name)
-        return preferences.getObject<CurrentlyReadingLocalModel>(key)?.toDomain()
+        return getUserPreferenceUseCase<CurrentlyReadingLocalModel>(PreferencesKey.CurrentlyReading)?.toDomain()
     }
 
     override fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel) {
-        val userId = userRegistry.getActiveProfileIdOrDefault()
-        val key = PreferencesKey.UserScoped(userId, PreferencesKey.CurrentlyReading.name)
-        preferences.putObject(key, currentlyReading.toLocal())
+        saveUserPreferenceUseCase(PreferencesKey.CurrentlyReading, currentlyReading.toLocal())
     }
 
     override fun clearCurrentlyReading() {
-        val userId = userRegistry.getActiveProfileIdOrDefault()
-        val key = PreferencesKey.UserScoped(userId, PreferencesKey.CurrentlyReading.name)
-        preferences.remove(key)
+        removeUserPreferenceUseCase(PreferencesKey.CurrentlyReading)
     }
 
     override suspend fun getAllPositions(): AppResult<List<PositionLocalModel>> {
