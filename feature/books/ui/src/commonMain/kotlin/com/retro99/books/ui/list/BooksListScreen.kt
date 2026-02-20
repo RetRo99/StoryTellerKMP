@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -19,11 +20,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -53,7 +57,12 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import resources.translations.books_empty_filtered_subtitle
+import resources.translations.books_empty_filtered_title
+import resources.translations.books_empty_subtitle
+import resources.translations.books_empty_title
 import resources.translations.books_importing
+import resources.translations.books_reset_filters
 import resources.translations.books_series_with_position
 
 @Composable
@@ -171,51 +180,116 @@ private fun BooksListScreenContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(
-                        items = viewState.filteredBooks,
-                        key = { it.uuid },
-                    ) { book ->
-                        BookItemCard(
-                            modifier = Modifier.animateItem(),
-                            book = book,
-                            isFavorite = book.uuid in viewState.favoriteBookUuids,
-                            onClick = {
-                                intentDispatcher(BooksListIntent.OnBookClicked(book))
-                            },
-                            onFavoriteClick = {
-                                intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
-                            },
-                            progressInfo = viewState.bookProgressInfo[book.uuid],
-                            subtitleContent = {
-                                if (book.series.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    val seriesInfo = book.series.first()
-                                    val seriesText = if (seriesInfo.position != null) {
-                                        stringResource(
-                                            StringRes.books_series_with_position,
-                                            seriesInfo.name,
-                                            seriesInfo.position,
+                if (viewState.filteredBooks.isEmpty() && !viewState.isLoading) {
+                    EmptyBooksState(
+                        hasActiveFilters = viewState.filterState.hasActiveFilters || viewState.searchQuery.isNotBlank(),
+                        onResetFilters = {
+                            intentDispatcher(BooksListIntent.OnClearAllFilters)
+                            searchFieldState.edit { delete(0, length) }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(
+                            items = viewState.filteredBooks,
+                            key = { it.uuid },
+                        ) { book ->
+                            BookItemCard(
+                                modifier = Modifier.animateItem(),
+                                book = book,
+                                isFavorite = book.uuid in viewState.favoriteBookUuids,
+                                onClick = {
+                                    intentDispatcher(BooksListIntent.OnBookClicked(book))
+                                },
+                                onFavoriteClick = {
+                                    intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
+                                },
+                                progressInfo = viewState.bookProgressInfo[book.uuid],
+                                subtitleContent = {
+                                    if (book.series.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val seriesInfo = book.series.first()
+                                        val seriesText = if (seriesInfo.position != null) {
+                                            stringResource(
+                                                StringRes.books_series_with_position,
+                                                seriesInfo.name,
+                                                seriesInfo.position,
+                                            )
+                                        } else {
+                                            seriesInfo.name
+                                        }
+                                        Text(
+                                            text = seriesText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
                                         )
-                                    } else {
-                                        seriesInfo.name
                                     }
-                                    Text(
-                                        text = seriesText,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            },
-                        )
+                                },
+                            )
+                        }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyBooksState(
+    hasActiveFilters: Boolean,
+    onResetFilters: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.MenuBook,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(
+                    if (hasActiveFilters) {
+                        StringRes.books_empty_filtered_title
+                    } else {
+                        StringRes.books_empty_title
+                    }
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(
+                    if (hasActiveFilters) {
+                        StringRes.books_empty_filtered_subtitle
+                    } else {
+                        StringRes.books_empty_subtitle
+                    }
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            )
+
+            if (hasActiveFilters) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onResetFilters) {
+                    Text(text = stringResource(StringRes.books_reset_filters))
                 }
             }
         }

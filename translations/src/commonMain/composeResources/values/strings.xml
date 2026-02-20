@@ -92,6 +92,11 @@
     <string name="books_media_download">Download</string>
     <string name="books_media_downloading">Downloading…</string>
     <string name="books_importing">Importing book…</string>
+    <string name="books_empty_title">No Books Found</string>
+    <string name="books_empty_subtitle">Import a book to get started</string>
+    <string name="books_empty_filtered_title">No Books Match Your Filters</string>
+    <string name="books_empty_filtered_subtitle">Try adjusting your search or filters</string>
+    <string name="books_reset_filters">Reset Filters</string>
 
     <!-- Book Filters -->
     <string name="books_filter_favorites">Favorites</string>
