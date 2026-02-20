@@ -1,5 +1,6 @@
 package com.retro99.books.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
@@ -19,7 +21,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.RecordVoiceOver
@@ -44,6 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.retro99.base.ui.compose.CoilImage
 import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
@@ -91,27 +94,50 @@ fun BookItemCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Book cover with optional cache indicator
-            Box {
+            Box(
+                modifier = Modifier.size(width = 80.dp, height = 120.dp),
+            ) {
                 CoilImage(
                     data = book.coverUrl,
                     cacheKey = book.uuid,
                     modifier = Modifier
-                        .size(width = 80.dp, height = 120.dp)
+                        .matchParentSize()
                         .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop,
                     contentDescription = book.title,
                 )
-                // Cache indicator badge
+                // Cache indicator badge - prominent badge at bottom of cover
                 if (progressInfo?.hasAnyCached == true) {
-                    Icon(
-                        imageVector = Icons.Outlined.CloudDone,
-                        contentDescription = stringResource(StringRes.books_cached_indicator),
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                                shape = RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp),
+                            )
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.DownloadDone,
+                            contentDescription = stringResource(StringRes.books_cached_indicator),
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = stringResource(StringRes.books_cached_indicator),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.sp,
+                                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            ),
+                        )
+                    }
                 }
             }
 
