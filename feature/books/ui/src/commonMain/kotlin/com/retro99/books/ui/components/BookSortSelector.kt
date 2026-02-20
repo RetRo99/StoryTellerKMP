@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -29,14 +27,20 @@ import com.retro99.books.ui.model.SortDirection
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import resources.translations.books_sort_a_to_z
 import resources.translations.books_sort_author
 import resources.translations.books_sort_date_added
+import resources.translations.books_sort_highest
 import resources.translations.books_sort_label
+import resources.translations.books_sort_lowest
+import resources.translations.books_sort_newest
+import resources.translations.books_sort_oldest
 import resources.translations.books_sort_rating
 import resources.translations.books_sort_title
+import resources.translations.books_sort_z_to_a
 
 /**
- * Sort selector with dropdown for sort option and toggle for direction.
+ * Sort selector with dropdown for sort option and segmented button for direction.
  */
 @Composable
 fun BookSortSelector(
@@ -82,24 +86,39 @@ fun BookSortSelector(
             }
         }
 
-        IconButton(
-            onClick = {
-                val newDirection = when (sortConfig.direction) {
-                    SortDirection.ASCENDING -> SortDirection.DESCENDING
-                    SortDirection.DESCENDING -> SortDirection.ASCENDING
-                }
+        // Segmented button for sort direction with contextual labels
+        SortDirectionSelector(
+            sortOption = sortConfig.option,
+            direction = sortConfig.direction,
+            onDirectionChanged = { newDirection ->
                 onSortChanged(sortConfig.copy(direction = newDirection))
             },
-        ) {
-            Icon(
-                imageVector = when (sortConfig.direction) {
-                    SortDirection.ASCENDING -> Icons.Filled.ArrowUpward
-                    SortDirection.DESCENDING -> Icons.Filled.ArrowDownward
-                },
-                contentDescription = null,
-            )
-        }
+        )
     }
+}
+
+/**
+ * Filter chips for selecting sort direction with contextual labels.
+ * Labels change based on the sort option (e.g., "A→Z" for title, "Newest" for date).
+ */
+@Composable
+private fun SortDirectionSelector(
+    sortOption: BookSortOption,
+    direction: SortDirection,
+    onDirectionChanged: (SortDirection) -> Unit,
+) {
+    val (ascendingLabel, descendingLabel) = sortOption.directionLabels
+
+    FilterChip(
+        selected = direction == SortDirection.ASCENDING,
+        onClick = { onDirectionChanged(SortDirection.ASCENDING) },
+        label = { Text(text = stringResource(ascendingLabel)) },
+    )
+    FilterChip(
+        selected = direction == SortDirection.DESCENDING,
+        onClick = { onDirectionChanged(SortDirection.DESCENDING) },
+        label = { Text(text = stringResource(descendingLabel)) },
+    )
 }
 
 /**
@@ -111,5 +130,17 @@ private val BookSortOption.labelRes: StringResource
         BookSortOption.AUTHOR -> StringRes.books_sort_author
         BookSortOption.RATING -> StringRes.books_sort_rating
         BookSortOption.DATE_ADDED -> StringRes.books_sort_date_added
+    }
+
+/**
+ * Direction labels for each sort option.
+ * Returns a pair of (ascending label, descending label).
+ */
+private val BookSortOption.directionLabels: Pair<StringResource, StringResource>
+    get() = when (this) {
+        BookSortOption.TITLE -> StringRes.books_sort_a_to_z to StringRes.books_sort_z_to_a
+        BookSortOption.AUTHOR -> StringRes.books_sort_a_to_z to StringRes.books_sort_z_to_a
+        BookSortOption.RATING -> StringRes.books_sort_highest to StringRes.books_sort_lowest
+        BookSortOption.DATE_ADDED -> StringRes.books_sort_oldest to StringRes.books_sort_newest
     }
 
