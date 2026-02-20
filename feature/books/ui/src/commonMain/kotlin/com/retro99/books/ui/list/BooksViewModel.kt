@@ -180,10 +180,7 @@ class BooksViewModel(
         observeAllFavoritesUseCase()
             .onEach { favoriteUuids ->
                 updateState {
-                    it.copy(
-                        favoriteBookUuids = favoriteUuids,
-                        books = sortBooksByFavorites(it.books, favoriteUuids),
-                    )
+                    it.copy(favoriteBookUuids = favoriteUuids)
                 }
             }
             .launchIn(viewModelScope)
@@ -203,7 +200,7 @@ class BooksViewModel(
                             .mapValues { (_, info) -> info.toUiModel() }
                         updateState {
                             it.copy(
-                                books = sortBooksByFavorites(uiBooks, it.favoriteBookUuids),
+                                books = uiBooks,
                                 bookProgressInfo = progressInfo,
                                 isLoading = false,
                                 isRefreshing = false,
@@ -223,13 +220,6 @@ class BooksViewModel(
                     }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun sortBooksByFavorites(
-        books: List<BookUiModel>,
-        favoriteUuids: Set<String>,
-    ): List<BookUiModel> {
-        return books.sortedByDescending { it.uuid in favoriteUuids }
     }
 
     private fun importBook(file: io.github.vinceglb.filekit.core.PlatformFile) {

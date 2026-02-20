@@ -1,6 +1,7 @@
 package com.retro99.login.ui.login
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -79,6 +81,7 @@ fun LoginScreen(
             isSignInEnabled = viewState.isSignInEnabled,
             loginError = viewState.loginError,
             intentDispatcher = intentDispatcher,
+            onBackClick = onBackClick,
             modifier = modifier,
         )
     }
@@ -93,105 +96,122 @@ private fun LoginScreenContent(
     isSignInEnabled: Boolean,
     loginError: String?,
     intentDispatcher: IntentDispatcher<LoginIntent>,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    Box(
+        modifier = modifier.fillMaxSize(),
     ) {
-        Text(
-            text = stringResource(StringRes.login_title),
-            style = MaterialTheme.typography.headlineMedium,
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedTextField(
-            state = urlState,
-            label = { Text(stringResource(StringRes.login_url_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            lineLimits = TextFieldLineLimits.SingleLine,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Uri,
-                imeAction = ImeAction.Next,
-            ),
-            trailingIcon = { UrlInfoTooltip() },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            state = usernameState,
-            label = { Text(stringResource(StringRes.login_username_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            lineLimits = TextFieldLineLimits.SingleLine,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next,
-            ),
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedSecureTextField(
-            state = passwordState,
-            label = { Text(stringResource(StringRes.login_password_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            textObfuscationMode = if (passwordVisible) {
-                TextObfuscationMode.Visible
-            } else {
-                TextObfuscationMode.Hidden
-            },
-            keyboardOptions = KeyboardOptions(
-                autoCorrectEnabled = false,
-                imeAction = ImeAction.Done,
-                keyboardType = KeyboardType.Password,
-            ),
-            onKeyboardAction = {
-                if (isSignInEnabled) {
-                    intentDispatcher(LoginIntent.OnSignInClicked)
-                }
-            },
-            trailingIcon = {
-                PasswordVisibilityToggle(
-                    isVisible = passwordVisible,
-                    onToggle = { passwordVisible = !passwordVisible },
-                )
-            },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (loginError != null) {
-            Text(
-                text = loginError,
-                maxLines = 2,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        } else {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        Button(
-            onClick = { intentDispatcher(LoginIntent.OnSignInClicked) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = isSignInEnabled,
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp),
         ) {
-            Text(stringResource(StringRes.login_sign_in_button))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = stringResource(StringRes.login_title),
+                style = MaterialTheme.typography.headlineMedium,
+            )
 
-        TextButton(onClick = { intentDispatcher(LoginIntent.OnBackClicked) }) {
-            Text(stringResource(StringRes.general_back))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedTextField(
+                state = urlState,
+                label = { Text(stringResource(StringRes.login_url_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                lineLimits = TextFieldLineLimits.SingleLine,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Uri,
+                    imeAction = ImeAction.Next,
+                ),
+                trailingIcon = { UrlInfoTooltip() },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                state = usernameState,
+                label = { Text(stringResource(StringRes.login_username_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                lineLimits = TextFieldLineLimits.SingleLine,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
+                ),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedSecureTextField(
+                state = passwordState,
+                label = { Text(stringResource(StringRes.login_password_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                textObfuscationMode = if (passwordVisible) {
+                    TextObfuscationMode.Visible
+                } else {
+                    TextObfuscationMode.Hidden
+                },
+                keyboardOptions = KeyboardOptions(
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Done,
+                    keyboardType = KeyboardType.Password,
+                ),
+                onKeyboardAction = {
+                    if (isSignInEnabled) {
+                        intentDispatcher(LoginIntent.OnSignInClicked)
+                    }
+                },
+                trailingIcon = {
+                    PasswordVisibilityToggle(
+                        isVisible = passwordVisible,
+                        onToggle = { passwordVisible = !passwordVisible },
+                    )
+                },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (loginError != null) {
+                Text(
+                    text = loginError,
+                    maxLines = 2,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            Button(
+                onClick = { intentDispatcher(LoginIntent.OnSignInClicked) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isSignInEnabled,
+            ) {
+                Text(stringResource(StringRes.login_sign_in_button))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextButton(onClick = { intentDispatcher(LoginIntent.OnBackClicked) }) {
+                Text(stringResource(StringRes.general_back))
+            }
         }
     }
 }

@@ -8,10 +8,18 @@ import org.koin.core.annotation.Provided
 
 @KoinViewModel
 class LoginNavigationViewModel(
+    startAtLogin: Boolean,
     @Provided @Named("isDebug") isDebug: Boolean,
     @Provided private val skipLoginUseCase: SkipLoginUseCase,
 ) : BaseViewModel<LoginNavigationState, LoginNavigationIntent>(
-    LoginNavigationState(isDebug = isDebug),
+    LoginNavigationState(
+        backStack = if (startAtLogin) {
+            listOf(LoginDestination.Login)
+        } else {
+            listOf(LoginDestination.Welcome)
+        },
+        isDebug = isDebug,
+    ),
 ) {
 
     override fun onIntent(intent: LoginNavigationIntent) {

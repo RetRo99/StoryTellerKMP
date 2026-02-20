@@ -26,12 +26,19 @@ class RootNavigationViewModel(
             RootNavigationIntent.OnLoginSuccess -> handleLoginSuccess()
             RootNavigationIntent.OnLogout -> handleLogout()
             RootNavigationIntent.OnLoginClicked -> handleLoginClicked()
+            RootNavigationIntent.OnBackFromLogin -> handleBackFromLogin()
         }
     }
 
     private fun handleLoginClicked() {
         updateState { state ->
-            state.copy(backStack = listOf(RootDestination.Login(false)))
+            state.copy(backStack = state.backStack + RootDestination.Login(false))
+        }
+    }
+
+    private fun handleBackFromLogin() {
+        updateState { state ->
+            state.copy(backStack = state.backStack.dropLast(1))
         }
     }
 
