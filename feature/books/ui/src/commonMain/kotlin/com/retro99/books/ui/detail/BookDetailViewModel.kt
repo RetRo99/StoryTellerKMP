@@ -20,6 +20,7 @@ import com.retro99.reader.domain.usecase.DownloadMediaUseCase
 import com.retro99.reader.domain.usecase.BookIdentifier
 import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
 import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
+import com.retro99.reader.domain.usecase.ResolvePositionConflictUseCase
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -44,6 +45,7 @@ class BookDetailViewModel(
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeFavoriteUseCase: ObserveFavoriteUseCase,
     @Provided private val getAllBooksProgressInfoUseCase: GetAllBooksProgressInfoUseCase,
+    @Provided private val resolvePositionConflictUseCase: ResolvePositionConflictUseCase,
     @Provided private val fileImportManager: FileImportManager,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<BookDetailViewState, BookDetailIntent>(
@@ -130,6 +132,18 @@ class BookDetailViewModel(
             BookDetailIntent.OnDeleteLocalBookDismissed -> {
                 updateState { it.copy(showDeleteLocalBookConfirmation = false) }
             }
+
+            BookDetailIntent.OnUseLocalPositionClicked -> {
+                resolveConflictWithLocal()
+            }
+
+            BookDetailIntent.OnUseRemotePositionClicked -> {
+                resolveConflictWithRemote()
+            }
+
+            BookDetailIntent.OnConflictResolutionErrorDismissed -> {
+                updateState { it.copy(conflictResolutionError = null) }
+            }
         }
     }
 
@@ -144,6 +158,46 @@ class BookDetailViewModel(
                     error.log(analytics, "BookDetailViewModel: Failed to delete local book")
                 }
         }
+    }
+
+    private fun resolveConflictWithLocal() {
+        viewModelScope.launch {
+            updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
+            resolvePositionConflictUseCase.useLocal(serverId, bookUuid)
+                .onSuccess {
+                    // Refresh progress info after resolving
+                    refreshProgressInfo()
+                }
+                .onFailure { error ->
+                    error.log(analytics, "BookDetailViewModel: Failed to resolve conflict with local")
+                    updateState { it.copy(conflictResolutionError = error) }
+                }
+            updateState { it.copy(isResolvingConflict = false) }
+        }
+    }
+
+    private fun resolveConflictWithRemote() {
+        viewModelScope.launch {
+            updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
+            resolvePositionConflictUseCase.useRemote(serverId, bookUuid)
+                .onSuccess {
+                    // Refresh progress info after resolving
+                    refreshProgressInfo()
+                }
+                .onFailure { error ->
+                    error.log(analytics, "BookDetailViewModel: Failed to resolve conflict with remote")
+                    updateState { it.copy(conflictResolutionError = error) }
+                }
+            updateState { it.copy(isResolvingConflict = false) }
+        }
+    }
+
+    private suspend fun refreshProgressInfo() {
+        val book = viewState.value.book ?: return
+        val bookIdentifier = BookIdentifier(book.uuid, serverId)
+        val progressInfo = getAllBooksProgressInfoUseCase(listOf(bookIdentifier))
+            .values.firstOrNull()?.toUiModel()
+        updateState { it.copy(progressInfo = progressInfo) }
     }
 
     private fun toggleFavorite() {

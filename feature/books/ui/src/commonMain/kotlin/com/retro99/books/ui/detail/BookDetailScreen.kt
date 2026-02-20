@@ -43,14 +43,21 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
+import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
@@ -99,6 +107,8 @@ import resources.translations.books_media_readaloud
 import resources.translations.books_media_ready
 import resources.translations.general_back
 import resources.translations.general_cancel
+import resources.translations.reader_conflict_use_local
+import resources.translations.reader_conflict_use_remote
 
 @Composable
 fun BookDetailScreen(
@@ -127,6 +137,8 @@ fun BookDetailScreen(
                 showDeleteLocalBookConfirmation = viewState.showDeleteLocalBookConfirmation,
                 isFavorite = viewState.isFavorite,
                 progressInfo = viewState.progressInfo,
+                isResolvingConflict = viewState.isResolvingConflict,
+                conflictResolutionError = viewState.conflictResolutionError,
                 intentDispatcher = intentDispatcher,
             )
         }
@@ -144,9 +156,23 @@ private fun BookDetailScreenContent(
     showDeleteLocalBookConfirmation: Boolean,
     isFavorite: Boolean,
     progressInfo: BookProgressInfoUiModel?,
+    isResolvingConflict: Boolean,
+    conflictResolutionError: AppError?,
     intentDispatcher: IntentDispatcher<BookDetailIntent>,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error snackbar when conflict resolution fails
+    LaunchedEffect(conflictResolutionError) {
+        conflictResolutionError?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error.message ?: "Failed to sync reading position",
+                duration = SnackbarDuration.Short,
+            )
+            intentDispatcher(BookDetailIntent.OnConflictResolutionErrorDismissed)
+        }
+    }
     deleteConfirmationBookType?.let { bookType ->
         DeleteCacheConfirmationDialog(
             bookType = bookType,
@@ -165,6 +191,7 @@ private fun BookDetailScreenContent(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { },
@@ -234,6 +261,9 @@ private fun BookDetailScreenContent(
                         localProgressPercent = progressInfo.localProgressPercent,
                         remoteProgression = progressInfo.remoteProgression,
                         remoteProgressPercent = progressInfo.remoteProgressPercent,
+                        isResolvingConflict = isResolvingConflict,
+                        onUseLocal = { intentDispatcher(BookDetailIntent.OnUseLocalPositionClicked) },
+                        onUseRemote = { intentDispatcher(BookDetailIntent.OnUseRemotePositionClicked) },
                     )
                 }
             }
@@ -357,6 +387,9 @@ private fun ReadingProgressSection(
     localProgressPercent: Int?,
     remoteProgression: Double?,
     remoteProgressPercent: Int?,
+    isResolvingConflict: Boolean,
+    onUseLocal: () -> Unit,
+    onUseRemote: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -423,6 +456,28 @@ private fun ReadingProgressSection(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
+                }
+
+                // Resolve conflict buttons
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onUseLocal,
+                        enabled = !isResolvingConflict,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(StringRes.reader_conflict_use_local))
+                    }
+                    OutlinedButton(
+                        onClick = onUseRemote,
+                        enabled = !isResolvingConflict,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(StringRes.reader_conflict_use_remote))
+                    }
                 }
             }
         } else {

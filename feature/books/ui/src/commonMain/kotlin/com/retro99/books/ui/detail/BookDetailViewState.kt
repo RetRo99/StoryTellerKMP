@@ -17,5 +17,7 @@ data class BookDetailViewState(
     val isFavorite: Boolean = false,
     val showDeleteLocalBookConfirmation: Boolean = false,
     val progressInfo: BookProgressInfoUiModel? = null,
+    val isResolvingConflict: Boolean = false,
+    val conflictResolutionError: AppError? = null,
 )
 
