@@ -1,6 +1,7 @@
 package com.retro99.books.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -62,27 +63,29 @@ fun BookSortSelector(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        SuggestionChip(
-            onClick = { expanded = true },
-            label = {
-                Text(
-                    text = "${stringResource(StringRes.books_sort_label)}: ${stringResource(sortConfig.option.labelRes)}"
-                )
-            },
-        )
+        Box {
+            SuggestionChip(
+                onClick = { expanded = true },
+                label = {
+                    Text(
+                        text = "${stringResource(StringRes.books_sort_label)}: ${stringResource(sortConfig.option.labelRes)}"
+                    )
+                },
+            )
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            BookSortOption.entries.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(option.labelRes)) },
-                    onClick = {
-                        onSortChanged(sortConfig.copy(option = option))
-                        expanded = false
-                    },
-                )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                BookSortOption.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(option.labelRes)) },
+                        onClick = {
+                            onSortChanged(sortConfig.copy(option = option))
+                            expanded = false
+                        },
+                    )
+                }
             }
         }
 
