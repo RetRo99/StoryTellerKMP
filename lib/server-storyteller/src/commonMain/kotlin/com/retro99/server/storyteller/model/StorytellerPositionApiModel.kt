@@ -90,13 +90,16 @@ fun StorytellerPositionApiModel.toServerPosition(bookUuid: String, serverId: Str
 }
 
 /**
- * Converts server-agnostic ServerPosition to Storyteller API model.
+ * Converts server-agnostic ServerPosition to Storyteller API model for saving.
+ * Note: createdAt and updatedAt are server-managed fields and should not be sent
+ * when saving positions - the server will set these automatically.
  */
 fun ServerPosition.toStorytellerApiModel(): StorytellerPositionApiModel {
     return StorytellerPositionApiModel(
         timestamp = timestamp,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
+        // Don't send createdAt/updatedAt - these are server-managed fields
+        createdAt = null,
+        updatedAt = null,
         locator = StorytellerLocatorApiModel(
             href = locatorHref,
             type = locatorType,

@@ -19,5 +19,8 @@ sealed interface BookDetailIntent : BaseIntent {
     data object OnDeleteLocalBookClicked : BookDetailIntent
     data object OnDeleteLocalBookConfirmed : BookDetailIntent
     data object OnDeleteLocalBookDismissed : BookDetailIntent
+    data object OnUseLocalPositionClicked : BookDetailIntent
+    data object OnUseRemotePositionClicked : BookDetailIntent
+    data object OnConflictResolutionErrorDismissed : BookDetailIntent
 }
 

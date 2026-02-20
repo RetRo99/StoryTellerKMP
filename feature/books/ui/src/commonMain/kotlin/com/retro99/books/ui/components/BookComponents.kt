@@ -206,7 +206,7 @@ fun BookItemCard(
                                 Text(
                                     text = stringResource(StringRes.books_progress_remote),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.tertiary,
                                     modifier = Modifier.width(48.dp),
                                 )
                                 LinearProgressIndicator(
@@ -215,11 +215,13 @@ fun BookItemCard(
                                         .weight(1f)
                                         .height(4.dp)
                                         .clip(RoundedCornerShape(2.dp)),
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                 )
                                 Text(
                                     text = "${progressInfo.remoteProgressPercent}%",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.tertiary,
                                 )
                             }
                         }
