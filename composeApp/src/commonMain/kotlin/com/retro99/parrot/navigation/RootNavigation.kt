@@ -21,7 +21,12 @@ fun RootNavigation(
         NavDisplay(
             backStack = state.backStack,
             onBack = {
-                // Don't allow back navigation from root destinations
+                // Allow back navigation only from non-initial Login (when navigating from settings)
+                val currentDestination = state.backStack.lastOrNull()
+                if (currentDestination is RootDestination.Login && !currentDestination.initial) {
+                    intentDispatcher(RootNavigationIntent.OnBackFromLogin)
+                }
+                // Otherwise don't allow back navigation from root destinations
                 // This prevents going back to Splash or Login after logging in
             },
             modifier = modifier,
@@ -34,11 +39,17 @@ fun RootNavigation(
                     SplashScreen()
                 }
 
-                entry<RootDestination.Login> {
+                entry<RootDestination.Login> { destination ->
                     LoginNavigation(
                         onLoginSuccess = {
                             intentDispatcher(RootNavigationIntent.OnLoginSuccess)
                         },
+                        onBack = if (!destination.initial) {
+                            { intentDispatcher(RootNavigationIntent.OnBackFromLogin) }
+                        } else {
+                            null
+                        },
+                        startAtLogin = !destination.initial,
                     )
                 }
 

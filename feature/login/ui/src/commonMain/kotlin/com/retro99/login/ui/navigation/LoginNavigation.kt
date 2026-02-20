@@ -11,12 +11,15 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.login.ui.login.LoginScreen
 import com.retro99.login.ui.welcome.WelcomeScreen
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun LoginNavigation(
     onLoginSuccess: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    startAtLogin: Boolean = false,
     modifier: Modifier = Modifier,
-    viewModel: LoginNavigationViewModel = koinViewModel(),
+    viewModel: LoginNavigationViewModel = koinViewModel { parametersOf(startAtLogin) },
 ) {
     BaseScreen(viewModel = viewModel) { state, intentDispatcher ->
         LaunchedEffect(state.skipLoginComplete) {
@@ -28,7 +31,11 @@ fun LoginNavigation(
         NavDisplay(
             backStack = state.backStack,
             onBack = {
-                intentDispatcher(LoginNavigationIntent.OnBackClicked)
+                if (state.backStack.size <= 1 && onBack != null) {
+                    onBack()
+                } else {
+                    intentDispatcher(LoginNavigationIntent.OnBackClicked)
+                }
             },
             modifier = modifier,
             entryDecorators = listOf(
@@ -45,6 +52,7 @@ fun LoginNavigation(
                         onSkipLoginClick = {
                             intentDispatcher(LoginNavigationIntent.OnSkipLoginClicked)
                         },
+                        onBack = onBack,
                     )
                 }
 
@@ -52,7 +60,11 @@ fun LoginNavigation(
                     LoginScreen(
                         onSignInSuccess = onLoginSuccess,
                         onBackClick = {
-                            intentDispatcher(LoginNavigationIntent.OnBackClicked)
+                            if (state.backStack.size <= 1 && onBack != null) {
+                                onBack()
+                            } else {
+                                intentDispatcher(LoginNavigationIntent.OnBackClicked)
+                            }
                         },
                     )
                 }
