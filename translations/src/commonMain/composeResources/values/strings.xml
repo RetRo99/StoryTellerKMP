@@ -112,6 +112,12 @@
     <string name="books_sort_date_added">Date Added</string>
     <string name="books_sort_ascending">Ascending</string>
     <string name="books_sort_descending">Descending</string>
+    <string name="books_sort_a_to_z">A → Z</string>
+    <string name="books_sort_z_to_a">Z → A</string>
+    <string name="books_sort_newest">Newest</string>
+    <string name="books_sort_oldest">Oldest</string>
+    <string name="books_sort_highest">Highest</string>
+    <string name="books_sort_lowest">Lowest</string>
 
     <!-- Book Detail Screen -->
     <string name="books_detail_add_favorite">Add to favorites</string>
