@@ -53,6 +53,9 @@ class LocalBooksRepository(
  * Convert a LocalBook to ServerBook for unified handling.
  */
 private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook {
+    val isEbook = bookType == com.retro99.books.domain.model.BookType.EBOOK
+    val isReadaloud = bookType == com.retro99.books.domain.model.BookType.READALOUD
+
     return ServerBook(
         uuid = uuid,
         serverId = serverId,
@@ -63,17 +66,22 @@ private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook
         narrators = emptyList(),
         series = emptyList(),
         tags = emptyList(),
-        hasEbook = bookType == com.retro99.books.domain.model.BookType.EBOOK,
+        hasEbook = isEbook,
         hasAudiobook = false,
-        hasReadaloud = bookType == com.retro99.books.domain.model.BookType.READALOUD,
-        metadata = mapOf(
-            "filePath" to filePath,
-            "fileSize" to fileSize,
-            "importedAt" to importedAt,
-            "lastOpenedAt" to lastOpenedAt,
-            "bookType" to bookType.value,
-            "isLocal" to true,
-        ),
+        hasReadaloud = isReadaloud,
+        // File paths - set based on book type
+        ebookFilepath = if (isEbook) filePath else null,
+        audiobookFilepath = null,
+        readaloudFilepath = if (isReadaloud) filePath else null,
+        // File sizes - set based on book type
+        ebookFileSize = if (isEbook) fileSize else null,
+        audiobookFileSize = null,
+        readaloudFileSize = if (isReadaloud) fileSize else null,
+        // Timestamps
+        createdAt = importedAt,
+        lastOpenedAt = lastOpenedAt,
+        // This is a local book
+        isLocal = true,
     )
 }
 

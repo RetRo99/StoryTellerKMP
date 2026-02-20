@@ -79,7 +79,7 @@ internal fun ServerBook.toEntity(): BookEntity {
         description = description,
         rating = null,
         suffix = null,
-        createdAt = null,
+        createdAt = createdAt,
         updatedAt = null,
         authors = authors.map { name ->
             SimplePersonEntity(
@@ -120,18 +120,19 @@ internal fun ServerBook.toEntity(): BookEntity {
         },
         collections = emptyList(),
         status = null,
-        ebook = if (hasEbook) SimpleMediaFileEntity(uuid, "ebook") else null,
-        audiobook = if (hasAudiobook) SimpleMediaFileEntity(uuid, "audiobook") else null,
-        readaloud = if (hasReadaloud) SimpleReadaloudEntity(uuid) else null,
+        ebook = if (hasEbook) SimpleMediaFileEntity(uuid, "ebook", ebookFilepath, ebookFileSize) else null,
+        audiobook = if (hasAudiobook) SimpleMediaFileEntity(uuid, "audiobook", audiobookFilepath, audiobookFileSize) else null,
+        readaloud = if (hasReadaloud) SimpleReadaloudEntity(uuid, readaloudFilepath) else null,
     )
 }
 
 internal data class SimpleMediaFileEntity(
     override val bookUuid: String,
     override val type: String,
+    override val filepath: String? = null,
+    val size: Long? = null,
 ) : MediaFileEntity {
     override val uuid: String = "$bookUuid-$type"
-    override val filepath: String? = null
     override val missing: Int? = null
     override val createdAt: String? = null
     override val updatedAt: String? = null
@@ -139,9 +140,9 @@ internal data class SimpleMediaFileEntity(
 
 internal data class SimpleReadaloudEntity(
     override val bookUuid: String,
+    override val filepath: String? = null,
 ) : ReadaloudEntity {
     override val uuid: String = "$bookUuid-readaloud"
-    override val filepath: String? = "readaloud"
     override val missing: Int? = null
     override val status: String? = null
     override val currentStage: String? = null
@@ -175,6 +176,19 @@ internal fun BookEntity.toServerBook(baseUrl: String?): ServerBook {
         hasEbook = ebook != null,
         hasAudiobook = audiobook != null,
         hasReadaloud = readaloud != null,
+        // File paths from cached entity
+        ebookFilepath = ebook?.filepath,
+        audiobookFilepath = audiobook?.filepath,
+        readaloudFilepath = readaloud?.filepath,
+        // File sizes - need to cast to SimpleMediaFileEntity to access size
+        ebookFileSize = (ebook as? SimpleMediaFileEntity)?.size,
+        audiobookFileSize = (audiobook as? SimpleMediaFileEntity)?.size,
+        readaloudFileSize = null, // Readaloud doesn't have size
+        // Timestamps
+        createdAt = createdAt,
+        lastOpenedAt = null, // Not stored in entity
+        // Cached books are not local
+        isLocal = false,
     )
 }
 

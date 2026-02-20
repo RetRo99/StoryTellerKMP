@@ -52,7 +52,19 @@ data class ServerBook(
     val hasEbook: Boolean,
     val hasAudiobook: Boolean,
     val hasReadaloud: Boolean,
-    val metadata: Map<String, Any?> = emptyMap(),
+    // File paths (nullable - Storyteller has paths for each media type, local books have one)
+    val ebookFilepath: String? = null,
+    val audiobookFilepath: String? = null,
+    val readaloudFilepath: String? = null,
+    // File sizes (optional)
+    val ebookFileSize: Long? = null,
+    val audiobookFileSize: Long? = null,
+    val readaloudFileSize: Long? = null,
+    // Timestamps
+    val createdAt: String? = null,
+    val lastOpenedAt: String? = null,
+    // Local book flag
+    val isLocal: Boolean = false,
 )
 
 data class ServerBookSeries(

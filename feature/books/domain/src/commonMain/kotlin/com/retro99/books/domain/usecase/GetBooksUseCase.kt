@@ -72,13 +72,21 @@ class GetBooksUseCase(
 
 /**
  * Maps a ServerBook to BookDomainModel.
- * Returns LocalBook if metadata indicates it's a local book, otherwise StorytellerBook.
+ * Returns LocalBook if isLocal flag is true, otherwise StorytellerBook.
  */
 private fun ServerBook.toBookDomainModel(): BookDomainModel {
-    // Check if this is a local book based on metadata
-    val isLocal = metadata["isLocal"] == true
-
     return if (isLocal) {
+        // Determine book type from which filepath is set
+        val bookType = when {
+            ebookFilepath != null -> BookType.EBOOK
+            readaloudFilepath != null -> BookType.READALOUD
+            audiobookFilepath != null -> BookType.AUDIOBOOK
+            else -> BookType.EBOOK
+        }
+        // Get the file path and size based on book type
+        val filePath = ebookFilepath ?: readaloudFilepath ?: audiobookFilepath ?: ""
+        val fileSize = ebookFileSize ?: readaloudFileSize ?: audiobookFileSize ?: 0L
+
         BookDomainModel.LocalBook(
             uuid = uuid,
             serverId = serverId,
@@ -86,13 +94,11 @@ private fun ServerBook.toBookDomainModel(): BookDomainModel {
             description = description,
             coverUrl = coverUrl,
             author = authors.firstOrNull(),
-            filePath = metadata["filePath"] as? String ?: "",
-            fileSize = (metadata["fileSize"] as? Number)?.toLong() ?: 0L,
-            importedAt = metadata["importedAt"] as? String ?: "",
-            lastOpenedAt = metadata["lastOpenedAt"] as? String,
-            bookType = (metadata["bookType"] as? String)?.let {
-                BookType.fromValue(it)
-            } ?: BookType.EBOOK,
+            filePath = filePath,
+            fileSize = fileSize,
+            importedAt = createdAt ?: "",
+            lastOpenedAt = lastOpenedAt,
+            bookType = bookType,
         )
     } else {
         BookDomainModel.StorytellerBook(
@@ -103,7 +109,7 @@ private fun ServerBook.toBookDomainModel(): BookDomainModel {
             coverUrl = coverUrl,
             id = 0L, // Not available in ServerBook
             language = null,
-            createdAt = null,
+            createdAt = createdAt,
             updatedAt = null,
             publicationDate = null,
             rating = null,
@@ -154,21 +160,21 @@ private fun ServerBook.toBookDomainModel(): BookDomainModel {
             status = null,
             ebook = if (hasEbook) MediaFileDomainModel(
                 uuid = "$uuid-ebook",
-                filepath = "ebook",
+                filepath = ebookFilepath,
                 missing = null,
                 createdAt = null,
                 updatedAt = null,
             ) else null,
             audiobook = if (hasAudiobook) MediaFileDomainModel(
                 uuid = "$uuid-audiobook",
-                filepath = "audiobook",
+                filepath = audiobookFilepath,
                 missing = null,
                 createdAt = null,
                 updatedAt = null,
             ) else null,
             readaloud = if (hasReadaloud) ReadaloudDomainModel(
                 uuid = "$uuid-readaloud",
-                filepath = "readaloud",
+                filepath = readaloudFilepath,
                 missing = null,
                 status = null,
                 currentStage = null,

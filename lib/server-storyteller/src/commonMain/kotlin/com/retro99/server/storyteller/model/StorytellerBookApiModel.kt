@@ -131,6 +131,19 @@ fun StorytellerBookApiModel.toDomain(
         hasEbook = ebook?.filepath != null,
         hasAudiobook = audiobook?.filepath != null,
         hasReadaloud = readaloud?.filepath != null,
+        // File paths from Storyteller API
+        ebookFilepath = ebook?.filepath,
+        audiobookFilepath = audiobook?.filepath,
+        readaloudFilepath = readaloud?.filepath,
+        // File sizes from Storyteller API
+        ebookFileSize = ebook?.size,
+        audiobookFileSize = audiobook?.size,
+        readaloudFileSize = null, // Readaloud doesn't have size in API model
+        // Timestamps
+        createdAt = createdAt,
+        lastOpenedAt = null, // Not available from API
+        // Storyteller books are not local
+        isLocal = false,
     )
 }
 
