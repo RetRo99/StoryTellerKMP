@@ -62,6 +62,7 @@ private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook
         authors = listOfNotNull(author),
         narrators = emptyList(),
         series = emptyList(),
+        tags = emptyList(),
         hasEbook = bookType == com.retro99.books.domain.model.BookType.EBOOK,
         hasAudiobook = false,
         hasReadaloud = bookType == com.retro99.books.domain.model.BookType.READALOUD,

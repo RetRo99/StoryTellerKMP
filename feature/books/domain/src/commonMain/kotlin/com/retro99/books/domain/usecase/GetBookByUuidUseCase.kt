@@ -10,6 +10,7 @@ import com.retro99.books.domain.model.MediaFileDomainModel
 import com.retro99.books.domain.model.PersonDomainModel
 import com.retro99.books.domain.model.ReadaloudDomainModel
 import com.retro99.books.domain.model.SeriesDomainModel
+import com.retro99.books.domain.model.TagDomainModel
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerBook
 import kotlinx.coroutines.flow.Flow
@@ -116,19 +117,24 @@ private fun ServerBook.toBookDomainModel(): BookDomainModel {
                 )
             },
             creators = emptyList(),
-            series = series.mapNotNull { s ->
-                s.id?.let { id ->
-                    SeriesDomainModel(
-                        uuid = id,
-                        name = s.name,
-                        featured = null,
-                        position = s.sequence?.toDouble(),
-                        createdAt = null,
-                        updatedAt = null,
-                    )
-                }
+            series = series.map { s ->
+                SeriesDomainModel(
+                    uuid = s.id ?: s.name, // Use name as fallback uuid when id is null
+                    name = s.name,
+                    featured = null,
+                    position = s.sequence?.toDouble(),
+                    createdAt = null,
+                    updatedAt = null,
+                )
             },
-            tags = emptyList(),
+            tags = tags.map { tagName ->
+                TagDomainModel(
+                    uuid = tagName, // Use name as uuid
+                    name = tagName,
+                    createdAt = null,
+                    updatedAt = null,
+                )
+            },
             collections = emptyList(),
             status = null,
             ebook = if (hasEbook) MediaFileDomainModel(

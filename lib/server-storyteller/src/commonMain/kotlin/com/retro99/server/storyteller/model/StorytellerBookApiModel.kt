@@ -127,6 +127,7 @@ fun StorytellerBookApiModel.toDomain(
                 sequence = it.sequence,
             )
         },
+        tags = tags.map { it.name },
         hasEbook = ebook?.filepath != null,
         hasAudiobook = audiobook?.filepath != null,
         hasReadaloud = readaloud?.filepath != null,
