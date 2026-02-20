@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -58,6 +59,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
@@ -521,7 +523,10 @@ private fun MediaButton(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 6.sp,
+                    maxFontSize = MaterialTheme.typography.labelLarge.fontSize,
+                ),
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -534,6 +539,11 @@ private fun MediaButton(
                             text = "${(downloadProgress * 100).toInt()}%",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.sp,
+                                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            ),
                         )
                     }
                     // Show cancel hint
@@ -552,6 +562,11 @@ private fun MediaButton(
                             text = stringResource(StringRes.general_cancel),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.sp,
+                                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            ),
                         )
                     }
                 }
@@ -572,6 +587,11 @@ private fun MediaButton(
                             text = stringResource(StringRes.books_media_ready),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.sp,
+                                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            ),
                         )
                     }
 
@@ -583,6 +603,11 @@ private fun MediaButton(
                             text = stringResource(StringRes.books_media_delete),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.sp,
+                                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            ),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .clickable(onClick = onDeleteClick)
@@ -608,6 +633,11 @@ private fun MediaButton(
                             text = stringResource(StringRes.books_media_download),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.sp,
+                                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            ),
                         )
                     }
                 }
