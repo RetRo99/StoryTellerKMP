@@ -8,7 +8,9 @@ sealed interface RootDestination {
     data object Splash : RootDestination
 
     @Serializable
-    data object Login : RootDestination
+    data class Login(
+        val initial: Boolean,
+    ) : RootDestination
 
     @Serializable
     data object Home : RootDestination
