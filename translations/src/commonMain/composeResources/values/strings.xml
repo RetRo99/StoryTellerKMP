@@ -113,7 +113,7 @@
 
     <!-- Book Progress -->
     <string name="books_reading_progress">Reading Progress</string>
-    <string name="books_cached_indicator">Downloaded for offline</string>
+    <string name="books_cached_indicator">Downloaded</string>
 
     <!-- Reader Screen -->
     <string name="reader_toc_title">Table of Contents</string>
