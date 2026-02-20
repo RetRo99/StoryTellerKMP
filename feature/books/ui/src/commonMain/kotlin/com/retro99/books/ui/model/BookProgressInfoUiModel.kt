@@ -8,26 +8,60 @@ import com.retro99.reader.domain.model.BookProgressInfoDomainModel
 data class BookProgressInfoUiModel(
     val bookUuid: String,
     /**
-     * Total reading progress as a value between 0.0 and 1.0.
-     * Null if no progress has been recorded.
+     * Local reading progress as a value between 0.0 and 1.0.
+     * Null if no local progress has been recorded.
      */
-    val totalProgression: Double?,
+    val localProgression: Double?,
+    /**
+     * Remote reading progress as a value between 0.0 and 1.0.
+     * Null if no remote progress exists.
+     */
+    val remoteProgression: Double?,
     /**
      * Whether any media type is cached locally.
      */
     val hasAnyCached: Boolean,
 ) {
     /**
-     * Returns the progress as a percentage (0-100).
+     * Returns the display progress (prefers local) as a percentage (0-100).
      */
     val progressPercent: Int
-        get() = ((totalProgression ?: 0.0) * 100).toInt()
+        get() = ((displayProgression ?: 0.0) * 100).toInt()
+
+    /**
+     * Returns the local progress as a percentage (0-100), or null if no local progress.
+     */
+    val localProgressPercent: Int?
+        get() = localProgression?.let { (it * 100).toInt() }
+
+    /**
+     * Returns the remote progress as a percentage (0-100), or null if no remote progress.
+     */
+    val remoteProgressPercent: Int?
+        get() = remoteProgression?.let { (it * 100).toInt() }
+
+    /**
+     * Returns true if there's a conflict between local and remote progress.
+     */
+    val hasConflict: Boolean
+        get() {
+            val local = localProgression ?: return false
+            val remote = remoteProgression ?: return false
+            return kotlin.math.abs(local - remote) > 0.01
+        }
+
+    /**
+     * Returns the progress to display (prefers local if available).
+     */
+    val displayProgression: Double?
+        get() = localProgression ?: remoteProgression
 }
 
 fun BookProgressInfoDomainModel.toUiModel(): BookProgressInfoUiModel {
     return BookProgressInfoUiModel(
         bookUuid = bookUuid,
-        totalProgression = totalProgression,
+        localProgression = localProgression,
+        remoteProgression = remoteProgression,
         hasAnyCached = hasAnyCached,
     )
 }

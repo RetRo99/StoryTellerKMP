@@ -17,6 +17,7 @@ import com.retro99.reader.domain.model.DownloadState
 import com.retro99.reader.domain.usecase.CancelDownloadUseCase
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
 import com.retro99.reader.domain.usecase.DownloadMediaUseCase
+import com.retro99.reader.domain.usecase.BookIdentifier
 import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
 import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
 import kotlinx.coroutines.flow.combine
@@ -197,7 +198,8 @@ class BookDetailViewModel(
             .onEach { result ->
                 result
                     .onSuccess { book ->
-                        val progressInfo = getAllBooksProgressInfoUseCase(listOf(book.uuid))
+                        val bookIdentifier = BookIdentifier(book.uuid, book.serverId)
+                        val progressInfo = getAllBooksProgressInfoUseCase(listOf(bookIdentifier))
                             .values.firstOrNull()?.toUiModel()
                         updateState {
                             it.copy(

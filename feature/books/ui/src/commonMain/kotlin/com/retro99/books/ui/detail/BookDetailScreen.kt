@@ -80,6 +80,8 @@ import resources.translations.books_delete_cache_confirm
 import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
 import resources.translations.books_delete_local_button
+import resources.translations.books_progress_local
+import resources.translations.books_progress_remote
 import resources.translations.books_reading_progress
 import resources.translations.books_delete_local_confirm
 import resources.translations.books_delete_local_message
@@ -221,12 +223,17 @@ private fun BookDetailScreenContent(
             )
 
             // Reading progress section
-            progressInfo?.totalProgression?.let { progress ->
+            progressInfo?.displayProgression?.let { progress ->
                 if (progress > 0.0) {
                     Spacer(modifier = Modifier.height(24.dp))
                     ReadingProgressSection(
                         progress = progress,
                         progressPercent = progressInfo.progressPercent,
+                        hasConflict = progressInfo.hasConflict,
+                        localProgression = progressInfo.localProgression,
+                        localProgressPercent = progressInfo.localProgressPercent,
+                        remoteProgression = progressInfo.remoteProgression,
+                        remoteProgressPercent = progressInfo.remoteProgressPercent,
                     )
                 }
             }
@@ -345,35 +352,103 @@ private fun BookHeader(
 private fun ReadingProgressSection(
     progress: Double,
     progressPercent: Int,
+    hasConflict: Boolean,
+    localProgression: Double?,
+    localProgressPercent: Int?,
+    remoteProgression: Double?,
+    remoteProgressPercent: Int?,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(StringRes.books_reading_progress),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = "$progressPercent%",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        LinearProgressIndicator(
-            progress = { progress.toFloat() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        Text(
+            text = stringResource(StringRes.books_reading_progress),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
         )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (hasConflict && localProgression != null && remoteProgression != null) {
+            // Show both local and remote progress bars when there's a conflict
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Local progress
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = stringResource(StringRes.books_progress_local),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(56.dp),
+                    )
+                    LinearProgressIndicator(
+                        progress = { localProgression.toFloat() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Text(
+                        text = "$localProgressPercent%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                // Remote progress
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = stringResource(StringRes.books_progress_remote),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(56.dp),
+                    )
+                    LinearProgressIndicator(
+                        progress = { remoteProgression.toFloat() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Text(
+                        text = "$remoteProgressPercent%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+            }
+        } else {
+            // Single progress bar when no conflict
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                LinearProgressIndicator(
+                    progress = { progress.toFloat() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "$progressPercent%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 }
 

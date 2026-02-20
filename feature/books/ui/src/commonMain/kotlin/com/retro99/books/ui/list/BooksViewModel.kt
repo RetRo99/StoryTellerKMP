@@ -24,6 +24,7 @@ import com.retro99.books.ui.model.toUiModel
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
+import com.retro99.reader.domain.usecase.BookIdentifier
 import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -76,9 +77,10 @@ class BooksViewModel(
     private fun refreshProgressInfo() {
         viewModelScope.launch {
             updateState { it.copy(isRefreshing = true) }
-            val bookUuids = viewState.value.books.map { it.uuid }
-            if (bookUuids.isNotEmpty()) {
-                val progressInfo = getAllBooksProgressInfoUseCase(bookUuids)
+            val books = viewState.value.books
+            if (books.isNotEmpty()) {
+                val bookIdentifiers = books.map { BookIdentifier(it.uuid, it.serverId) }
+                val progressInfo = getAllBooksProgressInfoUseCase(bookIdentifiers)
                     .mapValues { (_, info) -> info.toUiModel() }
                 updateState {
                     it.copy(
@@ -195,8 +197,8 @@ class BooksViewModel(
                 result
                     .onSuccess { books ->
                         val uiBooks = books.map { book -> book.toUiModel() }
-                        val bookUuids = books.map { it.uuid }
-                        val progressInfo = getAllBooksProgressInfoUseCase(bookUuids)
+                        val bookIdentifiers = books.map { BookIdentifier(it.uuid, it.serverId) }
+                        val progressInfo = getAllBooksProgressInfoUseCase(bookIdentifiers)
                             .mapValues { (_, info) -> info.toUiModel() }
                         updateState {
                             it.copy(

@@ -1,7 +1,6 @@
 package com.retro99.server.storyteller
 
 import com.github.michaelbull.result.map
-import com.github.michaelbull.result.onSuccess
 import com.retro99.base.repository.BaseRepository
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
@@ -64,12 +63,6 @@ class StorytellerReaderRepository(
             path = "/api/v2/books/$bookUuid/positions"
         ).map { apiModel ->
             apiModel?.toServerPosition(bookUuid, serverId)
-        }.onSuccess { position ->
-            // Cache the remote position locally (remoteWithCacheFallback handles this too,
-            // but we also cache when called directly)
-            if (position != null) {
-                localSource.savePosition(position)
-            }
         }
     }
 }
