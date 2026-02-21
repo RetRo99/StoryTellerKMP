@@ -13,6 +13,7 @@ import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAU
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
+import com.retro99.reader.domain.model.VolumeButtonAction
 
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
@@ -52,6 +53,13 @@ data class ReaderSettingsUiModel(
     val showReadingTime: Boolean = true,
     // Reading speed in words per minute (used for reading time estimation)
     val readingSpeedWpm: Int = DEFAULT_READING_SPEED_WPM,
+    // Volume button navigation settings (for Onyx Boox e-readers)
+    // Whether volume buttons are used for page navigation (only applies to ebooks, not read-aloud)
+    val volumeButtonsEnabled: Boolean = false,
+    // Action for volume up button
+    val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
+    // Action for volume down button
+    val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
 )
 
 enum class ReaderThemeUi {
@@ -120,6 +128,9 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     showCurrentTime = showCurrentTime,
     showReadingTime = showReadingTime,
     readingSpeedWpm = readingSpeedWpm,
+    volumeButtonsEnabled = volumeButtonsEnabled,
+    volumeUpAction = volumeUpAction,
+    volumeDownAction = volumeDownAction,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -146,6 +157,9 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     showCurrentTime = showCurrentTime,
     showReadingTime = showReadingTime,
     readingSpeedWpm = readingSpeedWpm,
+    volumeButtonsEnabled = volumeButtonsEnabled,
+    volumeUpAction = volumeUpAction,
+    volumeDownAction = volumeDownAction,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {

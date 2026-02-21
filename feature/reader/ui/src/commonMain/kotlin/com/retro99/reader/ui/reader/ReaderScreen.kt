@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,6 +68,7 @@ import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
+import com.retro99.reader.domain.model.VolumeButtonAction
 import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.PositionUiModel
@@ -125,9 +135,27 @@ private fun ReaderScreenContent(
         HideSystemBars()
     }
 
+    // Focus requester to ensure the reader can receive key events
+    val focusRequester = remember { FocusRequester() }
+
+    // Request focus when the reader content is first displayed
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusable()
+            .onKeyEvent { event ->
+                handlePageNavigationKeyEvent(
+                    event = event,
+                    settings = viewState.currentSettings,
+                    isReadAloud = viewState.isReadAloud,
+                    intentDispatcher = intentDispatcher,
+                )
+            },
     ) {
 
         val movableLoader = movableContentOf {
@@ -698,5 +726,75 @@ private fun ReadingProgressBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * Handles key events for page navigation in the reader.
+ *
+ * Page Up/Down and Direction keys always control page navigation, respecting user's
+ * configured actions for "up" and "down" buttons.
+ *
+ * Volume buttons only control page navigation when:
+ * 1. Volume button navigation is enabled in settings
+ * 2. Not in read-aloud mode (users need volume buttons for audio control)
+ *
+ * @return true if the key event was consumed, false otherwise
+ */
+private fun handlePageNavigationKeyEvent(
+    event: KeyEvent,
+    settings: ReaderSettingsUiModel?,
+    isReadAloud: Boolean,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
+): Boolean {
+    // Only handle key down events to avoid double-triggering
+    if (event.type != KeyEventType.KeyDown) return false
+
+    // Get configured actions, with sensible defaults
+    val upAction = settings?.volumeUpAction ?: VolumeButtonAction.NEXT_PAGE
+    val downAction = settings?.volumeDownAction ?: VolumeButtonAction.PREVIOUS_PAGE
+
+    return when (event.key) {
+        // Page Up/Down and Direction keys always control page navigation
+        // They respect the same action configuration as volume buttons
+        Key.PageUp, Key.DirectionUp -> {
+            dispatchNavigationAction(upAction, intentDispatcher)
+            true
+        }
+        Key.PageDown, Key.DirectionDown -> {
+            dispatchNavigationAction(downAction, intentDispatcher)
+            true
+        }
+        // Volume buttons only work when enabled and not in read-aloud mode
+        Key.VolumeUp -> {
+            if (settings?.volumeButtonsEnabled == true && !isReadAloud) {
+                dispatchNavigationAction(upAction, intentDispatcher)
+                true
+            } else {
+                false
+            }
+        }
+        Key.VolumeDown -> {
+            if (settings?.volumeButtonsEnabled == true && !isReadAloud) {
+                dispatchNavigationAction(downAction, intentDispatcher)
+                true
+            } else {
+                false
+            }
+        }
+        else -> false
+    }
+}
+
+/**
+ * Dispatches the appropriate navigation intent based on the action.
+ */
+private fun dispatchNavigationAction(
+    action: VolumeButtonAction,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
+) {
+    when (action) {
+        VolumeButtonAction.NEXT_PAGE -> intentDispatcher(ReaderIntent.GoToNextPage)
+        VolumeButtonAction.PREVIOUS_PAGE -> intentDispatcher(ReaderIntent.GoToPreviousPage)
     }
 }

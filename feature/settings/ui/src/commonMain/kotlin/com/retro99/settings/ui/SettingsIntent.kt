@@ -5,6 +5,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
+import com.retro99.reader.domain.model.VolumeButtonAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
@@ -47,5 +48,10 @@ sealed interface SettingsIntent : BaseIntent {
 
     // Show reading time intent
     data class OnShowReadingTimeChanged(val showReadingTime: Boolean) : SettingsIntent
+
+    // Volume button navigation intents
+    data class OnVolumeButtonsEnabledChanged(val enabled: Boolean) : SettingsIntent
+    data class OnVolumeUpActionChanged(val action: VolumeButtonAction) : SettingsIntent
+    data class OnVolumeDownActionChanged(val action: VolumeButtonAction) : SettingsIntent
 }
 

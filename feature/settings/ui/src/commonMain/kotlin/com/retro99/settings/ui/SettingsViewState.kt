@@ -4,6 +4,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
+import com.retro99.reader.domain.model.VolumeButtonAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderSettingsUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
@@ -37,6 +38,9 @@ data class SettingsViewState(
     val fullscreenMode: Boolean get() = readerSettings.fullscreenMode
     val showCurrentTime: Boolean get() = readerSettings.showCurrentTime
     val showReadingTime: Boolean get() = readerSettings.showReadingTime
+    val volumeButtonsEnabled: Boolean get() = readerSettings.volumeButtonsEnabled
+    val volumeUpAction: VolumeButtonAction get() = readerSettings.volumeUpAction
+    val volumeDownAction: VolumeButtonAction get() = readerSettings.volumeDownAction
 
     fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
 }
@@ -45,6 +49,7 @@ enum class SettingsSection {
     APPEARANCE,
     TYPOGRAPHY,
     LAYOUT,
+    NAVIGATION,
     READALOUD,
 }
 

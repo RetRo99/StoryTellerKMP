@@ -7,6 +7,7 @@ import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
+import com.retro99.reader.domain.model.VolumeButtonAction
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -69,6 +70,13 @@ data class ReaderSettingsLocalModel(
     // Reading speed in words per minute (used for reading time estimation)
     @SerialName("reading_speed_wpm")
     val readingSpeedWpm: Int = ReaderSettingsDomainModel.DEFAULT_READING_SPEED_WPM,
+    // Volume button navigation settings (for Onyx Boox e-readers)
+    @SerialName("volume_buttons_enabled")
+    val volumeButtonsEnabled: Boolean = false,
+    @SerialName("volume_up_action")
+    val volumeUpAction: String = "NEXT_PAGE",
+    @SerialName("volume_down_action")
+    val volumeDownAction: String = "PREVIOUS_PAGE",
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -129,6 +137,17 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         showCurrentTime = showCurrentTime,
         showReadingTime = showReadingTime,
         readingSpeedWpm = readingSpeedWpm,
+        volumeButtonsEnabled = volumeButtonsEnabled,
+        volumeUpAction = try {
+            VolumeButtonAction.valueOf(volumeUpAction)
+        } catch (e: IllegalArgumentException) {
+            VolumeButtonAction.NEXT_PAGE
+        },
+        volumeDownAction = try {
+            VolumeButtonAction.valueOf(volumeDownAction)
+        } catch (e: IllegalArgumentException) {
+            VolumeButtonAction.PREVIOUS_PAGE
+        },
     )
 }
 
@@ -157,5 +176,8 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         showCurrentTime = showCurrentTime,
         showReadingTime = showReadingTime,
         readingSpeedWpm = readingSpeedWpm,
+        volumeButtonsEnabled = volumeButtonsEnabled,
+        volumeUpAction = volumeUpAction.name,
+        volumeDownAction = volumeDownAction.name,
     )
 }

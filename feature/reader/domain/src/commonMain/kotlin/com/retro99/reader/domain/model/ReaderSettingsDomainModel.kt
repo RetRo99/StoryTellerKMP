@@ -41,6 +41,13 @@ data class ReaderSettingsDomainModel(
     val showReadingTime: Boolean = true,
     // Reading speed in words per minute (used for reading time estimation)
     val readingSpeedWpm: Int = DEFAULT_READING_SPEED_WPM,
+    // Volume button navigation settings (for Onyx Boox e-readers)
+    // Whether volume buttons are used for page navigation (only applies to ebooks, not read-aloud)
+    val volumeButtonsEnabled: Boolean = false,
+    // Action for volume up button
+    val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
+    // Action for volume down button
+    val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
 ) {
     companion object {
         /** Default reading speed in words per minute (average adult reading speed) */
@@ -122,4 +129,17 @@ enum class ProgressBarPosition {
 
     /** Progress bar at the bottom (default) */
     BOTTOM,
+}
+
+/**
+ * Actions that can be assigned to volume buttons for page navigation.
+ * This is primarily used for Onyx Boox e-readers where volume buttons
+ * can be configured as page turn buttons.
+ */
+enum class VolumeButtonAction {
+    /** Navigate to the next page */
+    NEXT_PAGE,
+
+    /** Navigate to the previous page */
+    PREVIOUS_PAGE,
 }

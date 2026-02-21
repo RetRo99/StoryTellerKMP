@@ -248,6 +248,16 @@
     <string name="settings_show_reading_time">Show Reading Time</string>
     <string name="settings_show_reading_time_description">Display remaining chapter time in the progress bar</string>
 
+    <!-- Volume Button Navigation Settings -->
+    <string name="settings_section_navigation">Navigation</string>
+    <string name="settings_section_navigation_description">Volume button page navigation</string>
+    <string name="settings_volume_buttons_enabled">Use Volume Buttons for Navigation</string>
+    <string name="settings_volume_buttons_enabled_description">Use volume buttons to turn pages (only in ebooks, not read-aloud)</string>
+    <string name="settings_volume_up_action">Volume Up Button</string>
+    <string name="settings_volume_down_action">Volume Down Button</string>
+    <string name="settings_volume_action_next_page">Next Page</string>
+    <string name="settings_volume_action_previous_page">Previous Page</string>
+
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
     <string name="settings_section_readaloud_description">Text highlighting style and color</string>
