@@ -492,8 +492,13 @@ private fun ColorPickerDialog(
     onColorSelected: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val initialComposeColor = Color(initialColor)
     val controller = rememberColorPickerController()
-    var selectedColor by remember { mutableStateOf(Color(initialColor)) }
+    var selectedColor by remember { mutableStateOf(initialComposeColor) }
+
+    // Debug logging
+    println("log123: ColorPickerDialog - initialColor (Int) = $initialColor (hex: ${initialColor.toUInt().toString(16)})")
+    println("log123: ColorPickerDialog - initialComposeColor = $initialComposeColor")
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -522,9 +527,13 @@ private fun ColorPickerDialog(
                         .height(200.dp),
                     controller = controller,
                     onColorChanged = { colorEnvelope ->
-                        selectedColor = colorEnvelope.color
+                        println("log123: onColorChanged - fromUser=${colorEnvelope.fromUser}, color=${colorEnvelope.color}")
+                        // Only update when user interacts, not on initial composition
+                        if (colorEnvelope.fromUser) {
+                            selectedColor = colorEnvelope.color
+                        }
                     },
-                    initialColor = Color(initialColor),
+                    initialColor = initialComposeColor,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -539,6 +548,7 @@ private fun ColorPickerDialog(
                         .fillMaxWidth()
                         .height(35.dp),
                     controller = controller,
+                    initialColor = initialComposeColor,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -553,6 +563,7 @@ private fun ColorPickerDialog(
                         .fillMaxWidth()
                         .height(35.dp),
                     controller = controller,
+                    initialColor = initialComposeColor,
                 )
             }
         },
@@ -560,9 +571,9 @@ private fun ColorPickerDialog(
             TextButton(
                 onClick = {
                     // Convert Color to ARGB Int
-                    val argb = (selectedColor.alpha * 255).toInt() shl 24 or
-                            (selectedColor.red * 255).toInt() shl 16 or
-                            (selectedColor.green * 255).toInt() shl 8 or
+                    val argb = ((selectedColor.alpha * 255).toInt() shl 24) or
+                            ((selectedColor.red * 255).toInt() shl 16) or
+                            ((selectedColor.green * 255).toInt() shl 8) or
                             (selectedColor.blue * 255).toInt()
                     onColorSelected(argb)
                 },

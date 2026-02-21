@@ -12,15 +12,26 @@ interface Preferences {
     fun remove(key: PreferencesKey)
 }
 
+/**
+ * Json instance configured for preferences serialization.
+ * - ignoreUnknownKeys: Allows adding new fields without breaking existing stored data
+ * - coerceInputValues: Uses data class default values when JSON field is missing or null
+ */
+@PublishedApi
+internal val preferencesJson = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+}
+
 inline fun <reified T> Preferences.putObject(key: PreferencesKey, value: T) {
-    val jsonString = Json.encodeToString(value)
+    val jsonString = preferencesJson.encodeToString(value)
     putString(key, jsonString)
 }
 
 inline fun <reified T> Preferences.getObject(key: PreferencesKey): T? {
     val jsonString = getStringOrNull(key) ?: return null
     return try {
-        Json.decodeFromString<T>(jsonString)
+        preferencesJson.decodeFromString<T>(jsonString)
     } catch (e: Exception) {
         // Note: This is in the API module without Analytics dependency.
         // Callers should handle null return appropriately.

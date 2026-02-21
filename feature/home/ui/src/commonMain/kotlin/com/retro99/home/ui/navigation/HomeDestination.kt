@@ -66,7 +66,7 @@ sealed interface HomeDestination : NavKey, BottomSheetDestination, BottomBarDest
 
         @Transient
         override val bottomSheetConfig: BottomSheetConfig = BottomSheetConfig(
-            skipPartiallyExpanded = false,
+            skipPartiallyExpanded = true,
             fillMaxHeight = false,
         )
     }
