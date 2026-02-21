@@ -14,5 +14,6 @@ interface ImportedBookEntity {
     val importedAt: String
     val lastOpenedAt: String?
     val bookType: String
+    val publicationDate: String?
 }
 

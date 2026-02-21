@@ -66,7 +66,7 @@ data class BooksListViewState(
                 it.authors.firstOrNull() ?: ""
             }
             BookSortOption.RATING -> compareBy(nullsLast()) { it.rating }
-            BookSortOption.DATE_ADDED -> compareBy { it.uuid } // Fallback, ideally use createdAt
+            BookSortOption.DATE_ADDED -> compareBy(nullsLast()) { it.publicationDate }
         }
         return when (config.direction) {
             SortDirection.ASCENDING -> sortedWith(comparator)

@@ -63,6 +63,7 @@ data class ServerBook(
     // Timestamps
     val createdAt: String? = null,
     val lastOpenedAt: String? = null,
+    val publicationDate: String? = null,
     // Local book flag
     val isLocal: Boolean = false,
 )

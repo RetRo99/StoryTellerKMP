@@ -31,6 +31,8 @@ sealed class BookUiModel {
 
     abstract val rating: Float?
 
+    abstract val publicationDate: String?
+
     /**
      * Returns the file path for the given book type, or null if not available.
      */
@@ -52,6 +54,7 @@ sealed class BookUiModel {
         override val tags: List<String>,
         override val statusName: String?,
         override val rating: Float?,
+        override val publicationDate: String?,
         override val hasEbook: Boolean,
         override val hasAudiobook: Boolean,
         override val hasReadaloud: Boolean,
@@ -82,6 +85,7 @@ sealed class BookUiModel {
         val importedAt: String,
         val lastOpenedAt: String?,
         val bookType: BookType,
+        override val publicationDate: String?,
     ) : BookUiModel() {
         override val hasEbook: Boolean = bookType == BookType.EBOOK
         override val hasAudiobook: Boolean = false

@@ -19,6 +19,7 @@ data class ImportedBookLocalModel(
     override val importedAt: String,
     override val lastOpenedAt: String?,
     override val bookType: String,
+    override val publicationDate: String?,
 ) : ImportedBookEntity
 
 fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
@@ -33,6 +34,7 @@ fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
     importedAt = importedAt,
     lastOpenedAt = lastOpenedAt,
     bookType = BookType.fromValue(bookType),
+    publicationDate = publicationDate,
 )
 
 fun BookDomainModel.LocalBook.toLocalModel() = ImportedBookLocalModel(
@@ -46,5 +48,6 @@ fun BookDomainModel.LocalBook.toLocalModel() = ImportedBookLocalModel(
     importedAt = importedAt,
     lastOpenedAt = lastOpenedAt,
     bookType = bookType.value,
+    publicationDate = publicationDate,
 )
 

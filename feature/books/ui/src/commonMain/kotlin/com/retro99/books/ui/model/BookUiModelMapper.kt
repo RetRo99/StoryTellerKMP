@@ -15,6 +15,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
         tags = tags.map { it.name },
         statusName = status?.name,
         rating = rating,
+        publicationDate = publicationDate,
         description = description,
         hasEbook = ebook?.filepath != null,
         hasAudiobook = audiobook?.filepath != null,
@@ -36,6 +37,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
         importedAt = importedAt,
         lastOpenedAt = lastOpenedAt,
         bookType = bookType,
+        publicationDate = publicationDate,
     )
 }
 
