@@ -83,11 +83,17 @@ data class StorytellerSeriesApiModel(
     @SerialName("id")
     val id: Long? = null,
 
+    @SerialName("uuid")
+    val uuid: String? = null,
+
     @SerialName("name")
     val name: String,
 
-    @SerialName("sequence")
-    val sequence: Float? = null,
+    @SerialName("position")
+    val position: Float? = null,
+
+    @SerialName("featured")
+    val featured: Int? = null,
 )
 
 @Serializable
@@ -122,9 +128,9 @@ fun StorytellerBookApiModel.toDomain(
         narrators = narrators.map { it.name },
         series = series.map {
             ServerBookSeries(
-                id = it.id?.toString(),
+                id = it.uuid ?: it.id?.toString(),
                 name = it.name,
-                sequence = it.sequence,
+                sequence = it.position,
             )
         },
         tags = tags.map { it.name },

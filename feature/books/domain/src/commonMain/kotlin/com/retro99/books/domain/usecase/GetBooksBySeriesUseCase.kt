@@ -21,7 +21,7 @@ class GetBooksBySeriesUseCase(
                     }.sortedWith(
                         compareBy(
                             { book ->
-                                book.series.find { it.name.equals(seriesName, ignoreCase = true) }?.position ?: Int.MAX_VALUE
+                                book.series.find { it.name.equals(seriesName, ignoreCase = true) }?.position ?: Double.MAX_VALUE
                             },
                             { it.title },
                         ),
