@@ -117,10 +117,10 @@ class InitializeReaderUseCase(
     private suspend fun initializeImportedBook(
         book: BookDomainModel.LocalBook,
         requestedBookType: BookType,
-    ): AppResult<ReaderInitializationData> {
+    ): AppResult<ReaderInitializationData> = coroutineScope {
         // Validate that the requested book type matches the stored book type
         if (requestedBookType != book.bookType) {
-            return Err(
+            return@coroutineScope Err(
                 AppError.UnknownError(
                     Throwable(
                         "Book type mismatch: requested $requestedBookType but book is ${book.bookType}"
@@ -129,9 +129,18 @@ class InitializeReaderUseCase(
             )
         }
 
-        val settings = getReaderSettingsUseCase().first()
+        val settingsDeferred = async {
+            getReaderSettingsUseCase().first()
+        }
+        val progressDeferred = async {
+            getReadingProgressWithConflictUseCase(book.serverId, book.uuid)
+        }
 
-        return Ok(
+        val settings = settingsDeferred.await()
+        val progressResult = progressDeferred.await()
+            .getOrElse { ReadingProgressResult.Resolved(null) }
+
+        Ok(
             ReaderInitializationData(
                 serverId = book.serverId,
                 bookUuid = book.uuid,
@@ -140,8 +149,7 @@ class InitializeReaderUseCase(
                 localEbookPath = book.filePath,
                 bookType = book.bookType,
                 initialSettings = settings,
-                // TODO: Add progress tracking for imported books
-                progressResult = ReadingProgressResult.Resolved(null),
+                progressResult = progressResult,
             )
         )
     }
