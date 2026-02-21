@@ -83,6 +83,11 @@ class AndroidBookController internal constructor() : BookController {
     private var highlightStyle: ReadAloudHighlightStyle = ReadAloudHighlightStyle.HIGHLIGHT
 
     /**
+     * Current highlighted locator, used to refresh decoration when settings change.
+     */
+    private var currentHighlightedLocator: Locator? = null
+
+    /**
      * Tracks the last sentence that triggered a page turn to avoid duplicate turns.
      */
     private var lastPageTurnSentenceId: String? = null
@@ -300,9 +305,31 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
+        val colorChanged = highlightColorArgb != settings.highlightColor
+        val styleChanged = highlightStyle != settings.highlightStyle
+
         highlightColorArgb = settings.highlightColor
         highlightStyle = settings.highlightStyle
         withNavigator { it.submitPreferences(settings.toEpubPreferences()) }
+
+        // Refresh current decoration if highlight color or style changed
+        if ((colorChanged || styleChanged) && currentHighlightedLocator != null) {
+            refreshCurrentDecoration()
+        }
+    }
+
+    /**
+     * Refreshes the current decoration with updated highlight color/style.
+     */
+    private fun refreshCurrentDecoration() {
+        val locator = currentHighlightedLocator ?: return
+        controllerScope.launch {
+            withNavigatorOrNull { nav ->
+                val decorableNavigator = nav as? DecorableNavigator ?: return@withNavigatorOrNull
+                val decorations = createDecorations(locator)
+                decorableNavigator.applyDecorations(decorations, READALOUD_DECORATION_GROUP)
+            }
+        }
     }
 
     override fun goToPosition(position: PositionUiModel) {
@@ -328,6 +355,9 @@ class AndroidBookController internal constructor() : BookController {
                 nav as? DecorableNavigator ?: return@withNavigatorOrNull
             val androidLocator = locator.toAndroidLocator() ?: return@withNavigatorOrNull
             val fragmentId = locator.fragments?.firstOrNull()
+
+            // Track current highlighted locator for refreshing when settings change
+            currentHighlightedLocator = androidLocator
 
             // First navigate to the locator to ensure the sentence is visible
             nav.go(androidLocator)
@@ -469,6 +499,7 @@ class AndroidBookController internal constructor() : BookController {
     override fun close() {
         pendingPageTurnJob?.cancel()
         pendingActions.clear()
+        currentHighlightedLocator = null
         // Note: No need to call getRemoveDoubleTapDetectorScript() here.
         // The WebView and its JavaScript context will be destroyed when the
         // fragment is removed, so the event listener will be cleaned up automatically.
