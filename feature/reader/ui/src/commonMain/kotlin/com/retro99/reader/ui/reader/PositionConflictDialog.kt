@@ -39,12 +39,14 @@ fun PositionConflictDialog(
             PositionCard(
                 title = stringResource(StringRes.reader_conflict_local_title),
                 position = conflict.localPosition,
+                onClick = onUseLocal,
             )
         },
         remoteContent = {
             PositionCard(
                 title = stringResource(StringRes.reader_conflict_remote_title),
                 position = conflict.remotePosition,
+                onClick = onUseRemote,
             )
         },
         onUseLocal = onUseLocal,
@@ -58,9 +60,11 @@ fun PositionConflictDialog(
 private fun PositionCard(
     title: String,
     position: PositionUiModel,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
