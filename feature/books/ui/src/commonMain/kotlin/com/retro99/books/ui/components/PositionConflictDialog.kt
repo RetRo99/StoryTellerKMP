@@ -48,12 +48,14 @@ fun PositionConflictDialog(
             ProgressCard(
                 title = stringResource(StringRes.reader_conflict_local_title),
                 progressPercent = localProgressPercent,
+                onClick = onUseLocal,
             )
         },
         remoteContent = {
             ProgressCard(
                 title = stringResource(StringRes.reader_conflict_remote_title),
                 progressPercent = remoteProgressPercent,
+                onClick = onUseRemote,
             )
         },
         onUseLocal = onUseLocal,
@@ -123,9 +125,11 @@ fun PositionConflictDialogContent(
 private fun ProgressCard(
     title: String,
     progressPercent: Int,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
