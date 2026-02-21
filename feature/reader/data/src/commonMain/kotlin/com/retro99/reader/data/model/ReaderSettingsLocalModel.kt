@@ -1,7 +1,6 @@
 package com.retro99.reader.data.model
 
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
-import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
@@ -35,8 +34,9 @@ data class ReaderSettingsLocalModel(
     val playbackSpeed: Float = 1.0f,
     @SerialName("volume")
     val volume: Float = 1.0f,
-    @SerialName("highlight_color")
-    val highlightColor: String = "YELLOW",
+    // Highlight color as ARGB Int value
+    @SerialName("highlight_color_argb")
+    val highlightColorArgb: Int = ReaderSettingsDomainModel.DEFAULT_HIGHLIGHT_COLOR,
     @SerialName("highlight_style")
     val highlightStyle: String = "HIGHLIGHT",
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
@@ -89,11 +89,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
-        highlightColor = try {
-            HighlightColor.valueOf(highlightColor)
-        } catch (e: IllegalArgumentException) {
-            HighlightColor.YELLOW
-        },
+        highlightColor = highlightColorArgb,
         highlightStyle = try {
             HighlightStyle.valueOf(highlightStyle)
         } catch (e: IllegalArgumentException) {
@@ -136,7 +132,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
-        highlightColor = highlightColor.name,
+        highlightColorArgb = highlightColor,
         highlightStyle = highlightStyle.name,
         showProgressBar = showProgressBar,
         chapterProgressDisplayMode = chapterProgressDisplayMode.name,

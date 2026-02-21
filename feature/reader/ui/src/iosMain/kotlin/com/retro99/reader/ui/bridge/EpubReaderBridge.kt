@@ -19,7 +19,8 @@ data class EpubReaderSettings(
     val scrollMode: Boolean?,
     val textAlign: String,
     val publisherStyles: Boolean,
-    val highlightColor: String,
+    // Highlight color as ARGB Int value
+    val highlightColorArgb: Int,
     val highlightStyle: String,
     val initialPosition: PositionUiModel?,
 ) {
@@ -38,7 +39,7 @@ data class EpubReaderSettings(
                 scrollMode = settings.scrollMode,
                 textAlign = settings.textAlign.name,
                 publisherStyles = settings.publisherStyles,
-                highlightColor = settings.highlightColor.name,
+                highlightColorArgb = settings.highlightColor,
                 highlightStyle = settings.highlightStyle.name,
                 initialPosition = initialPosition,
             )

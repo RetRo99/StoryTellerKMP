@@ -1,10 +1,10 @@
 package com.retro99.settings.ui.model
 
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
-import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
@@ -17,8 +17,8 @@ data class ReaderSettingsUiModel(
     val textAlign: ReaderTextAlignUiModel = ReaderTextAlignUiModel.START,
     // When true, uses publisher's CSS styles. When false, allows custom lineHeight, textAlign, etc.
     val publisherStyles: Boolean = true,
-    // Highlight color for ReadAloud text highlighting
-    val highlightColor: HighlightColor = HighlightColor.YELLOW,
+    // Highlight color for ReadAloud text highlighting (ARGB Int value)
+    val highlightColor: Int = DEFAULT_HIGHLIGHT_COLOR,
     // Highlight style for ReadAloud text highlighting
     val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
     // Progress bar visibility: true = always, null = on tap (with controls), false = never

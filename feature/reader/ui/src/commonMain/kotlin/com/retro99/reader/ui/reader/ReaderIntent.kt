@@ -2,7 +2,6 @@ package com.retro99.reader.ui.reader
 
 import com.retro99.base.ui.BaseIntent
 import com.retro99.reader.ui.model.PositionUiModel
-import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
 sealed interface ReaderIntent : BaseIntent {
@@ -112,9 +111,9 @@ sealed interface ReaderIntent : BaseIntent {
     /**
      * Set the highlight color for ReadAloud text highlighting.
      *
-     * @param color The highlight color to use
+     * @param colorArgb The highlight color as ARGB Int value
      */
-    data class SetHighlightColor(val color: ReadAloudHighlightColor) : ReaderIntent
+    data class SetHighlightColor(val colorArgb: Int) : ReaderIntent
 
     /**
      * Dismiss the "no audio available" snackbar message.

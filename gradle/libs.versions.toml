@@ -43,6 +43,7 @@ sqlite = "2.6.2"
 sqldelight = "2.0.2"
 multiplatformMarkdown = "0.39.2"
 filekit = "0.8.8"
+colorpicker = "1.1.3"
 
 
 [libraries]
@@ -151,6 +152,9 @@ sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", versi
 # FileKit (cross-platform file picker)
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 filekit-compose = { module = "io.github.vinceglb:filekit-compose", version.ref = "filekit" }
+
+# Color Picker (Kotlin Multiplatform)
+colorpicker-compose = { module = "com.github.skydoves:colorpicker-compose", version.ref = "colorpicker" }
 
 [bundles]
 ktorClientBundle = [

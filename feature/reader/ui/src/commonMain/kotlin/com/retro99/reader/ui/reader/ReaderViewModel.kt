@@ -22,7 +22,6 @@ import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
-import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toPositionUiModel
@@ -176,7 +175,7 @@ class ReaderViewModel(
             is ReaderIntent.GoToChapter -> goToChapter(intent.href, intent.currentPosition)
             is ReaderIntent.UndoChapterNavigation -> undoChapterNavigation(intent.position)
             ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
-            is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.color)
+            is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.colorArgb)
             ReaderIntent.Retry -> retry()
             ReaderIntent.DismissNoAudioMessage -> dismissNoAudioMessage()
         }
@@ -560,9 +559,9 @@ class ReaderViewModel(
         }
     }
 
-    private fun setHighlightColor(color: ReadAloudHighlightColor) {
+    private fun setHighlightColor(colorArgb: Int) {
         val currentSettings = viewState.value.currentSettings ?: return
-        val updatedSettings = currentSettings.copy(highlightColor = color)
+        val updatedSettings = currentSettings.copy(highlightColor = colorArgb)
         updateState { it.copy(currentSettings = updatedSettings) }
         viewModelScope.launch {
             saveReaderSettingsUseCase(updatedSettings.toDomainModel())
