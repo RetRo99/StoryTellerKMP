@@ -67,6 +67,7 @@ data class BooksListViewState(
             }
             BookSortOption.RATING -> compareBy(nullsLast()) { it.rating }
             BookSortOption.DATE_PUBLISHED -> compareBy(nullsLast()) { it.publicationDate }
+            BookSortOption.DATE_ADDED -> compareBy(nullsLast()) { it.dateAdded }
         }
         return when (config.direction) {
             SortDirection.ASCENDING -> sortedWith(comparator)

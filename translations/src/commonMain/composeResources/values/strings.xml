@@ -115,6 +115,7 @@
     <string name="books_sort_author">Author</string>
     <string name="books_sort_rating">Rating</string>
     <string name="books_sort_date_published">Date Published</string>
+    <string name="books_sort_date_added">Date Added</string>
     <string name="books_sort_ascending">Ascending</string>
     <string name="books_sort_descending">Descending</string>
     <string name="books_sort_a_to_z">A → Z</string>

@@ -11,6 +11,7 @@ enum class BookSortOption {
     AUTHOR,
     RATING,
     DATE_PUBLISHED,
+    DATE_ADDED,
 }
 
 /**

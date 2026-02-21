@@ -34,6 +34,12 @@ sealed class BookUiModel {
     abstract val publicationDate: String?
 
     /**
+     * The date when the book was added to the library.
+     * For local books this is importedAt, for Storyteller books this is createdAt.
+     */
+    abstract val dateAdded: String?
+
+    /**
      * Returns the file path for the given book type, or null if not available.
      */
     abstract fun filePath(bookType: BookType): String?
@@ -55,6 +61,7 @@ sealed class BookUiModel {
         override val statusName: String?,
         override val rating: Float?,
         override val publicationDate: String?,
+        override val dateAdded: String?,
         override val hasEbook: Boolean,
         override val hasAudiobook: Boolean,
         override val hasReadaloud: Boolean,
@@ -96,6 +103,7 @@ sealed class BookUiModel {
         override val tags: List<String> = emptyList()
         override val subtitle: String? = null
         override val rating: Float? = null
+        override val dateAdded: String? = importedAt
 
         override fun filePath(bookType: BookType): String? = when (bookType) {
             BookType.EBOOK -> if (this.bookType == BookType.EBOOK) filePath else null
