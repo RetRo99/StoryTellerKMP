@@ -350,14 +350,11 @@ private fun SettingsScreenContent(
                 selectedStyle = viewState.highlightStyle,
                 onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
             )
-            // Only show color selector when highlight is enabled (not underline-only)
-            if (viewState.highlightStyle != HighlightStyle.UNDERLINE) {
-                Spacer(modifier = Modifier.height(16.dp))
-                HighlightColorSelector(
-                    selectedColor = viewState.highlightColor,
-                    onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+            HighlightColorSelector(
+                selectedColor = viewState.highlightColor,
+                onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+            )
         }
     }
 }
