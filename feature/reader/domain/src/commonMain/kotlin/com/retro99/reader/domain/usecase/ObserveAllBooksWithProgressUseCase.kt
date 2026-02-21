@@ -16,6 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -41,9 +42,12 @@ class ObserveAllBooksWithProgressUseCase(
     // Cache of remote progressions - fetched once per refresh
     private val remoteProgressionCache = mutableMapOf<String, Double?>()
 
+    // Trigger to force re-evaluation when remote progress is fetched
+    private val refreshTrigger = MutableStateFlow(0)
+
     /**
      * Observes all books with their progress information.
-     * 
+     *
      * @return Flow of books with progress, sorted by title
      */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -59,13 +63,14 @@ class ObserveAllBooksWithProgressUseCase(
                 if (bookFlows.isEmpty()) {
                     flowOf(Ok(emptyList()))
                 } else {
-                    // Combine all book flows with position observation
+                    // Combine all book flows with position observation and refresh trigger
                     combine(
                         combine(bookFlows) { results ->
                             results.flatMap { it.getOrElse { emptyList() } }
                         },
-                        positionLocalSource.observeAllPositions()
-                    ) { booksWithServers, localPositions ->
+                        positionLocalSource.observeAllPositions(),
+                        refreshTrigger
+                    ) { booksWithServers, localPositions, _ ->
                         buildBooksWithProgress(booksWithServers, localPositions)
                     }
                 }
@@ -75,6 +80,7 @@ class ObserveAllBooksWithProgressUseCase(
     /**
      * Fetches remote progress for all books.
      * Should be called once when the book list is loaded or refreshed.
+     * Triggers a re-emission of the flow after fetching.
      */
     suspend fun fetchRemoteProgress(books: List<BookWithProgressDomainModel>) {
         if (books.isEmpty()) return
@@ -90,6 +96,9 @@ class ObserveAllBooksWithProgressUseCase(
                 }
             }.awaitAll()
         }
+
+        // Trigger re-emission of the flow with updated remote progress
+        refreshTrigger.value++
     }
 
     /**

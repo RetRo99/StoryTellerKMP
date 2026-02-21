@@ -180,12 +180,9 @@ class BooksViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun observeBooks() {
-        viewModelScope.launch {
-            // Fetch remote progress first
-            observeAllBooksWithProgressUseCase.fetchRemoteProgress(currentBooks)
-        }
+    private var hasInitiallyFetchedRemoteProgress = false
 
+    private fun observeBooks() {
         observeAllBooksWithProgressUseCase()
             .onStart {
                 updateState { it.copy(isLoading = true, error = null) }
@@ -195,6 +192,14 @@ class BooksViewModel(
                     .onSuccess { booksWithProgress ->
                         // Store for refresh
                         currentBooks = booksWithProgress
+
+                        // Fetch remote progress once after first load
+                        if (!hasInitiallyFetchedRemoteProgress && booksWithProgress.isNotEmpty()) {
+                            hasInitiallyFetchedRemoteProgress = true
+                            viewModelScope.launch {
+                                observeAllBooksWithProgressUseCase.fetchRemoteProgress(booksWithProgress)
+                            }
+                        }
 
                         val uiBooks = booksWithProgress.map { it.book.toUiModel() }
                         val progressInfo = booksWithProgress
