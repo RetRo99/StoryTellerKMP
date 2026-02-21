@@ -103,6 +103,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var onMediaPlayerReadyCallback: (() -> Void)?
     private var onChapterAudioCompletedCallback: ((String) -> Void)?
     private var currentHighlightId: String?
+    private var currentHighlightedLocator: Locator?
     private var currentChapterHref: RelativeURL?
     private var currentHighlightColor: UIColor = .yellow
     private var currentHighlightStyle: HighlightStyle = .highlight
@@ -268,11 +269,27 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
+            let oldColor = currentHighlightColor
+            let oldStyle = currentHighlightStyle
+
             currentHighlightColor = highlightColorFromArgb(settings.highlightColorArgb)
             currentHighlightStyle = highlightStyleFromString(settings.highlightStyle)
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
+
+            // Refresh current decoration if highlight color or style changed
+            if (oldColor != currentHighlightColor || oldStyle != currentHighlightStyle),
+               let locator = currentHighlightedLocator {
+                refreshCurrentDecoration(locator: locator)
+            }
         }
+    }
+
+    /// Refreshes the current decoration with updated highlight color/style.
+    private func refreshCurrentDecoration(locator: Locator) {
+        guard let navigator = navigatorViewController else { return }
+        let decorations = createDecorations(for: locator)
+        navigator.apply(decorations: decorations, in: "media-overlay")
     }
 
     /// Converts an ARGB Int32 value to UIColor
@@ -635,6 +652,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             return
         }
         currentHighlightId = fragmentId
+        currentHighlightedLocator = locator
 
         // Create decorations based on the current highlight style
         let decorations = createDecorations(for: locator)
