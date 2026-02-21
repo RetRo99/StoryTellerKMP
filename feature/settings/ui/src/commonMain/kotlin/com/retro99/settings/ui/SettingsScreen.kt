@@ -157,11 +157,14 @@ private fun SettingsScreenContent(
     intentDispatcher: IntentDispatcher<SettingsIntent>,
     modifier: Modifier = Modifier,
 ) {
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

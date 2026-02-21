@@ -34,7 +34,7 @@ import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
 
 @KoinViewModel
-class BooksViewModel(
+class BooksListViewModel(
     @InjectedParam private val onNavigateToBookDetail: (book: BookUiModel) -> Unit,
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeAllFavoritesUseCase: ObserveAllFavoritesUseCase,

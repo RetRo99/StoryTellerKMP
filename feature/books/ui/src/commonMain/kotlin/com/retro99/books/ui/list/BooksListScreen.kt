@@ -1,7 +1,6 @@
 package com.retro99.books.ui.list
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -69,7 +68,7 @@ import resources.translations.books_series_with_position
 fun BooksListScreen(
     onNavigateToBookDetail: (book: BookUiModel) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: BooksViewModel = koinViewModel { parametersOf(onNavigateToBookDetail) },
+    viewModel: BooksListViewModel = koinViewModel { parametersOf(onNavigateToBookDetail) },
 ) {
     BaseScreen(
         modifier = modifier,
