@@ -17,8 +17,8 @@ data class ReaderSettingsDomainModel(
     // Media playback settings for ReadAloud books
     val playbackSpeed: Float = 1.0f,
     val volume: Float = 1.0f,
-    // Highlight color for ReadAloud text highlighting
-    val highlightColor: HighlightColor = HighlightColor.YELLOW,
+    // Highlight color for ReadAloud text highlighting (ARGB Int value)
+    val highlightColor: Int = DEFAULT_HIGHLIGHT_COLOR,
     // Highlight style for ReadAloud text highlighting
     val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
@@ -43,6 +43,9 @@ data class ReaderSettingsDomainModel(
     companion object {
         /** Default reading speed in words per minute (average adult reading speed) */
         const val DEFAULT_READING_SPEED_WPM = 200
+
+        /** Default highlight color (Yellow with 50% alpha) */
+        const val DEFAULT_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
     }
 }
 
@@ -58,17 +61,6 @@ enum class ReaderTextAlign {
     END,
     CENTER,
     JUSTIFY,
-}
-
-/**
- * Available highlight colors for ReadAloud text highlighting.
- */
-enum class HighlightColor {
-    YELLOW,
-    GREEN,
-    BLUE,
-    PINK,
-    ORANGE,
 }
 
 /**

@@ -2,7 +2,6 @@ package com.retro99.settings.ui
 
 import com.retro99.base.ui.BaseIntent
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
-import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
@@ -35,7 +34,7 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnProgressBarPositionChanged(val position: ProgressBarPosition) : SettingsIntent
 
     // ReadAloud settings intents
-    data class OnHighlightColorChanged(val color: HighlightColor) : SettingsIntent
+    data class OnHighlightColorChanged(val colorArgb: Int) : SettingsIntent
     data class OnHighlightStyleChanged(val style: HighlightStyle) : SettingsIntent
 
     // Fullscreen mode intent

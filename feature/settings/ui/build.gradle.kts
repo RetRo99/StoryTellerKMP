@@ -33,6 +33,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.navigation3.ui)
             implementation(libs.navigation3.viewmodel)
+            implementation(libs.colorpicker.compose)
             implementation(projects.base)
             implementation(projects.baseUi)
             implementation(projects.translations)

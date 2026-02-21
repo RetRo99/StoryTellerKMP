@@ -268,28 +268,20 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
-            currentHighlightColor = highlightColorFromString(settings.highlightColor)
+            currentHighlightColor = highlightColorFromArgb(settings.highlightColorArgb)
             currentHighlightStyle = highlightStyleFromString(settings.highlightStyle)
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
         }
     }
 
-    private func highlightColorFromString(_ colorName: String) -> UIColor {
-        switch colorName.uppercased() {
-        case "YELLOW":
-            return UIColor.yellow.withAlphaComponent(0.5)
-        case "GREEN":
-            return UIColor.systemGreen.withAlphaComponent(0.5)
-        case "BLUE":
-            return UIColor.systemBlue.withAlphaComponent(0.5)
-        case "PINK":
-            return UIColor.systemPink.withAlphaComponent(0.5)
-        case "ORANGE":
-            return UIColor.orange.withAlphaComponent(0.5)
-        default:
-            return UIColor.yellow.withAlphaComponent(0.5)
-        }
+    /// Converts an ARGB Int32 value to UIColor
+    private func highlightColorFromArgb(_ argb: Int32) -> UIColor {
+        let alpha = CGFloat((argb >> 24) & 0xFF) / 255.0
+        let red = CGFloat((argb >> 16) & 0xFF) / 255.0
+        let green = CGFloat((argb >> 8) & 0xFF) / 255.0
+        let blue = CGFloat(argb & 0xFF) / 255.0
+        return UIColor(red: red, green: green, blue: blue, alpha: alpha)
     }
 
     private func highlightStyleFromString(_ styleName: String) -> HighlightStyle {

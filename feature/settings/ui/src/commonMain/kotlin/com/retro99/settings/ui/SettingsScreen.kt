@@ -43,10 +43,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.github.skydoves.colorpicker.compose.AlphaSlider
+import com.github.skydoves.colorpicker.compose.BrightnessSlider
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
-import com.retro99.reader.domain.model.HighlightColor
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
@@ -359,11 +368,22 @@ private fun SettingsScreenContent(
     }
 }
 
+/** Preset highlight colors for quick selection */
+private val PresetHighlightColors = listOf(
+    0x80FFEB3B.toInt(), // Yellow
+    0x8081C784.toInt(), // Green
+    0x8064B5F6.toInt(), // Blue
+    0x80F48FB1.toInt(), // Pink
+    0x80FFB74D.toInt(), // Orange
+)
+
 @Composable
 private fun HighlightColorSelector(
-    selectedColor: HighlightColor,
-    onColorSelected: (HighlightColor) -> Unit,
+    selectedColor: Int,
+    onColorSelected: (Int) -> Unit,
 ) {
+    var showColorPickerDialog by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(StringRes.settings_highlight_color),
@@ -374,29 +394,75 @@ private fun HighlightColorSelector(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            HighlightColor.entries.forEach { color ->
-                HighlightColorSwatch(
-                    color = color,
-                    isSelected = color == selectedColor,
-                    onClick = { onColorSelected(color) },
+            // Preset color swatches
+            PresetHighlightColors.forEach { colorArgb ->
+                ColorSwatch(
+                    colorArgb = colorArgb,
+                    isSelected = colorArgb == selectedColor,
+                    onClick = { onColorSelected(colorArgb) },
+                )
+            }
+            // Custom color picker button
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (selectedColor !in PresetHighlightColors) {
+                            Color(selectedColor)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    )
+                    .border(
+                        width = if (selectedColor !in PresetHighlightColors) 3.dp else 1.dp,
+                        color = if (selectedColor !in PresetHighlightColors) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.outline
+                        },
+                        shape = CircleShape,
+                    )
+                    .clickable { showColorPickerDialog = true },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Custom color",
+                    tint = if (selectedColor !in PresetHighlightColors) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
     }
+
+    if (showColorPickerDialog) {
+        ColorPickerDialog(
+            initialColor = selectedColor,
+            onColorSelected = { colorArgb ->
+                onColorSelected(colorArgb)
+                showColorPickerDialog = false
+            },
+            onDismiss = { showColorPickerDialog = false },
+        )
+    }
 }
 
 @Composable
-private fun HighlightColorSwatch(
-    color: HighlightColor,
+private fun ColorSwatch(
+    colorArgb: Int,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val swatchColor = Color(color.toArgb())
     Box(
         modifier = Modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(swatchColor)
+            .background(Color(colorArgb))
             .border(
                 width = if (isSelected) 3.dp else 1.dp,
                 color = if (isSelected) {
@@ -420,15 +486,96 @@ private fun HighlightColorSwatch(
     }
 }
 
-/**
- * Returns the ARGB color value for the highlight color.
- */
-private fun HighlightColor.toArgb(): Int = when (this) {
-    HighlightColor.YELLOW -> 0x80FFEB3B.toInt()
-    HighlightColor.GREEN -> 0x8081C784.toInt()
-    HighlightColor.BLUE -> 0x8064B5F6.toInt()
-    HighlightColor.PINK -> 0x80F48FB1.toInt()
-    HighlightColor.ORANGE -> 0x80FFB74D.toInt()
+@Composable
+private fun ColorPickerDialog(
+    initialColor: Int,
+    onColorSelected: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val controller = rememberColorPickerController()
+    var selectedColor by remember { mutableStateOf(Color(initialColor)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(StringRes.settings_highlight_color))
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Color preview
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(selectedColor)
+                        .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // HSV Color Picker
+                HsvColorPicker(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    controller = controller,
+                    onColorChanged = { colorEnvelope ->
+                        selectedColor = colorEnvelope.color
+                    },
+                    initialColor = Color(initialColor),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Alpha slider
+                Text(
+                    text = "Opacity",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.Start),
+                )
+                AlphaSlider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(35.dp),
+                    controller = controller,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Brightness slider
+                Text(
+                    text = "Brightness",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.Start),
+                )
+                BrightnessSlider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(35.dp),
+                    controller = controller,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    // Convert Color to ARGB Int
+                    val argb = (selectedColor.alpha * 255).toInt() shl 24 or
+                            (selectedColor.red * 255).toInt() shl 16 or
+                            (selectedColor.green * 255).toInt() shl 8 or
+                            (selectedColor.blue * 255).toInt()
+                    onColorSelected(argb)
+                },
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 @Composable

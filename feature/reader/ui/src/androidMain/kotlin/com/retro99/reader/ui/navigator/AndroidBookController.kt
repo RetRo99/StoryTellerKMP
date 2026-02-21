@@ -1,10 +1,10 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PositionUiModel
-import com.retro99.reader.ui.model.ReadAloudHighlightColor
 import com.retro99.reader.ui.model.ReadAloudHighlightStyle
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.ReaderTextAlignUi
@@ -73,9 +73,9 @@ class AndroidBookController internal constructor() : BookController {
     private val pendingActions = mutableListOf<(EpubNavigatorFragment) -> Unit>()
 
     /**
-     * Current reader settings, used for highlight color.
+     * Current reader settings, used for highlight color (ARGB Int).
      */
-    private var highLightColor: ReadAloudHighlightColor = ReadAloudHighlightColor.YELLOW
+    private var highlightColorArgb: Int = DEFAULT_HIGHLIGHT_COLOR
 
     /**
      * Current highlight style setting.
@@ -300,7 +300,7 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
-        highLightColor = settings.highlightColor
+        highlightColorArgb = settings.highlightColor
         highlightStyle = settings.highlightStyle
         withNavigator { it.submitPreferences(settings.toEpubPreferences()) }
     }
@@ -428,7 +428,7 @@ class AndroidBookController internal constructor() : BookController {
                     id = "readaloud-highlight",
                     locator = locator,
                     style = Decoration.Style.Highlight(
-                        tint = highLightColor.argb,
+                        tint = highlightColorArgb,
                         isActive = false,
                     ),
                 ),
@@ -439,7 +439,7 @@ class AndroidBookController internal constructor() : BookController {
                     id = "readaloud-underline",
                     locator = locator,
                     style = Decoration.Style.Underline(
-                        tint = highLightColor.argb,
+                        tint = highlightColorArgb,
                         isActive = false,
                     ),
                 ),
@@ -450,7 +450,7 @@ class AndroidBookController internal constructor() : BookController {
                     id = "readaloud-highlight",
                     locator = locator,
                     style = Decoration.Style.Highlight(
-                        tint = highLightColor.argb,
+                        tint = highlightColorArgb,
                         isActive = false,
                     ),
                 ),
@@ -458,7 +458,7 @@ class AndroidBookController internal constructor() : BookController {
                     id = "readaloud-underline",
                     locator = locator,
                     style = Decoration.Style.Underline(
-                        tint = highLightColor.argb,
+                        tint = highlightColorArgb,
                         isActive = false,
                     ),
                 ),
