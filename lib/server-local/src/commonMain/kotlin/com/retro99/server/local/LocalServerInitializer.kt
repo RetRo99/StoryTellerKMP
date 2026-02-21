@@ -9,9 +9,8 @@ import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import org.koin.core.annotation.Provided
@@ -23,9 +22,9 @@ import org.koin.core.annotation.Single
  * Unlike remote servers that require login, the Local server is always
  * available for accessing locally imported books.
  *
- * This initializer:
- * 1. Creates the Local server for the initial user at app startup
- * 2. Observes user profile changes and creates the Local server for new users
+ * This initializer observes both user profile changes AND server list changes
+ * to ensure the Local server is always present. This handles race conditions
+ * where ServerRegistry might reload and clear the Local server.
  */
 @Single(binds = [AppInitializer::class])
 class LocalServerInitializer(
@@ -41,13 +40,19 @@ class LocalServerInitializer(
             ensureLocalServerRegistered()
         }
 
-        // Observe user changes and ensure Local server exists for each user
-        userRegistry.observeActiveProfile()
-            .map { it?.id }
-            .distinctUntilChanged()
-            .onEach {
-                // When user changes, ensure Local server exists for the new user™
-                ensureLocalServerRegistered()
+        // Observe BOTH user changes AND server list changes
+        // This ensures Local server is re-added if ServerRegistry reloads and clears it
+        combine(
+            userRegistry.observeActiveProfile(),
+            serverRegistry.observeAllServers()
+        ) { profile, servers ->
+            val hasLocalServer = servers.any { it.id == LOCAL_SERVER_ID }
+            profile != null && !hasLocalServer
+        }
+            .onEach { needsLocalServer ->
+                if (needsLocalServer) {
+                    ensureLocalServerRegistered()
+                }
             }
             .launchIn(scope)
     }
