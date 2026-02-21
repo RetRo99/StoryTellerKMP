@@ -26,7 +26,7 @@ data class BooksListViewState(
     val filteredBooks: List<BookUiModel>
         get() = books
             .applySearchFilter(searchQuery)
-            .applyQuickFilters(filterState.activeQuickFilters, favoriteBookUuids)
+            .applyQuickFilters(filterState.activeQuickFilters, favoriteBookUuids, bookProgressInfo)
             .applySorting(sortConfig)
 
     private fun List<BookUiModel>.applySearchFilter(query: String): List<BookUiModel> {
@@ -43,6 +43,7 @@ data class BooksListViewState(
     private fun List<BookUiModel>.applyQuickFilters(
         filters: Set<BookQuickFilter>,
         favoriteUuids: Set<String>,
+        progressInfo: Map<String, BookProgressInfoUiModel>,
     ): List<BookUiModel> {
         if (filters.isEmpty()) return this
         return filter { book ->
@@ -54,6 +55,7 @@ data class BooksListViewState(
                     BookQuickFilter.IN_SERIES -> book.series.isNotEmpty()
                     BookQuickFilter.LOCAL_BOOKS -> book is BookUiModel.LocalBook
                     BookQuickFilter.REMOTE_BOOKS -> book is BookUiModel.StorytellerBook
+                    BookQuickFilter.CACHED -> progressInfo[book.uuid]?.hasAnyCached == true
                 }
             }
         }

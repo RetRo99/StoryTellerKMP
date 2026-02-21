@@ -14,5 +14,6 @@ enum class BookQuickFilter {
     IN_SERIES,
     LOCAL_BOOKS,
     REMOTE_BOOKS,
+    CACHED,
 }
 

@@ -21,6 +21,7 @@ import com.retro99.books.ui.model.BookQuickFilter
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import resources.translations.books_filter_cached
 import resources.translations.books_filter_ebook
 import resources.translations.books_filter_favorites
 import resources.translations.books_filter_in_series
@@ -85,5 +86,6 @@ private val BookQuickFilter.labelRes: StringResource
         BookQuickFilter.IN_SERIES -> StringRes.books_filter_in_series
         BookQuickFilter.LOCAL_BOOKS -> StringRes.books_filter_local
         BookQuickFilter.REMOTE_BOOKS -> StringRes.books_filter_remote
+        BookQuickFilter.CACHED -> StringRes.books_filter_cached
     }
 
