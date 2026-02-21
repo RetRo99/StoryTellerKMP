@@ -212,6 +212,7 @@ private fun createUniqueClassName(key: String): String = "r2-$key-${++classNames
 
 /**
  * Creates a highlight template that uses the color's own alpha value.
+ * This template only renders a background highlight, no underline.
  */
 private fun createHighlightTemplate(
     defaultTint: Int,
@@ -224,22 +225,22 @@ private fun createHighlightTemplate(
         layout = HtmlDecorationTemplate.Layout.BOXES,
         element = { decoration ->
             val tint = (decoration.style as? Decoration.Style.Tinted)?.tint ?: defaultTint
-            val isActive = (decoration.style as? Decoration.Style.Activable)?.isActive ?: false
             val css = buildString {
                 // Use toCss() without alpha parameter to respect the color's own alpha
                 append("background-color: ${tint.toCss()} !important;")
-                if (isActive) {
-                    append("--underline-color: ${tint.toCss()};")
-                }
             }
             """<div class="$className" style="$css"/>"""
         },
-        stylesheet = createDecorationStylesheet(className, lineWeight, cornerRadius)
+        stylesheet = createHighlightStylesheet(className, cornerRadius)
     )
 }
 
 /**
  * Creates an underline template that uses the color's own alpha value.
+ *
+ * Unlike the highlight template, we set the border-color directly in the inline style
+ * to ensure it overrides any CSS rules that might set a default color (e.g., white in dark theme).
+ * Inline styles have the highest specificity, so this ensures the user's color is always used.
  */
 private fun createUnderlineTemplate(
     defaultTint: Int,
@@ -253,20 +254,44 @@ private fun createUnderlineTemplate(
         element = { decoration ->
             val tint = (decoration.style as? Decoration.Style.Tinted)?.tint ?: defaultTint
             val isActive = (decoration.style as? Decoration.Style.Activable)?.isActive ?: false
+            val colorCss = tint.toCss()
             val css = buildString {
                 if (isActive) {
                     // Use toCss() without alpha parameter to respect the color's own alpha
-                    append("background-color: ${tint.toCss()} !important;")
+                    append("background-color: $colorCss !important;")
                 }
-                append("--underline-color: ${tint.toCss()};")
+                // Set border-color directly in inline style to override any CSS rules
+                // (including Readium's dark theme CSS that might set border to white)
+                append("border-color: $colorCss !important;")
             }
             """<div class="$className" style="$css"/>"""
         },
-        stylesheet = createDecorationStylesheet(className, lineWeight, cornerRadius)
+        stylesheet = createUnderlineStylesheet(className, lineWeight, cornerRadius)
     )
 }
 
-private fun createDecorationStylesheet(
+/**
+ * Creates a stylesheet for highlight decorations.
+ * Only includes background styling, no border/underline.
+ */
+private fun createHighlightStylesheet(
+    className: String,
+    cornerRadius: Int,
+): String = """
+    .$className {
+        margin: 0px -1px 0 0;
+        padding: 0 2px 0px 0;
+        border-radius: ${cornerRadius}px;
+        box-sizing: border-box;
+    }
+"""
+
+/**
+ * Creates a stylesheet for underline decorations.
+ * The border-color is set directly in the inline style (not via CSS variable)
+ * to ensure it overrides any CSS rules that might set a default color in dark theme.
+ */
+private fun createUnderlineStylesheet(
     className: String,
     lineWeight: Int,
     cornerRadius: Int,
@@ -276,10 +301,9 @@ private fun createDecorationStylesheet(
         padding: 0 2px 0px 0;
         border-radius: ${cornerRadius}px;
         box-sizing: border-box;
-        /* Use border-color directly from the inline style's --underline-color variable */
-        /* The !important ensures it overrides any Readium CSS that might set a default color */
-        border: 0 solid var(--underline-color, currentColor) !important;
-        border-color: var(--underline-color, currentColor) !important;
+        /* border-color is set in inline style to override dark theme CSS */
+        border-width: 0;
+        border-style: solid;
     }
 
     /* Horizontal (default) */
