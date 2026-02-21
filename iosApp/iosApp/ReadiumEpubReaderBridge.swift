@@ -106,6 +106,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var currentHighlightedLocator: Locator?
     private var currentChapterHref: RelativeURL?
     private var currentHighlightColor: UIColor = .yellow
+    private var currentUnderlineColor: UIColor = .blue
     private var currentHighlightStyle: HighlightStyle = .highlight
 
     // Readium 3.x infrastructure
@@ -269,16 +270,18 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
-            let oldColor = currentHighlightColor
+            let oldHighlightColor = currentHighlightColor
+            let oldUnderlineColor = currentUnderlineColor
             let oldStyle = currentHighlightStyle
 
             currentHighlightColor = highlightColorFromArgb(settings.highlightColorArgb)
+            currentUnderlineColor = highlightColorFromArgb(settings.underlineColorArgb)
             currentHighlightStyle = highlightStyleFromString(settings.highlightStyle)
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
 
-            // Refresh current decoration if highlight color or style changed
-            if (oldColor != currentHighlightColor || oldStyle != currentHighlightStyle),
+            // Refresh current decoration if highlight color, underline color, or style changed
+            if (oldHighlightColor != currentHighlightColor || oldUnderlineColor != currentUnderlineColor || oldStyle != currentHighlightStyle),
                let locator = currentHighlightedLocator {
                 refreshCurrentDecoration(locator: locator)
             }
@@ -668,6 +671,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         }
     }
 
+    /// Creates decorations based on the current highlight style setting.
+    /// Uses currentHighlightColor for highlight decorations and currentUnderlineColor for underline decorations.
     private func createDecorations(for locator: Locator) -> [Decoration] {
         switch currentHighlightStyle {
         case .highlight:
@@ -683,7 +688,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 Decoration(
                     id: "media-overlay-underline",
                     locator: locator,
-                    style: .underline(tint: currentHighlightColor, isActive: false)
+                    style: .underline(tint: currentUnderlineColor, isActive: false)
                 )
             ]
         case .highlightUnderline:
@@ -696,7 +701,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 Decoration(
                     id: "media-overlay-underline",
                     locator: locator,
-                    style: .underline(tint: currentHighlightColor, isActive: false)
+                    style: .underline(tint: currentUnderlineColor, isActive: false)
                 )
             ]
         }

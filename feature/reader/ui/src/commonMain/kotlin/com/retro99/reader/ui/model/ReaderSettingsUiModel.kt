@@ -10,6 +10,7 @@ import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_READING_SPEED_WPM
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
 
@@ -29,6 +30,8 @@ data class ReaderSettingsUiModel(
     val volume: Float = 1.0f,
     // Highlight color for ReadAloud text highlighting (ARGB Int value)
     val highlightColor: Int = DEFAULT_HIGHLIGHT_COLOR,
+    // Underline color for ReadAloud text highlighting (ARGB Int value)
+    val underlineColor: Int = DEFAULT_UNDERLINE_COLOR,
     // Highlight style for ReadAloud text highlighting
     val highlightStyle: ReadAloudHighlightStyle = ReadAloudHighlightStyle.HIGHLIGHT,
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
@@ -106,6 +109,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     playbackSpeed = playbackSpeed,
     volume = volume,
     highlightColor = highlightColor,
+    underlineColor = underlineColor,
     highlightStyle = highlightStyle.toUiHighlightStyle(),
     showProgressBar = showProgressBar,
     chapterProgressDisplayMode = chapterProgressDisplayMode,
@@ -131,6 +135,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     playbackSpeed = playbackSpeed,
     volume = volume,
     highlightColor = highlightColor,
+    underlineColor = underlineColor,
     highlightStyle = highlightStyle.toDomainHighlightStyle(),
     showProgressBar = showProgressBar,
     chapterProgressDisplayMode = chapterProgressDisplayMode,

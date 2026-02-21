@@ -37,6 +37,9 @@ data class ReaderSettingsLocalModel(
     // Highlight color as ARGB Int value
     @SerialName("highlight_color_argb")
     val highlightColorArgb: Int = ReaderSettingsDomainModel.DEFAULT_HIGHLIGHT_COLOR,
+    // Underline color as ARGB Int value
+    @SerialName("underline_color_argb")
+    val underlineColorArgb: Int = ReaderSettingsDomainModel.DEFAULT_UNDERLINE_COLOR,
     @SerialName("highlight_style")
     val highlightStyle: String = "HIGHLIGHT",
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
@@ -95,6 +98,11 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } else {
             highlightColorArgb
         },
+        underlineColor = if (underlineColorArgb == 0) {
+            ReaderSettingsDomainModel.DEFAULT_UNDERLINE_COLOR
+        } else {
+            underlineColorArgb
+        },
         highlightStyle = try {
             HighlightStyle.valueOf(highlightStyle)
         } catch (e: IllegalArgumentException) {
@@ -138,6 +146,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         playbackSpeed = playbackSpeed,
         volume = volume,
         highlightColorArgb = highlightColor,
+        underlineColorArgb = underlineColor,
         highlightStyle = highlightStyle.name,
         showProgressBar = showProgressBar,
         chapterProgressDisplayMode = chapterProgressDisplayMode.name,

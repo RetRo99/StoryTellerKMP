@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.LocatorState
@@ -76,6 +77,11 @@ class AndroidBookController internal constructor() : BookController {
      * Current reader settings, used for highlight color (ARGB Int).
      */
     private var highlightColorArgb: Int = DEFAULT_HIGHLIGHT_COLOR
+
+    /**
+     * Current reader settings, used for underline color (ARGB Int).
+     */
+    private var underlineColorArgb: Int = DEFAULT_UNDERLINE_COLOR
 
     /**
      * Current highlight style setting.
@@ -305,15 +311,17 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
-        val colorChanged = highlightColorArgb != settings.highlightColor
+        val highlightColorChanged = highlightColorArgb != settings.highlightColor
+        val underlineColorChanged = underlineColorArgb != settings.underlineColor
         val styleChanged = highlightStyle != settings.highlightStyle
 
         highlightColorArgb = settings.highlightColor
+        underlineColorArgb = settings.underlineColor
         highlightStyle = settings.highlightStyle
         withNavigator { it.submitPreferences(settings.toEpubPreferences()) }
 
-        // Refresh current decoration if highlight color or style changed
-        if ((colorChanged || styleChanged) && currentHighlightedLocator != null) {
+        // Refresh current decoration if highlight color, underline color, or style changed
+        if ((highlightColorChanged || underlineColorChanged || styleChanged) && currentHighlightedLocator != null) {
             refreshCurrentDecoration()
         }
     }
@@ -450,6 +458,7 @@ class AndroidBookController internal constructor() : BookController {
 
     /**
      * Creates decorations based on the current highlight style setting.
+     * Uses highlightColorArgb for highlight decorations and underlineColorArgb for underline decorations.
      */
     private fun createDecorations(locator: Locator): List<Decoration> {
         return when (highlightStyle) {
@@ -469,7 +478,7 @@ class AndroidBookController internal constructor() : BookController {
                     id = "readaloud-underline",
                     locator = locator,
                     style = Decoration.Style.Underline(
-                        tint = highlightColorArgb,
+                        tint = underlineColorArgb,
                         isActive = false,
                     ),
                 ),
@@ -488,7 +497,7 @@ class AndroidBookController internal constructor() : BookController {
                     id = "readaloud-underline",
                     locator = locator,
                     style = Decoration.Style.Underline(
-                        tint = highlightColorArgb,
+                        tint = underlineColorArgb,
                         isActive = false,
                     ),
                 ),

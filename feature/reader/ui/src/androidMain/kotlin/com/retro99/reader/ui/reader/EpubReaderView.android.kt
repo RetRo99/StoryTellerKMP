@@ -276,7 +276,10 @@ private fun createDecorationStylesheet(
         padding: 0 2px 0px 0;
         border-radius: ${cornerRadius}px;
         box-sizing: border-box;
-        border: 0 solid var(--underline-color);
+        /* Use border-color directly from the inline style's --underline-color variable */
+        /* The !important ensures it overrides any Readium CSS that might set a default color */
+        border: 0 solid var(--underline-color, currentColor) !important;
+        border-color: var(--underline-color, currentColor) !important;
     }
 
     /* Horizontal (default) */
