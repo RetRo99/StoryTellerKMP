@@ -146,8 +146,10 @@ private fun SeriesDetailScreenContent(
                         items = viewState.filteredBooks,
                         key = { it.uuid },
                     ) { book ->
+                        // Match by name since series UUID from /api/v2/series doesn't match
+                        // the numeric ID in books' series data
                         val position = book.series.find {
-                            it.uuid == viewState.seriesUuid
+                            it.name.equals(viewState.seriesName, ignoreCase = true)
                         }?.position
 
                         BookItemCard(

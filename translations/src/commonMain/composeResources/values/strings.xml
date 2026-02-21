@@ -78,7 +78,7 @@
     <string name="authors_empty_subtitle">Authors will appear here once available</string>
 
     <!-- Series Detail Screen -->
-    <string name="series_detail_position">Book #%1$d</string>
+    <string name="series_detail_position">Book #%1$s</string>
 
     <!-- Books List Screen -->
     <string name="books_search_placeholder">Search books…</string>
