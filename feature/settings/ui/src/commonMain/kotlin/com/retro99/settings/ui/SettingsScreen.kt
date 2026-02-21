@@ -66,6 +66,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
+import com.retro99.reader.domain.model.VolumeButtonAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
@@ -120,10 +121,18 @@ import resources.translations.settings_section_appearance
 import resources.translations.settings_section_appearance_description
 import resources.translations.settings_section_layout
 import resources.translations.settings_section_layout_description
+import resources.translations.settings_section_navigation
+import resources.translations.settings_section_navigation_description
 import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_readaloud_description
 import resources.translations.settings_section_typography
 import resources.translations.settings_section_typography_description
+import resources.translations.settings_volume_action_next_page
+import resources.translations.settings_volume_action_previous_page
+import resources.translations.settings_volume_buttons_enabled
+import resources.translations.settings_volume_buttons_enabled_description
+import resources.translations.settings_volume_down_action
+import resources.translations.settings_volume_up_action
 import resources.translations.settings_show_current_time
 import resources.translations.settings_show_current_time_description
 import resources.translations.settings_show_reading_time
@@ -359,6 +368,40 @@ private fun SettingsScreenContent(
                 isEnabled = viewState.showReadingTime,
                 onToggle = { intentDispatcher(SettingsIntent.OnShowReadingTimeChanged(it)) },
             )
+        }
+
+        // Navigation Section - Volume Button Settings
+        ExpandableSettingsSection(
+            title = stringResource(StringRes.settings_section_navigation),
+            description = stringResource(StringRes.settings_section_navigation_description),
+            isExpanded = viewState.isSectionExpanded(SettingsSection.NAVIGATION),
+            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.NAVIGATION)) },
+            scrollState = scrollState,
+            coroutineScope = coroutineScope,
+        ) {
+            VolumeButtonsEnabledSwitch(
+                isEnabled = viewState.volumeButtonsEnabled,
+                onToggle = { intentDispatcher(SettingsIntent.OnVolumeButtonsEnabledChanged(it)) },
+            )
+
+            // Only show action selectors when volume buttons are enabled
+            if (viewState.volumeButtonsEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                VolumeButtonActionSelector(
+                    title = stringResource(StringRes.settings_volume_up_action),
+                    selectedAction = viewState.volumeUpAction,
+                    onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeUpActionChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                VolumeButtonActionSelector(
+                    title = stringResource(StringRes.settings_volume_down_action),
+                    selectedAction = viewState.volumeDownAction,
+                    onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeDownActionChanged(it)) },
+                )
+            }
         }
 
         // ReadAloud Section - Highlight Style and Color
@@ -1264,6 +1307,79 @@ private fun ShowReadingTimeSwitch(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/**
+ * Switch to enable/disable volume button navigation.
+ * When enabled, volume buttons can be used to turn pages in ebooks.
+ * Note: This only applies to ebooks, not read-aloud mode.
+ */
+@Composable
+private fun VolumeButtonsEnabledSwitch(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_volume_buttons_enabled),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onToggle,
+            )
+        }
+        Text(
+            text = stringResource(StringRes.settings_volume_buttons_enabled_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Selector for volume button action.
+ * Options:
+ * - Next Page: Navigate to the next page
+ * - Previous Page: Navigate to the previous page
+ */
+@Composable
+private fun VolumeButtonActionSelector(
+    title: String,
+    selectedAction: VolumeButtonAction,
+    onActionSelected: (VolumeButtonAction) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            VolumeButtonAction.entries.forEachIndexed { index, action ->
+                SegmentedButton(
+                    selected = action == selectedAction,
+                    onClick = { onActionSelected(action) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = VolumeButtonAction.entries.size,
+                    ),
+                ) {
+                    Text(
+                        text = when (action) {
+                            VolumeButtonAction.NEXT_PAGE -> stringResource(StringRes.settings_volume_action_next_page)
+                            VolumeButtonAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_volume_action_previous_page)
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 

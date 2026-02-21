@@ -6,6 +6,7 @@ import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
+import com.retro99.reader.domain.model.VolumeButtonAction
 
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
@@ -40,6 +41,13 @@ data class ReaderSettingsUiModel(
     val showCurrentTime: Boolean = true,
     // Whether to show estimated remaining reading time in the progress bar
     val showReadingTime: Boolean = true,
+    // Volume button navigation settings (for Onyx Boox e-readers)
+    // Whether volume buttons are used for page navigation (only applies to ebooks, not read-aloud)
+    val volumeButtonsEnabled: Boolean = false,
+    // Action for volume up button
+    val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
+    // Action for volume down button
+    val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
 )
 
 enum class ReaderThemeUiModel {

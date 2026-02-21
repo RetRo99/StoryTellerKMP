@@ -25,6 +25,9 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     fullscreenMode = fullscreenMode,
     showCurrentTime = showCurrentTime,
     showReadingTime = showReadingTime,
+    volumeButtonsEnabled = volumeButtonsEnabled,
+    volumeUpAction = volumeUpAction,
+    volumeDownAction = volumeDownAction,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -48,6 +51,9 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     fullscreenMode = fullscreenMode,
     showCurrentTime = showCurrentTime,
     showReadingTime = showReadingTime,
+    volumeButtonsEnabled = volumeButtonsEnabled,
+    volumeUpAction = volumeUpAction,
+    volumeDownAction = volumeDownAction,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

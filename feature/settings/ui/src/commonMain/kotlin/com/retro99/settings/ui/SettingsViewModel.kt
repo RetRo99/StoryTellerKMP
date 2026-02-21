@@ -166,6 +166,27 @@ class SettingsViewModel(
             ) {
                 it.copy(showReadingTime = intent.showReadingTime)
             }
+
+            is SettingsIntent.OnVolumeButtonsEnabledChanged -> updateReaderSetting(
+                "volume_buttons_enabled",
+                intent.enabled.toString(),
+            ) {
+                it.copy(volumeButtonsEnabled = intent.enabled)
+            }
+
+            is SettingsIntent.OnVolumeUpActionChanged -> updateReaderSetting(
+                "volume_up_action",
+                intent.action.name,
+            ) {
+                it.copy(volumeUpAction = intent.action)
+            }
+
+            is SettingsIntent.OnVolumeDownActionChanged -> updateReaderSetting(
+                "volume_down_action",
+                intent.action.name,
+            ) {
+                it.copy(volumeDownAction = intent.action)
+            }
         }
     }
 
