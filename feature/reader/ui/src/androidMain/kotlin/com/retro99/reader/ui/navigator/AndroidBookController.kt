@@ -300,6 +300,7 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
+        println("log123: AndroidBookController.setSettings - highlightColor=${settings.highlightColor} (hex: ${settings.highlightColor.toUInt().toString(16)})")
         highlightColorArgb = settings.highlightColor
         highlightStyle = settings.highlightStyle
         withNavigator { it.submitPreferences(settings.toEpubPreferences()) }

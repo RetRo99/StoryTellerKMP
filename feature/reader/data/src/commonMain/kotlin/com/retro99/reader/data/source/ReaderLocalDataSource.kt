@@ -104,8 +104,14 @@ class ReaderLocalDataSource(
     }
 
     private fun loadReaderSettings(): ReaderSettingsLocalModel {
-        return preferences.getObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
+        val rawJson = preferences.getStringOrNull(PreferencesKey.ReaderSettings)
+        println("log123: ReaderLocalDataSource - raw JSON: $rawJson")
+
+        val settings = preferences.getObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
             ?: ReaderSettingsLocalModel()
+
+        println("log123: ReaderLocalDataSource - loaded highlightColorArgb=${settings.highlightColorArgb} (hex: ${settings.highlightColorArgb.toUInt().toString(16)})")
+        return settings
     }
 }
 

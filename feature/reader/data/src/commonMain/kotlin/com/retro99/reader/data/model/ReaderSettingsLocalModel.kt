@@ -89,7 +89,12 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         publisherStyles = publisherStyles,
         playbackSpeed = playbackSpeed,
         volume = volume,
-        highlightColor = highlightColorArgb,
+        // Treat 0 (fully transparent black) as invalid and use default
+        highlightColor = if (highlightColorArgb == 0) {
+            ReaderSettingsDomainModel.DEFAULT_HIGHLIGHT_COLOR
+        } else {
+            highlightColorArgb
+        },
         highlightStyle = try {
             HighlightStyle.valueOf(highlightStyle)
         } catch (e: IllegalArgumentException) {
