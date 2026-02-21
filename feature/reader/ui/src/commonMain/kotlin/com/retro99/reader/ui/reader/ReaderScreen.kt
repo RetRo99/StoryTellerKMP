@@ -44,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -610,38 +612,27 @@ private fun ReadingProgressBar(
                 }
             }
 
-            // Show chapter title with position info based on display mode
-            val chapterText = buildString {
-                chapterTitle?.let { append(it) }
-                when (chapterProgressDisplayMode) {
-                    ChapterProgressDisplayMode.NONE -> {
-                        // No chapter progress info shown
-                    }
+            // Chapter title (can be truncated)
+            val chapterTitleText = chapterTitle ?: ""
 
-                    ChapterProgressDisplayMode.PERCENTAGE -> {
-                        chapterProgressPercent?.let { percent ->
-                            if (isNotEmpty()) append(" ")
-                            append("($percent%)")
-                        }
-                    }
-
-                    ChapterProgressDisplayMode.RELATIVE -> {
-                        chapterInfo?.let { info ->
-                            if (isNotEmpty()) append(" ")
-                            append("(${info.currentPage}/${info.totalPages})")
-                        }
-                    }
-
-                    ChapterProgressDisplayMode.FIXED -> {
-                        fixedPosition?.let { position ->
-                            if (isNotEmpty()) append(" ")
-                            append("($position)")
-                        }
-                    }
+            // Page info based on display mode (should always be visible)
+            val pageInfoText = when (chapterProgressDisplayMode) {
+                ChapterProgressDisplayMode.NONE -> ""
+                ChapterProgressDisplayMode.PERCENTAGE -> {
+                    chapterProgressPercent?.let { "($it%)" } ?: ""
+                }
+                ChapterProgressDisplayMode.RELATIVE -> {
+                    chapterInfo?.let { "(${it.currentPage}/${it.totalPages})" } ?: ""
+                }
+                ChapterProgressDisplayMode.FIXED -> {
+                    fixedPosition?.let { "($it)" } ?: ""
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 // Current time on the left (formatted according to user's locale)
                 // Only shown when showCurrentTime setting is enabled (currentTime is non-empty)
                 if (currentTime.isNotEmpty()) {
@@ -649,26 +640,36 @@ private fun ReadingProgressBar(
                         text = currentTime,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.CenterStart),
-                    )
-                }
-
-                // Centered chapter title
-                if (chapterText.isNotEmpty()) {
-                    Text(
-                        text = chapterText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        modifier = Modifier.align(Alignment.Center),
                     )
                 }
 
-                // Right side: reading time and/or total progress
+                // Centered chapter title - uses weight to take remaining space and truncate if needed
+                Text(
+                    text = chapterTitleText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
+                )
+
+                // Right side: page info, reading time and/or total progress
                 Row(
-                    modifier = Modifier.align(Alignment.CenterEnd),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Show page info (always visible when enabled)
+                    if (pageInfoText.isNotEmpty()) {
+                        Text(
+                            text = pageInfoText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
                     // Show estimated reading time if enabled
                     if (showReadingTime && chapterReadingTimeInfo != null) {
                         val readingTimeText = if (chapterReadingTimeInfo.remainingMinutes < 1) {
