@@ -29,6 +29,7 @@ class SettingsViewModel(
     override fun onIntent(intent: SettingsIntent) {
         when (intent) {
             is SettingsIntent.OnSectionToggled -> toggleSection(intent.section)
+            is SettingsIntent.OnFontsToggled -> toggleFonts()
             is SettingsIntent.OnThemeChanged -> updateReaderSetting("theme", intent.theme.name) {
                 it.copy(theme = intent.theme)
             }
@@ -185,6 +186,12 @@ class SettingsViewModel(
                 state.expandedSections + section
             }
             state.copy(expandedSections = newExpandedSections)
+        }
+    }
+
+    private fun toggleFonts() {
+        updateState { state ->
+            state.copy(isFontsExpanded = !state.isFontsExpanded)
         }
     }
 
