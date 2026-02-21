@@ -665,7 +665,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 Decoration(
                     id: "media-overlay-highlight",
                     locator: locator,
-                    style: .highlight(tint: currentHighlightColor, isActive: true)
+                    style: .highlight(tint: currentHighlightColor, isActive: false)
                 )
             ]
         case .underline:
@@ -673,7 +673,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 Decoration(
                     id: "media-overlay-underline",
                     locator: locator,
-                    style: .underline(tint: currentHighlightColor, isActive: true)
+                    style: .underline(tint: currentHighlightColor, isActive: false)
                 )
             ]
         case .highlightUnderline:
@@ -681,12 +681,12 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                 Decoration(
                     id: "media-overlay-highlight",
                     locator: locator,
-                    style: .highlight(tint: currentHighlightColor, isActive: true)
+                    style: .highlight(tint: currentHighlightColor, isActive: false)
                 ),
                 Decoration(
                     id: "media-overlay-underline",
                     locator: locator,
-                    style: .underline(tint: currentHighlightColor, isActive: true)
+                    style: .underline(tint: currentHighlightColor, isActive: false)
                 )
             ]
         }
