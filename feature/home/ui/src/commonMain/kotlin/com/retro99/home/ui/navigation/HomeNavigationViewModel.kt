@@ -50,13 +50,23 @@ class HomeNavigationViewModel(
     HomeUiState(),
 ) {
 
-    private val _navigationEvents = MutableSharedFlow<HomeNavigationEvent>(extraBufferCapacity = 1)
+    private val _navigationEvents = MutableSharedFlow<HomeNavigationEvent>(replay = 1, extraBufferCapacity = 1)
 
     /**
      * Navigation events that should be consumed by the composable to perform navigation.
      * These are one-shot events for deep links and "open last book on launch".
+     * Uses replay = 1 to ensure events emitted during init (like "open last book on launch")
+     * are received by collectors that start after the event was emitted.
      */
     val navigationEvents: SharedFlow<HomeNavigationEvent> = _navigationEvents.asSharedFlow()
+
+    /**
+     * Clears the replay cache after an event has been consumed.
+     * This prevents the same event from being replayed on recomposition.
+     */
+    fun clearNavigationEventReplayCache() {
+        _navigationEvents.resetReplayCache()
+    }
 
     private val _userProfileChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 

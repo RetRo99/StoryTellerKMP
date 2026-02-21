@@ -68,6 +68,8 @@ fun HomeNavigation(
                     )
                 }
             }
+            // Clear replay cache after consuming the event to prevent replay on recomposition
+            viewModel.clearNavigationEventReplayCache()
         }
     }
 
