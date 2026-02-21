@@ -8,7 +8,6 @@ import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.FileImportManager
-import com.retro99.books.domain.usecase.GetBookByUuidUseCase
 import com.retro99.books.domain.usecase.ObserveFavoriteUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.toUiModel
@@ -17,8 +16,7 @@ import com.retro99.reader.domain.model.DownloadState
 import com.retro99.reader.domain.usecase.CancelDownloadUseCase
 import com.retro99.reader.domain.usecase.DeleteMediaCacheUseCase
 import com.retro99.reader.domain.usecase.DownloadMediaUseCase
-import com.retro99.reader.domain.usecase.BookIdentifier
-import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
+import com.retro99.reader.domain.usecase.ObserveBookWithProgressUseCase
 import com.retro99.reader.domain.usecase.ObserveDownloadStateUseCase
 import com.retro99.reader.domain.usecase.ResolvePositionConflictUseCase
 import kotlinx.coroutines.flow.combine
@@ -37,14 +35,13 @@ class BookDetailViewModel(
     @InjectedParam private val onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType) -> Unit,
     @InjectedParam private val onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     @InjectedParam private val onBack: () -> Unit,
-    @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
+    @Provided private val observeBookWithProgressUseCase: ObserveBookWithProgressUseCase,
     @Provided private val downloadMediaUseCase: DownloadMediaUseCase,
     @Provided private val cancelDownloadUseCase: CancelDownloadUseCase,
     @Provided private val observeDownloadStateUseCase: ObserveDownloadStateUseCase,
     @Provided private val deleteMediaCacheUseCase: DeleteMediaCacheUseCase,
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeFavoriteUseCase: ObserveFavoriteUseCase,
-    @Provided private val getAllBooksProgressInfoUseCase: GetAllBooksProgressInfoUseCase,
     @Provided private val resolvePositionConflictUseCase: ResolvePositionConflictUseCase,
     @Provided private val fileImportManager: FileImportManager,
     @Provided private val analytics: Analytics,
@@ -59,7 +56,7 @@ class BookDetailViewModel(
                 source = "direct",
             )
         )
-        fetchBook()
+        observeBookWithProgress()
         observeDownloadStates()
         observeFavoriteState()
     }
@@ -71,7 +68,7 @@ class BookDetailViewModel(
             }
 
             BookDetailIntent.OnRetryClicked -> {
-                fetchBook()
+                observeBookWithProgress()
             }
 
             is BookDetailIntent.OnTagClicked -> {
@@ -170,8 +167,6 @@ class BookDetailViewModel(
             updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
             resolvePositionConflictUseCase.useLocal(serverId, bookUuid)
                 .onSuccess {
-                    // Refresh progress info after resolving
-                    refreshProgressInfo()
                     // Navigate to reader if user was trying to open a book
                     pendingBookType?.let { bookType ->
                         updateState { it.copy(pendingOpenBookType = null) }
@@ -192,8 +187,6 @@ class BookDetailViewModel(
             updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
             resolvePositionConflictUseCase.useRemote(serverId, bookUuid)
                 .onSuccess {
-                    // Refresh progress info after resolving
-                    refreshProgressInfo()
                     // Navigate to reader if user was trying to open a book
                     pendingBookType?.let { bookType ->
                         updateState { it.copy(pendingOpenBookType = null) }
@@ -206,14 +199,6 @@ class BookDetailViewModel(
                 }
             updateState { it.copy(isResolvingConflict = false) }
         }
-    }
-
-    private suspend fun refreshProgressInfo() {
-        val book = viewState.value.book ?: return
-        val bookIdentifier = BookIdentifier(book.uuid, serverId)
-        val progressInfo = getAllBooksProgressInfoUseCase(listOf(bookIdentifier))
-            .values.firstOrNull()?.toUiModel()
-        updateState { it.copy(progressInfo = progressInfo) }
     }
 
     private fun toggleFavorite() {
@@ -265,21 +250,23 @@ class BookDetailViewModel(
         // If not cached, user should click download first
     }
 
-    private fun fetchBook() {
-        getBookByUuidUseCase(serverId, bookUuid)
+    /**
+     * Observes book data with progress information.
+     * Uses database-driven reactivity for reliable updates even when the screen is recreated.
+     * This replaces the separate fetchBook() and observeProgressChanges() methods.
+     */
+    private fun observeBookWithProgress() {
+        observeBookWithProgressUseCase(serverId, bookUuid)
             .onStart {
                 updateState { it.copy(isLoading = true, error = null) }
             }
             .onEach { result ->
                 result
-                    .onSuccess { book ->
-                        val bookIdentifier = BookIdentifier(book.uuid, book.serverId)
-                        val progressInfo = getAllBooksProgressInfoUseCase(listOf(bookIdentifier))
-                            .values.firstOrNull()?.toUiModel()
+                    .onSuccess { bookWithProgress ->
                         updateState {
                             it.copy(
-                                book = book.toUiModel(),
-                                progressInfo = progressInfo,
+                                book = bookWithProgress.book.toUiModel(),
+                                progressInfo = bookWithProgress.progressInfo?.toUiModel(),
                                 isLoading = false,
                                 error = null,
                             )

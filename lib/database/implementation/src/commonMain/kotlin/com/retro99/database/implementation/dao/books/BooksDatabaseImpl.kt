@@ -13,6 +13,7 @@ import com.retro99.database.api.books.SeriesEntity
 import com.retro99.database.api.books.SeriesWithPositionEntity
 import com.retro99.database.api.books.StatusEntity
 import com.retro99.database.api.books.TagEntity
+import kotlinx.coroutines.flow.Flow
 
 internal class BooksDatabaseImpl(
     private val sqlDelightDao: BooksSqlDelightDao,
@@ -226,6 +227,14 @@ internal class BooksDatabaseImpl(
 
     override suspend fun deletePosition(bookUuid: String) {
         sqlDelightDao.deletePosition(bookUuid)
+    }
+
+    override fun observePositionByBookUuid(bookUuid: String): Flow<PositionEntity?> {
+        return sqlDelightDao.observePositionByBookUuid(bookUuid)
+    }
+
+    override fun observeAllPositions(): Flow<List<PositionEntity>> {
+        return sqlDelightDao.observeAllPositions()
     }
 
     // ==================== TRANSACTION SUPPORT ====================

@@ -1,0 +1,161 @@
+package com.retro99.reader.domain.usecase
+
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.getOrElse
+import com.retro99.base.result.AppResult
+import com.retro99.books.domain.model.BookProgressInfoDomainModel
+import com.retro99.books.domain.model.BookType
+import com.retro99.books.domain.model.BookWithProgressDomainModel
+import com.retro99.books.domain.model.toBookDomainModel
+import com.retro99.reader.domain.ReaderSettingsRepository
+import com.retro99.server.api.AuthenticatedRepositoryProvider
+import com.retro99.server.api.ServerBook
+import com.retro99.server.api.ServerPosition
+import com.retro99.server.api.ServerPositionLocalSource
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Provided
+import com.github.michaelbull.result.map as resultMap
+
+/**
+ * Combined use case that observes all books with their progress information.
+ * 
+ * Combines book fetching from all servers with reactive progress observation.
+ * Returns a list of [BookWithProgressDomainModel] that updates when:
+ * - Books are added/removed from servers
+ * - Local reading progress changes
+ */
+@Factory
+class ObserveAllBooksWithProgressUseCase(
+    @Provided private val repositoryProvider: AuthenticatedRepositoryProvider,
+    @Provided private val readerSettingsRepository: ReaderSettingsRepository,
+    @Provided private val positionLocalSource: ServerPositionLocalSource,
+) {
+    // Cache of remote progressions - fetched once per refresh
+    private val remoteProgressionCache = mutableMapOf<String, Double?>()
+
+    /**
+     * Observes all books with their progress information.
+     * 
+     * @return Flow of books with progress, sorted by title
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    operator fun invoke(): Flow<AppResult<List<BookWithProgressDomainModel>>> {
+        return repositoryProvider.observeBooksRepositories()
+            .flatMapLatest { repositories ->
+                val bookFlows = repositories.map { repo ->
+                    repo.getBooks().mapToFlow { books ->
+                        books.map { it to repo.serverId }
+                    }
+                }
+
+                if (bookFlows.isEmpty()) {
+                    flowOf(Ok(emptyList()))
+                } else {
+                    // Combine all book flows with position observation
+                    combine(
+                        combine(bookFlows) { results ->
+                            results.flatMap { it.getOrElse { emptyList() } }
+                        },
+                        positionLocalSource.observeAllPositions()
+                    ) { booksWithServers, localPositions ->
+                        buildBooksWithProgress(booksWithServers, localPositions)
+                    }
+                }
+            }
+    }
+
+    /**
+     * Fetches remote progress for all books.
+     * Should be called once when the book list is loaded or refreshed.
+     */
+    suspend fun fetchRemoteProgress(books: List<BookWithProgressDomainModel>) {
+        if (books.isEmpty()) return
+
+        coroutineScope {
+            books.map { bookWithProgress ->
+                async {
+                    val book = bookWithProgress.book
+                    val readerRepo = repositoryProvider.getReaderRepository(book.serverId)
+                    val remotePosition = readerRepo?.getRemotePosition(book.uuid)
+                        ?.getOrElse { null }
+                    remoteProgressionCache[book.uuid] = remotePosition?.totalProgression
+                }
+            }.awaitAll()
+        }
+    }
+
+    /**
+     * Clears the remote progress cache.
+     */
+    fun clearCache() {
+        remoteProgressionCache.clear()
+    }
+
+    private suspend fun buildBooksWithProgress(
+        booksWithServers: List<Pair<ServerBook, String>>,
+        localPositions: List<ServerPosition>,
+    ): AppResult<List<BookWithProgressDomainModel>> {
+        val localPositionMap = localPositions.associateBy { it.bookUuid }
+
+        val booksWithProgress = booksWithServers.map { (serverBook, _) ->
+            val bookUuid = serverBook.uuid
+            val localPosition = localPositionMap[bookUuid]
+            val remoteProgression = remoteProgressionCache[bookUuid]
+
+            val progressInfo = createProgressInfo(
+                bookUuid = bookUuid,
+                localPosition = localPosition,
+                remoteProgression = remoteProgression,
+            )
+
+            BookWithProgressDomainModel(
+                book = serverBook.toBookDomainModel(),
+                progressInfo = progressInfo,
+            )
+        }
+
+        return Ok(booksWithProgress.sortedBy { it.book.title.lowercase() })
+    }
+
+    private suspend fun createProgressInfo(
+        bookUuid: String,
+        localPosition: ServerPosition?,
+        remoteProgression: Double?,
+    ): BookProgressInfoDomainModel? {
+        val isEbookCached = readerSettingsRepository.isEbookCached(bookUuid, BookType.EBOOK)
+        val isAudiobookCached = readerSettingsRepository.isEbookCached(bookUuid, BookType.AUDIOBOOK)
+        val isReadaloudCached = readerSettingsRepository.isEbookCached(bookUuid, BookType.READALOUD)
+
+        val localProgression = localPosition?.totalProgression
+        val hasLocalProgress = localProgression != null && localProgression > 0.0
+        val hasRemoteProgress = remoteProgression != null && remoteProgression > 0.0
+        val hasCached = isEbookCached || isAudiobookCached || isReadaloudCached
+
+        return if (hasLocalProgress || hasRemoteProgress || hasCached) {
+            BookProgressInfoDomainModel(
+                bookUuid = bookUuid,
+                localProgression = localProgression,
+                remoteProgression = remoteProgression,
+                isEbookCached = isEbookCached,
+                isAudiobookCached = isAudiobookCached,
+                isReadaloudCached = isReadaloudCached,
+            )
+        } else {
+            null
+        }
+    }
+
+    private fun <T, R> Flow<AppResult<T>>.mapToFlow(
+        transform: (T) -> R
+    ): Flow<AppResult<R>> = this.map { result: AppResult<T> ->
+        result.resultMap { value: T -> transform(value) }
+    }
+}

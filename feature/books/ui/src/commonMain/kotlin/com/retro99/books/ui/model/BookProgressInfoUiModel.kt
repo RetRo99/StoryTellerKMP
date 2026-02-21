@@ -1,6 +1,6 @@
 package com.retro99.books.ui.model
 
-import com.retro99.reader.domain.model.BookProgressInfoDomainModel
+import com.retro99.books.domain.model.BookProgressInfoDomainModel
 
 /**
  * UI model for book progress and cache information.

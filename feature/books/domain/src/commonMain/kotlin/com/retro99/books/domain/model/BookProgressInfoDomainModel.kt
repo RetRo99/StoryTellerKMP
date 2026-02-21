@@ -1,4 +1,4 @@
-package com.retro99.reader.domain.model
+package com.retro99.books.domain.model
 
 import kotlin.math.abs
 

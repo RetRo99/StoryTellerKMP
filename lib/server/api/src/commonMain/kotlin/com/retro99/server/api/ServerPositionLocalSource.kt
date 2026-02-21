@@ -2,6 +2,7 @@ package com.retro99.server.api
 
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Local source interface for position storage.
@@ -37,5 +38,22 @@ interface ServerPositionLocalSource {
      * @param bookUuid The UUID of the book
      */
     suspend fun deletePosition(bookUuid: String): CompletableResult
+
+    /**
+     * Observes position changes for a specific book.
+     * Emits whenever the position for this book is updated in the database.
+     *
+     * @param bookUuid The UUID of the book
+     * @return Flow of position updates (null if no position exists)
+     */
+    fun observePosition(bookUuid: String): Flow<ServerPosition?>
+
+    /**
+     * Observes all position changes.
+     * Emits whenever any position is updated in the database.
+     *
+     * @return Flow of all positions
+     */
+    fun observeAllPositions(): Flow<List<ServerPosition>>
 }
 

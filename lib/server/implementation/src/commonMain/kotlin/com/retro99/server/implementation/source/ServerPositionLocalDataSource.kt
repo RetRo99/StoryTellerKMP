@@ -7,6 +7,8 @@ import com.retro99.database.api.books.PositionDatabase
 import com.retro99.database.api.books.PositionEntity
 import com.retro99.server.api.ServerPosition
 import com.retro99.server.api.ServerPositionLocalSource
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -42,6 +44,16 @@ class ServerPositionLocalDataSource(
         return databaseExecutor.executeDatabaseOperation {
             positionDatabase.deletePosition(bookUuid)
         }
+    }
+
+    override fun observePosition(bookUuid: String): Flow<ServerPosition?> {
+        return positionDatabase.observePositionByBookUuid(bookUuid)
+            .map { it?.toServerPosition() }
+    }
+
+    override fun observeAllPositions(): Flow<List<ServerPosition>> {
+        return positionDatabase.observeAllPositions()
+            .map { positions -> positions.map { it.toServerPosition() } }
     }
 }
 

@@ -11,7 +11,7 @@ import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
-import com.retro99.books.domain.usecase.GetBooksUseCase
+import com.retro99.books.domain.model.BookWithProgressDomainModel
 import com.retro99.books.domain.usecase.ImportEpubUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
@@ -24,8 +24,7 @@ import com.retro99.books.ui.model.toUiModel
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
-import com.retro99.reader.domain.usecase.BookIdentifier
-import com.retro99.reader.domain.usecase.GetAllBooksProgressInfoUseCase
+import com.retro99.reader.domain.usecase.ObserveAllBooksWithProgressUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -37,15 +36,17 @@ import org.koin.core.annotation.Provided
 @KoinViewModel
 class BooksViewModel(
     @InjectedParam private val onNavigateToBookDetail: (book: BookUiModel) -> Unit,
-    @Provided private val getBooksUseCase: GetBooksUseCase,
     @Provided private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     @Provided private val observeAllFavoritesUseCase: ObserveAllFavoritesUseCase,
     @Provided private val importEpubUseCase: ImportEpubUseCase,
-    @Provided private val getAllBooksProgressInfoUseCase: GetAllBooksProgressInfoUseCase,
+    @Provided private val observeAllBooksWithProgressUseCase: ObserveAllBooksWithProgressUseCase,
     @Provided private val analytics: Analytics,
     @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
     @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
+
+    // Current books for refresh
+    private var currentBooks: List<BookWithProgressDomainModel> = emptyList()
 
     val searchFieldState = TextFieldState()
 
@@ -72,25 +73,16 @@ class BooksViewModel(
 
     /**
      * Refreshes the progress/cache info for all books.
-     * Called on pull-to-refresh to update cache status after downloads.
+     * Called on pull-to-refresh to update remote progress and cache status.
      */
     private fun refreshProgressInfo() {
         viewModelScope.launch {
             updateState { it.copy(isRefreshing = true) }
-            val books = viewState.value.books
-            if (books.isNotEmpty()) {
-                val bookIdentifiers = books.map { BookIdentifier(it.uuid, it.serverId) }
-                val progressInfo = getAllBooksProgressInfoUseCase(bookIdentifiers)
-                    .mapValues { (_, info) -> info.toUiModel() }
-                updateState {
-                    it.copy(
-                        bookProgressInfo = progressInfo,
-                        isRefreshing = false,
-                    )
-                }
-            } else {
-                updateState { it.copy(isRefreshing = false) }
+            if (currentBooks.isNotEmpty()) {
+                // Re-fetch remote progress
+                observeAllBooksWithProgressUseCase.fetchRemoteProgress(currentBooks)
             }
+            updateState { it.copy(isRefreshing = false) }
         }
     }
 
@@ -189,17 +181,26 @@ class BooksViewModel(
     }
 
     private fun observeBooks() {
-        getBooksUseCase()
+        viewModelScope.launch {
+            // Fetch remote progress first
+            observeAllBooksWithProgressUseCase.fetchRemoteProgress(currentBooks)
+        }
+
+        observeAllBooksWithProgressUseCase()
             .onStart {
                 updateState { it.copy(isLoading = true, error = null) }
             }
             .onEach { result ->
                 result
-                    .onSuccess { books ->
-                        val uiBooks = books.map { book -> book.toUiModel() }
-                        val bookIdentifiers = books.map { BookIdentifier(it.uuid, it.serverId) }
-                        val progressInfo = getAllBooksProgressInfoUseCase(bookIdentifiers)
-                            .mapValues { (_, info) -> info.toUiModel() }
+                    .onSuccess { booksWithProgress ->
+                        // Store for refresh
+                        currentBooks = booksWithProgress
+
+                        val uiBooks = booksWithProgress.map { it.book.toUiModel() }
+                        val progressInfo = booksWithProgress
+                            .filter { it.progressInfo != null }
+                            .associate { it.book.uuid to it.progressInfo!!.toUiModel() }
+
                         updateState {
                             it.copy(
                                 books = uiBooks,
