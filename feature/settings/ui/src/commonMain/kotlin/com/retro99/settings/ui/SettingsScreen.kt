@@ -497,9 +497,6 @@ private fun ColorPickerDialog(
     var selectedColor by remember { mutableStateOf(initialComposeColor) }
 
     // Debug logging
-    println("log123: ColorPickerDialog - initialColor (Int) = $initialColor (hex: ${initialColor.toUInt().toString(16)})")
-    println("log123: ColorPickerDialog - initialComposeColor = $initialComposeColor")
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -527,7 +524,6 @@ private fun ColorPickerDialog(
                         .height(200.dp),
                     controller = controller,
                     onColorChanged = { colorEnvelope ->
-                        println("log123: onColorChanged - fromUser=${colorEnvelope.fromUser}, color=${colorEnvelope.color}")
                         // Only update when user interacts, not on initial composition
                         if (colorEnvelope.fromUser) {
                             selectedColor = colorEnvelope.color

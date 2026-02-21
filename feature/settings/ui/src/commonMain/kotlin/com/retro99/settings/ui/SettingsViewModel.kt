@@ -184,9 +184,7 @@ class SettingsViewModel(
     private fun observeReaderSettings() {
         getReaderSettingsUseCase()
             .onEach { settings ->
-                println("log123: SettingsViewModel domain - highlightColor=${settings.highlightColor} (hex: ${settings.highlightColor.toUInt().toString(16)})")
                 val uiModel = settings.toUiModel()
-                println("log123: SettingsViewModel UI model - highlightColor=${uiModel.highlightColor} (hex: ${uiModel.highlightColor.toUInt().toString(16)})")
                 updateState { it.copy(readerSettings = uiModel) }
             }
             .launchIn(viewModelScope)
