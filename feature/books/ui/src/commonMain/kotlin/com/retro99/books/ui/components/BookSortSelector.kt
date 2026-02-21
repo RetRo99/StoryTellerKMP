@@ -30,6 +30,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import resources.translations.books_sort_a_to_z
 import resources.translations.books_sort_author
+import resources.translations.books_sort_date_added
 import resources.translations.books_sort_date_published
 import resources.translations.books_sort_highest
 import resources.translations.books_sort_label
@@ -133,6 +134,7 @@ private val BookSortOption.labelRes: StringResource
         BookSortOption.AUTHOR -> StringRes.books_sort_author
         BookSortOption.RATING -> StringRes.books_sort_rating
         BookSortOption.DATE_PUBLISHED -> StringRes.books_sort_date_published
+        BookSortOption.DATE_ADDED -> StringRes.books_sort_date_added
     }
 
 /**
@@ -145,5 +147,6 @@ private val BookSortOption.directionLabels: Pair<StringResource, StringResource>
         BookSortOption.AUTHOR -> StringRes.books_sort_a_to_z to StringRes.books_sort_z_to_a
         BookSortOption.RATING -> StringRes.books_sort_highest to StringRes.books_sort_lowest
         BookSortOption.DATE_PUBLISHED -> StringRes.books_sort_oldest to StringRes.books_sort_newest
+        BookSortOption.DATE_ADDED -> StringRes.books_sort_oldest to StringRes.books_sort_newest
     }
 

@@ -16,6 +16,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
         statusName = status?.name,
         rating = rating,
         publicationDate = publicationDate,
+        dateAdded = createdAt,
         description = description,
         hasEbook = ebook?.filepath != null,
         hasAudiobook = audiobook?.filepath != null,
