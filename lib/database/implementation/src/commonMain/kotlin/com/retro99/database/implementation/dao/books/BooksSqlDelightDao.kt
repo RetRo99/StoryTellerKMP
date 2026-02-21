@@ -1,8 +1,13 @@
 package com.retro99.database.implementation.dao.books
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 /**
@@ -609,6 +614,68 @@ internal class BooksSqlDelightDao(
                 )
             }
         }
+    }
+
+    /**
+     * Observes position changes for a specific book.
+     * Emits whenever the position for this book is updated in the database.
+     */
+    fun observePositionByBookUuid(bookUuid: String): Flow<PositionSqlDelightEntity?> {
+        return positionQueries.getPositionByBookUuid(bookUuid)
+            .asFlow()
+            .mapToOneOrNull(Dispatchers.IO)
+            .map { row ->
+                row?.let {
+                    PositionSqlDelightEntity(
+                        bookUuid = it.book_uuid,
+                        timestamp = it.timestamp,
+                        createdAt = it.created_at,
+                        updatedAt = it.updated_at,
+                        locatorHref = it.locator_href,
+                        locatorType = it.locator_type,
+                        locatorTitle = it.locator_title,
+                        locatorTarget = it.locator_target?.toInt(),
+                        audioTimestampMs = it.audio_timestamp_ms,
+                        chapterIndex = it.chapter_index?.toInt(),
+                        progression = it.progression,
+                        totalChapters = it.total_chapters?.toInt(),
+                        totalDurationMs = it.total_duration_ms,
+                        totalProgression = it.total_progression,
+                        position = it.position?.toInt(),
+                    )
+                }
+            }
+    }
+
+    /**
+     * Observes all position changes.
+     * Emits whenever any position is updated in the database.
+     */
+    fun observeAllPositions(): Flow<List<PositionSqlDelightEntity>> {
+        return positionQueries.getAllPositions()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { list ->
+                list.map { row ->
+                    PositionSqlDelightEntity(
+                        bookUuid = row.book_uuid,
+                        timestamp = row.timestamp,
+                        createdAt = row.created_at,
+                        updatedAt = row.updated_at,
+                        locatorHref = row.locator_href,
+                        locatorType = row.locator_type,
+                        locatorTitle = row.locator_title,
+                        locatorTarget = row.locator_target?.toInt(),
+                        audioTimestampMs = row.audio_timestamp_ms,
+                        chapterIndex = row.chapter_index?.toInt(),
+                        progression = row.progression,
+                        totalChapters = row.total_chapters?.toInt(),
+                        totalDurationMs = row.total_duration_ms,
+                        totalProgression = row.total_progression,
+                        position = row.position?.toInt(),
+                    )
+                }
+            }
     }
 
     // ==================== TRANSACTION SUPPORT ====================
