@@ -13,6 +13,7 @@ data class SettingsViewState(
     val isLoading: Boolean = false,
     val readerSettings: ReaderSettingsUiModel = ReaderSettingsUiModel(),
     val expandedSections: Set<SettingsSection> = setOf(SettingsSection.APPEARANCE),
+    val isFontsExpanded: Boolean = false,
 ) {
     // Convenience accessors for UI
     val theme: ReaderThemeUiModel get() = readerSettings.theme

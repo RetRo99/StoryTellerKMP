@@ -12,6 +12,7 @@ import com.retro99.settings.ui.model.ReaderThemeUiModel
 sealed interface SettingsIntent : BaseIntent {
     // Section expansion
     data class OnSectionToggled(val section: SettingsSection) : SettingsIntent
+    data object OnFontsToggled : SettingsIntent
 
     // Reader settings intents
     data class OnThemeChanged(val theme: ReaderThemeUiModel) : SettingsIntent

@@ -67,6 +67,7 @@ data class BooksListViewState(
             BookSortOption.AUTHOR -> compareBy(String.CASE_INSENSITIVE_ORDER) {
                 it.authors.firstOrNull() ?: ""
             }
+
             BookSortOption.RATING -> compareBy(nullsLast()) { it.rating }
             BookSortOption.DATE_PUBLISHED -> compareBy(nullsLast()) { it.publicationDate }
             BookSortOption.DATE_ADDED -> compareBy(nullsLast()) { it.dateAdded }

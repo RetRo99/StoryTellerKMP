@@ -213,6 +213,8 @@ private fun SettingsScreenContent(
                 onFontFamilySelected = {
                     intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
                 },
+                isExpanded = viewState.isFontsExpanded,
+                onToggle = { intentDispatcher(SettingsIntent.OnFontsToggled) },
             )
         }
 
@@ -791,18 +793,44 @@ private fun ThemeSelector(
 private fun FontFamilySelector(
     selectedFontFamily: FontFamilyUiModel,
     onFontFamilySelected: (FontFamilyUiModel) -> Unit,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
 ) {
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "font_arrow_rotation",
+    )
+
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_font_family),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        // Use FlowRow-like layout with FilterChips for better UX with many options
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Text(
+                text = stringResource(StringRes.settings_font_family),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                modifier = Modifier.rotate(rotationAngle),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
             // First row: Default, Serif, Sans Serif
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -874,6 +902,7 @@ private fun FontFamilySelector(
                     onClick = { onFontFamilySelected(FontFamilyUiModel.OPEN_DYSLEXIC) },
                     modifier = Modifier.weight(1f),
                 )
+            }
             }
         }
     }
