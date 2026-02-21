@@ -19,6 +19,8 @@ data class ReaderSettingsDomainModel(
     val volume: Float = 1.0f,
     // Highlight color for ReadAloud text highlighting (ARGB Int value)
     val highlightColor: Int = DEFAULT_HIGHLIGHT_COLOR,
+    // Underline color for ReadAloud text highlighting (ARGB Int value)
+    val underlineColor: Int = DEFAULT_UNDERLINE_COLOR,
     // Highlight style for ReadAloud text highlighting
     val highlightStyle: HighlightStyle = HighlightStyle.HIGHLIGHT,
     // Progress bar visibility: true = always, null = on tap (with controls), false = never
@@ -46,6 +48,9 @@ data class ReaderSettingsDomainModel(
 
         /** Default highlight color (Yellow with 50% alpha) */
         const val DEFAULT_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()
+
+        /** Default underline color (Blue with 80% alpha) */
+        const val DEFAULT_UNDERLINE_COLOR = 0xCC64B5F6.toInt()
     }
 }
 

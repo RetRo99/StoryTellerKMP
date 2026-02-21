@@ -88,6 +88,7 @@ import resources.translations.settings_highlight_style
 import resources.translations.settings_highlight_style_highlight
 import resources.translations.settings_highlight_style_highlight_underline
 import resources.translations.settings_highlight_style_underline
+import resources.translations.settings_underline_color
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
@@ -360,9 +361,16 @@ private fun SettingsScreenContent(
                 onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
             )
             Spacer(modifier = Modifier.height(16.dp))
-            HighlightColorSelector(
+            ColorSelector(
+                title = stringResource(StringRes.settings_highlight_color),
                 selectedColor = viewState.highlightColor,
                 onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            ColorSelector(
+                title = stringResource(StringRes.settings_underline_color),
+                selectedColor = viewState.underlineColor,
+                onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
             )
         }
     }
@@ -378,7 +386,8 @@ private val PresetHighlightColors = listOf(
 )
 
 @Composable
-private fun HighlightColorSelector(
+private fun ColorSelector(
+    title: String,
     selectedColor: Int,
     onColorSelected: (Int) -> Unit,
 ) {
@@ -386,7 +395,7 @@ private fun HighlightColorSelector(
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = stringResource(StringRes.settings_highlight_color),
+            text = title,
             style = MaterialTheme.typography.bodyMedium,
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -442,6 +451,7 @@ private fun HighlightColorSelector(
 
     if (showColorPickerDialog) {
         ColorPickerDialog(
+            title = title,
             initialColor = selectedColor,
             onColorSelected = { colorArgb ->
                 onColorSelected(colorArgb)
@@ -488,6 +498,7 @@ private fun ColorSwatch(
 
 @Composable
 private fun ColorPickerDialog(
+    title: String,
     initialColor: Int,
     onColorSelected: (Int) -> Unit,
     onDismiss: () -> Unit,
@@ -496,11 +507,10 @@ private fun ColorPickerDialog(
     val controller = rememberColorPickerController()
     var selectedColor by remember { mutableStateOf(initialComposeColor) }
 
-    // Debug logging
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = stringResource(StringRes.settings_highlight_color))
+            Text(text = title)
         },
         text = {
             Column(

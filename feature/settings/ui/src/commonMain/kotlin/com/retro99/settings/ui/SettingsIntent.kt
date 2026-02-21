@@ -35,6 +35,7 @@ sealed interface SettingsIntent : BaseIntent {
 
     // ReadAloud settings intents
     data class OnHighlightColorChanged(val colorArgb: Int) : SettingsIntent
+    data class OnUnderlineColorChanged(val colorArgb: Int) : SettingsIntent
     data class OnHighlightStyleChanged(val style: HighlightStyle) : SettingsIntent
 
     // Fullscreen mode intent

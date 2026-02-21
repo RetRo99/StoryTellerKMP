@@ -131,6 +131,13 @@ class SettingsViewModel(
                 it.copy(highlightColor = intent.colorArgb)
             }
 
+            is SettingsIntent.OnUnderlineColorChanged -> updateReaderSetting(
+                "underline_color_argb",
+                intent.colorArgb.toString(),
+            ) {
+                it.copy(underlineColor = intent.colorArgb)
+            }
+
             is SettingsIntent.OnHighlightStyleChanged -> updateReaderSetting(
                 "highlight_style",
                 intent.style.name,

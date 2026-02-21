@@ -28,6 +28,7 @@ data class SettingsViewState(
     val chapterProgressDisplayMode: ChapterProgressDisplayMode
         get() = readerSettings.chapterProgressDisplayMode
     val highlightColor: Int get() = readerSettings.highlightColor
+    val underlineColor: Int get() = readerSettings.underlineColor
     val highlightStyle: HighlightStyle get() = readerSettings.highlightStyle
     val showTotalProgress: Boolean get() = readerSettings.showTotalProgress
     val progressIndicatorMode: ProgressIndicatorMode get() = readerSettings.progressIndicatorMode
