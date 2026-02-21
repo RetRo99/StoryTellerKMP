@@ -73,6 +73,7 @@ class AndroidEpubMetadataExtractor(
                 val title = metadata.title ?: file.nameWithoutExtension
                 val author = metadata.authors.firstOrNull()?.name
                 val description = metadata.description
+                val publicationDate = metadata.published?.toString()
 
                 // Extract cover image
                 val coverBytes = try {
@@ -105,6 +106,7 @@ class AndroidEpubMetadataExtractor(
                         description = description,
                         coverBytes = coverBytes,
                         hasMediaOverlays = hasMediaOverlays,
+                        publicationDate = publicationDate,
                     )
                 )
             } catch (e: CancellationException) {

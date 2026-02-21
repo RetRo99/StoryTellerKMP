@@ -102,6 +102,7 @@ class AndroidFileImportManager(
                     importedAt = Clock.System.now().toString(),
                     lastOpenedAt = null,
                     bookType = bookType,
+                    publicationDate = metadata.publicationDate,
                 )
 
                 // Save to database

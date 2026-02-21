@@ -142,6 +142,7 @@ fun StorytellerBookApiModel.toDomain(
         // Timestamps
         createdAt = createdAt,
         lastOpenedAt = null, // Not available from API
+        publicationDate = publicationDate,
         // Storyteller books are not local
         isLocal = false,
     )

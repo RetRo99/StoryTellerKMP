@@ -32,6 +32,7 @@ internal class ImportedBooksSqlDelightDao(
                 imported_at = book.importedAt,
                 last_opened_at = book.lastOpenedAt,
                 book_type = book.bookType,
+                publication_date = book.publicationDate,
             )
         }
     }
@@ -90,6 +91,7 @@ internal class ImportedBooksSqlDelightDao(
         importedAt = imported_at,
         lastOpenedAt = last_opened_at,
         bookType = book_type,
+        publicationDate = publication_date,
     )
 }
 
@@ -107,5 +109,6 @@ private data class ImportedBookEntityImpl(
     override val importedAt: String,
     override val lastOpenedAt: String?,
     override val bookType: String,
+    override val publicationDate: String?,
 ) : ImportedBookEntity
 

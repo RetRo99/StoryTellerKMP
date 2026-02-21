@@ -49,7 +49,7 @@ sqldelight {
     databases {
         create("AppDatabase") {
             packageName.set("com.retro99.database.implementation")
-            version = 8
+            version = 9
         }
     }
 }

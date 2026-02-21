@@ -1,0 +1,5 @@
+-- Migration from version 8 to version 9
+-- Adds publication_date column to imported_books table for sorting by publication date
+
+ALTER TABLE imported_books ADD COLUMN publication_date TEXT;
+

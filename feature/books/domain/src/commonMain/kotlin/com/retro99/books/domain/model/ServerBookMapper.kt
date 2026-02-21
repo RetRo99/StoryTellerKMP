@@ -31,6 +31,7 @@ fun ServerBook.toBookDomainModel(): BookDomainModel {
             importedAt = createdAt ?: "",
             lastOpenedAt = lastOpenedAt,
             bookType = bookType,
+            publicationDate = publicationDate,
         )
     } else {
         BookDomainModel.StorytellerBook(
@@ -43,7 +44,7 @@ fun ServerBook.toBookDomainModel(): BookDomainModel {
             language = null,
             createdAt = createdAt,
             updatedAt = null,
-            publicationDate = null,
+            publicationDate = publicationDate,
             rating = null,
             suffix = null,
             subtitle = null,

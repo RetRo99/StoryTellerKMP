@@ -80,6 +80,7 @@ private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook
         // Timestamps
         createdAt = importedAt,
         lastOpenedAt = lastOpenedAt,
+        publicationDate = publicationDate,
         // This is a local book
         isLocal = true,
     )
