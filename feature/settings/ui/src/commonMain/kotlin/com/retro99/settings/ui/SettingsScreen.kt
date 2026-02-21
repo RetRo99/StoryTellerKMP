@@ -360,18 +360,28 @@ private fun SettingsScreenContent(
                 selectedStyle = viewState.highlightStyle,
                 onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            ColorSelector(
-                title = stringResource(StringRes.settings_highlight_color),
-                selectedColor = viewState.highlightColor,
-                onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            ColorSelector(
-                title = stringResource(StringRes.settings_underline_color),
-                selectedColor = viewState.underlineColor,
-                onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
-            )
+            // Show highlight color picker only if style includes highlight
+            if (viewState.highlightStyle == HighlightStyle.HIGHLIGHT ||
+                viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                ColorSelector(
+                    title = stringResource(StringRes.settings_highlight_color),
+                    selectedColor = viewState.highlightColor,
+                    onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+                )
+            }
+            // Show underline color picker only if style includes underline
+            if (viewState.highlightStyle == HighlightStyle.UNDERLINE ||
+                viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                ColorSelector(
+                    title = stringResource(StringRes.settings_underline_color),
+                    selectedColor = viewState.underlineColor,
+                    onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
+                )
+            }
         }
     }
 }
