@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -36,13 +37,19 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -358,6 +365,8 @@ private fun SettingsScreenContent(
             description = stringResource(StringRes.settings_section_readaloud_description),
             isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
             onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
+            scrollState = scrollState,
+            coroutineScope = coroutineScope,
         ) {
             HighlightStyleSelector(
                 selectedStyle = viewState.highlightStyle,
@@ -672,6 +681,8 @@ private fun ExpandableSettingsSection(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    scrollState: ScrollState? = null,
+    coroutineScope: CoroutineScope? = null,
     content: @Composable () -> Unit,
 ) {
     val rotationAngle by animateFloatAsState(
@@ -679,8 +690,25 @@ private fun ExpandableSettingsSection(
         label = "arrow_rotation",
     )
 
+    var sectionPosition by remember { mutableStateOf(0) }
+
+    // Auto-scroll when section expands
+    LaunchedEffect(isExpanded) {
+        if (isExpanded && scrollState != null && coroutineScope != null) {
+            coroutineScope.launch {
+                // Small delay to allow the expansion animation to start
+                kotlinx.coroutines.delay(100)
+                scrollState.animateScrollTo(sectionPosition)
+            }
+        }
+    }
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+                sectionPosition = coordinates.positionInParent().y.toInt()
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         ),
