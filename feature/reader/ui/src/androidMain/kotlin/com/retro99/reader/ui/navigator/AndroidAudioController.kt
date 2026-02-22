@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayPlayer
@@ -208,21 +207,25 @@ class AndroidAudioController(
         player.dismissPermissionDeniedDialog()
     }
 
-    override fun onBookLocationChanged(locator: LocatorState) {
+    override fun onBookLocationChanged(locator: LocatorState, visibleSentenceId: String?) {
         val isChapterChange = currentBookLocation?.href != locator.href
         currentBookLocation = locator
         if (isChapterChange) {
-            onChapterChanged(locator)
+            onChapterChanged(locator, visibleSentenceId)
+        } else if (visibleSentenceId != null) {
+            updatePositionForFragment(visibleSentenceId)
         }
+        resetPlaybackState()
     }
 
-    private fun onChapterChanged(locator: LocatorState) {
+    private fun onChapterChanged(locator: LocatorState, visibleSentenceId: String?) {
         val chapterUrl = Url(locator.href) ?: return
         // Get the visible fragment ID (sentence) so we can prepare the correct audio file
         // for chapters that span multiple audio files
         val fragmentId = locator.fragments?.firstOrNull()
         controllerScope.launch {
             player.prepareChapterDuration(chapterUrl, targetFragmentId = fragmentId)
+            visibleSentenceId?.let { updatePositionForFragment(it) }
         }
     }
 
