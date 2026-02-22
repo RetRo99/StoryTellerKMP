@@ -29,6 +29,7 @@ object VisibleSentenceDetector : KoinComponent {
      * 1. Gets all elements with an ID attribute (sentence elements have IDs)
      * 2. Filters to elements that are within the visible viewport
      * 3. Returns the ID of the topmost visible element
+     * 4. Falls back to the last sentence in the chapter if none are visible
      *
      * In paginated EPUB mode, elements on the next virtual page have their
      * left edge beyond the viewport width, so we filter those out.
@@ -43,6 +44,7 @@ object VisibleSentenceDetector : KoinComponent {
 
             let topMostElement = null;
             let topMostY = Infinity;
+            let lastSentenceId = null;
 
             for (let i = 0; i < elementsWithId.length; i++) {
                 const el = elementsWithId[i];
@@ -50,6 +52,9 @@ object VisibleSentenceDetector : KoinComponent {
 
                 // Skip elements without meaningful IDs
                 if (!id || id.length === 0) continue;
+
+                // Track the last sentence element as fallback
+                lastSentenceId = id;
 
                 const rects = el.getClientRects();
                 if (rects.length === 0) continue;
@@ -76,6 +81,13 @@ object VisibleSentenceDetector : KoinComponent {
                     status: 'found',
                     elementId: topMostElement,
                     topY: topMostY
+                });
+            } else if (lastSentenceId) {
+                // Fallback to last sentence in chapter if none are visible
+                return JSON.stringify({
+                    status: 'found',
+                    elementId: lastSentenceId,
+                    topY: -1
                 });
             } else {
                 return JSON.stringify({ status: 'not_found' });
