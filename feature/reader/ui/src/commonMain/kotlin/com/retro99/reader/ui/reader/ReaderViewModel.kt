@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.reader
 
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
@@ -74,11 +75,13 @@ class ReaderViewModel(
     private val readerScope: Scope by lazy {
         getKoin().createScope<ReaderScope>(bookUuid).apply {
             viewState.value.publicationState?.let { pubState ->
+                val initialPositionMs = pubState.position?.audioTimestampMs
+                val initialHref = pubState.position?.href
                 declare(pubState.publication)
                 declare(
                     InitialAudioPosition(
-                        positionMs = pubState.position?.audioTimestampMs,
-                        href = pubState.position?.href,
+                        positionMs = initialPositionMs,
+                        href = initialHref,
                     )
                 )
             }
@@ -662,8 +665,13 @@ class ReaderViewModel(
         val audioPositionMs = currentState.currentAudioPositionMs
         val currentPosition = currentState.currentPosition
 
-        if (audioPositionMs <= 0) return
-        if (currentPosition == null) return
+        if (audioPositionMs <= 0) {
+            return
+        }
+        if (currentPosition == null) {
+            return
+        }
+
 
         val now = now().toString()
         val positionDomainModel = PositionDomainModel(

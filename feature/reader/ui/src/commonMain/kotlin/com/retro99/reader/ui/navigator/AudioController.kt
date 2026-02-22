@@ -77,15 +77,6 @@ interface AudioController : AutoCloseable {
     fun togglePlayback()
 
     /**
-     * Sets the currently visible sentence ID.
-     * Called by the sync coordinator when the book location changes.
-     * Used by [togglePlayback] to know where to start playback from.
-     *
-     * @param sentenceId The fragment ID of the visible sentence, or null if unknown
-     */
-    fun setVisibleSentenceId(sentenceId: String?)
-
-    /**
      * Resets the playback state so the next play starts fresh.
      * Should be called when the user navigates to a new position while paused.
      */

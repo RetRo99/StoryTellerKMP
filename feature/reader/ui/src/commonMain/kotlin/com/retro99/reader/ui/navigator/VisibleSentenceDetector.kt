@@ -37,31 +37,31 @@ object VisibleSentenceDetector : KoinComponent {
         (function() {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
-            
-            // Get all elements with an ID - these are potential sentence elements
-            const elementsWithId = document.querySelectorAll('[id]');
-            
+
+            // Get all elements with an ID containing "sentence" - these are SMIL-linked elements
+            const elementsWithId = document.querySelectorAll('[id*="sentence"]');
+
             let topMostElement = null;
             let topMostY = Infinity;
-            
+
             for (let i = 0; i < elementsWithId.length; i++) {
                 const el = elementsWithId[i];
                 const id = el.id;
-                
-                // Skip elements without meaningful IDs or non-sentence elements
+
+                // Skip elements without meaningful IDs
                 if (!id || id.length === 0) continue;
-                
+
                 const rects = el.getClientRects();
                 if (rects.length === 0) continue;
-                
+
                 // Get the first rect (first line of the element)
                 const rect = rects[0];
-                
+
                 // Check if the element is within the visible viewport
                 // In paginated mode, elements on next page have left >= vw
                 const isHorizontallyVisible = rect.left >= 0 && rect.left < vw;
                 const isVerticallyVisible = rect.top >= 0 && rect.top < vh;
-                
+
                 if (isHorizontallyVisible && isVerticallyVisible) {
                     // Track the topmost visible element
                     if (rect.top < topMostY) {
@@ -70,7 +70,7 @@ object VisibleSentenceDetector : KoinComponent {
                     }
                 }
             }
-            
+
             if (topMostElement) {
                 return JSON.stringify({
                     status: 'found',
