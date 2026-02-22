@@ -1,7 +1,6 @@
 package com.retro99.reader.ui.publication
 
 import com.retro99.books.domain.model.BookType
-import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
 
 /**
@@ -9,6 +8,9 @@ import com.retro99.reader.ui.model.TocItemUiModel
  *
  * On Android, this wraps Readium's Publication object.
  * On iOS, this wraps the EpubReaderBridge.
+ *
+ * Note: Reader settings and position are managed separately in [PublicationState],
+ * which wraps this class and allows settings/position to be updated via `.copy()`.
  */
 expect class EpubPublication {
     /**
@@ -22,11 +24,6 @@ expect class EpubPublication {
      * Used for deep link navigation from audio notifications.
      */
     val bookUuid: String
-
-    /**
-     * The initial settings that were used to open this publication.
-     */
-    val initialSettings: ReaderSettingsUiModel
 
     /**
      * The type of book (EBOOK, AUDIOBOOK, or READALOUD).

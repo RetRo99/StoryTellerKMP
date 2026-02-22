@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.audio
 
 import com.retro99.reader.ui.bridge.AudioLocator
+import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
@@ -26,6 +27,7 @@ import org.koin.core.annotation.Scoped
 @Scoped(binds = [AudioController::class])
 class IosAudioController(
     @Provided private val publication: EpubPublication,
+    @Provided private val initialAudioPosition: InitialAudioPosition,
 ) : AudioController {
 
     private val bridge = publication.bridge
@@ -41,9 +43,9 @@ class IosAudioController(
     /**
      * Initial audio position from saved reading progress.
      * Used on first playback, then cleared.
-     * Initialized from publication's saved position.
+     * Initialized from the injected InitialAudioPosition.
      */
-    private var initialPositionMs: Long? = publication.initialPosition?.audioTimestampMs
+    private var initialPositionMs: Long? = initialAudioPosition.positionMs
 
     /**
      * Currently visible sentence ID, updated by the sync coordinator.
@@ -54,7 +56,7 @@ class IosAudioController(
     // Internal mutable flows for state observation
     private val _audioPlaybackState = MutableStateFlow(
         AudioPlaybackState(
-            currentPositionMs = publication.initialPosition?.audioTimestampMs,
+            currentPositionMs = initialAudioPosition.positionMs,
             totalDurationMs = null,
             isPlaying = false,
             playbackState = PlaybackState.STOPPED,

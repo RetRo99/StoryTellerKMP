@@ -24,7 +24,7 @@ import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.DoubleTapJsInterface
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
-import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.publication.PublicationState
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
@@ -40,7 +40,7 @@ private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
 @Composable
 internal actual fun EpubReaderViewInternal(
     bookUuid: String,
-    publication: EpubPublication,
+    publicationState: PublicationState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     bookController: BookController,
     modifier: Modifier,
@@ -51,6 +51,7 @@ internal actual fun EpubReaderViewInternal(
         return
     }
 
+    val publication = publicationState.publication
     val readiumPublication = publication.publication
 
     val navigatorController = bookController as? AndroidBookController
@@ -149,10 +150,12 @@ internal actual fun EpubReaderViewInternal(
             val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
                     as? EpubNavigatorFragment
             if (existingFragment == null) {
-                val initialLocator = publication.initialPosition?.toAndroidLocator()
+                // Use current settings and position from PublicationState
+                // This ensures the fragment is created with up-to-date values on rotation
+                val initialLocator = publicationState.position?.toAndroidLocator()
                 fragmentManager.fragmentFactory = navigatorFactory.createFragmentFactory(
                     initialLocator = initialLocator,
-                    initialPreferences = publication.initialSettings.toEpubPreferences(),
+                    initialPreferences = publicationState.settings.toEpubPreferences(),
                     configuration = navigatorConfiguration,
                 )
 
