@@ -75,7 +75,7 @@ import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
 import com.retro99.reader.ui.model.backgroundColor
-import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.publication.PublicationState
 import com.retro99.translations.StringRes
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -162,11 +162,10 @@ private fun ReaderScreenContent(
             LoadingScreen()
         }
         when {
-            viewState.publication != null -> {
+            viewState.publicationState != null -> {
                 ReaderContent(
                     bookUuid = bookUuid,
-                    publication = viewState.publication,
-                    currentSettings = viewState.currentSettings,
+                    publicationState = viewState.publicationState,
                     isReadAloud = viewState.isReadAloud,
                     isPlaying = viewState.isPlaying,
                     currentAudioPositionMs = viewState.currentAudioPositionMs,
@@ -175,7 +174,6 @@ private fun ReaderScreenContent(
                     tableOfContents = viewState.tableOfContents,
                     isTocVisible = viewState.isTocVisible,
                     previousTocPosition = viewState.previousTocPosition,
-                    lastKnownPosition = viewState.lastKnownPosition,
                     chapterInfo = viewState.chapterInfo,
                     chapterReadingTimeInfo = viewState.chapterReadingTimeInfo,
                     currentTime = viewState.currentTime,
@@ -239,8 +237,7 @@ private fun NoAudioSnackbar(
 @Composable
 private fun ReaderContent(
     bookUuid: String,
-    publication: EpubPublication,
-    currentSettings: ReaderSettingsUiModel?,
+    publicationState: PublicationState,
     isReadAloud: Boolean,
     isPlaying: Boolean,
     currentAudioPositionMs: Long,
@@ -248,7 +245,6 @@ private fun ReaderContent(
     tableOfContents: List<TocItemUiModel>,
     isTocVisible: Boolean,
     previousTocPosition: PositionUiModel?,
-    lastKnownPosition: PositionUiModel?,
     chapterInfo: ChapterInfo?,
     chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     currentTime: String,
@@ -256,7 +252,8 @@ private fun ReaderContent(
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
 ) {
-    val settings = currentSettings ?: publication.initialSettings
+    val settings = publicationState.settings
+    val currentPosition = publicationState.position
     var tempScale by remember(settings.fontSize) { mutableStateOf(settings.fontSize) }
     var isZooming by remember { mutableStateOf(false) }
 
@@ -288,7 +285,7 @@ private fun ReaderContent(
             settings = settings,
             areControlsVisible = areControlsVisible,
             position = ProgressBarPosition.TOP,
-            lastKnownPosition = lastKnownPosition,
+            lastKnownPosition = currentPosition,
             chapterInfo = chapterInfo,
             chapterReadingTimeInfo = chapterReadingTimeInfo,
             currentTime = currentTime,
@@ -302,7 +299,7 @@ private fun ReaderContent(
         ) {
             EpubReaderView(
                 bookUuid = bookUuid,
-                publication = publication,
+                publicationState = publicationState,
                 intentDispatcher = intentDispatcher,
                 modifier = Modifier
                     .fillMaxSize()
@@ -403,9 +400,9 @@ private fun ReaderContent(
             if (isTocVisible) {
                 TableOfContentsSheet(
                     tableOfContents = tableOfContents,
-                    currentChapterHref = lastKnownPosition?.href,
+                    currentChapterHref = currentPosition?.href,
                     onChapterClick = { href ->
-                        intentDispatcher(ReaderIntent.GoToChapter(href, lastKnownPosition))
+                        intentDispatcher(ReaderIntent.GoToChapter(href, currentPosition))
                     },
                     onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
                 )
@@ -427,7 +424,7 @@ private fun ReaderContent(
             settings = settings,
             areControlsVisible = areControlsVisible,
             position = ProgressBarPosition.BOTTOM,
-            lastKnownPosition = lastKnownPosition,
+            lastKnownPosition = currentPosition,
             chapterInfo = chapterInfo,
             chapterReadingTimeInfo = chapterReadingTimeInfo,
             currentTime = currentTime,

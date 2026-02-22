@@ -6,9 +6,8 @@ import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
-import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
-import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.publication.PublicationState
 
 data class ReaderViewState(
     val bookType: BookType,
@@ -16,20 +15,16 @@ data class ReaderViewState(
     val bookTitle: String = "",
     val bookCoverUrl: String? = null,
     val localFilePath: String? = null,
-    val publication: EpubPublication? = null,
+    val publicationState: PublicationState? = null,
     val positionConflict: PositionConflictUiModel? = null,
     val isSettingsVisible: Boolean = false,
     val error: AppError? = null,
-    // Current reader settings (updated when user changes settings)
-    val currentSettings: ReaderSettingsUiModel? = null,
     // Current time formatted according to user's locale (updated every minute)
     val currentTime: String = "",
     // Media playback state for ReadAloud books
     val isPlaying: Boolean = false,
     val currentAudioPositionMs: Long = 0L,
     val totalDurationMs: Long? = null,
-    // Last known text position (used for saving audio position)
-    val lastKnownPosition: PositionUiModel? = null,
     // Whether the media player is ready (for ReadAloud books)
     val isAudioPlayerReady: Boolean = false,
     // Table of contents
@@ -50,6 +45,18 @@ data class ReaderViewState(
      * the publication must have media overlays.
      */
     val isReadAloud: Boolean
-        get() = bookType == BookType.READALOUD && publication?.hasMediaOverlays == true
+        get() = bookType == BookType.READALOUD && publicationState?.publication?.hasMediaOverlays == true
+
+    /**
+     * Convenience accessor for the current reader settings.
+     * Returns null if no publication is loaded.
+     */
+    val currentSettings get() = publicationState?.settings
+
+    /**
+     * Convenience accessor for the current reading position.
+     * Returns null if no publication is loaded or position is not set.
+     */
+    val currentPosition get() = publicationState?.position
 }
 

@@ -2,21 +2,20 @@ package com.retro99.reader.ui.publication
 
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.bridge.EpubReaderBridge
-import com.retro99.reader.ui.model.PositionUiModel
-import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
 
 /**
  * iOS implementation of EpubPublication.
  * Wraps the EpubReaderBridge which provides access to the Swift Readium implementation.
+ *
+ * Note: Reader settings and position are managed separately in [PublicationState],
+ * which wraps this class and allows settings/position to be updated via `.copy()`.
  */
 actual class EpubPublication(
     internal val bridge: EpubReaderBridge,
     actual val serverId: String,
     actual val bookUuid: String,
-    actual val initialSettings: ReaderSettingsUiModel,
     actual val bookType: BookType = BookType.EBOOK,
-    internal val initialPosition: PositionUiModel?,
 ) {
 
     /**

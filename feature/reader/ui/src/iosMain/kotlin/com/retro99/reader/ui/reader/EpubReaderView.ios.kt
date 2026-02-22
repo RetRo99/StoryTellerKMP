@@ -19,7 +19,7 @@ import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.bridge.EpubReaderSettings
 import com.retro99.reader.ui.navigator.BookController
 import com.retro99.reader.ui.navigator.IosBookController
-import com.retro99.reader.ui.publication.EpubPublication
+import com.retro99.reader.ui.publication.PublicationState
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import platform.UIKit.UIViewController
@@ -35,11 +35,12 @@ import platform.UIKit.UIViewController
 @Composable
 internal actual fun EpubReaderViewInternal(
     bookUuid: String,
-    publication: EpubPublication,
+    publicationState: PublicationState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     bookController: BookController,
     modifier: Modifier,
 ) {
+    val publication = publicationState.publication
     val navigator = bookController as? IosBookController
 
     // Note: Double-tap events are handled by ReaderSyncCoordinator, not the View
@@ -49,13 +50,14 @@ internal actual fun EpubReaderViewInternal(
     var readerViewController by remember(bookUuid) { mutableStateOf<UIViewController?>(null) }
 
     // Create the reader view controller when the publication is ready
+    // Use current settings and position from PublicationState for up-to-date values on recreation
     LaunchedEffect(publication, navigator) {
         // Try to create the view controller, retrying if needed
         var attempts = 0
         while (readerViewController == null && attempts < 10) {
             val settings = EpubReaderSettings.from(
-                settings = publication.initialSettings,
-                initialPosition = publication.initialPosition,
+                settings = publicationState.settings,
+                initialPosition = publicationState.position,
             )
 
             val viewController = publication.bridge.createReaderViewController(settings = settings)

@@ -20,6 +20,7 @@ import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
+import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
@@ -29,6 +30,7 @@ import com.retro99.reader.ui.model.toUiData
 import com.retro99.reader.ui.model.toUiModel
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
+import com.retro99.reader.ui.publication.PublicationState
 import com.retro99.reader.ui.service.EpubPublicationService
 import com.retro99.statistics.domain.usecase.SaveReadingSessionUseCase
 import kotlinx.coroutines.Job
@@ -71,8 +73,14 @@ class ReaderViewModel(
 
     private val readerScope: Scope by lazy {
         getKoin().createScope<ReaderScope>(bookUuid).apply {
-            viewState.value.publication?.let {
-                declare(it)
+            viewState.value.publicationState?.let { pubState ->
+                declare(pubState.publication)
+                declare(
+                    InitialAudioPosition(
+                        positionMs = pubState.position?.audioTimestampMs,
+                        href = pubState.position?.href,
+                    )
+                )
             }
         }
     }
@@ -203,9 +211,21 @@ class ReaderViewModel(
             .onEach { settings ->
                 val uiSettings = settings.toUiModel()
                 bookController.setSettings(uiSettings)
-                updateState { it.copy(currentSettings = uiSettings) }
+                updatePublicationState { it.copy(settings = uiSettings) }
             }
             .launchIn(viewModelScope)
+    }
+
+    /**
+     * Updates the PublicationState within the ViewState.
+     * Only applies the update if publicationState is not null.
+     */
+    private inline fun updatePublicationState(crossinline update: (PublicationState) -> PublicationState) {
+        updateState { state ->
+            state.publicationState?.let { pubState ->
+                state.copy(publicationState = update(pubState))
+            } ?: state
+        }
     }
 
     private fun observeBookLocationChanges() {
@@ -213,7 +233,7 @@ class ReaderViewModel(
             .onEach { locator ->
                 val currentState = viewState.value
                 val positionUiModel = locator.toPositionUiModel(
-                    basePosition = currentState.lastKnownPosition,
+                    basePosition = currentState.currentPosition,
                     createdAt = now().toString(),
                 )
                 updatePosition(positionUiModel)
@@ -294,9 +314,7 @@ class ReaderViewModel(
             filePath = data.localEbookPath,
             serverId = data.serverId,
             bookUuid = data.bookUuid,
-            initialSettings = settings,
             bookType = bookType,
-            initialPosition = position,
         ).onSuccess { publication ->
             // Track book opened event
             bookOpenedTimestamp = nowMillis()
@@ -307,17 +325,23 @@ class ReaderViewModel(
                 )
             )
 
+            // Create PublicationState with initial settings and position
+            val publicationState = PublicationState(
+                publication = publication,
+                settings = settings,
+                position = position,
+            )
+
             updateState { state ->
                 state.copy(
                     bookUuid = data.bookUuid,
                     bookTitle = data.bookTitle,
                     bookCoverUrl = data.bookCoverUrl,
-                    publication = publication,
+                    publicationState = publicationState,
                     bookType = bookType,
                     positionConflict = conflict,
                     error = null,
                     currentAudioPositionMs = position?.audioTimestampMs ?: 0L,
-                    lastKnownPosition = position,
                     tableOfContents = publication.tableOfContents,
                 )
             }
@@ -393,7 +417,7 @@ class ReaderViewModel(
     private fun updatePosition(position: PositionUiModel) {
         if (viewState.value.positionConflict != null) return
 
-        updateState { it.copy(lastKnownPosition = position) }
+        updatePublicationState { it.copy(position = position) }
 
         val now = now().toString()
         val currentState = viewState.value
@@ -478,7 +502,7 @@ class ReaderViewModel(
             } else {
                 0L
             }
-            val progressPercent = currentState.lastKnownPosition?.totalProgression
+            val progressPercent = currentState.currentPosition?.totalProgression
                 ?.let { (it * 100).toInt() } ?: 0
             val sessionReadingSpeedWpm = readingSpeedTracker.establishedReadingSpeedWpm.value
                 ?: currentState.currentSettings?.readingSpeedWpm
@@ -501,7 +525,7 @@ class ReaderViewModel(
                     startTime = bookOpenedTimestamp,
                     endTime = endTime,
                     durationMs = readingDurationMs,
-                    endProgression = currentState.lastKnownPosition?.totalProgression,
+                    endProgression = currentState.currentPosition?.totalProgression,
                     readingSpeedWpm = sessionReadingSpeedWpm,
                 )
             }
@@ -515,7 +539,7 @@ class ReaderViewModel(
                         bookType = currentState.bookType,
                         bookTitle = currentState.bookTitle,
                         coverUrl = currentState.bookCoverUrl,
-                        totalProgression = currentState.lastKnownPosition?.totalProgression,
+                        totalProgression = currentState.currentPosition?.totalProgression,
                     )
                 )
             }
@@ -560,7 +584,7 @@ class ReaderViewModel(
     private fun setHighlightColor(colorArgb: Int) {
         val currentSettings = viewState.value.currentSettings ?: return
         val updatedSettings = currentSettings.copy(highlightColor = colorArgb)
-        updateState { it.copy(currentSettings = updatedSettings) }
+        updatePublicationState { it.copy(settings = updatedSettings) }
         viewModelScope.launch {
             saveReaderSettingsUseCase(updatedSettings.toDomainModel())
         }
@@ -636,29 +660,29 @@ class ReaderViewModel(
     private suspend fun saveCurrentAudioPositionSync() {
         val currentState = viewState.value
         val audioPositionMs = currentState.currentAudioPositionMs
-        val lastPosition = currentState.lastKnownPosition
+        val currentPosition = currentState.currentPosition
 
         if (audioPositionMs <= 0) return
-        if (lastPosition == null) return
+        if (currentPosition == null) return
 
         val now = now().toString()
         val positionDomainModel = PositionDomainModel(
             bookUuid = bookUuid,
             serverId = serverId,
             timestamp = nowMillis(),
-            createdAt = lastPosition.createdAt,
+            createdAt = currentPosition.createdAt,
             updatedAt = now,
-            locatorHref = lastPosition.href,
-            locatorType = lastPosition.type,
-            locatorTitle = lastPosition.title,
+            locatorHref = currentPosition.href,
+            locatorType = currentPosition.type,
+            locatorTitle = currentPosition.title,
             locatorTarget = null,
             audioTimestampMs = audioPositionMs,
-            chapterIndex = lastPosition.chapterIndex,
-            progression = lastPosition.progression,
-            totalChapters = lastPosition.totalChapters,
+            chapterIndex = currentPosition.chapterIndex,
+            progression = currentPosition.progression,
+            totalChapters = currentPosition.totalChapters,
             totalDurationMs = currentState.totalDurationMs,
-            totalProgression = lastPosition.totalProgression,
-            position = lastPosition.position,
+            totalProgression = currentPosition.totalProgression,
+            position = currentPosition.position,
         )
         saveReadingProgressUseCase(positionDomainModel)
     }

@@ -5,8 +5,6 @@ import com.github.michaelbull.result.Ok
 import com.retro99.analytics.api.Analytics
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.model.BookType
-import com.retro99.reader.ui.model.PositionUiModel
-import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -47,9 +45,7 @@ class AndroidEpubPublicationService(
         filePath: String,
         serverId: String,
         bookUuid: String,
-        initialSettings: ReaderSettingsUiModel,
         bookType: BookType,
-        initialPosition: PositionUiModel?,
     ): AppResult<EpubPublication> =
         withContext(Dispatchers.IO) {
             try {
@@ -83,9 +79,7 @@ class AndroidEpubPublicationService(
                         openedPublication,
                         serverId,
                         bookUuid,
-                        initialSettings,
                         bookType,
-                        initialPosition,
                     )
                 )
             } catch (e: CancellationException) {

@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayPlayer
 import com.retro99.reader.ui.model.AudioLocatorState
@@ -30,6 +31,7 @@ class AndroidAudioController(
     private val player: MediaOverlayPlayer,
     private val playbackStateTracker: PlaybackStateTracker,
     private val locatorTracker: LocatorTracker,
+    private val initialAudioPosition: InitialAudioPosition,
 ) : AudioController {
 
     private var currentBookLocation: LocatorState? = null
@@ -45,9 +47,9 @@ class AndroidAudioController(
     /**
      * Initial audio position from saved reading progress.
      * Used on first playback, then cleared.
-     * Initialized from publication's saved position.
+     * Initialized from the injected InitialAudioPosition.
      */
-    private var initialPositionMs: Long? = publication.initialPosition?.audioTimestampMs
+    private var initialPositionMs: Long? = initialAudioPosition.positionMs
 
     /**
      * Currently visible sentence ID, updated by the sync coordinator.
@@ -96,17 +98,23 @@ class AndroidAudioController(
         }
     }
 
+    /**
+     * Initial chapter href from saved reading progress.
+     * Used for initializing media overlays at the correct chapter.
+     */
+    private val initialChapterHref: String? = initialAudioPosition.href
+
     private suspend fun initializeMediaOverlays() {
-        val initialChapterHref = publication.initialPosition?.href
+        val chapterHref = initialChapterHref
             ?: publication.publication.readingOrder.firstOrNull()?.href?.toString()
-        val initialChapterUrl = initialChapterHref?.let { Url(it) }
+        val chapterUrl = chapterHref?.let { Url(it) }
 
-        player.initialize(initialChapterHref)
+        player.initialize(chapterHref)
 
-        if (initialChapterUrl != null) {
+        if (chapterUrl != null) {
             // Pass initial position so audio is pre-buffered at the correct position
             // This makes playback start instantly when user clicks play
-            player.prepareChapterDuration(initialChapterUrl, initialPositionMs)
+            player.prepareChapterDuration(chapterUrl, initialPositionMs)
         }
     }
 
