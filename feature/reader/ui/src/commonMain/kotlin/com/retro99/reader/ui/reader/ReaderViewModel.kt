@@ -315,7 +315,6 @@ class ReaderViewModel(
                     publication = publication,
                     bookType = bookType,
                     positionConflict = conflict,
-                    playbackSpeed = settings.playbackSpeed,
                     error = null,
                     currentAudioPositionMs = position?.audioTimestampMs ?: 0L,
                     lastKnownPosition = position,
@@ -549,9 +548,8 @@ class ReaderViewModel(
             ReaderAnalyticsEvent.SettingChanged("playback_speed", speed.toString())
         )
         audioController.setPlaybackSpeed(speed)
-        updateState { it.copy(playbackSpeed = speed) }
         // Also save the speed to settings
-        val currentSettings = viewState.value.publication?.initialSettings
+        val currentSettings = viewState.value.currentSettings
         viewModelScope.launch {
             currentSettings?.let { settings ->
                 saveReaderSettingsUseCase(settings.copy(playbackSpeed = speed).toDomainModel())
