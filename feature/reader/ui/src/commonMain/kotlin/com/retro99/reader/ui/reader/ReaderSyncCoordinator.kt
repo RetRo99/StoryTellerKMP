@@ -40,6 +40,7 @@ class ReaderSyncCoordinator(
         if (bookToAudioJob != null || audioToBookJob != null) return
 
         bookToAudioJob = bookController.currentLocator
+            .drop(1)
             .onEach { locator ->
                 audioController.onBookLocationChanged(locator)
                 // Only handle ReadAloud-specific logic for books with media overlays

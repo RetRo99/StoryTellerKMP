@@ -162,11 +162,6 @@ class LocatorTracker(
      */
     fun setChapterClips(clips: List<MediaOverlayClip>) {
         currentChapterClips = clips
-
-        // Reset position to 0 as a safe default for the new chapter.
-        // The actual position will be set by updatePositionForFragment() once the
-        // visible sentence is determined, which may also trigger an audio file switch.
-        _currentPosition.value = 0L
     }
 
     /**
