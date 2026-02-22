@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.reader
 
+import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController

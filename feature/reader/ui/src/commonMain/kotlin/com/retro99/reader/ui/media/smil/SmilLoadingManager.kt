@@ -116,41 +116,13 @@ class SmilLoadingManager(
     suspend fun buildInitialIndex(currentChapterHref: String): Long = withContext(ioDispatcher) {
         val startTime = currentTimeMillis()
 
-        val normalizedCurrent = quickScanner.normalizeChapterHref(currentChapterHref)
-        val readingOrder = contentProvider.getReadingOrder()
-            .map { quickScanner.normalizeChapterHref(it) }
         val allSmilHrefs = contentProvider.getAllSmilHrefs()
 
-        // Find current chapter position in reading order
-        val currentIndex = readingOrder.indexOf(normalizedCurrent).takeIf { it >= 0 } ?: 0
-
-        // Determine which chapters we need to find SMILs for (current + N ahead)
-        val chaptersToFind = readingOrder
-            .drop(currentIndex)
-            .take(initialScanAhead + 1)
-            .toMutableSet()
-
-        // Scan SMIL files until we find all the chapters we need
-        var scannedCount = 0
-
+        // Scan ALL SMIL files to build complete index
+        // This avoids slow fallback scans in getClipsForChapter later
         for (smilHref in allSmilHrefs) {
-            // Stop early if we found SMILs for all chapters we need
-            if (chaptersToFind.isEmpty()) {
-                break
-            }
-
             if (index.isScanned(smilHref)) continue
-
-            val chapterHref = scanSmilFile(smilHref)
-            scannedCount++
-
-            if (chapterHref != null && chapterHref in chaptersToFind) {
-                // Found a SMIL for one of the chapters we need
-                // Check if we have at least one SMIL per chapter
-                if (index.hasSmilForChapter(chapterHref)) {
-                    chaptersToFind.remove(chapterHref)
-                }
-            }
+            scanSmilFile(smilHref)
         }
 
         currentTimeMillis() - startTime
