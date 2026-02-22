@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.audio
 
+import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
@@ -149,21 +150,15 @@ class IosAudioController(
         }
     }
 
-    override fun setVisibleSentenceId(sentenceId: String?) {
-        currentVisibleSentenceId = sentenceId
-    }
-
     override fun resetPlaybackState() {
         // Only reset if not currently playing - when playing, the audio drives the state
         if (_audioPlaybackState.value.isPlaying) return
         hasStartedPlayback = false
-        initialPositionMs = null
     }
 
     override fun setInitialAudioPosition(positionMs: Long?) {
-        initialPositionMs = positionMs
         hasStartedPlayback = false
-        // Also update the playback state flow so the seek bar reflects the new position
+        // Update the playback state flow so the seek bar reflects the new position
         _audioPlaybackState.value = _audioPlaybackState.value.copy(
             currentPositionMs = positionMs,
         )
@@ -174,27 +169,15 @@ class IosAudioController(
     }
 
     /**
-     * Starts playback from the current position.
-     * Uses saved position if available, otherwise uses the cached visible sentence.
+     * Starts playback from the current position shown on the seek bar.
+     * The _audioPlaybackState maintains the position - either from saved state or user navigation.
      */
     private fun startPlaybackFromCurrentPosition() {
-        val savedPosition = initialPositionMs
-        if (savedPosition != null) {
-            ensureMediaOverlaysInitialized {
-                bridge.playAudio(savedPosition)
-            }
-        } else {
-            val visibleSentenceId = currentVisibleSentenceId
-            if (visibleSentenceId != null) {
-                playFromFragment(visibleSentenceId, chapterHref = null)
-            } else {
-                ensureMediaOverlaysInitialized {
-                    bridge.playAudio(null)
-                }
-            }
+        val currentPosition = _audioPlaybackState.value.currentPositionMs
+        ensureMediaOverlaysInitialized {
+            bridge.playAudio(currentPosition)
         }
         hasStartedPlayback = true
-        initialPositionMs = null // Clear after first use
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {
@@ -223,8 +206,8 @@ class IosAudioController(
         // Only update position when not playing - when playing, the position
         // is driven by the audio playback itself
         if (_audioPlaybackState.value.isPlaying) return
-        // Don't overwrite initial position from saved reading progress
-        if (initialPositionMs != null) return
+        // Don't overwrite initial position before user has started playback
+        if (!hasStartedPlayback && _audioPlaybackState.value.currentPositionMs != null) return
         bridge.updatePositionForFragment(fragmentId)
     }
 

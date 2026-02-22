@@ -44,19 +44,6 @@ class AndroidAudioController(
      */
     private var hasStartedPlayback = false
 
-    /**
-     * Initial audio position from saved reading progress.
-     * Used on first playback, then cleared.
-     * Initialized from the injected InitialAudioPosition.
-     */
-    private var initialPositionMs: Long? = initialAudioPosition.positionMs
-
-    /**
-     * Currently visible sentence ID, updated by the sync coordinator.
-     * Used for precise positioning when starting playback.
-     */
-    private var currentVisibleSentenceId: String? = null
-
     override val currentAudioLocator: StateFlow<AudioLocatorState?>
         get() = locatorTracker.currentLocator
 
@@ -112,9 +99,9 @@ class AndroidAudioController(
         player.initialize(chapterHref)
 
         if (chapterUrl != null) {
-            // Pass initial position so audio is pre-buffered at the correct position
+            // Pass current position so audio is pre-buffered at the correct position
             // This makes playback start instantly when user clicks play
-            player.prepareChapterDuration(chapterUrl, initialPositionMs)
+            player.prepareChapterDuration(chapterUrl, locatorTracker.currentPosition.value)
         }
     }
 
@@ -131,21 +118,15 @@ class AndroidAudioController(
         }
     }
 
-    override fun setVisibleSentenceId(sentenceId: String?) {
-        currentVisibleSentenceId = sentenceId
-    }
-
     override fun resetPlaybackState() {
         // Only reset if not currently playing - when playing, the audio drives the state
         if (playbackStateTracker.isPlaying.value) return
         hasStartedPlayback = false
-        initialPositionMs = null
     }
 
     override fun setInitialAudioPosition(positionMs: Long?) {
-        initialPositionMs = positionMs
         hasStartedPlayback = false
-        // Also update the LocatorTracker so the seek bar reflects the new position
+        // Update the LocatorTracker so the seek bar reflects the new position
         if (positionMs != null) {
             locatorTracker.setInitialPosition(positionMs)
         }
@@ -156,23 +137,13 @@ class AndroidAudioController(
     }
 
     /**
-     * Starts playback from the current position.
-     * Uses saved position if available, otherwise uses the cached visible sentence.
+     * Starts playback from the current position shown on the seek bar.
+     * The LocatorTracker maintains the position - either from saved state or user navigation.
      */
     private fun startPlaybackFromCurrentPosition() {
-        val savedPosition = initialPositionMs
-        if (savedPosition != null) {
-            executePlayCommand(savedPosition)
-        } else {
-            val visibleSentenceId = currentVisibleSentenceId
-            if (visibleSentenceId != null) {
-                playFromFragment(visibleSentenceId, chapterHref = null)
-            } else {
-                executePlayCommand(null)
-            }
-        }
+        val currentPosition = locatorTracker.currentPosition.value
+        executePlayCommand(currentPosition)
         hasStartedPlayback = true
-        initialPositionMs = null // Clear after first use
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {

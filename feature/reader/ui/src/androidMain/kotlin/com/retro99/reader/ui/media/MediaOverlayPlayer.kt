@@ -19,6 +19,7 @@ import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.playback.PermissionDenialState
 import com.retro99.reader.ui.playback.PlaybackStateTracker
 import com.retro99.reader.ui.publication.EpubPublication
+import co.touchlab.kermit.Logger
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

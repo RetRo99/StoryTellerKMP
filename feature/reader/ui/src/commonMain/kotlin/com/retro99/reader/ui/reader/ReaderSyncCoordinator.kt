@@ -109,7 +109,6 @@ class ReaderSyncCoordinator(
      */
     private suspend fun updateVisibleSentence() {
         val visibleSentenceId = bookController.getVisibleSentenceId()
-        audioController.setVisibleSentenceId(visibleSentenceId)
         if (visibleSentenceId != null) {
             audioController.updatePositionForFragment(visibleSentenceId)
         }
