@@ -56,8 +56,6 @@ class PlaybackStateTracker(
     private val foregroundServiceController: ForegroundServiceController,
     private val locatorTracker: LocatorTracker,
 ) {
-    private val logger = Logger.withTag("čič")
-
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -109,7 +107,11 @@ class PlaybackStateTracker(
 
                 Player.STATE_READY -> {
                     val duration = player.duration
-                    if (duration > 0) {
+                    // NOTE: Don't let ExoPlayer duration overwrite SMIL-calculated duration.
+                    // SMIL clips give us the correct chapter duration; ExoPlayer's duration
+                    // may be the full audio file which can contain multiple chapters.
+                    // Only set duration if not already set (i.e., no SMIL duration calculated yet)
+                    if (duration > 0 && _totalDuration.value == null) {
                         _totalDuration.value = duration
                     }
                     // Handle pending seek position
@@ -135,7 +137,6 @@ class PlaybackStateTracker(
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            logger.e(error) { "ExoPlayer playback error: ${error.errorCodeName}" }
             analytics.logException(error, "ExoPlayer playback error: ${error.errorCodeName}")
             // Update state to reflect the error so UI can show appropriate feedback
             _playbackState.value = PlaybackState.ERROR

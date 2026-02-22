@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayPlayer
@@ -49,7 +50,7 @@ class AndroidAudioController(
 
     override val audioPlaybackState: Flow<AudioPlaybackState>
         get() = combine(
-            locatorTracker.currentPosition,
+            locatorTracker.normalizedPosition,  // Use normalized position for UI display (starts at 0:00)
             playbackStateTracker.totalDuration,
             playbackStateTracker.isPlaying,
             playbackStateTracker.playbackState,
@@ -79,17 +80,17 @@ class AndroidAudioController(
             currentBookLocation?.href ?: ""
         }.filter { it.isNotEmpty() }
 
-    init {
-        controllerScope.launch {
-            initializeMediaOverlays()
-        }
-    }
-
     /**
      * Initial chapter href from saved reading progress.
      * Used for initializing media overlays at the correct chapter.
      */
     private val initialChapterHref: String? = initialAudioPosition.href
+
+    init {
+        controllerScope.launch {
+            initializeMediaOverlays()
+        }
+    }
 
     private suspend fun initializeMediaOverlays() {
         val chapterHref = initialChapterHref
@@ -147,7 +148,9 @@ class AndroidAudioController(
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {
-        player.seekTo(timestampMs)
+        // Convert normalized position (from UI) to raw ExoPlayer position
+        val rawPosition = locatorTracker.normalizedToRawPosition(timestampMs)
+        player.seekTo(rawPosition)
     }
 
     override fun setPlaybackSpeed(speed: Float) {
@@ -176,7 +179,29 @@ class AndroidAudioController(
         // Only update position when not playing - when playing, the position
         // is driven by the audio playback itself
         if (playbackStateTracker.isPlaying.value) return
-        locatorTracker.updatePositionForFragment(fragmentId)
+
+        // First, find the clip WITHOUT seeking ExoPlayer yet.
+        // We need to check if audio file switch is needed before seeking,
+        // because seeking to a position beyond the current file's duration
+        // would cause issues.
+        val matchingClip = locatorTracker.findClipForFragment(fragmentId)
+        if (matchingClip == null) {
+            return
+        }
+
+        val clipAudioHref = matchingClip.audioHref
+        val currentAudioHref = player.getCurrentAudioHref()
+        val positionMs = (matchingClip.startTime * 1000.0).toLong()
+
+        if (clipAudioHref != currentAudioHref) {
+            // Audio file switch needed - update internal position state,
+            // but let switchAudioFileIfNeeded handle the actual seek
+            locatorTracker.updatePositionForFragment(fragmentId, skipSeek = true)
+            player.switchAudioFileIfNeeded(clipAudioHref, positionMs)
+        } else {
+            // Same audio file - update position and seek normally
+            locatorTracker.updatePositionForFragment(fragmentId, skipSeek = false)
+        }
     }
 
     override fun dismissPermissionDeniedDialog() {
@@ -193,8 +218,11 @@ class AndroidAudioController(
 
     private fun onChapterChanged(locator: LocatorState) {
         val chapterUrl = Url(locator.href) ?: return
+        // Get the visible fragment ID (sentence) so we can prepare the correct audio file
+        // for chapters that span multiple audio files
+        val fragmentId = locator.fragments?.firstOrNull()
         controllerScope.launch {
-            player.prepareChapterDuration(chapterUrl)
+            player.prepareChapterDuration(chapterUrl, targetFragmentId = fragmentId)
         }
     }
 

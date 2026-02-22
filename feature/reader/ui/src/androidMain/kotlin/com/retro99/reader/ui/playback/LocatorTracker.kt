@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.playback
 
 import androidx.media3.exoplayer.ExoPlayer
+import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayClip
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -51,16 +53,40 @@ class LocatorTracker(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     /**
-     * Current position in milliseconds.
+     * Current position in milliseconds (raw ExoPlayer position).
      * This is kept in sync with ExoPlayer - any position change also seeks ExoPlayer.
      */
     private val _currentPosition = MutableStateFlow(initialAudioPosition.positionMs ?: 0L)
 
+    /**
+     * Raw position from ExoPlayer. For display purposes, use [normalizedPosition] instead.
+     */
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
+
+    /**
+     * Chapter start offset for normalization (as a StateFlow for reactivity).
+     * This is the minimum start time of clips in the current audio file.
+     * Subtracting this from raw position gives normalized position starting at 0.
+     */
+    private val _chapterStartOffset = MutableStateFlow(0L)
+
+    /**
+     * Normalized position for UI display, starting at 0:00 for the chapter.
+     * Calculated as: rawPosition - chapterStartOffset
+     * Uses combine to react to both position and offset changes.
+     */
+    val normalizedPosition: StateFlow<Long> = combine(
+        _currentPosition,
+        _chapterStartOffset
+    ) { rawPosition, offset ->
+        (rawPosition - offset).coerceAtLeast(0L)
+    }.stateIn(scope, SharingStarted.Eagerly, 0L)
 
     init {
         // Seek ExoPlayer to initial position if provided
-        initialAudioPosition.positionMs?.let { player.seekTo(it) }
+        initialAudioPosition.positionMs?.let {
+            player.seekTo(it)
+        }
     }
 
     /**
@@ -129,15 +155,46 @@ class LocatorTracker(
     /**
      * Updates the clips for the current chapter.
      * Called when a new chapter is prepared.
+     *
+     * Note: This stores ALL clips for the chapter, which may span multiple audio files.
+     * The position is reset to 0 as a safe default. The correct position will be set
+     * by updatePositionForFragment() once the visible sentence is determined.
      */
     fun setChapterClips(clips: List<MediaOverlayClip>) {
         currentChapterClips = clips
+
+        // Reset position to 0 as a safe default for the new chapter.
+        // The actual position will be set by updatePositionForFragment() once the
+        // visible sentence is determined, which may also trigger an audio file switch.
+        _currentPosition.value = 0L
     }
 
     /**
      * Gets the current chapter clips.
      */
     fun getChapterClips(): List<MediaOverlayClip> = currentChapterClips
+
+    /**
+     * Sets the chapter start offset for position normalization.
+     * The offset is the minimum start time of clips in the current audio file.
+     * This allows position display to start at 0:00 for the chapter content.
+     *
+     * @param offsetMs The offset in milliseconds to subtract from raw position
+     */
+    fun setChapterStartOffset(offsetMs: Long) {
+        _chapterStartOffset.value = offsetMs
+    }
+
+    /**
+     * Converts a normalized position (displayed to user) back to raw ExoPlayer position.
+     * Used when the user seeks on the seek bar.
+     *
+     * @param normalizedPositionMs The position as shown to the user (starting from 0:00)
+     * @return The raw ExoPlayer position with offset added
+     */
+    fun normalizedToRawPosition(normalizedPositionMs: Long): Long {
+        return normalizedPositionMs + _chapterStartOffset.value
+    }
 
     /**
      * Starts periodic position updates.
@@ -164,16 +221,27 @@ class LocatorTracker(
     }
 
     /**
+     * Finds the clip for a given text fragment ID.
+     *
+     * @param fragmentId The fragment ID to find (e.g., "chapter44.xhtml-sentence50")
+     * @return The matching clip, or null if not found
+     */
+    fun findClipForFragment(fragmentId: String?): MediaOverlayClip? {
+        val result = fragmentId?.let {
+            currentChapterClips.find { clip -> clip.fragmentId == it }
+        }
+        return result
+    }
+
+    /**
      * Finds the audio position in milliseconds for a given text fragment ID.
      *
      * @param fragmentId The fragment ID to find (e.g., "chapter44.xhtml-sentence50")
      * @return The start time in milliseconds, or null if not found
      */
     fun findPositionForFragment(fragmentId: String?): Long? {
-        return fragmentId?.let {
-            currentChapterClips.find { clip -> clip.fragmentId == it }
-                ?.let { clip -> (clip.startTime * SECONDS_TO_MS).toLong() }
-        }
+        return findClipForFragment(fragmentId)
+            ?.let { clip -> (clip.startTime * SECONDS_TO_MS).toLong() }
     }
 
     /**
@@ -184,10 +252,23 @@ class LocatorTracker(
      * from the correct position.
      *
      * @param fragmentId The fragment ID of the sentence (e.g., "chapter44.xhtml-sentence50")
+     * @param skipSeek If true, only updates the internal position state without seeking ExoPlayer.
+     *                 Used when the caller will switch audio files and seek there instead.
+     * @return The matching clip if found (so caller can check if audio file switch is needed)
      */
-    fun updatePositionForFragment(fragmentId: String) {
-        val positionMs = findPositionForFragment(fragmentId) ?: return
-        setPosition(positionMs)
+    fun updatePositionForFragment(fragmentId: String, skipSeek: Boolean = false): MediaOverlayClip? {
+        val matchingClip = findClipForFragment(fragmentId)
+        val positionMs = matchingClip?.let { (it.startTime * SECONDS_TO_MS).toLong() }
+        if (positionMs != null) {
+            if (skipSeek) {
+                // Only update internal state, don't seek ExoPlayer
+                // This is used when audio file will be switched by caller
+                _currentPosition.value = positionMs
+            } else {
+                setPosition(positionMs)
+            }
+        }
+        return matchingClip
     }
 
     /**
