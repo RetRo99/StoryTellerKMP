@@ -28,7 +28,6 @@ data class ReaderViewState(
     val isPlaying: Boolean = false,
     val currentAudioPositionMs: Long = 0L,
     val totalDurationMs: Long? = null,
-    val playbackSpeed: Float = 1.0f,
     // Last known text position (used for saving audio position)
     val lastKnownPosition: PositionUiModel? = null,
     // Whether the media player is ready (for ReadAloud books)
