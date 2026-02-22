@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.reader
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.navigator.AudioController
 import com.retro99.reader.ui.navigator.BookController
@@ -42,16 +41,8 @@ class ReaderSyncCoordinator(
         bookToAudioJob = bookController.currentLocator
             .drop(1)
             .onEach { locator ->
-                audioController.onBookLocationChanged(locator)
-                // Only handle ReadAloud-specific logic for books with media overlays
-                if (bookController.hasMediaOverlays) {
-                    // Reset playback state when user navigates while not playing
-                    // so next play starts from the current visible text position.
-                    // AudioController checks if playing internally and ignores if so.
-                    audioController.resetPlaybackState()
-                    // Update visible sentence and seek bar position
-                    updateVisibleSentence()
-                }
+                val visibleSentenceId = bookController.getVisibleSentenceId()
+                audioController.onBookLocationChanged(locator, visibleSentenceId)
             }
             .launchIn(scope)
 
@@ -99,20 +90,6 @@ class ReaderSyncCoordinator(
                 fragmentId = newLocator.fragments?.firstOrNull() ?: "",
                 chapterHref = newLocator.href,
             )
-        }
-    }
-
-    /**
-     * Updates the audio controller with the current visible sentence.
-     *
-     * Called when the book location changes. This:
-     * 1. Notifies the audio controller of the visible sentence for future playback
-     * 2. Updates the seek bar position (only if not playing)
-     */
-    private suspend fun updateVisibleSentence() {
-        val visibleSentenceId = bookController.getVisibleSentenceId()
-        if (visibleSentenceId != null) {
-            audioController.updatePositionForFragment(visibleSentenceId)
         }
     }
 

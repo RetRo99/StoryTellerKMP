@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.audio
 
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
@@ -215,7 +214,7 @@ class IosAudioController(
         _showPermissionDeniedDialog.value = false
     }
 
-    override fun onBookLocationChanged(locator: LocatorState) {
+    override fun onBookLocationChanged(locator: LocatorState, visibleSentenceId: String?) {
         // No-op on iOS for now; media overlay player handles its own chapter prep.
     }
 

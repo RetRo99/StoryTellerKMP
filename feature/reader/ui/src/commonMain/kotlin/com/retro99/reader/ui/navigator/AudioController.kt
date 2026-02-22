@@ -148,7 +148,7 @@ interface AudioController : AutoCloseable {
      */
     fun dismissPermissionDeniedDialog()
 
-    fun onBookLocationChanged(locator: LocatorState)
+    fun onBookLocationChanged(locator: LocatorState, visibleSentenceId: String?)
 
     /**
      * Flow of current audio locator with timing information.
