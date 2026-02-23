@@ -273,12 +273,26 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             let oldHighlightColor = currentHighlightColor
             let oldUnderlineColor = currentUnderlineColor
             let oldStyle = currentHighlightStyle
+            let oldFontSize = navigatorViewController?.settings.fontSize
 
             currentHighlightColor = highlightColorFromArgb(settings.highlightColorArgb)
             currentUnderlineColor = highlightColorFromArgb(settings.underlineColorArgb)
             currentHighlightStyle = highlightStyleFromString(settings.highlightStyle)
+
+            // Save the current position before applying settings
+            // Font size changes cause re-pagination which can lose the position
+            let currentPosition = navigatorViewController?.currentLocation
+
             let preferences = settings.toEpubPreferences()
             navigatorViewController?.submitPreferences(preferences)
+
+            // Restore the position after settings are applied (only if font size changed)
+            // We need a delay because submitPreferences triggers async re-pagination in the WebView
+            let newFontSize = navigatorViewController?.settings.fontSize
+            if oldFontSize != newFontSize, let position = currentPosition {
+                try? await Task.sleep(nanoseconds: 300_000_000) // 300ms delay
+                _ = await navigatorViewController?.go(to: position)
+            }
 
             // Refresh current decoration if highlight color, underline color, or style changed
             if (oldHighlightColor != currentHighlightColor || oldUnderlineColor != currentUnderlineColor || oldStyle != currentHighlightStyle),

@@ -318,7 +318,24 @@ class AndroidBookController internal constructor() : BookController {
         highlightColorArgb = settings.highlightColor
         underlineColorArgb = settings.underlineColor
         highlightStyle = settings.highlightStyle
-        withNavigator { it.submitPreferences(settings.toEpubPreferences()) }
+
+        withNavigator { nav ->
+            // Save the current position before applying settings
+            // Font size changes cause re-pagination which can lose the position
+            val currentPosition = nav.currentLocator.value
+            nav.submitPreferences(settings.toEpubPreferences())
+
+            // Restore the position after settings are applied
+            // We need a delay because submitPreferences triggers async re-pagination in the WebView
+            if (nav.settings.value.fontSize != settings.fontSize) {
+                currentPosition.let { position ->
+                    controllerScope.launch {
+                        delay(SETTINGS_REPAGINATION_DELAY_MS)
+                        nav.go(position)
+                    }
+                }
+            }
+        }
 
         // Refresh current decoration if highlight color, underline color, or style changed
         if ((highlightColorChanged || underlineColorChanged || styleChanged) && currentHighlightedLocator != null) {
@@ -522,6 +539,9 @@ class AndroidBookController internal constructor() : BookController {
 
         /** Delay before injecting double-tap detection script to ensure WebView is ready */
         private const val SCRIPT_INJECTION_DELAY_MS = 500L
+
+        /** Delay after settings change to allow WebView re-pagination before restoring position */
+        private const val SETTINGS_REPAGINATION_DELAY_MS = 300L
     }
 }
 
