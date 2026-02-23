@@ -1,7 +1,6 @@
 package com.retro99.reader.ui.playback
 
 import androidx.media3.exoplayer.ExoPlayer
-import co.touchlab.kermit.Logger
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayClip
@@ -25,6 +24,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.mediatype.MediaType
 
 /** Interval in milliseconds for position updates during playback */
@@ -152,6 +152,20 @@ class LocatorTracker(
     // Current chapter's clips (set externally when chapter changes)
     private var currentChapterClips: List<MediaOverlayClip> = emptyList()
 
+    // Current audio file href being played
+    private var currentAudioHref: Url? = null
+
+    // Clips filtered to only the current audio file (used for time-based lookups)
+    // This prevents returning clips from the wrong audio file when times overlap
+    private var currentAudioFileClips: List<MediaOverlayClip> = emptyList()
+
+    // Callback for when chapter audio playback exceeds the clip range
+    // This is used to detect chapter completion when audio file contains multiple chapters
+    var onChapterClipsExceeded: (() -> Unit)? = null
+
+    // Flag to prevent multiple completion callbacks for the same chapter
+    private var hasNotifiedChapterExceeded = false
+
     /**
      * Updates the clips for the current chapter.
      * Called when a new chapter is prepared.
@@ -159,9 +173,18 @@ class LocatorTracker(
      * Note: This stores ALL clips for the chapter, which may span multiple audio files.
      * The position is reset to 0 as a safe default. The correct position will be set
      * by updatePositionForFragment() once the visible sentence is determined.
+     *
+     * IMPORTANT: This clears the audio href filter. The caller must call setCurrentAudioHref()
+     * after this to set up proper filtering for multi-audio-file chapters.
      */
     fun setChapterClips(clips: List<MediaOverlayClip>) {
         currentChapterClips = clips
+        // Clear audio href and filtered clips - they'll be set by setCurrentAudioHref()
+        // This prevents stale href from previous chapter causing issues
+        currentAudioHref = null
+        currentAudioFileClips = emptyList()
+        // Reset completion flag for the new chapter
+        hasNotifiedChapterExceeded = false
     }
 
     /**
@@ -178,6 +201,24 @@ class LocatorTracker(
      */
     fun setChapterStartOffset(offsetMs: Long) {
         _chapterStartOffset.value = offsetMs
+    }
+
+    /**
+     * Sets the current audio file href being played.
+     * This filters the chapter clips to only those belonging to this audio file,
+     * which is essential for correct clip lookup in multi-audio-file chapters.
+     *
+     * When a chapter has multiple audio files, clips from different files may have
+     * overlapping time ranges. This filter ensures findClipAtTime returns the correct
+     * clip for the currently playing audio file.
+     *
+     * @param audioHref The href of the audio file currently being played
+     */
+    fun setCurrentAudioHref(audioHref: Url) {
+        if (audioHref != currentAudioHref) {
+            currentAudioHref = audioHref
+            currentAudioFileClips = currentChapterClips.filter { it.audioHref == audioHref }
+        }
     }
 
     /**
@@ -287,6 +328,10 @@ class LocatorTracker(
     /**
      * Updates the current locator based on the current playback position.
      * This is used to highlight the currently spoken text.
+     *
+     * Also detects when playback exceeds the chapter's clip range, which happens
+     * when a single audio file contains multiple chapters. In this case, we need
+     * to trigger chapter completion manually since ExoPlayer won't fire STATE_ENDED.
      */
     private fun updateCurrentLocator() {
         val currentTimeSeconds = player.currentPosition / SECONDS_TO_MS
@@ -309,6 +354,36 @@ class LocatorTracker(
             if (currentFragments != locator.locations.fragments) {
                 _currentLocatorWithClip.value = LocatorWithClip(locator, currentClip)
             }
+        } else {
+            // No clip found - check if we've exceeded the chapter's clip range
+            // This happens when a single audio file contains multiple chapters
+            checkChapterExceeded(currentTimeSeconds)
+        }
+    }
+
+    /**
+     * Checks if playback has exceeded the current chapter's clip range.
+     * If so, triggers the chapter completion callback (once per chapter).
+     *
+     * This handles the case where a single audio file contains audio for multiple
+     * chapters. When the current chapter's clips end, ExoPlayer continues playing
+     * into the next chapter's content. We detect this and trigger chapter completion.
+     */
+    private fun checkChapterExceeded(currentTimeSeconds: Double) {
+        if (hasNotifiedChapterExceeded) return
+
+        // Get the clips to check - prefer filtered clips for multi-audio chapters
+        val clipsToCheck = currentAudioFileClips.ifEmpty { currentChapterClips }
+        if (clipsToCheck.isEmpty()) return
+
+        val lastClipEndTime = clipsToCheck.lastOrNull()?.endTime ?: return
+
+        // If current position is past the last clip's end time, chapter is complete
+        // Use a small threshold (200ms) to account for timing variations
+        val thresholdSeconds = 0.2
+        if (currentTimeSeconds > lastClipEndTime + thresholdSeconds) {
+            hasNotifiedChapterExceeded = true
+            onChapterClipsExceeded?.invoke()
         }
     }
 
@@ -318,23 +393,29 @@ class LocatorTracker(
      * Clips are assumed to be sorted by startTime (which they are from SMIL parsing).
      * Uses binary search to find the clip where startTime <= time < endTime.
      *
+     * Important: This searches only within currentAudioFileClips (filtered by audio href).
+     * In multi-audio-file chapters, clips from different audio files may have overlapping
+     * time ranges. Searching the full chapter clips would return incorrect results.
+     *
      * @param timeSeconds The time in seconds to search for
      * @return The clip containing the time, or null if not found
      */
     private fun findClipAtTime(timeSeconds: Double): MediaOverlayClip? {
-        if (currentChapterClips.isEmpty()) return null
+        // Use filtered clips for current audio file to avoid returning clips from wrong file
+        val clipsToSearch = currentAudioFileClips.ifEmpty { currentChapterClips }
+        if (clipsToSearch.isEmpty()) return null
 
         var low = 0
-        var high = currentChapterClips.size - 1
+        var high = clipsToSearch.size - 1
 
         while (low <= high) {
             val mid = (low + high) / 2
-            val clip = currentChapterClips[mid]
+            val clip = clipsToSearch[mid]
 
             when {
                 timeSeconds < clip.startTime -> high = mid - 1
                 timeSeconds >= clip.endTime -> low = mid + 1
-                else -> return clip // timeSeconds is within [startTime, endTime)
+                else -> return clip
             }
         }
 
@@ -356,6 +437,10 @@ class LocatorTracker(
     fun release() {
         stopPositionUpdates()
         currentChapterClips = emptyList()
+        currentAudioFileClips = emptyList()
+        currentAudioHref = null
+        onChapterClipsExceeded = null
+        hasNotifiedChapterExceeded = false
     }
 
 }
