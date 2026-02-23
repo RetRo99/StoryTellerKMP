@@ -3,6 +3,7 @@ package com.retro99.reader.ui.media
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -19,7 +20,6 @@ import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.playback.PermissionDenialState
 import com.retro99.reader.ui.playback.PlaybackStateTracker
 import com.retro99.reader.ui.publication.EpubPublication
-import co.touchlab.kermit.Logger
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -119,10 +119,52 @@ class MediaOverlayPlayer(
     // Mutex to prevent concurrent playInternal() calls from double-taps
     private val playMutex = Mutex()
 
+    /**
+     * Listener for media item (track) transitions within a playlist.
+     * When ExoPlayer automatically transitions from one audio file to the next,
+     * we need to update the duration and start offset for the new track.
+     */
+    private val trackTransitionListener = object : Player.Listener {
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            val newTrackIndex = exoPlayer.currentMediaItemIndex
+            val newAudioHref = playlistAudioHrefs.getOrNull(newTrackIndex)
+
+            // Only handle automatic transitions (not seeks or playlist changes we initiate)
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                if (newAudioHref != null && newAudioHref != currentAudioHref) {
+                    currentAudioHref = newAudioHref
+
+                    // Update duration for the new audio file
+                    val newDuration = audioDurations[newAudioHref]
+                    if (newDuration != null && newDuration > 0) {
+                        playbackStateTracker.setTotalDuration(newDuration)
+                    }
+
+                    // Update start offset for position normalization
+                    val newStartOffset = audioStartOffsets[newAudioHref] ?: 0L
+                    locatorTracker.setChapterStartOffset(newStartOffset)
+
+                    // Update filtered clips for the new audio file
+                    locatorTracker.setCurrentAudioHref(newAudioHref)
+                }
+            }
+        }
+    }
+
     init {
         // Trigger lazy initialization of playback state tracker
         // This registers the Player.Listener for state tracking
         playbackStateTracker
+
+        // Register track transition listener for multi-audio-file chapter support
+        exoPlayer.addListener(trackTransitionListener)
+
+        // Set up callback for when playback exceeds chapter clip range
+        // This handles the case where a single audio file contains multiple chapters
+        locatorTracker.onChapterClipsExceeded = {
+            exoPlayer.pause()
+            playbackStateTracker.emitChapterCompleted()
+        }
 
         // Configure audio attributes for speech content
         audioFocusManager.configurePlayerAudioAttributes()
@@ -418,13 +460,16 @@ class MediaOverlayPlayer(
         val targetAudioHref = targetClip?.audioHref ?: audioFiles.firstOrNull()
         val targetTrackIndex = audioFiles.indexOf(targetAudioHref).coerceAtLeast(0)
 
-        // Set duration and start offset for the initial track
+        // Set duration, start offset, and audio href filter for the initial track
         val initialDuration = audioDurations[targetAudioHref]
         if (initialDuration != null && initialDuration > 0) {
             playbackStateTracker.setTotalDuration(initialDuration)
         }
         val initialStartOffset = audioStartOffsets[targetAudioHref] ?: 0L
         locatorTracker.setChapterStartOffset(initialStartOffset)
+        if (targetAudioHref != null) {
+            locatorTracker.setCurrentAudioHref(targetAudioHref)
+        }
 
         // Determine the position to seek to within the target track
         val positionToSeek = if (targetClip != null) {
@@ -456,6 +501,9 @@ class MediaOverlayPlayer(
         // playInternal() or prepareChapterAsync() is running, ExoPlayer throws
         // IllegalStateException on any method call after release().
         playerScope.cancel()
+
+        // Remove track transition listener before releasing player
+        exoPlayer.removeListener(trackTransitionListener)
 
         // Release trackers
         locatorTracker.release()
@@ -569,7 +617,8 @@ class MediaOverlayPlayer(
         val clipsAlreadySet = existingClips.size == allChapterClips.size &&
             existingClips.firstOrNull()?.fragmentId == allChapterClips.firstOrNull()?.fragmentId
 
-        if (!clipsAlreadySet) {
+        val clipsWereUpdated = !clipsAlreadySet
+        if (clipsWereUpdated) {
             locatorTracker.setChapterClips(allChapterClips)
         }
 
@@ -650,12 +699,26 @@ class MediaOverlayPlayer(
             if (currentTrackIndex != expectedTrackIndex) {
                 // Wrong track - need to switch
                 exoPlayer.seekTo(expectedTrackIndex, positionToSeek ?: 0L)
+
+                // Update duration, offset, and clip filter for the new track
+                val newDuration = audioDurations[targetAudioHref]
+                if (newDuration != null && newDuration > 0) {
+                    playbackStateTracker.setTotalDuration(newDuration)
+                }
+                val newStartOffset = audioStartOffsets[targetAudioHref] ?: 0L
+                locatorTracker.setChapterStartOffset(newStartOffset)
+                locatorTracker.setCurrentAudioHref(targetAudioHref)
             } else if (positionToSeek != null && positionToSeek > 0) {
                 // Same track but different position (e.g., double-tap on a sentence)
                 exoPlayer.seekTo(positionToSeek)
-            } else {
             }
             currentAudioHref = targetAudioHref
+        }
+
+        // If clips were updated (new chapter), ensure audio href filter is set
+        // This handles the case where we reused the playlist and same track
+        if (clipsWereUpdated) {
+            locatorTracker.setCurrentAudioHref(targetAudioHref)
         }
 
         // Set playWhenReady AFTER all seeking/preparation is done.
@@ -710,6 +773,9 @@ class MediaOverlayPlayer(
         playlistAudioHrefs = audioHrefs
         audioHrefToTrackIndex = audioHrefs.mapIndexed { index, href -> href to index }.toMap()
         currentAudioHref = audioHrefs.getOrNull(initialTrackIndex)
+
+        // Update locator tracker's clip filter for the new audio file
+        currentAudioHref?.let { locatorTracker.setCurrentAudioHref(it) }
     }
 
     /**
@@ -731,13 +797,14 @@ class MediaOverlayPlayer(
             // Audio file is in current playlist - use seekTo for seamless switch
             currentAudioHref = audioHref
 
-            // Update duration and start offset for the new audio file
+            // Update duration, start offset, and audio href filter for the new audio file
             val durationMs = audioDurations[audioHref]
             if (durationMs != null && durationMs > 0) {
                 playbackStateTracker.setTotalDuration(durationMs)
             }
             val startOffset = audioStartOffsets[audioHref] ?: 0L
             locatorTracker.setChapterStartOffset(startOffset)
+            locatorTracker.setCurrentAudioHref(audioHref)
 
             // Seamless track switch using ExoPlayer's playlist capability
             exoPlayer.seekTo(trackIndex, positionMs)
