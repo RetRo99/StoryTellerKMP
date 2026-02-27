@@ -218,6 +218,10 @@ class IosAudioController(
         // No-op on iOS for now; media overlay player handles its own chapter prep.
     }
 
+    override fun setNowPlayingInfo(bookUuid: String, bookTitle: String, coverUrl: String?) {
+        // No-op on iOS - audio playback not yet supported
+    }
+
     private fun ensureMediaOverlaysInitialized(onReady: () -> Unit) {
         if (mediaOverlaysInitialized) {
             onReady()

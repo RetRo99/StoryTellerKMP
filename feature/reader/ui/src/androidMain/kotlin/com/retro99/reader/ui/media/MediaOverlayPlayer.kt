@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.media
 
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
@@ -12,13 +13,12 @@ import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.smil.SmilClip
 import com.retro99.reader.ui.media.smil.SmilLoadingManager
 import com.retro99.reader.ui.model.PlaybackState
-import com.retro99.reader.ui.playback.AudioFocusManager
 import com.retro99.reader.ui.playback.ForegroundServiceController
-import com.retro99.reader.ui.playback.LocatorTracker
+import com.retro99.reader.ui.playback.MediaPlaybackController
 import com.retro99.reader.ui.playback.MediaSessionManager
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import com.retro99.reader.ui.playback.PermissionDenialState
-import com.retro99.reader.ui.playback.PlaybackStateTracker
+import com.retro99.reader.ui.playback.SchedulableClip
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +37,8 @@ import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.util.Url
+
+private const val TAG = "čič123"
 
 /** Conversion factor from seconds to milliseconds */
 private const val SECONDS_TO_MS = 1000.0
@@ -65,13 +67,17 @@ class MediaOverlayPlayer(
     private val analytics: Analytics,
     private val smilLoadingManager: SmilLoadingManager,
     private val notificationPermissionHandler: NotificationPermissionHandler,
-    private val exoPlayer: ExoPlayer,
-    private val audioFocusManager: AudioFocusManager,
+    private val mediaPlaybackController: MediaPlaybackController,
     private val mediaSessionManager: MediaSessionManager,
     private val foregroundServiceController: ForegroundServiceController,
-    private val locatorTracker: LocatorTracker,
-    private val playbackStateTracker: PlaybackStateTracker,
 ) {
+    /**
+     * Gets the ExoPlayer from the service via controller.
+     * Returns null if the service is not running.
+     */
+    private val exoPlayer: ExoPlayer?
+        get() = mediaPlaybackController.currentPlayer
+
     private val publication: Publication = epubPublication.publication
 
     /**
@@ -116,6 +122,9 @@ class MediaOverlayPlayer(
     // Used to normalize position display so chapter starts at 0:00
     private var audioStartOffsets: Map<Url, Long> = emptyMap()
 
+    // Current chapter href being played (for chapter navigation from notifications)
+    private var currentChapterHref: String? = null
+
     // Mutex to prevent concurrent playInternal() calls from double-taps
     private val playMutex = Mutex()
 
@@ -126,7 +135,8 @@ class MediaOverlayPlayer(
      */
     private val trackTransitionListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            val newTrackIndex = exoPlayer.currentMediaItemIndex
+            val player = exoPlayer ?: return
+            val newTrackIndex = player.currentMediaItemIndex
             val newAudioHref = playlistAudioHrefs.getOrNull(newTrackIndex)
 
             // Only handle automatic transitions (not seeks or playlist changes we initiate)
@@ -137,42 +147,53 @@ class MediaOverlayPlayer(
                     // Update duration for the new audio file
                     val newDuration = audioDurations[newAudioHref]
                     if (newDuration != null && newDuration > 0) {
-                        playbackStateTracker.setTotalDuration(newDuration)
+                        mediaPlaybackController.setTotalDuration(newDuration)
                     }
 
                     // Update start offset for position normalization
                     val newStartOffset = audioStartOffsets[newAudioHref] ?: 0L
-                    locatorTracker.setChapterStartOffset(newStartOffset)
+                    mediaPlaybackController.setChapterStartOffset(newStartOffset)
 
                     // Update filtered clips for the new audio file
-                    locatorTracker.setCurrentAudioHref(newAudioHref)
+                    mediaPlaybackController.setCurrentAudioHref(newAudioHref)
                 }
             }
         }
     }
 
     init {
-        // Trigger lazy initialization of playback state tracker
-        // This registers the Player.Listener for state tracking
-        playbackStateTracker
+        Log.d(TAG, "MediaOverlayPlayer init START")
 
         // Register track transition listener for multi-audio-file chapter support
-        exoPlayer.addListener(trackTransitionListener)
+        exoPlayer?.addListener(trackTransitionListener)
 
         // Set up callback for when playback exceeds chapter clip range
         // This handles the case where a single audio file contains multiple chapters
-        locatorTracker.onChapterClipsExceeded = {
-            exoPlayer.pause()
-            playbackStateTracker.emitChapterCompleted()
+        mediaPlaybackController.setOnChapterClipsExceeded {
+            exoPlayer?.pause()
+            mediaPlaybackController.emitChapterCompleted()
         }
 
-        // Configure audio attributes for speech content
-        audioFocusManager.configurePlayerAudioAttributes()
+        // Listen for chapter navigation requests from notification/Android Auto
+        playerScope.launch {
+            mediaPlaybackController.nextChapterRequest.collect {
+                skipToNextChapter()
+            }
+        }
+        playerScope.launch {
+            mediaPlaybackController.previousChapterRequest.collect {
+                skipToPreviousChapter()
+            }
+        }
+
+        // Note: Audio attributes are now configured by MediaPlaybackService (handleAudioFocus=true)
 
         // Initialize media session for system integration
+        Log.d(TAG, "MediaOverlayPlayer init: calling mediaSessionManager.initialize()")
         mediaSessionManager.initialize()
 
         // Set book info for deep link navigation from notification
+        Log.d(TAG, "MediaOverlayPlayer init: calling mediaSessionManager.setBookInfo()")
         mediaSessionManager.setBookInfo(
             epubPublication.serverId,
             epubPublication.bookUuid,
@@ -182,6 +203,7 @@ class MediaOverlayPlayer(
         // Set initial book title from publication metadata
         bookTitle = publication.metadata.title ?: "Reading Aloud"
         mediaSessionManager.updateMetadata(bookTitle)
+        Log.d(TAG, "MediaOverlayPlayer init END")
     }
 
     /**
@@ -190,9 +212,30 @@ class MediaOverlayPlayer(
      * This builds a lightweight index of SMIL files without fully parsing them.
      * Full parsing happens on-demand when a chapter is prepared.
      *
+     * If the same book is already playing (e.g., user left reader and returned),
+     * this reconnects to the existing playback instead of starting fresh.
+     *
      * @param initialChapterHref The initial chapter href to optimize index building for
+     * @return true if this was a reconnection to existing playback (caller should skip prepareChapterDuration)
      */
-    suspend fun initialize(initialChapterHref: String? = null) {
+    suspend fun initialize(initialChapterHref: String? = null): Boolean {
+        Log.d(TAG, "initialize() START")
+        val bookUuid = epubPublication.bookUuid
+
+        // Check if this book is already loaded in the service (even if paused)
+        // This handles reconnection when user leaves and re-enters the reader
+        val isBookLoaded = mediaPlaybackController.isBookLoaded(bookUuid)
+        Log.d(TAG, "initialize(): isBookLoaded=$isBookLoaded for bookUuid=$bookUuid")
+        if (isBookLoaded) {
+            // Reconnect to existing playback - don't reinitialize anything
+            // The player, clips, and index are already set up in the service
+            Log.d(TAG, "initialize(): RECONNECTING to existing playback")
+            reconnectToExistingPlayback()
+            return true
+        }
+
+        // New book or no existing playback - initialize fresh
+        Log.d(TAG, "initialize(): FRESH initialization")
         smilLoadingManager.initialize(playerScope)
 
         // Load cover image ASYNC - don't block initialization on cover loading
@@ -205,10 +248,34 @@ class MediaOverlayPlayer(
         // Build initial index - must complete before getClipsForChapter to avoid fallback scan
         val chapterHref = initialChapterHref
             ?: publication.readingOrder.firstOrNull()?.href?.toString()
-            ?: return
+            ?: return false
 
         val buildIndexStartTime = System.currentTimeMillis()
         smilLoadingManager.buildInitialIndex(chapterHref)
+        return false
+    }
+
+    /**
+     * Reconnects to existing playback when re-entering the reader.
+     *
+     * Called when the user left the reader while audio was playing and then returned.
+     * The service is still playing, so we just need to sync our UI state with it.
+     * Service-owned state flows already contain the correct state - we just need to
+     * re-register our local listeners.
+     */
+    private fun reconnectToExistingPlayback() {
+        Log.d(TAG, "reconnectToExistingPlayback() START")
+
+        // Re-register our listeners with the existing player
+        Log.d(TAG, "reconnectToExistingPlayback(): adding trackTransitionListener")
+        exoPlayer?.addListener(trackTransitionListener)
+
+        // Service already owns the state flows and position updates.
+        // Just force an immediate position/locator update to sync UI
+        Log.d(TAG, "reconnectToExistingPlayback(): calling forceUpdatePosition()")
+        mediaPlaybackController.forceUpdatePosition()
+
+        Log.d(TAG, "reconnectToExistingPlayback() END")
     }
 
     /**
@@ -246,6 +313,8 @@ class MediaOverlayPlayer(
         initialProgression: Double?,
         initialPositionMs: Long?,
     ) {
+        Log.d(TAG, "playInternal: START chapterHref=$chapterHref, fragmentId=$initialFragmentId")
+
         // Find a chapter with audio BEFORE starting the foreground service.
         // This prevents ForegroundServiceDidNotStartInTimeException when the user
         // clicks play on a chapter without audio (e.g., cover page, table of contents).
@@ -253,8 +322,10 @@ class MediaOverlayPlayer(
             val chapterWithAudio = smilLoadingManager.findChapterWithAudio(
                 chapterHref.removeFragment().toString(),
             )
+            Log.d(TAG, "playInternal: chapterWithAudio=$chapterWithAudio")
             if (chapterWithAudio == null) {
                 // No chapters have audio - nothing to play
+                Log.w(TAG, "playInternal: NO chapters with audio found!")
                 analytics.logException(
                     IllegalStateException("No chapters with audio found"),
                     "Cannot play: no audio content available starting from $chapterHref",
@@ -264,6 +335,7 @@ class MediaOverlayPlayer(
             Url(chapterWithAudio)
         } else {
             // No chapter specified - will resume current audio
+            Log.d(TAG, "playInternal: no chapter specified, will resume")
             null
         }
 
@@ -271,35 +343,58 @@ class MediaOverlayPlayer(
         // NOTE: We intentionally do NOT set optimistic state (isPlaying=true, BUFFERING)
         // before permission is granted. This prevents UI flicker where the play button
         // briefly shows "playing" state before reverting if permission is denied.
+        Log.d(TAG, "playInternal: requesting notification permission")
         val permissionGranted = notificationPermissionHandler.ensurePermission()
         if (!permissionGranted) {
+            Log.w(TAG, "playInternal: notification permission DENIED")
             _showPermissionDeniedDialog.value = true
             return
         }
+        Log.d(TAG, "playInternal: notification permission granted")
 
-        // Request audio focus before starting playback
-        val focusGranted = audioFocusManager.requestFocus()
-        if (!focusGranted) {
-            analytics.logException(
-                IllegalStateException("Failed to acquire audio focus"),
-                "Could not acquire audio focus for playback",
-            )
-            return
-        }
+        // Note: Audio focus is now handled automatically by ExoPlayer with handleAudioFocus=true
+
+        // Prepare a deferred to wait for service ready BEFORE starting service
+        Log.d(TAG, "playInternal: preparing service ready deferred")
+        val serviceReadyDeferred = mediaPlaybackController.prepareServiceReady()
 
         // Start foreground service for background playback
+        Log.d(TAG, "playInternal: starting foreground service")
         val serviceStarted = foregroundServiceController.startService()
         if (!serviceStarted) {
             // App was backgrounded during permission dialog or other system restriction
-            audioFocusManager.abandonFocus()
+            Log.w(TAG, "playInternal: foreground service start BLOCKED")
             analytics.logException(
                 IllegalStateException("Cannot start foreground service from background"),
                 "Foreground service start blocked by system",
             )
             return
         }
+        Log.d(TAG, "playInternal: foreground service started, awaiting service ready")
+
+        // Wait for the service to be created and player to be available
+        val player = mediaPlaybackController.awaitServiceReady(serviceReadyDeferred)
+        if (player == null) {
+            // Service didn't start in time - this is critical, stop the service
+            Log.e(TAG, "playInternal: service did NOT start in time (timeout)")
+            foregroundServiceController.stopService()
+            analytics.logException(
+                IllegalStateException("Service did not start in time"),
+                "MediaPlaybackService onCreate timeout",
+            )
+            return
+        }
+        Log.d(TAG, "playInternal: service ready, player=$player")
+
+        // Register this book as currently playing for reconnection support
+        mediaPlaybackController.setCurrentPlayingBook(
+            serverId = epubPublication.serverId,
+            bookUuid = epubPublication.bookUuid,
+            bookType = epubPublication.bookType,
+        )
 
         if (chapterToPlay != null) {
+            Log.d(TAG, "playInternal: calling prepareChapter($chapterToPlay)")
             // prepareChapter will handle seeking and then set playWhenReady
             // Note: If we found a different chapter with audio, we ignore the initial
             // fragment/progression since they were for the original chapter
@@ -311,41 +406,50 @@ class MediaOverlayPlayer(
                 if (useInitialPosition) initialProgression else null,
                 if (useInitialPosition) initialPositionMs else null,
             )
+            Log.d(TAG, "playInternal: prepareChapter returned")
         } else {
+            Log.d(TAG, "playInternal: resuming without chapter change")
             // No chapter change - check if we need to switch audio files for the target fragment
-            val targetClip = initialFragmentId?.let { locatorTracker.findClipForFragment(it) }
+            val targetClip = initialFragmentId?.let { mediaPlaybackController.findClipForFragment(it) }
             val targetAudioHref = targetClip?.audioHref
 
             // Determine position to seek to
             val positionToSeek = initialPositionMs
                 ?: targetClip?.let { (it.startTime * SECONDS_TO_MS).toLong() }
-                ?: locatorTracker.findPositionForProgression(initialProgression)
+                ?: mediaPlaybackController.findPositionForProgression(initialProgression)
+            Log.d(TAG, "playInternal: positionToSeek=$positionToSeek, currentAudioHref=$currentAudioHref, targetAudioHref=$targetAudioHref")
 
             // Check if we need to switch audio files (for multi-audio-file chapters)
             if (targetAudioHref != null && targetAudioHref != currentAudioHref) {
+                Log.d(TAG, "playInternal: switching audio file")
                 switchAudioFileIfNeeded(targetAudioHref, positionToSeek ?: 0L)
             } else if (positionToSeek != null && positionToSeek > 0) {
-                exoPlayer.seekTo(positionToSeek)
+                Log.d(TAG, "playInternal: seeking to $positionToSeek")
+                exoPlayer?.seekTo(positionToSeek)
             }
 
             // Set playWhenReady and call play() after seeking
-            exoPlayer.playWhenReady = true
-            exoPlayer.play()
+            val exo = exoPlayer
+            Log.d(TAG, "playInternal: exoPlayer=$exo, calling play()")
+            exo?.let { p ->
+                p.playWhenReady = true
+                p.play()
+                Log.d(TAG, "playInternal: play() called, playWhenReady=${p.playWhenReady}, isPlaying=${p.isPlaying}, state=${p.playbackState}, mediaItemCount=${p.mediaItemCount}")
+            }
         }
+        Log.d(TAG, "playInternal: END")
     }
 
     fun pause() {
-        // Notify audio focus manager that user manually paused
-        // This prevents auto-resume when focus is regained
-        audioFocusManager.onUserPaused()
-        exoPlayer.pause()
+        // Note: Audio focus is handled automatically by ExoPlayer with handleAudioFocus=true
+        exoPlayer?.pause()
     }
 
     /**
      * Resumes playback from the current position without seeking.
      */
     fun resume() {
-        exoPlayer.play()
+        exoPlayer?.play()
     }
 
     /**
@@ -358,8 +462,8 @@ class MediaOverlayPlayer(
     }
 
     fun seekTo(positionMs: Long) {
-        exoPlayer.seekTo(positionMs)
-        locatorTracker.forceUpdatePosition()
+        exoPlayer?.seekTo(positionMs)
+        mediaPlaybackController.forceUpdatePosition()
     }
 
     /**
@@ -367,8 +471,9 @@ class MediaOverlayPlayer(
      * The position is clamped to the duration of the current media.
      */
     fun seekForward() {
-        val newPosition = (exoPlayer.currentPosition + SEEK_INCREMENT_MS)
-            .coerceAtMost(exoPlayer.duration.coerceAtLeast(0L))
+        val player = exoPlayer ?: return
+        val newPosition = (player.currentPosition + SEEK_INCREMENT_MS)
+            .coerceAtMost(player.duration.coerceAtLeast(0L))
         seekTo(newPosition)
     }
 
@@ -377,13 +482,62 @@ class MediaOverlayPlayer(
      * The position is clamped to 0.
      */
     fun seekBackward() {
-        val newPosition = (exoPlayer.currentPosition - SEEK_INCREMENT_MS)
+        val player = exoPlayer ?: return
+        val newPosition = (player.currentPosition - SEEK_INCREMENT_MS)
             .coerceAtLeast(0L)
         seekTo(newPosition)
     }
 
     fun setPlaybackSpeed(speed: Float) {
-        exoPlayer.playbackParameters = PlaybackParameters(speed)
+        exoPlayer?.playbackParameters = PlaybackParameters(speed)
+    }
+
+    /**
+     * Skips to the next chapter with audio.
+     * Called from notification/Android Auto chapter navigation buttons.
+     */
+    private suspend fun skipToNextChapter() {
+        val current = currentChapterHref
+        if (current == null) {
+            Log.d(TAG, "skipToNextChapter: no current chapter")
+            return
+        }
+
+        val nextChapter = smilLoadingManager.findNextChapterWithAudio(current)
+        if (nextChapter == null) {
+            Log.d(TAG, "skipToNextChapter: no next chapter with audio")
+            return
+        }
+
+        Log.d(TAG, "skipToNextChapter: navigating from $current to $nextChapter")
+        val success = prepareChapterAsync(Url(nextChapter)!!, null, null, null)
+        if (!success) {
+            Log.w(TAG, "skipToNextChapter: failed to prepare next chapter")
+        }
+    }
+
+    /**
+     * Skips to the previous chapter with audio.
+     * Called from notification/Android Auto chapter navigation buttons.
+     */
+    private suspend fun skipToPreviousChapter() {
+        val current = currentChapterHref
+        if (current == null) {
+            Log.d(TAG, "skipToPreviousChapter: no current chapter")
+            return
+        }
+
+        val prevChapter = smilLoadingManager.findPreviousChapterWithAudio(current)
+        if (prevChapter == null) {
+            Log.d(TAG, "skipToPreviousChapter: no previous chapter with audio")
+            return
+        }
+
+        Log.d(TAG, "skipToPreviousChapter: navigating from $current to $prevChapter")
+        val success = prepareChapterAsync(Url(prevChapter)!!, null, null, null)
+        if (!success) {
+            Log.w(TAG, "skipToPreviousChapter: failed to prepare previous chapter")
+        }
     }
 
     /**
@@ -419,10 +573,10 @@ class MediaOverlayPlayer(
             return
         }
 
-        // Store ALL clips in the locator tracker for fragment lookup.
+        // Store ALL clips in the controller/service for fragment lookup.
         // This is important because chapters may span multiple audio files, and we need
         // to be able to find any sentence regardless of which audio file it's in.
-        locatorTracker.setChapterClips(allChapterClips)
+        mediaPlaybackController.setChapterClips(allChapterClips)
 
         // Single-pass calculation: compute audioStartOffsets, audioDurations, audioFiles,
         // and find targetClip all in one iteration for better performance on slow devices.
@@ -463,12 +617,12 @@ class MediaOverlayPlayer(
         // Set duration, start offset, and audio href filter for the initial track
         val initialDuration = audioDurations[targetAudioHref]
         if (initialDuration != null && initialDuration > 0) {
-            playbackStateTracker.setTotalDuration(initialDuration)
+            mediaPlaybackController.setTotalDuration(initialDuration)
         }
         val initialStartOffset = audioStartOffsets[targetAudioHref] ?: 0L
-        locatorTracker.setChapterStartOffset(initialStartOffset)
+        mediaPlaybackController.setChapterStartOffset(initialStartOffset)
         if (targetAudioHref != null) {
-            locatorTracker.setCurrentAudioHref(targetAudioHref)
+            mediaPlaybackController.setCurrentAudioHref(targetAudioHref)
         }
 
         // Determine the position to seek to within the target track
@@ -484,42 +638,46 @@ class MediaOverlayPlayer(
             audioHrefToTrackIndex.isEmpty()
 
         if (needsNewPlaylist) {
-            preparePlaylist(audioFiles, targetTrackIndex, positionToSeek)
+            preparePlaylist(audioFiles, targetTrackIndex, positionToSeek, allChapterClips)
         } else if (positionToSeek > 0) {
             // Same playlist and track - just seek to position
-            exoPlayer.seekTo(positionToSeek)
-            locatorTracker.forceUpdatePosition()
+            exoPlayer?.seekTo(positionToSeek)
+            mediaPlaybackController.forceUpdatePosition()
         }
+
+        // Track the current chapter for navigation from notifications/Android Auto
+        currentChapterHref = normalizedHref
 
         // Prefetch next chapter in background
         smilLoadingManager.prefetchNextChapter(normalizedHref)
     }
 
     fun release() {
-        // CRITICAL: Cancel the scope FIRST to stop any in-flight coroutines
-        // that might be using exoPlayer. If we release exoPlayer while
-        // playInternal() or prepareChapterAsync() is running, ExoPlayer throws
-        // IllegalStateException on any method call after release().
+        // Cancel the scope to stop any in-flight coroutines
         playerScope.cancel()
 
-        // Remove track transition listener before releasing player
-        exoPlayer.removeListener(trackTransitionListener)
+        // Remove track transition listener (player is owned by service, so don't release it)
+        exoPlayer?.removeListener(trackTransitionListener)
 
-        // Release trackers
-        locatorTracker.release()
-        playbackStateTracker.release()
+        // Clear chapter clips exceeded callback
+        mediaPlaybackController.setOnChapterClipsExceeded(null)
 
-        // Abandon audio focus
-        audioFocusManager.abandonFocus()
-
-        // Release media session
+        // Release media session manager (no longer releases MediaSession - service owns it)
         mediaSessionManager.release()
 
-        // Stop foreground service
-        foregroundServiceController.stopService()
+        // Only stop the foreground service if playback is NOT active.
+        // If the user is playing audio and leaves the reader screen, let the service
+        // continue running for background playback (Android Auto use case).
+        // The service will stop itself when playback ends or user stops from notification.
+        val player = exoPlayer
+        val isPlaybackActive = player != null && player.isPlaying
+        if (!isPlaybackActive) {
+            Log.d(TAG, "release: stopping service (playback not active)")
+            foregroundServiceController.stopService()
+        } else {
+            Log.d(TAG, "release: keeping service running (playback active)")
+        }
 
-        // Now safe to release ExoPlayer - no coroutines are using it
-        exoPlayer.release()
         smilLoadingManager.release()
     }
 
@@ -542,6 +700,7 @@ class MediaOverlayPlayer(
         initialProgression: Double? = null,
         initialPositionMs: Long? = null,
     ) {
+        Log.d(TAG, "prepareChapter: $chapterHref, fragmentId=$initialFragmentId")
         playerScope.launch {
             try {
                 val success = prepareChapterAsync(
@@ -550,8 +709,10 @@ class MediaOverlayPlayer(
                     initialProgression,
                     initialPositionMs,
                 )
+                Log.d(TAG, "prepareChapter: prepareChapterAsync returned success=$success")
                 if (!success) {
                     // No playable content - emit completion to skip to next chapter
+                    Log.w(TAG, "prepareChapter: no playable content, handling failure")
                     handlePreparationFailure(
                         reason = "Chapter preparation returned no playable content",
                         emitCompletion = true,
@@ -560,6 +721,7 @@ class MediaOverlayPlayer(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Log.e(TAG, "prepareChapter: exception", e)
                 analytics.logException(e, "Failed to prepare chapter: $chapterHref")
                 handlePreparationFailure("Exception during chapter preparation: ${e.message}")
             }
@@ -574,14 +736,13 @@ class MediaOverlayPlayer(
      * @param emitCompletion If true, emits a chapter completion event to skip to next chapter
      */
     private fun handlePreparationFailure(reason: String, emitCompletion: Boolean = false) {
-        playbackStateTracker.setPlayingState(false)
-        playbackStateTracker.setPlaybackState(PlaybackState.ERROR)
-        audioFocusManager.abandonFocus()
+        mediaPlaybackController.setPlayingState(false)
+        mediaPlaybackController.setPlaybackState(PlaybackState.ERROR)
         foregroundServiceController.stopService()
 
         if (emitCompletion) {
             // Emit completion event so coordinator can skip to next chapter
-            playbackStateTracker.emitChapterCompleted()
+            mediaPlaybackController.emitChapterCompleted()
         }
     }
 
@@ -613,13 +774,13 @@ class MediaOverlayPlayer(
         // Only update clips if they're different from what's already stored.
         // This prevents resetting position when prepareChapterAsync is called after
         // prepareChapterDuration has already set up the clips and position.
-        val existingClips = locatorTracker.getChapterClips()
+        val existingClips = mediaPlaybackController.getChapterClips()
         val clipsAlreadySet = existingClips.size == allChapterClips.size &&
             existingClips.firstOrNull()?.fragmentId == allChapterClips.firstOrNull()?.fragmentId
 
         val clipsWereUpdated = !clipsAlreadySet
         if (clipsWereUpdated) {
-            locatorTracker.setChapterClips(allChapterClips)
+            mediaPlaybackController.setChapterClips(allChapterClips)
         }
 
         // Single-pass calculation: compute audioStartOffsets, audioDurations, audioFiles,
@@ -666,10 +827,10 @@ class MediaOverlayPlayer(
         val targetTrackIndex = audioFiles.indexOf(targetAudioHref).coerceAtLeast(0)
 
         // Only update duration if we're changing tracks or don't have a duration set
-        val currentDuration = playbackStateTracker.totalDuration.value
+        val currentDuration = mediaPlaybackController.totalDuration.value
         val targetDuration = audioDurations[targetAudioHref]
         if (targetDuration != null && targetDuration > 0 && currentDuration != targetDuration) {
-            playbackStateTracker.setTotalDuration(targetDuration)
+            mediaPlaybackController.setTotalDuration(targetDuration)
         }
 
         // Update metadata with chapter title for notification display
@@ -683,13 +844,14 @@ class MediaOverlayPlayer(
             // Need to build a new playlist - calculate position to seek to
             val positionToSeek = initialPositionMs
                 ?: (targetClip?.let { (it.startTime * SECONDS_TO_MS).toLong() })
-                ?: locatorTracker.findPositionForFragment(initialFragmentId)
-                ?: locatorTracker.findPositionForProgression(initialProgression)
+                ?: mediaPlaybackController.findPositionForFragment(initialFragmentId)
+                ?: mediaPlaybackController.findPositionForProgression(initialProgression)
                 ?: 0L
-            preparePlaylist(audioFiles, targetTrackIndex, positionToSeek)
+            preparePlaylist(audioFiles, targetTrackIndex, positionToSeek, allChapterClips)
         } else {
             // Playlist already set up - verify we're on the correct track and position
-            val currentTrackIndex = exoPlayer.currentMediaItemIndex
+            val player = exoPlayer ?: return false
+            val currentTrackIndex = player.currentMediaItemIndex
             val expectedTrackIndex = audioHrefToTrackIndex[targetAudioHref] ?: 0
 
             // Calculate target position - needed for both track switch and same-track seek
@@ -698,19 +860,19 @@ class MediaOverlayPlayer(
 
             if (currentTrackIndex != expectedTrackIndex) {
                 // Wrong track - need to switch
-                exoPlayer.seekTo(expectedTrackIndex, positionToSeek ?: 0L)
+                player.seekTo(expectedTrackIndex, positionToSeek ?: 0L)
 
                 // Update duration, offset, and clip filter for the new track
                 val newDuration = audioDurations[targetAudioHref]
                 if (newDuration != null && newDuration > 0) {
-                    playbackStateTracker.setTotalDuration(newDuration)
+                    mediaPlaybackController.setTotalDuration(newDuration)
                 }
                 val newStartOffset = audioStartOffsets[targetAudioHref] ?: 0L
-                locatorTracker.setChapterStartOffset(newStartOffset)
-                locatorTracker.setCurrentAudioHref(targetAudioHref)
+                mediaPlaybackController.setChapterStartOffset(newStartOffset)
+                mediaPlaybackController.setCurrentAudioHref(targetAudioHref)
             } else if (positionToSeek != null && positionToSeek > 0) {
                 // Same track but different position (e.g., double-tap on a sentence)
-                exoPlayer.seekTo(positionToSeek)
+                player.seekTo(positionToSeek)
             }
             currentAudioHref = targetAudioHref
         }
@@ -718,12 +880,15 @@ class MediaOverlayPlayer(
         // If clips were updated (new chapter), ensure audio href filter is set
         // This handles the case where we reused the playlist and same track
         if (clipsWereUpdated) {
-            locatorTracker.setCurrentAudioHref(targetAudioHref)
+            mediaPlaybackController.setCurrentAudioHref(targetAudioHref)
         }
 
         // Set playWhenReady AFTER all seeking/preparation is done.
         // This ensures playback starts from the correct position without flickering.
-        exoPlayer.playWhenReady = true
+        exoPlayer?.playWhenReady = true
+
+        // Track the current chapter for navigation from notifications/Android Auto
+        currentChapterHref = normalizedHref
 
         // Prefetch next chapter in background
         smilLoadingManager.prefetchNextChapter(normalizedHref)
@@ -745,8 +910,13 @@ class MediaOverlayPlayer(
         audioHrefs: List<Url>,
         initialTrackIndex: Int,
         initialPositionMs: Long,
+        allChapterClips: List<MediaOverlayClip> = emptyList(),
     ) {
-        if (audioHrefs.isEmpty()) return
+        Log.d(TAG, "preparePlaylist: audioHrefs=${audioHrefs.size}, initialTrack=$initialTrackIndex, initialPos=$initialPositionMs")
+        if (audioHrefs.isEmpty()) {
+            Log.w(TAG, "preparePlaylist: audioHrefs is EMPTY, returning")
+            return
+        }
 
         // Build MediaItems for all audio files
         val mediaItems = audioHrefs.map { audioHref ->
@@ -766,16 +936,61 @@ class MediaOverlayPlayer(
         }
 
         // Set playlist and seek to initial position
-        exoPlayer.setMediaSources(mediaSources, initialTrackIndex, initialPositionMs)
-        exoPlayer.prepare()
+        val player = exoPlayer
+        Log.d(TAG, "preparePlaylist: exoPlayer=$player")
+        if (player == null) {
+            Log.e(TAG, "preparePlaylist: exoPlayer is NULL, cannot prepare!")
+            return
+        }
+        Log.d(TAG, "preparePlaylist: calling setMediaSources with ${mediaSources.size} sources")
+        player.setMediaSources(mediaSources, initialTrackIndex, initialPositionMs)
+        Log.d(TAG, "preparePlaylist: calling player.prepare()")
+        player.prepare()
+        Log.d(TAG, "preparePlaylist: player.prepare() called, playbackState=${player.playbackState}, mediaItemCount=${player.mediaItemCount}")
 
         // Update tracking
         playlistAudioHrefs = audioHrefs
         audioHrefToTrackIndex = audioHrefs.mapIndexed { index, href -> href to index }.toMap()
         currentAudioHref = audioHrefs.getOrNull(initialTrackIndex)
 
-        // Update locator tracker's clip filter for the new audio file
-        currentAudioHref?.let { locatorTracker.setCurrentAudioHref(it) }
+        // Update controller's clip filter for the new audio file
+        currentAudioHref?.let { mediaPlaybackController.setCurrentAudioHref(it) }
+
+        // Schedule clip callbacks for text highlighting
+        scheduleClipsForAllTracks(audioHrefs, allChapterClips)
+        Log.d(TAG, "preparePlaylist: completed")
+    }
+
+    /**
+     * Schedules PlayerMessage callbacks for all tracks in the playlist.
+     * This enables CLIP_CHANGED broadcasts when playback reaches clip boundaries,
+     * allowing text highlighting to work even when the UI reconnects after being destroyed.
+     */
+    private fun scheduleClipsForAllTracks(
+        audioHrefs: List<Url>,
+        allChapterClips: List<MediaOverlayClip>,
+    ) {
+        if (allChapterClips.isEmpty()) return
+
+        // Clear any previously scheduled clips
+        mediaPlaybackController.clearScheduledClips()
+
+        // Group clips by audio href (track)
+        val clipsByAudio = allChapterClips.groupBy { it.audioHref }
+
+        // Schedule clips for each track
+        audioHrefs.forEachIndexed { trackIndex, audioHref ->
+            val trackClips = clipsByAudio[audioHref] ?: return@forEachIndexed
+            val schedulableClips = trackClips.map { clip ->
+                SchedulableClip(
+                    fragmentId = clip.fragmentId,
+                    textHref = clip.textHref.toString(),
+                    startTimeMs = (clip.startTime * SECONDS_TO_MS).toLong(),
+                    endTimeMs = (clip.endTime * SECONDS_TO_MS).toLong(),
+                )
+            }
+            mediaPlaybackController.scheduleClipsForTrack(trackIndex, schedulableClips)
+        }
     }
 
     /**
@@ -788,7 +1003,7 @@ class MediaOverlayPlayer(
     fun switchAudioFileIfNeeded(audioHref: Url, positionMs: Long) {
         if (currentAudioHref == audioHref) {
             // Same audio file - just seek to position
-            exoPlayer.seekTo(positionMs)
+            exoPlayer?.seekTo(positionMs)
             return
         }
 
@@ -800,14 +1015,14 @@ class MediaOverlayPlayer(
             // Update duration, start offset, and audio href filter for the new audio file
             val durationMs = audioDurations[audioHref]
             if (durationMs != null && durationMs > 0) {
-                playbackStateTracker.setTotalDuration(durationMs)
+                mediaPlaybackController.setTotalDuration(durationMs)
             }
             val startOffset = audioStartOffsets[audioHref] ?: 0L
-            locatorTracker.setChapterStartOffset(startOffset)
-            locatorTracker.setCurrentAudioHref(audioHref)
+            mediaPlaybackController.setChapterStartOffset(startOffset)
+            mediaPlaybackController.setCurrentAudioHref(audioHref)
 
             // Seamless track switch using ExoPlayer's playlist capability
-            exoPlayer.seekTo(trackIndex, positionMs)
+            exoPlayer?.seekTo(trackIndex, positionMs)
         } else {
             // Audio file not in playlist (shouldn't happen normally)
             preparePlaylist(listOf(audioHref), 0, positionMs)
