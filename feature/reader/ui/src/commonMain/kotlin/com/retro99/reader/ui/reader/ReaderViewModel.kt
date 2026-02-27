@@ -380,6 +380,14 @@ class ReaderViewModel(
         // Note: Initial audio position is handled via constructor injection in AudioController
         syncCoordinator.start(viewModelScope)
 
+        // Set now-playing info for mini-player display
+        val state = viewState.value
+        audioController.setNowPlayingInfo(
+            bookUuid = state.bookUuid,
+            bookTitle = state.bookTitle,
+            coverUrl = state.bookCoverUrl,
+        )
+
         audioController.audioPlaybackState
             .map { it.isPlayerReady }
             .distinctUntilChanged()
