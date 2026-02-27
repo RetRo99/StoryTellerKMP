@@ -282,7 +282,23 @@ class MediaPlaybackService : MediaLibraryService() {
         // Create MediaLibrarySession - for Android Auto support
         val sessionActivityIntent = createSessionActivityIntent()
 
-        // Create seek buttons (10 second skip)
+        // Define custom session commands for chapter navigation
+        val previousChapterCommand = SessionCommand(COMMAND_PREVIOUS_CHAPTER, Bundle.EMPTY)
+        val nextChapterCommand = SessionCommand(COMMAND_NEXT_CHAPTER, Bundle.EMPTY)
+
+        // Create chapter navigation buttons using custom SessionCommands
+        // These go in the overflow slots (4 and 5 in the notification)
+        val previousChapterButton = CommandButton.Builder(CommandButton.ICON_PREVIOUS)
+            .setDisplayName("Previous chapter")
+            .setSessionCommand(previousChapterCommand)
+            .build()
+
+        val nextChapterButton = CommandButton.Builder(CommandButton.ICON_NEXT)
+            .setDisplayName("Next chapter")
+            .setSessionCommand(nextChapterCommand)
+            .build()
+
+        // Create seek buttons (10 second skip) - use primary slots
         val seekBackwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
             .setDisplayName("Seek back 10 seconds")
             .setPlayerCommand(Player.COMMAND_SEEK_BACK)
@@ -299,8 +315,10 @@ class MediaPlaybackService : MediaLibraryService() {
             .setSessionActivity(sessionActivityIntent)
             .setMediaButtonPreferences(
                 ImmutableList.of(
+                    previousChapterButton,
                     seekBackwardButton,
                     seekForwardButton,
+                    nextChapterButton,
                 )
             )
             .build()
@@ -549,15 +567,59 @@ class MediaPlaybackService : MediaLibraryService() {
                 .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
                 .build()
 
-            // Add custom command for CLIP_CHANGED
+            // Add custom commands for CLIP_CHANGED and chapter navigation
             val sessionCommands = defaultCommands.availableSessionCommands.buildUpon()
                 .add(SessionCommand(COMMAND_CLIP_CHANGED, Bundle.EMPTY))
+                .add(SessionCommand(COMMAND_PREVIOUS_CHAPTER, Bundle.EMPTY))
+                .add(SessionCommand(COMMAND_NEXT_CHAPTER, Bundle.EMPTY))
                 .build()
 
-            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            val resultBuilder = MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(sessionCommands)
                 .setAvailablePlayerCommands(playerCommands)
-                .build()
+
+            // Create buttons for seek (primary) and chapter navigation (overflow)
+            // Following the same pattern as official Storyteller app
+            val allButtons = ImmutableList.of(
+                // Seek forward 10s - primary forward slot
+                CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_10)
+                    .setDisplayName("Seek forward 10 seconds")
+                    .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+                    .setSlots(CommandButton.SLOT_FORWARD)
+                    .build(),
+                // Seek back 10s - primary back slot
+                CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
+                    .setDisplayName("Seek back 10 seconds")
+                    .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+                    .setSlots(CommandButton.SLOT_BACK)
+                    .build(),
+                // Previous chapter - overflow menu
+                CommandButton.Builder(CommandButton.ICON_PREVIOUS)
+                    .setDisplayName("Previous chapter")
+                    .setSessionCommand(SessionCommand(COMMAND_PREVIOUS_CHAPTER, Bundle.EMPTY))
+                    .setSlots(CommandButton.SLOT_OVERFLOW)
+                    .build(),
+                // Next chapter - overflow menu
+                CommandButton.Builder(CommandButton.ICON_NEXT)
+                    .setDisplayName("Next chapter")
+                    .setSessionCommand(SessionCommand(COMMAND_NEXT_CHAPTER, Bundle.EMPTY))
+                    .setSlots(CommandButton.SLOT_OVERFLOW)
+                    .build(),
+            )
+
+            // Set button preferences for notification controller
+            if (session.isMediaNotificationController(controller)) {
+                Log.d(TAG, "Configuring buttons for media notification controller")
+                resultBuilder.setMediaButtonPreferences(allButtons)
+            }
+
+            // Set button preferences for Android Auto controllers
+            if (isAutomotiveController || isAutoCompanionController) {
+                Log.d(TAG, "Configuring buttons for Android Auto controller")
+                resultBuilder.setMediaButtonPreferences(allButtons)
+            }
+
+            return resultBuilder.build()
         }
 
         override fun onDisconnected(
@@ -592,6 +654,26 @@ class MediaPlaybackService : MediaLibraryService() {
                 }
             }
             return SessionResult.RESULT_SUCCESS
+        }
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> {
+            Log.d(TAG, "onCustomCommand: ${customCommand.customAction}")
+            when (customCommand.customAction) {
+                COMMAND_PREVIOUS_CHAPTER -> {
+                    serviceScope.launch { navigateToPreviousChapter() }
+                    return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+                COMMAND_NEXT_CHAPTER -> {
+                    serviceScope.launch { navigateToNextChapter() }
+                    return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+            }
+            return super.onCustomCommand(session, controller, customCommand, args)
         }
 
         override fun onMediaButtonEvent(
@@ -1018,6 +1100,10 @@ class MediaPlaybackService : MediaLibraryService() {
         const val EXTRA_TEXT_HREF = "textHref"
         const val EXTRA_START_TIME = "startTime"
         const val EXTRA_END_TIME = "endTime"
+
+        // Custom session commands for chapter navigation
+        const val COMMAND_PREVIOUS_CHAPTER = "com.retro99.PREVIOUS_CHAPTER"
+        const val COMMAND_NEXT_CHAPTER = "com.retro99.NEXT_CHAPTER"
     }
 }
 
