@@ -287,6 +287,7 @@ class AndroidAudioController(
     }
 
     override fun setNowPlayingInfo(bookUuid: String, bookTitle: String, coverUrl: String?) {
+        android.util.Log.d("bomba", "setNowPlayingInfo: bookUuid=$bookUuid, bookTitle=$bookTitle, coverUrl=$coverUrl")
         mediaPlaybackController.updateNowPlayingBookInfo(bookUuid, bookTitle, coverUrl)
     }
 

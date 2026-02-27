@@ -39,6 +39,16 @@ data class PlayingBookInfo(
 )
 
 /**
+ * Holds now-playing metadata set before playback starts.
+ * Applied when setCurrentPlayingBook() is called.
+ */
+private data class PendingNowPlayingInfo(
+    val bookUuid: String,
+    val bookTitle: String,
+    val coverUrl: String?,
+)
+
+/**
  * Koin-managed controller for media playback state.
  *
  * This class acts as a bridge between [MediaPlaybackService] (which owns the ExoPlayer
@@ -79,6 +89,11 @@ class MediaPlaybackController {
     // Track which book is currently playing for reconnection
     // Guarded by lock
     private var _currentPlayingBook: PlayingBookInfo? = null
+
+    // Pending now-playing info set before playback starts
+    // Applied when setCurrentPlayingBook() is called
+    // Guarded by lock
+    private var _pendingNowPlayingInfo: PendingNowPlayingInfo? = null
 
     // Deferred that completes when service is ready (onCreate called)
     // Guarded by lock
@@ -259,6 +274,10 @@ class MediaPlaybackController {
     /**
      * Sets the currently playing book info.
      * Called when playback starts for a book.
+     *
+     * If there's pending metadata from an earlier updateNowPlayingBookInfo() call,
+     * it will be merged in (pending takes priority for title/coverUrl if the caller
+     * didn't provide them).
      */
     fun setCurrentPlayingBook(
         serverId: String,
@@ -268,9 +287,32 @@ class MediaPlaybackController {
         coverUrl: String? = null,
     ) {
         synchronized(lock) {
-            val info = PlayingBookInfo(serverId, bookUuid, bookType, bookTitle, coverUrl)
+            // Check if there's pending metadata for this book
+            val pending = _pendingNowPlayingInfo
+            // Also check current info for the same book (preserves existing metadata)
+            val current = _currentPlayingBook?.takeIf { it.bookUuid == bookUuid }
+
+            // Priority: explicit param > pending > current existing value
+            val finalTitle = bookTitle
+                ?: pending?.takeIf { it.bookUuid == bookUuid }?.bookTitle
+                ?: current?.bookTitle
+            val finalCoverUrl = coverUrl
+                ?: pending?.takeIf { it.bookUuid == bookUuid }?.coverUrl
+                ?: current?.coverUrl
+
+            android.util.Log.d("bomba", "setCurrentPlayingBook: bookUuid=$bookUuid, bookTitle=$bookTitle, coverUrl=$coverUrl")
+            android.util.Log.d("bomba", "setCurrentPlayingBook: pending=$pending, current=$current")
+            android.util.Log.d("bomba", "setCurrentPlayingBook: finalTitle=$finalTitle, finalCoverUrl=$finalCoverUrl")
+
+            val info = PlayingBookInfo(serverId, bookUuid, bookType, finalTitle, finalCoverUrl)
             _currentPlayingBook = info
             _nowPlayingBook.value = info
+
+            // Clear pending info since we've applied it
+            if (pending?.bookUuid == bookUuid) {
+                _pendingNowPlayingInfo = null
+            }
+
             // Also update the service metadata for deep links
             _serviceInstance?.updateMetadata(
                 serverId = serverId,
@@ -294,15 +336,26 @@ class MediaPlaybackController {
     /**
      * Updates the now-playing book info with additional metadata.
      * Called when title and cover URL become available (e.g., from ReaderViewModel).
-     * Only updates if the bookUuid matches the currently playing book.
+     *
+     * If playback hasn't started yet (_currentPlayingBook is null), stores the info
+     * as pending metadata to be applied when setCurrentPlayingBook() is called.
+     * Otherwise, updates immediately if the bookUuid matches.
      */
     fun updateNowPlayingBookInfo(bookUuid: String, bookTitle: String, coverUrl: String?) {
+        android.util.Log.d("bomba", "updateNowPlayingBookInfo: bookUuid=$bookUuid, bookTitle=$bookTitle, coverUrl=$coverUrl")
         synchronized(lock) {
             val current = _currentPlayingBook
+            android.util.Log.d("bomba", "updateNowPlayingBookInfo: current=$current")
             if (current != null && current.bookUuid == bookUuid) {
+                // Playback already started - update immediately
                 val updated = current.copy(bookTitle = bookTitle, coverUrl = coverUrl)
                 _currentPlayingBook = updated
                 _nowPlayingBook.value = updated
+                android.util.Log.d("bomba", "updateNowPlayingBookInfo: updated immediately")
+            } else {
+                // Playback not started yet - store as pending metadata
+                _pendingNowPlayingInfo = PendingNowPlayingInfo(bookUuid, bookTitle, coverUrl)
+                android.util.Log.d("bomba", "updateNowPlayingBookInfo: stored as pending")
             }
         }
     }
