@@ -387,10 +387,12 @@ class MediaOverlayPlayer(
         Log.d(TAG, "playInternal: service ready, player=$player")
 
         // Register this book as currently playing for reconnection support
+        // Include book title for NowPlayingProvider display
         mediaPlaybackController.setCurrentPlayingBook(
             serverId = epubPublication.serverId,
             bookUuid = epubPublication.bookUuid,
             bookType = epubPublication.bookType,
+            bookTitle = bookTitle,
         )
 
         if (chapterToPlay != null) {
