@@ -780,8 +780,9 @@ class MediaPlaybackService : MediaLibraryService() {
                 startHeadlessPlayback(parsedServerId, parsedBookUuid)
             }
 
-            // Return items immediately - playback will start asynchronously
-            return Futures.immediateFuture(mediaItems)
+            // Return EMPTY list - the incoming mediaItems have no URI and would crash Media3.
+            // Headless playback sets up the player with proper media items internally.
+            return Futures.immediateFuture(mutableListOf())
         }
     }
 

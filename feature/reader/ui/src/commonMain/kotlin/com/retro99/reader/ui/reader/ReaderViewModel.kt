@@ -296,12 +296,15 @@ class ReaderViewModel(
     }
 
     private fun initializeReader() {
+        println("bomba ReaderViewModel.initializeReader: serverId=$serverId, bookUuid=$bookUuid, bookType=$bookType")
         viewModelScope.launch {
             initializeReaderUseCase(serverId, bookUuid, bookType)
                 .onSuccess { data ->
+                    println("bomba ReaderViewModel.initializeReader: SUCCESS, localPath=${data.localEbookPath}")
                     openPublication(data)
                 }
                 .onFailure { error ->
+                    println("bomba ReaderViewModel.initializeReader: FAILED, error=${error.message}")
                     error.log(analytics, "ReaderViewModel: Failed to initialize reader")
                     updateState { it.copy(error = error) }
                 }

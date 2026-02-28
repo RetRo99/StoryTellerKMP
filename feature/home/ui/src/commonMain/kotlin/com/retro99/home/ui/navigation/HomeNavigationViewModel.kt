@@ -162,6 +162,8 @@ class HomeNavigationViewModel(
     /**
      * Observes now-playing state from the playback system.
      * Updates the UI state for the mini-player display.
+     * Also navigates to the reader when a different book starts playing
+     * (e.g., when user selects a book from Android Auto).
      */
     private fun observeNowPlaying() {
         combine(
@@ -171,7 +173,35 @@ class HomeNavigationViewModel(
             info to isPlaying
         }
             .onEach { (info, isPlaying) ->
+                val previousInfo = viewState.value.nowPlayingInfo
+                android.util.Log.d(
+                    "bomba",
+                    "observeNowPlaying: info=${info?.bookTitle}, isPlaying=$isPlaying, " +
+                        "prevBook=${previousInfo?.bookUuid}, newBook=${info?.bookUuid}"
+                )
+
+                // Check if a different book was selected (e.g., from Android Auto)
+                // Navigate to that book's reader to keep phone in sync
+                // Note: We check BEFORE updating state, and don't require isPlaying
+                // because the book change and play state come in separate emissions
+                val bookChanged = info != null && previousInfo?.bookUuid != info.bookUuid
+
                 updateState { it.copy(nowPlayingInfo = info, isAudioPlaying = isPlaying) }
+
+                if (bookChanged) {
+                    android.util.Log.d(
+                        "bomba",
+                        "observeNowPlaying: NAVIGATING to reader for ${info?.bookTitle}"
+                    )
+                    emitNavigationEvent(
+                        HomeNavigationEvent.NavigateToReaderReplacing(
+                            serverId = info!!.serverId,
+                            bookUuid = info.bookUuid,
+                            bookType = info.bookType,
+                            tab = HomeTab.Books,
+                        )
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
