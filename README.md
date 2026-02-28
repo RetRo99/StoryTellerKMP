@@ -1,48 +1,98 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Desktop (JVM).
+# Parrot
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+A cross-platform ebook and audiobook reader app built with Kotlin Multiplatform and Compose Multiplatform. Parrot is a client for [Storyteller](https://github.com/smoores-dev/storyteller) servers, allowing you to stream and read your personal book library on Android, iOS, and Desktop.
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+## Features
 
-### Build and Run Android Application
+- **📚 Ebook Reader** - Read EPUB books with customizable fonts, themes, and margins
+- **🎧 Audiobook Player** - Listen to audiobooks with playback controls
+- **🗣️ Read Aloud** - Synchronized text highlighting with audio narration (for books with media overlays)
+- **📖 Multiple Server Support** - Connect to multiple Storyteller servers and switch between them
+- **📁 Local Books** - Import and read local EPUB files
+- **📊 Reading Statistics** - Track reading time, streaks, sessions, and most-read books
+- **🔖 Reading Progress Sync** - Sync reading position across devices via server
+- **📑 Table of Contents** - Navigate chapters easily
+- **🔍 Search & Filter** - Find books by title, author, series, or tags
+- **⭐ Favorites** - Mark books as favorites for quick access
+- **📱 E-Ink Support** - Optimized color scheme for e-ink devices
+- **🌙 Dark Mode** - System-aware dark/light theme support
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
+## Supported Platforms
 
-### Build and Run Desktop (JVM) Application
+| Platform | Status |
+|----------|--------|
+| Android  | ✅     |
+| iOS      | ✅     |
+| Desktop (JVM) | ✅ |
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
+## Project Structure
 
-### Build and Run iOS Application
+```
+├── composeApp/          # Main application module (shared UI & app entry points)
+├── androidApp/          # Android-specific app wrapper
+├── iosApp/              # iOS-specific app wrapper (Xcode project)
+├── feature/             # Feature modules (Clean Architecture)
+│   ├── auth/            # Authentication
+│   ├── books/           # Book listing, details, series
+│   ├── home/            # Home navigation & bottom tabs
+│   ├── login/           # Login/onboarding flow
+│   ├── reader/          # EPUB reader & audio player
+│   ├── settings/        # Reader settings
+│   └── statistics/      # Reading statistics & analytics
+├── lib/                 # Shared libraries
+│   ├── analytics/       # Analytics abstraction
+│   ├── database/        # SQLDelight database
+│   ├── network/         # Ktor networking
+│   ├── preferences/     # DataStore preferences
+│   ├── server/          # Server abstraction layer
+│   ├── server-local/    # Local file server implementation
+│   ├── server-storyteller/ # Storyteller API implementation
+│   └── user/            # User & server management
+├── base/                # Base classes & utilities
+├── base-ui/             # Shared UI components
+└── translations/        # Internationalization resources
+```
 
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+## Tech Stack
 
----
+- **Kotlin Multiplatform** - Share code across Android, iOS, and Desktop
+- **Compose Multiplatform** - Declarative UI framework
+- **Koin** - Dependency injection with annotations
+- **Ktor** - HTTP client for API communication
+- **SQLDelight** - Type-safe SQL database
+- **DataStore** - Preferences storage
+- **Readium** - EPUB rendering engine
+- **Coil** - Image loading
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+## Building
+
+### Prerequisites
+
+- JDK 17+
+- Android Studio or IntelliJ IDEA
+- Xcode (for iOS builds)
+
+### Android
+
+```shell
+./gradlew :composeApp:assembleDebug
+```
+
+### Desktop
+
+```shell
+./gradlew :composeApp:run
+```
+
+### iOS
+
+Open `iosApp/iosApp.xcworkspace` in Xcode and run the project.
+
+## Server Setup
+
+Parrot requires a [Storyteller](https://github.com/smoores-dev/storyteller) server to stream books. You can also import local EPUB files directly into the app.
+
+## License
+
+This project is for personal use.
+
