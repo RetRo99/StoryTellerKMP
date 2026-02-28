@@ -1,6 +1,6 @@
 # Parrot
 
-A cross-platform ebook and audiobook reader app built with Kotlin Multiplatform and Compose Multiplatform. Parrot is a client for [Storyteller](https://github.com/smoores-dev/storyteller) servers, allowing you to stream and read your personal book library on Android, iOS, and Desktop.
+A cross-platform ebook and audiobook reader app built with Kotlin Multiplatform and Compose Multiplatform. Parrot is a client for [Storyteller](https://gitlab.com/smoores/storyteller) servers, allowing you to stream and read your personal book library on Android and iOS.
 
 ## Features
 
@@ -23,7 +23,6 @@ A cross-platform ebook and audiobook reader app built with Kotlin Multiplatform 
 |----------|--------|
 | Android  | ✅     |
 | iOS      | ✅     |
-| Desktop (JVM) | ✅ |
 
 ## Project Structure
 
@@ -78,19 +77,13 @@ A cross-platform ebook and audiobook reader app built with Kotlin Multiplatform 
 ./gradlew :composeApp:assembleDebug
 ```
 
-### Desktop
-
-```shell
-./gradlew :composeApp:run
-```
-
 ### iOS
 
 Open `iosApp/iosApp.xcworkspace` in Xcode and run the project.
 
 ## Server Setup
 
-Parrot requires a [Storyteller](https://github.com/smoores-dev/storyteller) server to stream books. You can also import local EPUB files directly into the app.
+Parrot requires a [Storyteller](https://gitlab.com/smoores/storyteller) server to stream books. You can also import local EPUB files directly into the app.
 
 ## License
 
