@@ -88,25 +88,62 @@ class AndroidAudioController(
             initialValue = null,
         )
 
+    /**
+     * Audio playback state filtered to only show playing state when this book is playing.
+     * When a different book is playing (e.g., from Android Auto), this reader shows as stopped.
+     */
     override val audioPlaybackState: Flow<AudioPlaybackState>
-        get() = combine(
-            mediaPlaybackController.normalizedPosition,  // Use normalized position for UI display (starts at 0:00)
-            mediaPlaybackController.totalDuration,
-            mediaPlaybackController.isPlaying,
-            mediaPlaybackController.playbackState,
-            _isAudioInitialized,  // Use initialization status, not ExoPlayer STATE_READY
-        ) { positionMs, durationMs, isPlaying, playbackState, isAudioInitialized ->
-            AudioPlaybackState(
-                currentPositionMs = positionMs,
-                totalDurationMs = durationMs,
-                isPlaying = isPlaying,
-                playbackState = playbackState,
-                isPlayerReady = isAudioInitialized,  // "Player ready" means SMIL initialized
-            )
+        get() {
+            // Combine base playback state with book check
+            val baseStateFlow = combine(
+                mediaPlaybackController.normalizedPosition,
+                mediaPlaybackController.totalDuration,
+                mediaPlaybackController.isPlaying,
+                mediaPlaybackController.playbackState,
+                _isAudioInitialized,
+            ) { positionMs, durationMs, isPlaying, playbackState, isAudioInitialized ->
+                AudioPlaybackState(
+                    currentPositionMs = positionMs,
+                    totalDurationMs = durationMs,
+                    isPlaying = isPlaying,
+                    playbackState = playbackState,
+                    isPlayerReady = isAudioInitialized,
+                )
+            }
+
+            // Filter based on whether this book is currently playing
+            return combine(
+                baseStateFlow,
+                mediaPlaybackController.nowPlayingBook,
+            ) { state, nowPlaying ->
+                val isThisBookPlaying = nowPlaying == null || nowPlaying.bookUuid == publication.bookUuid
+                if (isThisBookPlaying) {
+                    state
+                } else {
+                    // Different book is playing - show this reader as stopped
+                    AudioPlaybackState(
+                        currentPositionMs = 0L,
+                        totalDurationMs = null,
+                        isPlaying = false,
+                        playbackState = PlaybackState.STOPPED,
+                        isPlayerReady = state.isPlayerReady,
+                    )
+                }
+            }
         }
 
+    /**
+     * Playback state filtered by book UUID.
+     * Shows STOPPED when a different book is playing.
+     */
     override val playbackState: Flow<PlaybackState>
-        get() = mediaPlaybackController.playbackState
+        get() = combine(
+            mediaPlaybackController.playbackState,
+            mediaPlaybackController.nowPlayingBook,
+        ) { state, nowPlaying ->
+            val isThisBook = nowPlaying == null || nowPlaying.bookUuid == publication.bookUuid
+            if (isThisBook) state else PlaybackState.STOPPED
+        }
 
     override val showPermissionDeniedDialog: Flow<Boolean>
         get() = player.showPermissionDeniedDialog

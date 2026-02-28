@@ -32,7 +32,7 @@ import org.readium.r2.navigator.html.HtmlDecorationTemplate
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.navigator.html.toCss
 
-private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
+private const val NAVIGATOR_FRAGMENT_TAG_PREFIX = "epub_navigator_"
 
 /**
  * Android implementation of EPUB reader using Readium's EpubNavigatorFragment.
@@ -50,6 +50,9 @@ internal actual fun EpubReaderViewInternal(
         ReaderErrorView(message = "Error: Activity is not a FragmentActivity", modifier = modifier)
         return
     }
+
+    // Use book-specific tag to avoid conflicts when switching between books
+    val navigatorFragmentTag = remember(bookUuid) { "$NAVIGATOR_FRAGMENT_TAG_PREFIX$bookUuid" }
 
     val publication = publicationState.publication
     val readiumPublication = publication.publication
@@ -110,7 +113,7 @@ internal actual fun EpubReaderViewInternal(
                 // Release media overlay player resources
                 navigatorController?.close()
                 val existingFragment = activity.supportFragmentManager
-                    .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+                    .findFragmentByTag(navigatorFragmentTag)
                 if (existingFragment != null) {
                     // Use commitNow to ensure the fragment is removed synchronously
                     // before onSaveInstanceState is called
@@ -127,7 +130,7 @@ internal actual fun EpubReaderViewInternal(
             // Also clean up on dispose in case ON_STOP wasn't called
             navigatorController?.close()
             val existingFragment = activity.supportFragmentManager
-                .findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+                .findFragmentByTag(navigatorFragmentTag)
             if (existingFragment != null) {
                 activity.supportFragmentManager.commit(allowStateLoss = true) {
                     remove(existingFragment)
@@ -146,8 +149,8 @@ internal actual fun EpubReaderViewInternal(
         update = { containerView ->
             val fragmentManager = activity.supportFragmentManager
 
-            // Only add fragment if it doesn't exist
-            val existingFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
+            // Only add fragment if it doesn't exist for THIS book
+            val existingFragment = fragmentManager.findFragmentByTag(navigatorFragmentTag)
                     as? EpubNavigatorFragment
             if (existingFragment == null) {
                 // Use current settings and position from PublicationState
@@ -166,14 +169,14 @@ internal actual fun EpubReaderViewInternal(
                         containerView.id,
                         EpubNavigatorFragment::class.java,
                         null,
-                        NAVIGATOR_FRAGMENT_TAG,
+                        navigatorFragmentTag,
                     )
                 }
             }
 
             // Create navigator controller if needed
             val navigatorFragment = (existingFragment
-                ?: fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG))
+                ?: fragmentManager.findFragmentByTag(navigatorFragmentTag))
                     as? EpubNavigatorFragment
 
             navigatorFragment?.let {
