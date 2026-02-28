@@ -386,30 +386,27 @@ class HeadlessMediaOverlayPlayer(
             .setIsBrowsable(false)
             .setIsPlayable(true)
 
-        if (bookMetadata != null) {
-            builder.setTitle(bookMetadata.title)
-            builder.setArtist(bookMetadata.author)
+        val bookTitle = bookMetadata?.title ?: publication.metadata.title
+        val author = bookMetadata?.author ?: publication.metadata.authors.firstOrNull()?.name
 
-            // Set chapter title as subtitle if available
-            if (chapterTitle != null) {
-                builder.setSubtitle(chapterTitle)
-            }
-
-            if (bookMetadata.coverArtwork != null) {
-                builder.setArtworkData(
-                    bookMetadata.coverArtwork,
-                    MediaMetadata.PICTURE_TYPE_FRONT_COVER
-                )
-            }
+        // For audiobooks, show chapter as title and book as album
+        // This makes notifications show: "Chapter Name" / "Book Title" / "Author"
+        if (chapterTitle != null) {
+            builder.setTitle(chapterTitle)
+            builder.setAlbumTitle(bookTitle)
         } else {
-            builder.setTitle(publication.metadata.title)
-            publication.metadata.authors.firstOrNull()?.name?.let {
-                builder.setArtist(it)
-            }
-            // Set chapter title as subtitle if available
-            if (chapterTitle != null) {
-                builder.setSubtitle(chapterTitle)
-            }
+            builder.setTitle(bookTitle)
+        }
+
+        if (author != null) {
+            builder.setArtist(author)
+        }
+
+        if (bookMetadata?.coverArtwork != null) {
+            builder.setArtworkData(
+                bookMetadata.coverArtwork,
+                MediaMetadata.PICTURE_TYPE_FRONT_COVER
+            )
         }
 
         return builder.build()
@@ -426,6 +423,7 @@ class HeadlessMediaOverlayPlayer(
      */
     private fun getChapterTitle(chapterHref: Url): String? {
         val normalizedHref = chapterHref.removeFragment().toString()
+        Log.d(TAG, "HeadlessPlayer: getChapterTitle normalizedHref=$normalizedHref")
 
         // Try reading order first (most common case)
         val readingOrderTitle = publication.readingOrder.find { link ->
@@ -433,11 +431,14 @@ class HeadlessMediaOverlayPlayer(
         }?.title
 
         if (readingOrderTitle != null) {
+            Log.d(TAG, "HeadlessPlayer: Found title in readingOrder: $readingOrderTitle")
             return readingOrderTitle
         }
 
         // Fall back to table of contents (may have more descriptive titles)
-        return findTitleInToc(publication.tableOfContents, normalizedHref)
+        val tocTitle = findTitleInToc(publication.tableOfContents, normalizedHref)
+        Log.d(TAG, "HeadlessPlayer: TOC lookup result: $tocTitle")
+        return tocTitle
     }
 
     /**
