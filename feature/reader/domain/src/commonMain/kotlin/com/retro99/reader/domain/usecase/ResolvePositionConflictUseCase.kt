@@ -46,7 +46,7 @@ class ResolvePositionConflictUseCase(
 
     /**
      * Resolves the conflict by using the remote position.
-     * This fetches the remote position and saves it to local storage.
+     * This fetches the remote position and saves it to local storage only.
      *
      * @param serverId The server ID
      * @param bookUuid The book UUID
@@ -60,8 +60,9 @@ class ResolvePositionConflictUseCase(
             .getOrElse { return Err(it) }
             ?: return Err(AppError.NotFoundError("No remote position found"))
 
-        // Save remote position to local (this also syncs back to remote, which is fine)
-        return serverRepository.savePosition(bookUuid, remotePosition)
+        // Save remote position to local only - don't sync back to server
+        // (the server already has this position, re-posting would cause timestamp conflicts)
+        return serverRepository.saveLocalPosition(remotePosition)
     }
 }
 

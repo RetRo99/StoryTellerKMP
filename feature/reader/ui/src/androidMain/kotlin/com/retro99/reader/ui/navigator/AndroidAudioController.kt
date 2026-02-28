@@ -16,10 +16,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
@@ -63,8 +65,28 @@ class AndroidAudioController(
      */
     private val _isAudioInitialized = MutableStateFlow(false)
 
-    override val currentAudioLocator: StateFlow<AudioLocatorState?>
-        get() = mediaPlaybackController.currentLocator
+    /**
+     * Current audio locator filtered to only emit when the currently playing book
+     * matches this reader's book. This prevents highlighting from being applied
+     * to the wrong book when switching books from Android Auto.
+     */
+    override val currentAudioLocator: StateFlow<AudioLocatorState?> =
+        combine(
+            mediaPlaybackController.currentLocator,
+            mediaPlaybackController.nowPlayingBook,
+        ) { locator, nowPlaying ->
+            // Only emit locator if it's for this book (or no book info available yet)
+            if (nowPlaying == null || nowPlaying.bookUuid == publication.bookUuid) {
+                locator
+            } else {
+                // Different book is playing - don't apply highlights to this reader
+                null
+            }
+        }.stateIn(
+            scope = controllerScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null,
+        )
 
     override val audioPlaybackState: Flow<AudioPlaybackState>
         get() = combine(
