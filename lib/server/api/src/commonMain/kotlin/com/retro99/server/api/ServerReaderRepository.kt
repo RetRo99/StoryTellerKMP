@@ -48,6 +48,14 @@ interface ServerReaderRepository {
      */
     suspend fun getLocalPosition(bookUuid: String): AppResult<ServerPosition?>
 
+    /**
+     * Saves the reading position only to local cache, without syncing to remote.
+     * Used when accepting a remote position to avoid re-posting it to the server.
+     *
+     * @param position The position to save locally
+     */
+    suspend fun saveLocalPosition(position: ServerPosition): CompletableResult
+
     // ==================== Remote-only Operations ====================
 
     /**

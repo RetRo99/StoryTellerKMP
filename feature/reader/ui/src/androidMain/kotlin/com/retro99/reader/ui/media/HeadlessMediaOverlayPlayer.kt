@@ -269,8 +269,11 @@ class HeadlessMediaOverlayPlayer(
         // Find which audio file the saved position belongs to
         val targetTrackIndex = findTrackIndexForPosition(smilClips, audioFilesOrdered, initialPositionMs)
 
-        // Prepare playlist
-        preparePlaylist(audioFilesOrdered, targetTrackIndex, initialPositionMs ?: 0L)
+        // Get chapter title for metadata
+        val chapterTitle = getChapterTitle(chapterHref)
+
+        // Prepare playlist with updated chapter title
+        preparePlaylist(audioFilesOrdered, targetTrackIndex, initialPositionMs ?: 0L, chapterTitle)
 
         // Start playback
         exoPlayer.playWhenReady = true
@@ -332,6 +335,7 @@ class HeadlessMediaOverlayPlayer(
         audioHrefs: List<Url>,
         initialTrackIndex: Int,
         initialPositionMs: Long,
+        chapterTitle: String? = null,
     ) {
         if (audioHrefs.isEmpty()) return
 
@@ -343,8 +347,8 @@ class HeadlessMediaOverlayPlayer(
 
         pendingSeekPositionMs = initialPositionMs
 
-        // Build metadata for notifications and Android Auto
-        val metadata = buildMediaMetadata()
+        // Build metadata for notifications and Android Auto with chapter title
+        val metadata = buildMediaMetadata(chapterTitle)
 
         // Build MediaItems
         val mediaItems = audioHrefs.mapIndexed { index, audioHref ->
@@ -376,7 +380,7 @@ class HeadlessMediaOverlayPlayer(
         currentAudioHref = audioHrefs.getOrNull(initialTrackIndex)
     }
 
-    private fun buildMediaMetadata(): MediaMetadata {
+    private fun buildMediaMetadata(chapterTitle: String? = null): MediaMetadata {
         val builder = MediaMetadata.Builder()
             .setMediaType(MediaMetadata.MEDIA_TYPE_AUDIO_BOOK)
             .setIsBrowsable(false)
@@ -385,6 +389,11 @@ class HeadlessMediaOverlayPlayer(
         if (bookMetadata != null) {
             builder.setTitle(bookMetadata.title)
             builder.setArtist(bookMetadata.author)
+
+            // Set chapter title as subtitle if available
+            if (chapterTitle != null) {
+                builder.setSubtitle(chapterTitle)
+            }
 
             if (bookMetadata.coverArtwork != null) {
                 builder.setArtworkData(
@@ -397,8 +406,57 @@ class HeadlessMediaOverlayPlayer(
             publication.metadata.authors.firstOrNull()?.name?.let {
                 builder.setArtist(it)
             }
+            // Set chapter title as subtitle if available
+            if (chapterTitle != null) {
+                builder.setSubtitle(chapterTitle)
+            }
         }
 
         return builder.build()
+    }
+
+    /**
+     * Gets the chapter title from the publication's reading order or table of contents.
+     *
+     * First tries to find the chapter in the reading order by matching the href.
+     * Falls back to the table of contents if not found in reading order.
+     *
+     * @param chapterHref The href of the chapter
+     * @return The chapter title, or null if not found
+     */
+    private fun getChapterTitle(chapterHref: Url): String? {
+        val normalizedHref = chapterHref.removeFragment().toString()
+
+        // Try reading order first (most common case)
+        val readingOrderTitle = publication.readingOrder.find { link ->
+            link.href.toString().substringBefore('#') == normalizedHref
+        }?.title
+
+        if (readingOrderTitle != null) {
+            return readingOrderTitle
+        }
+
+        // Fall back to table of contents (may have more descriptive titles)
+        return findTitleInToc(publication.tableOfContents, normalizedHref)
+    }
+
+    /**
+     * Recursively searches the table of contents for a matching href.
+     */
+    private fun findTitleInToc(
+        links: List<org.readium.r2.shared.publication.Link>,
+        normalizedHref: String,
+    ): String? {
+        for (link in links) {
+            if (link.href.toString().substringBefore('#') == normalizedHref) {
+                return link.title
+            }
+            // Search children recursively
+            val childTitle = findTitleInToc(link.children, normalizedHref)
+            if (childTitle != null) {
+                return childTitle
+            }
+        }
+        return null
     }
 }
