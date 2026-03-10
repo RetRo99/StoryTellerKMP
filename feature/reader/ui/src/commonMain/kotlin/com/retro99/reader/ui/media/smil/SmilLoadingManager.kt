@@ -78,6 +78,7 @@ class SmilLoadingManager(
     private val analytics: Analytics,
     private val index: SmilChapterIndex,
     private val cache: SmilClipCache,
+    private val clipRepository: SmilClipRepository,
     @Provided private val contentProvider: SmilContentProvider,
 ) {
     private val ioDispatcher = Dispatchers.IO
@@ -195,6 +196,10 @@ class SmilLoadingManager(
             // Parse SMIL files for this chapter
             val clips = parseChapterSmilFiles(normalized)
             cache.putClips(normalized, clips)
+
+            // Also store in global repository for service access
+            // This allows clips to survive ReaderScope destruction
+            clipRepository.storeClips(normalized, clips)
 
             clips
         }
@@ -329,6 +334,38 @@ class SmilLoadingManager(
 
         // Find the next chapter with audio (exclusive of current)
         for (i in (currentIndex + 1) until readingOrder.size) {
+            val chapter = readingOrder[i]
+            if (index.hasSmilForChapter(chapter)) {
+                return chapter
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Finds the previous chapter in the reading order that has audio (SMIL files).
+     *
+     * This is useful for chapter navigation from media controls.
+     *
+     * @param currentChapterHref The current chapter href
+     * @return The previous chapter href that has audio, or null if none found
+     */
+    suspend fun findPreviousChapterWithAudio(currentChapterHref: String): String? {
+        val normalized = quickScanner.normalizeChapterHref(currentChapterHref)
+        val readingOrder = contentProvider.getReadingOrder()
+            .map { quickScanner.normalizeChapterHref(it) }
+
+        val currentIndex = readingOrder.indexOf(normalized)
+        if (currentIndex <= 0) {
+            return null
+        }
+
+        // Ensure all SMIL files are scanned so we know which chapters have audio
+        ensureAllSmilFilesScanned()
+
+        // Find the previous chapter with audio (exclusive of current, searching backwards)
+        for (i in (currentIndex - 1) downTo 0) {
             val chapter = readingOrder[i]
             if (index.hasSmilForChapter(chapter)) {
                 return chapter

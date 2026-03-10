@@ -39,16 +39,21 @@
             </intent-filter>
         </activity>
 
-        <!-- Media playback foreground service for audio -->
-        <!-- exported=false is safe: MediaSessionService discovery works via MediaSession, not binding -->
+        <!-- Media playback foreground service for audio with Android Auto support -->
         <service
             android:name="com.retro99.reader.ui.playback.MediaPlaybackService"
-            android:exported="false"
+            android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+
+        <!-- Android Auto configuration -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <!-- Download foreground service for ebooks -->
         <service

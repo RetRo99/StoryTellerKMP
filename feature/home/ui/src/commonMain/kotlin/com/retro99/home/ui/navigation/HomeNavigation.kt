@@ -1,6 +1,7 @@
 package com.retro99.home.ui.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -84,6 +85,11 @@ fun HomeNavigation(
     val showBottomBar = (currentDestination as? BottomBarDestination)?.showBottomBar != false
     val isInReader = currentDestination is HomeDestination.Reader
     val currentlyReading = uiState.currentlyReading
+    val nowPlayingInfo = uiState.nowPlayingInfo
+    val isAudioPlaying = uiState.isAudioPlaying
+
+    // Show mini-player when audio is playing and not in reader
+    val showMiniPlayer = !isInReader && nowPlayingInfo != null
 
     // Track when leaving reader to refresh currently reading state
     val wasInReader = remember { mutableStateOf(false) }
@@ -98,12 +104,34 @@ fun HomeNavigation(
         Scaffold(
             bottomBar = {
                 if (showBottomBar) {
-                    HomeBottomNavigationBar(
-                        currentTab = navigationState.currentTab,
-                        onTabSelected = { tab ->
-                            intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
-                        },
-                    )
+                    Column {
+                        // Mini-player above bottom nav
+                        AnimatedMiniPlayer(
+                            visible = showMiniPlayer,
+                            nowPlayingInfo = nowPlayingInfo,
+                            isPlaying = isAudioPlaying,
+                            onPlayPauseClick = { intentDispatcher(HomeNavigationIntent.ToggleMiniPlayerPlayPause) },
+                            onStopClick = { intentDispatcher(HomeNavigationIntent.StopMiniPlayerPlayback) },
+                            onPlayerClick = {
+                                // Navigate to reader when clicking the mini-player
+                                nowPlayingInfo?.let { info ->
+                                    intentDispatcher(
+                                        HomeNavigationIntent.OpenReader(
+                                            serverId = info.serverId,
+                                            bookUuid = info.bookUuid,
+                                            bookType = info.bookType,
+                                        )
+                                    )
+                                }
+                            },
+                        )
+                        HomeBottomNavigationBar(
+                            currentTab = navigationState.currentTab,
+                            onTabSelected = { tab ->
+                                intentDispatcher(HomeNavigationIntent.SwitchTab(tab))
+                            },
+                        )
+                    }
                 }
             },
         ) { paddingValues ->
@@ -164,14 +192,13 @@ fun HomeNavigation(
                         BookDetailScreen(
                             serverId = destination.serverId,
                             bookUuid = destination.bookUuid,
-                            onNavigateToReader = { serverId, bookUuid, bookType ->
+                            onNavigateToReader = { serverId, bookUuid, bookType, bookTitle ->
                                 intentDispatcher(
-                                    HomeNavigationIntent.NavigateTo(
-                                        HomeDestination.Reader(
-                                            serverId = serverId,
-                                            bookUuid = bookUuid,
-                                            bookType = bookType,
-                                        )
+                                    HomeNavigationIntent.RequestOpenReader(
+                                        serverId = serverId,
+                                        bookUuid = bookUuid,
+                                        bookType = bookType,
+                                        bookTitle = bookTitle,
                                     )
                                 )
                             },
@@ -245,15 +272,25 @@ fun HomeNavigation(
                     currentlyReading = currentlyReading,
                     onClick = {
                         intentDispatcher(
-                            HomeNavigationIntent.OpenReader(
+                            HomeNavigationIntent.RequestOpenReader(
                                 serverId = currentlyReading.serverId,
                                 bookUuid = currentlyReading.bookUuid,
                                 bookType = currentlyReading.bookType,
+                                bookTitle = currentlyReading.bookTitle,
                             )
                         )
                     },
                 )
             }
+        }
+
+        // Playback conflict dialog
+        uiState.playbackConflictDialog?.let { dialogState ->
+            PlaybackConflictDialog(
+                state = dialogState,
+                onStopAndOpen = { intentDispatcher(HomeNavigationIntent.PlaybackConflictStopAndOpen) },
+                onDismiss = { intentDispatcher(HomeNavigationIntent.PlaybackConflictDismiss) },
+            )
         }
     }
 }

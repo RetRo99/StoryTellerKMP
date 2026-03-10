@@ -56,6 +56,10 @@ class StorytellerReaderRepository(
         }
     }
 
+    override suspend fun saveLocalPosition(position: ServerPosition): CompletableResult {
+        return localSource.savePosition(position)
+    }
+
     // ==================== Remote-only Operations ====================
 
     override suspend fun getRemotePosition(bookUuid: String): AppResult<ServerPosition?> {

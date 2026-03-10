@@ -165,6 +165,7 @@ private fun ReaderScreenContent(
             viewState.publicationState != null -> {
                 ReaderContent(
                     bookUuid = bookUuid,
+                    bookTitle = viewState.bookTitle,
                     publicationState = viewState.publicationState,
                     isReadAloud = viewState.isReadAloud,
                     isPlaying = viewState.isPlaying,
@@ -237,6 +238,7 @@ private fun NoAudioSnackbar(
 @Composable
 private fun ReaderContent(
     bookUuid: String,
+    bookTitle: String,
     publicationState: PublicationState,
     isReadAloud: Boolean,
     isPlaying: Boolean,
@@ -389,6 +391,7 @@ private fun ReaderContent(
                 modifier = Modifier.align(Alignment.TopEnd),
             ) {
                 ReaderToolbar(
+                    bookTitle = bookTitle,
                     onCloseClick = { intentDispatcher(ReaderIntent.Close) },
                     onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
                     onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
@@ -470,6 +473,7 @@ private fun AnimatedProgressBar(
 
 @Composable
 private fun ReaderToolbar(
+    bookTitle: String,
     onCloseClick: () -> Unit,
     onTocClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -480,10 +484,11 @@ private fun ReaderToolbar(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // Back button on the left
             IconButton(
@@ -491,7 +496,6 @@ private fun ReaderToolbar(
                     onInteraction()
                     onCloseClick()
                 },
-                modifier = Modifier.align(Alignment.CenterStart),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -500,34 +504,40 @@ private fun ReaderToolbar(
                 )
             }
 
+            // Book title in the center
+            Text(
+                text = bookTitle,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+
             // TOC and Settings buttons on the right
-            Row(
-                modifier = Modifier.align(Alignment.CenterEnd),
+            IconButton(
+                onClick = {
+                    onInteraction()
+                    onTocClick()
+                },
             ) {
-                IconButton(
-                    onClick = {
-                        onInteraction()
-                        onTocClick()
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = stringResource(StringRes.reader_toc_title),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        onInteraction()
-                        onSettingsClick()
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = stringResource(StringRes.settings_icon_content_description),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = stringResource(StringRes.reader_toc_title),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            IconButton(
+                onClick = {
+                    onInteraction()
+                    onSettingsClick()
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(StringRes.settings_icon_content_description),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
     }

@@ -148,6 +148,16 @@ interface AudioController : AutoCloseable {
      */
     fun dismissPermissionDeniedDialog()
 
+    /**
+     * Updates the now-playing book info with the title and cover URL.
+     * Called when this metadata becomes available (e.g., after reader initialization).
+     *
+     * @param bookUuid The book's unique identifier
+     * @param bookTitle The book's title for display
+     * @param coverUrl The cover image URL (from server, not EPUB internal)
+     */
+    fun setNowPlayingInfo(bookUuid: String, bookTitle: String, coverUrl: String?)
+
     fun onBookLocationChanged(locator: LocatorState, visibleSentenceId: String?)
 
     /**

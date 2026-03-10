@@ -115,7 +115,7 @@ import com.retro99.books.ui.components.PositionConflictDialog
 fun BookDetailScreen(
     serverId: String,
     bookUuid: String,
-    onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType) -> Unit,
+    onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType, bookTitle: String) -> Unit,
     onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,

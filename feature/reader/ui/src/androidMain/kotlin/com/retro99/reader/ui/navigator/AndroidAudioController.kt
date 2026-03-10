@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.navigator
 
+import android.util.Log
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.media.MediaOverlayPlayer
@@ -7,30 +8,33 @@ import com.retro99.reader.ui.model.AudioLocatorState
 import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
-import com.retro99.reader.ui.playback.LocatorTracker
-import com.retro99.reader.ui.playback.PlaybackStateTracker
+import com.retro99.reader.ui.playback.MediaPlaybackController
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 import org.readium.r2.shared.util.Url
+
+private const val TAG = "čič123"
 
 @Scope(ReaderScope::class)
 @Scoped(binds = [AudioController::class])
 class AndroidAudioController(
     private val publication: EpubPublication,
     private val player: MediaOverlayPlayer,
-    private val playbackStateTracker: PlaybackStateTracker,
-    private val locatorTracker: LocatorTracker,
+    private val mediaPlaybackController: MediaPlaybackController,
     private val initialAudioPosition: InitialAudioPosition,
 ) : AudioController {
 
@@ -44,28 +48,102 @@ class AndroidAudioController(
      */
     private var hasStartedPlayback = false
 
-    override val currentAudioLocator: StateFlow<AudioLocatorState?>
-        get() = locatorTracker.currentLocator
+    /**
+     * Tracks whether we're reconnecting to existing playback.
+     * When true, we skip prepareChapterDuration calls since the player already has the content.
+     * Reset to false after the first chapter change event.
+     */
+    private var isReconnecting = false
 
+    /**
+     * Tracks whether the audio system (SMIL files) has been initialized.
+     * This is separate from ExoPlayer's STATE_READY - initialization completes
+     * when SMIL files are loaded and indexed, not when media is buffered.
+     *
+     * This is used to hide the loading overlay once the reader is ready to use,
+     * even before the user presses play.
+     */
+    private val _isAudioInitialized = MutableStateFlow(false)
+
+    /**
+     * Current audio locator filtered to only emit when the currently playing book
+     * matches this reader's book. This prevents highlighting from being applied
+     * to the wrong book when switching books from Android Auto.
+     */
+    override val currentAudioLocator: StateFlow<AudioLocatorState?> =
+        combine(
+            mediaPlaybackController.currentLocator,
+            mediaPlaybackController.nowPlayingBook,
+        ) { locator, nowPlaying ->
+            // Only emit locator if it's for this book (or no book info available yet)
+            if (nowPlaying == null || nowPlaying.bookUuid == publication.bookUuid) {
+                locator
+            } else {
+                // Different book is playing - don't apply highlights to this reader
+                null
+            }
+        }.stateIn(
+            scope = controllerScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null,
+        )
+
+    /**
+     * Audio playback state filtered to only show playing state when this book is playing.
+     * When a different book is playing (e.g., from Android Auto), this reader shows as stopped.
+     */
     override val audioPlaybackState: Flow<AudioPlaybackState>
-        get() = combine(
-            locatorTracker.normalizedPosition,  // Use normalized position for UI display (starts at 0:00)
-            playbackStateTracker.totalDuration,
-            playbackStateTracker.isPlaying,
-            playbackStateTracker.playbackState,
-            playbackStateTracker.isPlayerReady,
-        ) { positionMs, durationMs, isPlaying, playbackState, isPlayerReady ->
-            AudioPlaybackState(
-                currentPositionMs = positionMs,
-                totalDurationMs = durationMs,
-                isPlaying = isPlaying,
-                playbackState = playbackState,
-                isPlayerReady = isPlayerReady,
-            )
+        get() {
+            // Combine base playback state with book check
+            val baseStateFlow = combine(
+                mediaPlaybackController.normalizedPosition,
+                mediaPlaybackController.totalDuration,
+                mediaPlaybackController.isPlaying,
+                mediaPlaybackController.playbackState,
+                _isAudioInitialized,
+            ) { positionMs, durationMs, isPlaying, playbackState, isAudioInitialized ->
+                AudioPlaybackState(
+                    currentPositionMs = positionMs,
+                    totalDurationMs = durationMs,
+                    isPlaying = isPlaying,
+                    playbackState = playbackState,
+                    isPlayerReady = isAudioInitialized,
+                )
+            }
+
+            // Filter based on whether this book is currently playing
+            return combine(
+                baseStateFlow,
+                mediaPlaybackController.nowPlayingBook,
+            ) { state, nowPlaying ->
+                val isThisBookPlaying = nowPlaying == null || nowPlaying.bookUuid == publication.bookUuid
+                if (isThisBookPlaying) {
+                    state
+                } else {
+                    // Different book is playing - show this reader as stopped
+                    AudioPlaybackState(
+                        currentPositionMs = 0L,
+                        totalDurationMs = null,
+                        isPlaying = false,
+                        playbackState = PlaybackState.STOPPED,
+                        isPlayerReady = state.isPlayerReady,
+                    )
+                }
+            }
         }
 
+    /**
+     * Playback state filtered by book UUID.
+     * Shows STOPPED when a different book is playing.
+     */
     override val playbackState: Flow<PlaybackState>
-        get() = playbackStateTracker.playbackState
+        get() = combine(
+            mediaPlaybackController.playbackState,
+            mediaPlaybackController.nowPlayingBook,
+        ) { state, nowPlaying ->
+            val isThisBook = nowPlaying == null || nowPlaying.bookUuid == publication.bookUuid
+            if (isThisBook) state else PlaybackState.STOPPED
+        }
 
     override val showPermissionDeniedDialog: Flow<Boolean>
         get() = player.showPermissionDeniedDialog
@@ -74,7 +152,7 @@ class AndroidAudioController(
         get() = player.showPermissionRationale
 
     override val chapterAudioCompleted: Flow<String>
-        get() = playbackStateTracker.chapterAudioCompleted.map {
+        get() = mediaPlaybackController.chapterAudioCompleted.map {
             // Return the current chapter href when audio completes
             currentBookLocation?.href ?: ""
         }.filter { it.isNotEmpty() }
@@ -84,6 +162,12 @@ class AndroidAudioController(
      * Used for initializing media overlays at the correct chapter.
      */
     private val initialChapterHref: String? = initialAudioPosition.href
+
+    /**
+     * Initial audio position from saved reading progress.
+     * Used to restore the seek bar to the saved position.
+     */
+    private val initialPositionMs: Long? = initialAudioPosition.positionMs
 
     init {
         controllerScope.launch {
@@ -96,17 +180,27 @@ class AndroidAudioController(
             ?: publication.publication.readingOrder.firstOrNull()?.href?.toString()
         val chapterUrl = chapterHref?.let { Url(it) }
 
-        player.initialize(chapterHref)
+        // initialize() returns true if this is a reconnection to existing playback
+        isReconnecting = player.initialize(chapterHref)
 
-        if (chapterUrl != null) {
-            // Pass current position so audio is pre-buffered at the correct position
-            // This makes playback start instantly when user clicks play
-            player.prepareChapterDuration(chapterUrl, locatorTracker.currentPosition.value)
+        if (!isReconnecting && chapterUrl != null) {
+            // Only prepare chapter duration for fresh initialization
+            // During reconnection, the player already has the content loaded
+            // Use saved position from reading progress (initialPositionMs), not currentPosition (which is 0 at startup)
+            player.prepareChapterDuration(chapterUrl, initialPositionMs)
+
+            // Also set the initial position directly on the controller so the seek bar shows correctly
+            // This is needed because the service may not be started yet at this point
+            initialPositionMs?.let { mediaPlaybackController.setInitialPosition(it) }
         }
+
+        // Mark audio as initialized - this hides the loading overlay
+        // Note: This happens after SMIL loading completes, not when ExoPlayer is STATE_READY
+        _isAudioInitialized.value = true
     }
 
     override fun togglePlayback() {
-        val isCurrentlyPlaying = playbackStateTracker.isPlaying.value
+        val isCurrentlyPlaying = mediaPlaybackController.isPlaying.value
         if (isCurrentlyPlaying) {
             player.pause()
         } else {
@@ -120,15 +214,15 @@ class AndroidAudioController(
 
     override fun resetPlaybackState() {
         // Only reset if not currently playing - when playing, the audio drives the state
-        if (playbackStateTracker.isPlaying.value) return
+        if (mediaPlaybackController.isPlaying.value) return
         hasStartedPlayback = false
     }
 
     override fun setInitialAudioPosition(positionMs: Long?) {
         hasStartedPlayback = false
-        // Update the LocatorTracker so the seek bar reflects the new position
+        // Update the controller so the seek bar reflects the new position
         if (positionMs != null) {
-            locatorTracker.setInitialPosition(positionMs)
+            mediaPlaybackController.setInitialPosition(positionMs)
         }
     }
 
@@ -138,17 +232,28 @@ class AndroidAudioController(
 
     /**
      * Starts playback from the current position shown on the seek bar.
-     * The LocatorTracker maintains the position - either from saved state or user navigation.
+     * Uses saved position (initialPositionMs) if controller position is 0,
+     * which indicates no user navigation has occurred since opening the book.
      */
     private fun startPlaybackFromCurrentPosition() {
-        val currentPosition = locatorTracker.currentPosition.value
-        executePlayCommand(currentPosition)
+        val controllerPosition = mediaPlaybackController.currentPosition.value
+        Log.d(TAG, "startPlaybackFromCurrentPosition: controllerPosition=$controllerPosition, initialPositionMs=$initialPositionMs")
+        // If controller position is 0 and we have a saved position, use the saved position
+        // This handles the case where the book was opened but the user hasn't navigated
+        val positionToUse = if (controllerPosition == 0L && initialPositionMs != null && initialPositionMs > 0) {
+            Log.d(TAG, "startPlaybackFromCurrentPosition: using initialPositionMs=$initialPositionMs")
+            initialPositionMs
+        } else {
+            Log.d(TAG, "startPlaybackFromCurrentPosition: using controllerPosition=$controllerPosition")
+            controllerPosition
+        }
+        executePlayCommand(positionToUse)
         hasStartedPlayback = true
     }
 
     override fun seekToAudioPosition(timestampMs: Long) {
         // Convert normalized position (from UI) to raw ExoPlayer position
-        val rawPosition = locatorTracker.normalizedToRawPosition(timestampMs)
+        val rawPosition = mediaPlaybackController.normalizedToRawPosition(timestampMs)
         player.seekTo(rawPosition)
     }
 
@@ -177,13 +282,13 @@ class AndroidAudioController(
     override fun updatePositionForFragment(fragmentId: String) {
         // Only update position when not playing - when playing, the position
         // is driven by the audio playback itself
-        if (playbackStateTracker.isPlaying.value) return
+        if (mediaPlaybackController.isPlaying.value) return
 
         // First, find the clip WITHOUT seeking ExoPlayer yet.
         // We need to check if audio file switch is needed before seeking,
         // because seeking to a position beyond the current file's duration
         // would cause issues.
-        val matchingClip = locatorTracker.findClipForFragment(fragmentId)
+        val matchingClip = mediaPlaybackController.findClipForFragment(fragmentId)
         if (matchingClip == null) {
             return
         }
@@ -195,11 +300,11 @@ class AndroidAudioController(
         if (clipAudioHref != currentAudioHref) {
             // Audio file switch needed - update internal position state,
             // but let switchAudioFileIfNeeded handle the actual seek
-            locatorTracker.updatePositionForFragment(fragmentId, skipSeek = true)
+            mediaPlaybackController.updatePositionForFragment(fragmentId, skipSeek = true)
             player.switchAudioFileIfNeeded(clipAudioHref, positionMs)
         } else {
             // Same audio file - update position and seek normally
-            locatorTracker.updatePositionForFragment(fragmentId, skipSeek = false)
+            mediaPlaybackController.updatePositionForFragment(fragmentId, skipSeek = false)
         }
     }
 
@@ -219,6 +324,12 @@ class AndroidAudioController(
     }
 
     private fun onChapterChanged(locator: LocatorState, visibleSentenceId: String?) {
+        // Skip chapter preparation during reconnection - the player already has the content
+        if (isReconnecting) {
+            isReconnecting = false // Clear flag after first chapter event
+            return
+        }
+
         val chapterUrl = Url(locator.href) ?: return
         // Get the visible fragment ID (sentence) so we can prepare the correct audio file
         // for chapters that span multiple audio files
@@ -232,6 +343,11 @@ class AndroidAudioController(
     override fun close() {
         player.release()
         controllerScope.cancel()
+    }
+
+    override fun setNowPlayingInfo(bookUuid: String, bookTitle: String, coverUrl: String?) {
+        android.util.Log.d("bomba", "setNowPlayingInfo: bookUuid=$bookUuid, bookTitle=$bookTitle, coverUrl=$coverUrl")
+        mediaPlaybackController.updateNowPlayingBookInfo(bookUuid, bookTitle, coverUrl)
     }
 
     private fun executePlayCommand(initialPositionMs: Long?) {

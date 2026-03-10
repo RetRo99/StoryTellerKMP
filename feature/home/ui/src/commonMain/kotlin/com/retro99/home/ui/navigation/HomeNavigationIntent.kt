@@ -21,12 +21,42 @@ sealed interface HomeNavigationIntent : BaseIntent {
     data object GoBack : HomeNavigationIntent
 
     /**
-     * Navigate to reader from the continue reading bubble.
+     * Request to open a book. Will check for playback conflicts first.
+     * If another book is playing, shows a confirmation dialog.
+     * Otherwise navigates directly to the reader.
+     *
+     * @param bookTitle Optional title for display in the conflict dialog
+     */
+    data class RequestOpenReader(
+        val serverId: String,
+        val bookUuid: String,
+        val bookType: BookType,
+        val bookTitle: String? = null,
+    ) : HomeNavigationIntent
+
+    /**
+     * Navigate to reader directly without conflict check.
+     * Used internally after dialog confirmation or when there's no conflict.
      */
     data class OpenReader(
         val serverId: String,
         val bookUuid: String,
         val bookType: BookType,
     ) : HomeNavigationIntent
+
+    // Mini-player intents
+    data object ToggleMiniPlayerPlayPause : HomeNavigationIntent
+    data object StopMiniPlayerPlayback : HomeNavigationIntent
+
+    // Playback conflict dialog intents
+    /**
+     * User chose to stop current playback and open the new book.
+     */
+    data object PlaybackConflictStopAndOpen : HomeNavigationIntent
+
+    /**
+     * User dismissed the dialog without making a choice.
+     */
+    data object PlaybackConflictDismiss : HomeNavigationIntent
 }
 
