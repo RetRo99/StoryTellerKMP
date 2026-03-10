@@ -1,7 +1,7 @@
 package com.retro99.reader.domain.usecase
 
 import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
+import com.retro99.base.nowMillis
 import com.retro99.base.result.AppError
 import com.retro99.base.result.CompletableResult
 import com.retro99.reader.domain.model.PositionDomainModel
@@ -34,12 +34,13 @@ class SaveReadingProgressUseCase(
 
 /**
  * Converts a PositionDomainModel to ServerPosition.
+ * Always uses current timestamp to ensure the server accepts the position.
  */
 private fun PositionDomainModel.toServerPosition(): ServerPosition {
     return ServerPosition(
         bookUuid = bookUuid,
         serverId = serverId,
-        timestamp = timestamp,
+        timestamp = nowMillis(),
         createdAt = createdAt,
         updatedAt = updatedAt,
         locatorHref = locatorHref,

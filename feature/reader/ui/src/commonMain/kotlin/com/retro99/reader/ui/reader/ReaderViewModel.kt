@@ -296,12 +296,15 @@ class ReaderViewModel(
     }
 
     private fun initializeReader() {
+        println("bomba ReaderViewModel.initializeReader: serverId=$serverId, bookUuid=$bookUuid, bookType=$bookType")
         viewModelScope.launch {
             initializeReaderUseCase(serverId, bookUuid, bookType)
                 .onSuccess { data ->
+                    println("bomba ReaderViewModel.initializeReader: SUCCESS, localPath=${data.localEbookPath}")
                     openPublication(data)
                 }
                 .onFailure { error ->
+                    println("bomba ReaderViewModel.initializeReader: FAILED, error=${error.message}")
                     error.log(analytics, "ReaderViewModel: Failed to initialize reader")
                     updateState { it.copy(error = error) }
                 }
@@ -379,6 +382,14 @@ class ReaderViewModel(
         // Start sync coordinator (this also triggers lazy initialization of audioController)
         // Note: Initial audio position is handled via constructor injection in AudioController
         syncCoordinator.start(viewModelScope)
+
+        // Set now-playing info for mini-player display
+        val state = viewState.value
+        audioController.setNowPlayingInfo(
+            bookUuid = state.bookUuid,
+            bookTitle = state.bookTitle,
+            coverUrl = state.bookCoverUrl,
+        )
 
         audioController.audioPlaybackState
             .map { it.isPlayerReady }

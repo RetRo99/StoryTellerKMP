@@ -32,7 +32,7 @@ import org.koin.core.annotation.Provided
 class BookDetailViewModel(
     @InjectedParam private val serverId: String,
     @InjectedParam private val bookUuid: String,
-    @InjectedParam private val onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType) -> Unit,
+    @InjectedParam private val onNavigateToReader: (serverId: String, bookUuid: String, bookType: BookType, bookTitle: String) -> Unit,
     @InjectedParam private val onNavigateToSeriesDetail: (seriesUuid: String, seriesName: String) -> Unit,
     @InjectedParam private val onBack: () -> Unit,
     @Provided private val observeBookWithProgressUseCase: ObserveBookWithProgressUseCase,
@@ -164,13 +164,14 @@ class BookDetailViewModel(
     private fun resolveConflictWithLocal() {
         viewModelScope.launch {
             val pendingBookType = viewState.value.pendingOpenBookType
+            val bookTitle = viewState.value.book?.title ?: ""
             updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
             resolvePositionConflictUseCase.useLocal(serverId, bookUuid)
                 .onSuccess {
                     // Navigate to reader if user was trying to open a book
                     pendingBookType?.let { bookType ->
                         updateState { it.copy(pendingOpenBookType = null) }
-                        onNavigateToReader(serverId, bookUuid, bookType)
+                        onNavigateToReader(serverId, bookUuid, bookType, bookTitle)
                     }
                 }
                 .onFailure { error ->
@@ -184,13 +185,14 @@ class BookDetailViewModel(
     private fun resolveConflictWithRemote() {
         viewModelScope.launch {
             val pendingBookType = viewState.value.pendingOpenBookType
+            val bookTitle = viewState.value.book?.title ?: ""
             updateState { it.copy(isResolvingConflict = true, conflictResolutionError = null) }
             resolvePositionConflictUseCase.useRemote(serverId, bookUuid)
                 .onSuccess {
                     // Navigate to reader if user was trying to open a book
                     pendingBookType?.let { bookType ->
                         updateState { it.copy(pendingOpenBookType = null) }
-                        onNavigateToReader(serverId, bookUuid, bookType)
+                        onNavigateToReader(serverId, bookUuid, bookType, bookTitle)
                     }
                 }
                 .onFailure { error ->
@@ -244,7 +246,8 @@ class BookDetailViewModel(
             if (currentState.progressInfo?.hasConflict == true) {
                 updateState { it.copy(pendingOpenBookType = bookType) }
             } else {
-                onNavigateToReader(serverId, bookUuid, bookType)
+                val bookTitle = currentState.book?.title ?: ""
+                onNavigateToReader(serverId, bookUuid, bookType, bookTitle)
             }
         }
         // If not cached, user should click download first

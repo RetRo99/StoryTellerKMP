@@ -39,7 +39,6 @@ class ReaderSyncCoordinator(
         if (bookToAudioJob != null || audioToBookJob != null) return
 
         bookToAudioJob = bookController.currentLocator
-            .drop(1)
             .onEach { locator ->
                 val visibleSentenceId = bookController.getVisibleSentenceId()
                 audioController.onBookLocationChanged(locator, visibleSentenceId)

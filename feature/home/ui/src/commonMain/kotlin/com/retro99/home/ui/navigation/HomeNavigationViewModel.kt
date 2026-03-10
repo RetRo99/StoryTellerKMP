@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.books.domain.model.BookType
 import com.retro99.home.ui.deeplink.DeepLinkDestination
 import com.retro99.home.ui.deeplink.DeepLinkHandler
 import com.retro99.preferences.api.Preferences
@@ -11,10 +12,12 @@ import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
+import com.retro99.reader.ui.playback.NowPlayingProvider
 import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -46,6 +49,7 @@ class HomeNavigationViewModel(
     @Provided private val userRegistry: UserRegistry,
     @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
     @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
+    @Provided private val nowPlayingProvider: NowPlayingProvider,
 ) : BaseViewModel<HomeUiState, HomeNavigationIntent>(
     HomeUiState(),
 ) {
@@ -82,6 +86,7 @@ class HomeNavigationViewModel(
         loadCurrentlyReading()
         loadBubblePosition()
         checkOpenLastBookOnLaunch()
+        observeNowPlaying()
     }
 
     /**
@@ -154,6 +159,53 @@ class HomeNavigationViewModel(
         updateState { it.copy(bubblePosition = position) }
     }
 
+    /**
+     * Observes now-playing state from the playback system.
+     * Updates the UI state for the mini-player display.
+     * Also navigates to the reader when a different book starts playing
+     * (e.g., when user selects a book from Android Auto).
+     */
+    private fun observeNowPlaying() {
+        combine(
+            nowPlayingProvider.nowPlayingInfo,
+            nowPlayingProvider.isPlaying,
+        ) { info, isPlaying ->
+            info to isPlaying
+        }
+            .onEach { (info, isPlaying) ->
+                val previousInfo = viewState.value.nowPlayingInfo
+                android.util.Log.d(
+                    "bomba",
+                    "observeNowPlaying: info=${info?.bookTitle}, isPlaying=$isPlaying, " +
+                        "prevBook=${previousInfo?.bookUuid}, newBook=${info?.bookUuid}"
+                )
+
+                // Check if a different book was selected (e.g., from Android Auto)
+                // Navigate to that book's reader to keep phone in sync
+                // Note: We check BEFORE updating state, and don't require isPlaying
+                // because the book change and play state come in separate emissions
+                val bookChanged = info != null && previousInfo?.bookUuid != info.bookUuid
+
+                updateState { it.copy(nowPlayingInfo = info, isAudioPlaying = isPlaying) }
+
+                if (bookChanged) {
+                    android.util.Log.d(
+                        "bomba",
+                        "observeNowPlaying: NAVIGATING to reader for ${info?.bookTitle}"
+                    )
+                    emitNavigationEvent(
+                        HomeNavigationEvent.NavigateToReaderReplacing(
+                            serverId = info!!.serverId,
+                            bookUuid = info.bookUuid,
+                            bookType = info.bookType,
+                            tab = HomeTab.Books,
+                        )
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
     private fun observeDeepLinks(deepLinkHandler: DeepLinkHandler) {
         deepLinkHandler.navigationEvents
             .onEach { destination ->
@@ -195,18 +247,92 @@ class HomeNavigationViewModel(
             HomeNavigationIntent.GoBack -> {
                 emitNavigationEvent(HomeNavigationEvent.GoBack)
             }
+
+            // Reader navigation with conflict check
+            is HomeNavigationIntent.RequestOpenReader -> {
+                handleRequestOpenReader(intent)
+            }
             is HomeNavigationIntent.OpenReader -> {
-                emitNavigationEvent(
-                    HomeNavigationEvent.NavigateTo(
-                        HomeDestination.Reader(
-                            serverId = intent.serverId,
-                            bookUuid = intent.bookUuid,
-                            bookType = intent.bookType,
-                        )
+                navigateToReader(intent.serverId, intent.bookUuid, intent.bookType)
+            }
+
+            // Mini-player intents
+            HomeNavigationIntent.ToggleMiniPlayerPlayPause -> {
+                nowPlayingProvider.togglePlayPause()
+            }
+            HomeNavigationIntent.StopMiniPlayerPlayback -> {
+                nowPlayingProvider.stop()
+            }
+
+            // Playback conflict dialog intents
+            HomeNavigationIntent.PlaybackConflictStopAndOpen -> {
+                handleStopAndOpenNewBook()
+            }
+            HomeNavigationIntent.PlaybackConflictDismiss -> {
+                dismissPlaybackConflictDialog()
+            }
+        }
+    }
+
+    /**
+     * Handles the request to open a reader.
+     * Checks if there's a playback conflict and shows dialog if needed.
+     */
+    private fun handleRequestOpenReader(intent: HomeNavigationIntent.RequestOpenReader) {
+        val currentlyPlaying = nowPlayingProvider.nowPlayingInfo.value
+
+        // Check if there's a different book currently playing
+        if (currentlyPlaying != null && currentlyPlaying.bookUuid != intent.bookUuid) {
+            // Show conflict dialog
+            updateState {
+                it.copy(
+                    playbackConflictDialog = PlaybackConflictDialogState(
+                        currentlyPlayingTitle = currentlyPlaying.bookTitle,
+                        targetBookTitle = intent.bookTitle,
+                        targetServerId = intent.serverId,
+                        targetBookUuid = intent.bookUuid,
+                        targetBookType = intent.bookType,
                     )
                 )
             }
+        } else {
+            // No conflict, navigate directly
+            navigateToReader(intent.serverId, intent.bookUuid, intent.bookType)
         }
+    }
+
+    /**
+     * Stops current playback and opens the new book.
+     */
+    private fun handleStopAndOpenNewBook() {
+        val dialogState = viewState.value.playbackConflictDialog ?: return
+
+        // Stop current playback
+        nowPlayingProvider.stop()
+
+        // Dismiss dialog and navigate
+        dismissPlaybackConflictDialog()
+        navigateToReader(
+            dialogState.targetServerId,
+            dialogState.targetBookUuid,
+            dialogState.targetBookType,
+        )
+    }
+
+    private fun dismissPlaybackConflictDialog() {
+        updateState { it.copy(playbackConflictDialog = null) }
+    }
+
+    private fun navigateToReader(serverId: String, bookUuid: String, bookType: BookType) {
+        emitNavigationEvent(
+            HomeNavigationEvent.NavigateTo(
+                HomeDestination.Reader(
+                    serverId = serverId,
+                    bookUuid = bookUuid,
+                    bookType = bookType,
+                )
+            )
+        )
     }
 
     private fun emitNavigationEvent(event: HomeNavigationEvent) {
