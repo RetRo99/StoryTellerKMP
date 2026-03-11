@@ -29,10 +29,11 @@ import kotlin.coroutines.coroutineContext
  *                         to detect double-taps. If false, taps fire immediately.
  * @param doubleTapTimeoutMs Timeout in milliseconds to wait for a second tap before treating as single tap.
  *                           Only used when detectDoubleTaps is true.
+ * @param tapNavigationEnabled If false, left/right taps are disabled (middle tap still works)
  * @param onZoomChange Callback during zoom gesture with relative scale (1.0 = no change)
  * @param onZoomEnd Callback when zoom gesture ends with final relative scale
- * @param onLeftTap Callback when user taps left third of screen
- * @param onRightTap Callback when user taps right third of screen
+ * @param onLeftTap Callback when user taps left third of screen (only called if tapNavigationEnabled)
+ * @param onRightTap Callback when user taps right third of screen (only called if tapNavigationEnabled)
  * @param onMiddleTap Callback when user taps middle third of screen
  * @param onDoubleTap Callback when user double-taps (only called when detectDoubleTaps is true)
  */
@@ -40,13 +41,14 @@ internal fun Modifier.readerGestures(
     containerSize: IntSize,
     detectDoubleTaps: Boolean = false,
     doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
+    tapNavigationEnabled: Boolean = true,
     onZoomChange: (scale: Double) -> Unit,
     onZoomEnd: (finalScale: Double) -> Unit,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onMiddleTap: () -> Unit,
     onDoubleTap: () -> Unit = {},
-): Modifier = this.pointerInput(containerSize, detectDoubleTaps, doubleTapTimeoutMs) {
+): Modifier = this.pointerInput(containerSize, detectDoubleTaps, doubleTapTimeoutMs, tapNavigationEnabled) {
     val touchSlop = viewConfiguration.touchSlop
     var lastTapTimeMs = 0L
     var pendingTapJob: Job? = null
@@ -107,10 +109,16 @@ internal fun Modifier.readerGestures(
             val rightThird = containerSize.width * 2f / 3f
             val currentTimeMs = nowMillis()
 
-            val tapAction: () -> Unit = when {
-                tapX < leftThird -> onLeftTap
-                tapX > rightThird -> onRightTap
-                else -> onMiddleTap
+            // Determine tap action based on region and whether tap navigation is enabled
+            val tapAction: (() -> Unit)? = when {
+                tapX < leftThird -> if (tapNavigationEnabled) onLeftTap else null
+                tapX > rightThird -> if (tapNavigationEnabled) onRightTap else null
+                else -> onMiddleTap // Middle tap always works (toggles controls)
+            }
+
+            // If no action (tap navigation disabled for left/right), do nothing
+            if (tapAction == null) {
+                return@awaitEachGesture
             }
 
             if (!detectDoubleTaps) {

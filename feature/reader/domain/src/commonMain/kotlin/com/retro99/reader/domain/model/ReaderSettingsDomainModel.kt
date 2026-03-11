@@ -45,9 +45,16 @@ data class ReaderSettingsDomainModel(
     // Whether volume buttons are used for page navigation (only applies to ebooks, not read-aloud)
     val volumeButtonsEnabled: Boolean = false,
     // Action for volume up button
-    val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
+    val volumeUpAction: NavigationAction = NavigationAction.NEXT_PAGE,
     // Action for volume down button
-    val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
+    val volumeDownAction: NavigationAction = NavigationAction.PREVIOUS_PAGE,
+    // Tap navigation settings
+    // Whether tap navigation is enabled (tap left/right sides of screen to turn pages)
+    val tapNavigationEnabled: Boolean = true,
+    // Action for left tap (default: previous page)
+    val leftTapAction: NavigationAction = NavigationAction.PREVIOUS_PAGE,
+    // Action for right tap (default: next page)
+    val rightTapAction: NavigationAction = NavigationAction.NEXT_PAGE,
     // Double-tap timeout in milliseconds for detecting double-taps on sentences (ReadAloud) and page navigation
     // Lower values require faster taps, higher values allow more time between taps but delay single-tap actions
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
@@ -140,11 +147,12 @@ enum class ProgressBarPosition {
 }
 
 /**
- * Actions that can be assigned to volume buttons for page navigation.
- * This is primarily used for Onyx Boox e-readers where volume buttons
- * can be configured as page turn buttons.
+ * Actions that can be assigned to navigation controls (volume buttons, tap zones).
+ * Used for:
+ * - Volume buttons on Onyx Boox e-readers for page navigation
+ * - Left/right screen tap zones for page navigation
  */
-enum class VolumeButtonAction {
+enum class NavigationAction {
     /** Navigate to the next page */
     NEXT_PAGE,
 

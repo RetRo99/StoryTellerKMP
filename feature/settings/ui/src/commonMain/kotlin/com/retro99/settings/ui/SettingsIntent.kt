@@ -5,7 +5,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
-import com.retro99.reader.domain.model.VolumeButtonAction
+import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
@@ -51,8 +51,13 @@ sealed interface SettingsIntent : BaseIntent {
 
     // Volume button navigation intents
     data class OnVolumeButtonsEnabledChanged(val enabled: Boolean) : SettingsIntent
-    data class OnVolumeUpActionChanged(val action: VolumeButtonAction) : SettingsIntent
-    data class OnVolumeDownActionChanged(val action: VolumeButtonAction) : SettingsIntent
+    data class OnVolumeUpActionChanged(val action: NavigationAction) : SettingsIntent
+    data class OnVolumeDownActionChanged(val action: NavigationAction) : SettingsIntent
+
+    // Tap navigation intents
+    data class OnTapNavigationEnabledChanged(val enabled: Boolean) : SettingsIntent
+    data class OnLeftTapActionChanged(val action: NavigationAction) : SettingsIntent
+    data class OnRightTapActionChanged(val action: NavigationAction) : SettingsIntent
 
     // Double-tap timeout intent
     data class OnDoubleTapTimeoutChanged(val timeoutMs: Int) : SettingsIntent

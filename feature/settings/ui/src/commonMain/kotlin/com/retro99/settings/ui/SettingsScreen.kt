@@ -66,7 +66,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
-import com.retro99.reader.domain.model.VolumeButtonAction
+import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
@@ -131,8 +131,12 @@ import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_readaloud_description
 import resources.translations.settings_section_typography
 import resources.translations.settings_section_typography_description
-import resources.translations.settings_volume_action_next_page
-import resources.translations.settings_volume_action_previous_page
+import resources.translations.settings_tap_navigation_enabled
+import resources.translations.settings_tap_navigation_enabled_description
+import resources.translations.settings_left_tap_action
+import resources.translations.settings_right_tap_action
+import resources.translations.settings_navigation_action_next_page
+import resources.translations.settings_navigation_action_previous_page
 import resources.translations.settings_volume_buttons_enabled
 import resources.translations.settings_volume_buttons_enabled_description
 import resources.translations.settings_volume_down_action
@@ -374,7 +378,7 @@ private fun SettingsScreenContent(
             )
         }
 
-        // Navigation Section - Volume Button Settings
+        // Navigation Section - Tap and Volume Button Settings
         ExpandableSettingsSection(
             title = stringResource(StringRes.settings_section_navigation),
             description = stringResource(StringRes.settings_section_navigation_description),
@@ -383,6 +387,34 @@ private fun SettingsScreenContent(
             scrollState = scrollState,
             coroutineScope = coroutineScope,
         ) {
+            // Tap Navigation Settings
+            TapNavigationEnabledSwitch(
+                isEnabled = viewState.tapNavigationEnabled,
+                onToggle = { intentDispatcher(SettingsIntent.OnTapNavigationEnabledChanged(it)) },
+            )
+
+            // Only show action selectors when tap navigation is enabled
+            if (viewState.tapNavigationEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TapActionSelector(
+                    title = stringResource(StringRes.settings_left_tap_action),
+                    selectedAction = viewState.leftTapAction,
+                    onActionSelected = { intentDispatcher(SettingsIntent.OnLeftTapActionChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TapActionSelector(
+                    title = stringResource(StringRes.settings_right_tap_action),
+                    selectedAction = viewState.rightTapAction,
+                    onActionSelected = { intentDispatcher(SettingsIntent.OnRightTapActionChanged(it)) },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Volume Button Navigation Settings
             VolumeButtonsEnabledSwitch(
                 isEnabled = viewState.volumeButtonsEnabled,
                 onToggle = { intentDispatcher(SettingsIntent.OnVolumeButtonsEnabledChanged(it)) },
@@ -1385,6 +1417,78 @@ private fun ShowReadingTimeSwitch(
 }
 
 /**
+ * Switch to enable/disable tap navigation.
+ * When enabled, tapping the left or right side of the screen turns pages.
+ */
+@Composable
+private fun TapNavigationEnabledSwitch(
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_tap_navigation_enabled),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onToggle,
+            )
+        }
+        Text(
+            text = stringResource(StringRes.settings_tap_navigation_enabled_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Selector for tap action.
+ * Options:
+ * - Next Page: Navigate to the next page
+ * - Previous Page: Navigate to the previous page
+ */
+@Composable
+private fun TapActionSelector(
+    title: String,
+    selectedAction: NavigationAction,
+    onActionSelected: (NavigationAction) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            NavigationAction.entries.forEachIndexed { index, action ->
+                SegmentedButton(
+                    selected = action == selectedAction,
+                    onClick = { onActionSelected(action) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = NavigationAction.entries.size,
+                    ),
+                ) {
+                    Text(
+                        text = when (action) {
+                            NavigationAction.NEXT_PAGE -> stringResource(StringRes.settings_navigation_action_next_page)
+                            NavigationAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_navigation_action_previous_page)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
  * Switch to enable/disable volume button navigation.
  * When enabled, volume buttons can be used to turn pages in ebooks.
  * Note: This only applies to ebooks, not read-aloud mode.
@@ -1426,8 +1530,8 @@ private fun VolumeButtonsEnabledSwitch(
 @Composable
 private fun VolumeButtonActionSelector(
     title: String,
-    selectedAction: VolumeButtonAction,
-    onActionSelected: (VolumeButtonAction) -> Unit,
+    selectedAction: NavigationAction,
+    onActionSelected: (NavigationAction) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -1436,19 +1540,19 @@ private fun VolumeButtonActionSelector(
         )
         Spacer(modifier = Modifier.height(8.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            VolumeButtonAction.entries.forEachIndexed { index, action ->
+            NavigationAction.entries.forEachIndexed { index, action ->
                 SegmentedButton(
                     selected = action == selectedAction,
                     onClick = { onActionSelected(action) },
                     shape = SegmentedButtonDefaults.itemShape(
                         index = index,
-                        count = VolumeButtonAction.entries.size,
+                        count = NavigationAction.entries.size,
                     ),
                 ) {
                     Text(
                         text = when (action) {
-                            VolumeButtonAction.NEXT_PAGE -> stringResource(StringRes.settings_volume_action_next_page)
-                            VolumeButtonAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_volume_action_previous_page)
+                            NavigationAction.NEXT_PAGE -> stringResource(StringRes.settings_navigation_action_next_page)
+                            NavigationAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_navigation_action_previous_page)
                         },
                     )
                 }

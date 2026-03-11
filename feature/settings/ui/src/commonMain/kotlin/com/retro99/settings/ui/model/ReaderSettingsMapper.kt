@@ -28,6 +28,9 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    tapNavigationEnabled = tapNavigationEnabled,
+    leftTapAction = leftTapAction,
+    rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
 )
@@ -56,6 +59,9 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    tapNavigationEnabled = tapNavigationEnabled,
+    leftTapAction = leftTapAction,
+    rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
 )
