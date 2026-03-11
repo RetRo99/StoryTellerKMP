@@ -123,13 +123,13 @@ interface EpubReaderBridge {
     fun setOnPositionChangedCallback(callback: ((PositionLocator) -> Unit)?)
 
     /**
-     * Sets a callback to be invoked when the user double-taps on a sentence element.
-     * Used to start audio playback from a specific sentence in ReadAloud books.
+     * Sets a callback to be invoked when the user taps on a sentence element.
+     * Double-tap detection is handled natively in Kotlin for consistent timing control.
      *
-     * @param callback The callback with the fragment ID of the double-tapped element,
+     * @param callback The callback with the fragment ID of the tapped element,
      *                 or null to clear the callback
      */
-    fun setOnSentenceDoubleTapCallback(callback: ((String) -> Unit)?)
+    fun setOnSentenceTapCallback(callback: ((String) -> Unit)?)
 
     // Media playback methods for ReadAloud books
 

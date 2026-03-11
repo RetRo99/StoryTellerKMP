@@ -1,5 +1,7 @@
 package com.retro99.reader.ui.navigator
 
+import co.touchlab.kermit.Logger
+import com.retro99.base.nowMillis
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
@@ -21,6 +23,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 import kotlin.coroutines.resume
+
+private val logger = Logger.withTag("IosBookController")
 
 /**
  * iOS implementation of [BookController].
@@ -62,11 +66,21 @@ class IosBookController(
      */
     private val chapterWordCountCache = mutableMapOf<String, Int>()
 
+    /**
+     * Timestamp of the last tap event from JavaScript, used for native double-tap detection.
+     */
+    private var lastTapTimeMs: Long = 0L
+
+    /**
+     * Fragment ID from the last tap event, used for native double-tap detection.
+     */
+    private var lastTapFragmentId: String? = null
+
     init {
         setupCallbacks()
-        // Only inject double-tap detection script for ReadAloud books
+        // Only inject tap detection script for ReadAloud books
         if (bridge.hasMediaOverlays()) {
-            injectDoubleTapDetectionScript()
+            injectTapDetectionScript()
         }
     }
 
@@ -94,8 +108,29 @@ class IosBookController(
             }
         }
 
-        // Set up callback for double-tap events from JavaScript
-        bridge.setOnSentenceDoubleTapCallback { fragmentId ->
+        // Set up callback for tap events from JavaScript
+        // Double-tap detection is handled natively for consistent timing control
+        bridge.setOnSentenceTapCallback { fragmentId ->
+            onSentenceTap(fragmentId)
+        }
+    }
+
+    /**
+     * Called from JavaScript when a sentence element is tapped.
+     * We handle double-tap detection natively for consistent timing control.
+     */
+    private fun onSentenceTap(fragmentId: String) {
+        val currentTimeMs = nowMillis()
+        val timeSinceLastTap = currentTimeMs - lastTapTimeMs
+
+        logger.d { "Sentence tap: fragmentId='$fragmentId', timeSinceLastTap=${timeSinceLastTap}ms" }
+
+        if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS && fragmentId.isNotEmpty()) {
+            // This is a double-tap on a sentence element
+            logger.d { "Double-tap detected on sentence: $fragmentId" }
+            lastTapTimeMs = 0L
+            lastTapFragmentId = null
+
             val currentHref = _currentLocator.replayCache.firstOrNull()?.href
             controllerScope.launch {
                 _sentenceDoubleTapEvents.emit(
@@ -105,6 +140,10 @@ class IosBookController(
                     )
                 )
             }
+        } else {
+            // First tap - record time and fragment ID
+            lastTapTimeMs = currentTimeMs
+            lastTapFragmentId = fragmentId
         }
     }
 
@@ -161,16 +200,17 @@ class IosBookController(
     }
 
     /**
-     * Injects the double-tap detection JavaScript into the navigator's WebView.
+     * Injects the tap detection JavaScript into the navigator's WebView.
+     * Native code handles double-tap detection timing for consistent behavior.
      *
      * Uses a small delay to ensure the WebView content is loaded.
      * The script has built-in protection against multiple injections.
      */
-    private fun injectDoubleTapDetectionScript() {
+    private fun injectTapDetectionScript() {
         controllerScope.launch {
             // Small delay to ensure WebView content is loaded
             delay(SCRIPT_INJECTION_DELAY_MS)
-            val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
+            val script = DoubleTapDetector.getTapDetectionScript("SentenceTap")
             bridge.evaluateJavaScript(script) { _ -> }
         }
     }
@@ -297,19 +337,19 @@ class IosBookController(
 
     override fun close() {
         pendingPageTurnJob?.cancel()
-        // Note: No need to call getRemoveDoubleTapDetectorScript() here.
+        // Note: No need to call getRemoveTapDetectorScript() here.
         // The WebView and its JavaScript context will be destroyed when the
         // navigator is closed, so the event listener will be cleaned up automatically.
         controllerScope.cancel()
         bridge.setOnPositionChangedCallback(null)
-        bridge.setOnSentenceDoubleTapCallback(null)
+        bridge.setOnSentenceTapCallback(null)
     }
 
     private companion object {
         /** Minimum delay before page turn to avoid jarring transitions */
         private const val MIN_PAGE_TURN_DELAY_MS = 200L
 
-        /** Delay before injecting double-tap detection script to ensure WebView is ready */
+        /** Delay before injecting tap detection script to ensure WebView is ready */
         private const val SCRIPT_INJECTION_DELAY_MS = 500L
     }
 }

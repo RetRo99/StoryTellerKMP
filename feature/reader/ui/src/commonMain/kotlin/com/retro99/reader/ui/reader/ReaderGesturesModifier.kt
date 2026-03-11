@@ -8,15 +8,16 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.IntSize
+import co.touchlab.kermit.Logger
 import com.retro99.base.nowMillis
+import com.retro99.reader.ui.navigator.DOUBLE_TAP_TIMEOUT_MS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.coroutines.coroutineContext
 
-/** Timeout in milliseconds to wait for a second tap before treating as single tap */
-private const val DOUBLE_TAP_TIMEOUT_MS = 300L
+private val logger = Logger.withTag("testingtaps")
 
 /**
  * Modifier that handles common reader gestures:
@@ -24,26 +25,28 @@ private const val DOUBLE_TAP_TIMEOUT_MS = 300L
  * - Tap in left third of screen (e.g., previous page)
  * - Tap in right third of screen (e.g., next page)
  * - Tap in middle third of screen (e.g., toggle controls)
+ * - Double-tap detection (when detectDoubleTaps is true)
  *
  * @param containerSize The size of the container for calculating tap regions
- * @param consumeDoubleTaps If true, double-taps on left/right regions are not passed through
- *                          (tap callbacks are still fired). If false, double-taps are allowed
- *                          to pass through to underlying views (e.g., WebView for ReadAloud).
+ * @param detectDoubleTaps If true, waits DOUBLE_TAP_TIMEOUT_MS before firing single taps
+ *                         to detect double-taps. If false, taps fire immediately.
  * @param onZoomChange Callback during zoom gesture with relative scale (1.0 = no change)
  * @param onZoomEnd Callback when zoom gesture ends with final relative scale
  * @param onLeftTap Callback when user taps left third of screen
  * @param onRightTap Callback when user taps right third of screen
  * @param onMiddleTap Callback when user taps middle third of screen
+ * @param onDoubleTap Callback when user double-taps (only called when detectDoubleTaps is true)
  */
 internal fun Modifier.readerGestures(
     containerSize: IntSize,
-    consumeDoubleTaps: Boolean = true,
+    detectDoubleTaps: Boolean = false,
     onZoomChange: (scale: Double) -> Unit,
     onZoomEnd: (finalScale: Double) -> Unit,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onMiddleTap: () -> Unit,
-): Modifier = this.pointerInput(containerSize, consumeDoubleTaps) {
+    onDoubleTap: () -> Unit = {},
+): Modifier = this.pointerInput(containerSize, detectDoubleTaps) {
     val touchSlop = viewConfiguration.touchSlop
     var lastTapTimeMs = 0L
     var pendingTapJob: Job? = null
@@ -112,27 +115,36 @@ internal fun Modifier.readerGestures(
 
             val isMiddleTap = tapX >= leftThird && tapX <= rightThird
 
-            if (consumeDoubleTaps || isMiddleTap) {
+            logger.d { "Tap detected: detectDoubleTaps=$detectDoubleTaps, isMiddleTap=$isMiddleTap, tapX=$tapX" }
+
+            if (!detectDoubleTaps) {
                 // Original behavior: fire tap immediately
+                logger.d { "Firing tap immediately (detectDoubleTaps=false)" }
                 down.consume()
                 tapAction()
             } else {
-                // For ReadAloud: detect double-tap and don't fire left/right taps
+                // Double-tap detection enabled: wait before firing single taps
                 val timeSinceLastTap = currentTimeMs - lastTapTimeMs
                 val isDoubleTap = timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS
 
+                logger.d { "Double-tap check: timeSinceLastTap=${timeSinceLastTap}ms, timeout=${DOUBLE_TAP_TIMEOUT_MS}ms, isDoubleTap=$isDoubleTap" }
+
                 if (isDoubleTap) {
-                    // This is a double-tap - cancel pending job and don't fire
+                    // This is a double-tap - cancel pending single tap and fire double-tap callback
+                    logger.d { "Double-tap detected! Cancelling pending job and firing onDoubleTap" }
                     pendingTapJob?.cancel()
                     pendingTapJob = null
                     lastTapTimeMs = 0L
-                    // Don't consume - let it pass through to WebView
+                    down.consume()
+                    onDoubleTap()
                 } else {
                     // Might be first tap of double-tap, schedule with delay
+                    logger.d { "First tap - scheduling single tap action with ${DOUBLE_TAP_TIMEOUT_MS}ms delay" }
                     lastTapTimeMs = currentTimeMs
                     pendingTapJob?.cancel()
                     pendingTapJob = scope.launch {
                         delay(DOUBLE_TAP_TIMEOUT_MS)
+                        logger.d { "Delay elapsed - firing single tap action now" }
                         tapAction()
                     }
                 }

@@ -1,5 +1,7 @@
 package com.retro99.reader.ui.navigator
 
+import co.touchlab.kermit.Logger
+import com.retro99.base.nowMillis
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
 import com.retro99.reader.ui.di.ReaderScope
@@ -40,6 +42,8 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.mediatype.MediaType
+
+private val logger = Logger.withTag("testingtaps")
 
 /** Decoration group name for ReadAloud text highlighting */
 private const val READALOUD_DECORATION_GROUP = "readaloud"
@@ -126,6 +130,16 @@ class AndroidBookController internal constructor() : BookController {
         _sentenceDoubleTapEvents.asSharedFlow()
 
     /**
+     * Timestamp of the last tap event from JavaScript, used for native double-tap detection.
+     */
+    private var lastTapTimeMs: Long = 0L
+
+    /**
+     * Fragment ID from the last tap event, used for native double-tap detection.
+     */
+    private var lastTapFragmentId: String? = null
+
+    /**
      * Whether this book has media overlays (ReadAloud capability).
      * Used to determine if double-tap detection should be enabled.
      */
@@ -172,9 +186,9 @@ class AndroidBookController internal constructor() : BookController {
         // Execute any pending actions that were queued before initialization
         executePendingActions(navigator)
 
-        // Only inject double-tap detection script for ReadAloud books
+        // Only inject tap detection script for ReadAloud books
         if (hasMediaOverlays) {
-            injectDoubleTapDetectionScript()
+            injectTapDetectionScript()
         }
     }
 
@@ -189,36 +203,53 @@ class AndroidBookController internal constructor() : BookController {
     }
 
     /**
-     * Injects the double-tap detection JavaScript into the navigator's WebView.
-     * This script listens for double-click events and calls back to native code.
+     * Injects the tap detection JavaScript into the navigator's WebView.
+     * This script listens for click events and calls back to native code.
+     * Native code handles double-tap detection timing.
      *
      * Uses a small delay to ensure the WebView content is loaded.
      * The script has built-in protection against multiple injections.
      */
-    private fun injectDoubleTapDetectionScript() {
+    private fun injectTapDetectionScript() {
         controllerScope.launch {
             // Small delay to ensure WebView content is loaded
             delay(SCRIPT_INJECTION_DELAY_MS)
-            val script = DoubleTapDetector.getDoubleTapDetectionScript("SentenceDoubleTap")
+            val script = DoubleTapDetector.getTapDetectionScript("SentenceTap")
             withNavigatorOrNull { it.evaluateJavascript(script) }
         }
     }
 
     /**
-     * Called from JavaScript when a sentence is double-tapped.
+     * Called from JavaScript when a sentence element is tapped.
      * This method is invoked via the JavaScript interface from a background thread.
-     * We launch a coroutine on Main dispatcher to safely access navigator state.
+     * We handle double-tap detection natively for consistent timing control.
      */
-    fun onSentenceDoubleTap(fragmentId: String) {
-        controllerScope.launch {
-            // Access navigator state on Main thread for thread safety
-            val currentHref = withNavigatorOrNull { it.currentLocator.value?.href?.toString() }
-            _sentenceDoubleTapEvents.emit(
-                SentenceDoubleTapEvent(
-                    fragmentId = fragmentId,
-                    chapterHref = currentHref,
+    fun onSentenceTap(fragmentId: String) {
+        val currentTimeMs = nowMillis()
+        val timeSinceLastTap = currentTimeMs - lastTapTimeMs
+
+        logger.d { "Sentence tap: fragmentId='$fragmentId', timeSinceLastTap=${timeSinceLastTap}ms" }
+
+        if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS && fragmentId.isNotEmpty()) {
+            // This is a double-tap on a sentence element
+            logger.d { "Double-tap detected on sentence: $fragmentId" }
+            lastTapTimeMs = 0L
+            lastTapFragmentId = null
+
+            controllerScope.launch {
+                // Access navigator state on Main thread for thread safety
+                val currentHref = withNavigatorOrNull { it.currentLocator.value.href.toString() }
+                _sentenceDoubleTapEvents.emit(
+                    SentenceDoubleTapEvent(
+                        fragmentId = fragmentId,
+                        chapterHref = currentHref,
+                    )
                 )
-            )
+            }
+        } else {
+            // First tap - record time and fragment ID
+            lastTapTimeMs = currentTimeMs
+            lastTapFragmentId = fragmentId
         }
     }
 
@@ -537,7 +568,7 @@ class AndroidBookController internal constructor() : BookController {
         /** Minimum delay before page turn to avoid jarring transitions */
         private const val MIN_PAGE_TURN_DELAY_MS = 200L
 
-        /** Delay before injecting double-tap detection script to ensure WebView is ready */
+        /** Delay before injecting tap detection script to ensure WebView is ready */
         private const val SCRIPT_INJECTION_DELAY_MS = 500L
 
         /** Delay after settings change to allow WebView re-pagination before restoring position */
