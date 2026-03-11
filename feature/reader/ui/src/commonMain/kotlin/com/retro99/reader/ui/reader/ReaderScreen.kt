@@ -312,6 +312,7 @@ private fun ReaderContent(
                     .readerGestures(
                         containerSize = containerSize,
                         detectDoubleTaps = isReadAloud,
+                        doubleTapTimeoutMs = settings.doubleTapTimeoutMs,
                         onZoomChange = { scale ->
                             isZooming = true
                             tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)

@@ -9,7 +9,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.IntSize
 import com.retro99.base.nowMillis
-import com.retro99.reader.ui.navigator.DOUBLE_TAP_TIMEOUT_MS
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_DOUBLE_TAP_TIMEOUT_MS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -25,8 +25,10 @@ import kotlin.coroutines.coroutineContext
  * - Double-tap detection (when detectDoubleTaps is true)
  *
  * @param containerSize The size of the container for calculating tap regions
- * @param detectDoubleTaps If true, waits DOUBLE_TAP_TIMEOUT_MS before firing single taps
+ * @param detectDoubleTaps If true, waits doubleTapTimeoutMs before firing single taps
  *                         to detect double-taps. If false, taps fire immediately.
+ * @param doubleTapTimeoutMs Timeout in milliseconds to wait for a second tap before treating as single tap.
+ *                           Only used when detectDoubleTaps is true.
  * @param onZoomChange Callback during zoom gesture with relative scale (1.0 = no change)
  * @param onZoomEnd Callback when zoom gesture ends with final relative scale
  * @param onLeftTap Callback when user taps left third of screen
@@ -37,13 +39,14 @@ import kotlin.coroutines.coroutineContext
 internal fun Modifier.readerGestures(
     containerSize: IntSize,
     detectDoubleTaps: Boolean = false,
+    doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
     onZoomChange: (scale: Double) -> Unit,
     onZoomEnd: (finalScale: Double) -> Unit,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onMiddleTap: () -> Unit,
     onDoubleTap: () -> Unit = {},
-): Modifier = this.pointerInput(containerSize, detectDoubleTaps) {
+): Modifier = this.pointerInput(containerSize, detectDoubleTaps, doubleTapTimeoutMs) {
     val touchSlop = viewConfiguration.touchSlop
     var lastTapTimeMs = 0L
     var pendingTapJob: Job? = null
@@ -117,7 +120,7 @@ internal fun Modifier.readerGestures(
             } else {
                 // Double-tap detection enabled: wait before firing single taps
                 val timeSinceLastTap = currentTimeMs - lastTapTimeMs
-                val isDoubleTap = timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS
+                val isDoubleTap = timeSinceLastTap < doubleTapTimeoutMs
 
                 if (isDoubleTap) {
                     // This is a double-tap - cancel pending single tap and fire double-tap callback
@@ -131,7 +134,7 @@ internal fun Modifier.readerGestures(
                     lastTapTimeMs = currentTimeMs
                     pendingTapJob?.cancel()
                     pendingTapJob = scope.launch {
-                        delay(DOUBLE_TAP_TIMEOUT_MS)
+                        delay(doubleTapTimeoutMs.toLong())
                         tapAction()
                     }
                 }

@@ -28,6 +28,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    doubleTapTimeoutMs = doubleTapTimeoutMs,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -54,6 +55,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    doubleTapTimeoutMs = doubleTapTimeoutMs,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

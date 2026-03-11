@@ -77,6 +77,9 @@ data class ReaderSettingsLocalModel(
     val volumeUpAction: String = "NEXT_PAGE",
     @SerialName("volume_down_action")
     val volumeDownAction: String = "PREVIOUS_PAGE",
+    // Double-tap timeout in milliseconds for detecting double-taps
+    @SerialName("double_tap_timeout_ms")
+    val doubleTapTimeoutMs: Int = ReaderSettingsDomainModel.DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -148,6 +151,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         } catch (e: IllegalArgumentException) {
             VolumeButtonAction.PREVIOUS_PAGE
         },
+        doubleTapTimeoutMs = doubleTapTimeoutMs,
     )
 }
 
@@ -179,5 +183,6 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         volumeButtonsEnabled = volumeButtonsEnabled,
         volumeUpAction = volumeUpAction.name,
         volumeDownAction = volumeDownAction.name,
+        doubleTapTimeoutMs = doubleTapTimeoutMs,
     )
 }

@@ -53,5 +53,8 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnVolumeButtonsEnabledChanged(val enabled: Boolean) : SettingsIntent
     data class OnVolumeUpActionChanged(val action: VolumeButtonAction) : SettingsIntent
     data class OnVolumeDownActionChanged(val action: VolumeButtonAction) : SettingsIntent
+
+    // Double-tap timeout intent
+    data class OnDoubleTapTimeoutChanged(val timeoutMs: Int) : SettingsIntent
 }
 

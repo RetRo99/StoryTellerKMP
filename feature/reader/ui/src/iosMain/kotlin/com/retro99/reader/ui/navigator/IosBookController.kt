@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.base.nowMillis
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_DOUBLE_TAP_TIMEOUT_MS
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
 import com.retro99.reader.ui.bridge.EpubReaderSettings
@@ -73,6 +74,11 @@ class IosBookController(
      */
     private var lastTapFragmentId: String? = null
 
+    /**
+     * Current double-tap timeout in milliseconds.
+     */
+    private var doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS
+
     init {
         setupCallbacks()
         // Only inject tap detection script for ReadAloud books
@@ -120,7 +126,7 @@ class IosBookController(
         val currentTimeMs = nowMillis()
         val timeSinceLastTap = currentTimeMs - lastTapTimeMs
 
-        if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS && fragmentId.isNotEmpty()) {
+        if (timeSinceLastTap < doubleTapTimeoutMs && fragmentId.isNotEmpty()) {
             // This is a double-tap on a sentence element
             lastTapTimeMs = 0L
             lastTapFragmentId = null
@@ -222,6 +228,7 @@ class IosBookController(
     }
 
     override fun setSettings(settings: ReaderSettingsUiModel) {
+        doubleTapTimeoutMs = settings.doubleTapTimeoutMs
         bridge.setSettings(settings = EpubReaderSettings.from(settings))
     }
 

@@ -187,6 +187,13 @@ class SettingsViewModel(
             ) {
                 it.copy(volumeDownAction = intent.action)
             }
+
+            is SettingsIntent.OnDoubleTapTimeoutChanged -> updateReaderSetting(
+                "double_tap_timeout_ms",
+                intent.timeoutMs.toString(),
+            ) {
+                it.copy(doubleTapTimeoutMs = intent.timeoutMs)
+            }
         }
     }
 

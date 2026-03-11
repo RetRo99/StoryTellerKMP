@@ -48,10 +48,16 @@ data class ReaderSettingsDomainModel(
     val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
     // Action for volume down button
     val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
+    // Double-tap timeout in milliseconds for detecting double-taps on sentences (ReadAloud) and page navigation
+    // Lower values require faster taps, higher values allow more time between taps but delay single-tap actions
+    val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
 ) {
     companion object {
         /** Default reading speed in words per minute (average adult reading speed) */
         const val DEFAULT_READING_SPEED_WPM = 200
+
+        /** Default double-tap timeout in milliseconds */
+        const val DEFAULT_DOUBLE_TAP_TIMEOUT_MS = 300
 
         /** Default highlight color (Yellow with 50% alpha) */
         const val DEFAULT_HIGHLIGHT_COLOR = 0x80FFEB3B.toInt()

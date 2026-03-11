@@ -267,6 +267,8 @@
     <string name="settings_highlight_style_highlight">Highlight</string>
     <string name="settings_highlight_style_highlight_underline">Both</string>
     <string name="settings_highlight_style_underline">Underline</string>
+    <string name="settings_double_tap_timeout">Double-Tap Timeout</string>
+    <string name="settings_double_tap_timeout_description">Time allowed between taps to register as a double-tap. Higher values give more time but delay single-tap actions like page turns.</string>
 
     <!-- Statistics Screen -->
     <string name="statistics_title">Reading Statistics</string>
