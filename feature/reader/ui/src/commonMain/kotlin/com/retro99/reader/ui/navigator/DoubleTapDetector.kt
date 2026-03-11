@@ -1,12 +1,6 @@
 package com.retro99.reader.ui.navigator
 
 /**
- * Timeout in milliseconds to wait for a second tap before treating as single tap.
- * Used by both native gesture detection and JavaScript tap detection.
- */
-const val DOUBLE_TAP_TIMEOUT_MS = 600L
-
-/**
  * Utility for detecting taps on sentence elements in the EPUB WebView.
  *
  * This injects JavaScript that:

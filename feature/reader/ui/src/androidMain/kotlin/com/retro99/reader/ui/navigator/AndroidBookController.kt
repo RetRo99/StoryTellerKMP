@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.navigator
 
 import com.retro99.base.nowMillis
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_DOUBLE_TAP_TIMEOUT_MS
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
 import com.retro99.reader.ui.di.ReaderScope
@@ -88,6 +89,11 @@ class AndroidBookController internal constructor() : BookController {
      * Current highlight style setting.
      */
     private var highlightStyle: ReadAloudHighlightStyle = ReadAloudHighlightStyle.HIGHLIGHT
+
+    /**
+     * Current double-tap timeout in milliseconds.
+     */
+    private var doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS
 
     /**
      * Current highlighted locator, used to refresh decoration when settings change.
@@ -225,7 +231,7 @@ class AndroidBookController internal constructor() : BookController {
         val currentTimeMs = nowMillis()
         val timeSinceLastTap = currentTimeMs - lastTapTimeMs
 
-        if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS && fragmentId.isNotEmpty()) {
+        if (timeSinceLastTap < doubleTapTimeoutMs && fragmentId.isNotEmpty()) {
             // This is a double-tap on a sentence element
             lastTapTimeMs = 0L
             lastTapFragmentId = null
@@ -343,6 +349,7 @@ class AndroidBookController internal constructor() : BookController {
         highlightColorArgb = settings.highlightColor
         underlineColorArgb = settings.underlineColor
         highlightStyle = settings.highlightStyle
+        doubleTapTimeoutMs = settings.doubleTapTimeoutMs
 
         withNavigator { nav ->
             // Save the current position before applying settings

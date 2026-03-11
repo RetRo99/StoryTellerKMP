@@ -97,6 +97,8 @@ import resources.translations.settings_highlight_style_highlight
 import resources.translations.settings_highlight_style_highlight_underline
 import resources.translations.settings_highlight_style_underline
 import resources.translations.settings_underline_color
+import resources.translations.settings_double_tap_timeout
+import resources.translations.settings_double_tap_timeout_description
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
@@ -437,6 +439,26 @@ private fun SettingsScreenContent(
                     title = stringResource(StringRes.settings_underline_color),
                     selectedColor = viewState.underlineColor,
                     onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Double-tap timeout slider
+            Column {
+                SettingsSlider(
+                    label = stringResource(StringRes.settings_double_tap_timeout),
+                    value = viewState.doubleTapTimeoutMs.toFloat(),
+                    valueRange = 200f..800f,
+                    onValueChange = {
+                        intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(it.toInt()))
+                    },
+                    valueDisplay = { "${it.toInt()}ms" },
+                )
+                Text(
+                    text = stringResource(StringRes.settings_double_tap_timeout_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

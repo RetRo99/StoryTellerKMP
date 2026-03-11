@@ -8,6 +8,7 @@ import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_DOUBLE_TAP_TIMEOUT_MS
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_READING_SPEED_WPM
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
@@ -60,6 +61,8 @@ data class ReaderSettingsUiModel(
     val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
     // Action for volume down button
     val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
+    // Double-tap timeout in milliseconds
+    val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
 )
 
 enum class ReaderThemeUi {
@@ -131,6 +134,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    doubleTapTimeoutMs = doubleTapTimeoutMs,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -160,6 +164,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    doubleTapTimeoutMs = doubleTapTimeoutMs,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {
