@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import com.retro99.base.nowMillis
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_HIGHLIGHT_COLOR
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
@@ -42,8 +41,6 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.mediatype.MediaType
-
-private val logger = Logger.withTag("testingtaps")
 
 /** Decoration group name for ReadAloud text highlighting */
 private const val READALOUD_DECORATION_GROUP = "readaloud"
@@ -228,11 +225,8 @@ class AndroidBookController internal constructor() : BookController {
         val currentTimeMs = nowMillis()
         val timeSinceLastTap = currentTimeMs - lastTapTimeMs
 
-        logger.d { "Sentence tap: fragmentId='$fragmentId', timeSinceLastTap=${timeSinceLastTap}ms" }
-
         if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS && fragmentId.isNotEmpty()) {
             // This is a double-tap on a sentence element
-            logger.d { "Double-tap detected on sentence: $fragmentId" }
             lastTapTimeMs = 0L
             lastTapFragmentId = null
 
