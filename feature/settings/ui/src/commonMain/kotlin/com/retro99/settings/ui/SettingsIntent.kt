@@ -56,5 +56,8 @@ sealed interface SettingsIntent : BaseIntent {
 
     // Double-tap timeout intent
     data class OnDoubleTapTimeoutChanged(val timeoutMs: Int) : SettingsIntent
+
+    // Audio progress bar visibility intent
+    data class OnShowAudioProgressBarChanged(val showAudioProgressBar: Boolean?) : SettingsIntent
 }
 

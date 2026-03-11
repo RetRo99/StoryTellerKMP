@@ -194,6 +194,13 @@ class SettingsViewModel(
             ) {
                 it.copy(doubleTapTimeoutMs = intent.timeoutMs)
             }
+
+            is SettingsIntent.OnShowAudioProgressBarChanged -> updateReaderSetting(
+                "show_audio_progress_bar",
+                intent.showAudioProgressBar?.toString() ?: "null",
+            ) {
+                it.copy(showAudioProgressBar = intent.showAudioProgressBar)
+            }
         }
     }
 

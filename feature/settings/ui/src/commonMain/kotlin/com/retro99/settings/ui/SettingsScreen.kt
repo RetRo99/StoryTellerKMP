@@ -99,6 +99,8 @@ import resources.translations.settings_highlight_style_underline
 import resources.translations.settings_underline_color
 import resources.translations.settings_double_tap_timeout
 import resources.translations.settings_double_tap_timeout_description
+import resources.translations.settings_audio_progress_bar
+import resources.translations.settings_audio_progress_bar_description
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
@@ -461,6 +463,14 @@ private fun SettingsScreenContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Audio progress bar visibility selector
+            AudioProgressBarModeSelector(
+                selectedMode = viewState.showAudioProgressBar,
+                onModeSelected = { intentDispatcher(SettingsIntent.OnShowAudioProgressBarChanged(it)) },
+            )
         }
     }
 }
@@ -1125,6 +1135,48 @@ private fun Boolean?.toProgressBarModeDisplayString(): String = when (this) {
     true -> stringResource(StringRes.settings_progress_bar_always)
     null -> stringResource(StringRes.settings_progress_bar_on_tap)
     false -> stringResource(StringRes.settings_progress_bar_never)
+}
+
+/**
+ * Selector for audio progress bar visibility (seek bar in ReadAloud mode).
+ * Options:
+ * - On Tap (null): Audio progress bar shows/hides with controls when tapping (default)
+ * - Never (false): Audio progress bar is never visible
+ */
+@Composable
+private fun AudioProgressBarModeSelector(
+    selectedMode: Boolean?,
+    onModeSelected: (Boolean?) -> Unit,
+) {
+    // Options: null = On Tap (default), false = Never
+    val options = listOf<Boolean?>(null, false)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(StringRes.settings_audio_progress_bar),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            text = stringResource(StringRes.settings_audio_progress_bar_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = mode == selectedMode,
+                    onClick = { onModeSelected(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = options.size,
+                    ),
+                ) {
+                    Text(text = mode.toProgressBarModeDisplayString())
+                }
+            }
+        }
+    }
 }
 
 /**

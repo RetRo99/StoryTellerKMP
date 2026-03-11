@@ -80,6 +80,9 @@ data class ReaderSettingsLocalModel(
     // Double-tap timeout in milliseconds for detecting double-taps
     @SerialName("double_tap_timeout_ms")
     val doubleTapTimeoutMs: Int = ReaderSettingsDomainModel.DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
+    // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
+    @SerialName("show_audio_progress_bar")
+    val showAudioProgressBar: Boolean? = null,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
@@ -152,6 +155,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
             VolumeButtonAction.PREVIOUS_PAGE
         },
         doubleTapTimeoutMs = doubleTapTimeoutMs,
+        showAudioProgressBar = showAudioProgressBar,
     )
 }
 
@@ -184,5 +188,6 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         volumeUpAction = volumeUpAction.name,
         volumeDownAction = volumeDownAction.name,
         doubleTapTimeoutMs = doubleTapTimeoutMs,
+        showAudioProgressBar = showAudioProgressBar,
     )
 }
