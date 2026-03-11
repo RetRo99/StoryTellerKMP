@@ -91,7 +91,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     private var publication: Publication?
     private var navigatorViewController: EPUBNavigatorViewController?
     private var onPositionChangedCallback: ((PositionLocator) -> Void)?
-    private var onSentenceDoubleTapCallback: ((String) -> Void)?
+    private var onSentenceTapCallback: ((String) -> Void)?
 
     // Cached table of contents (populated when publication is opened)
     private var tableOfContentsCache: [TocItem] = []
@@ -355,8 +355,8 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         self.onPositionChangedCallback = callback
     }
 
-    func setOnSentenceDoubleTapCallback(callback: ((String) -> Void)?) {
-        self.onSentenceDoubleTapCallback = callback
+    func setOnSentenceTapCallback(callback: ((String) -> Void)?) {
+        self.onSentenceTapCallback = callback
     }
 
     func getTableOfContents() -> [TocItem] {

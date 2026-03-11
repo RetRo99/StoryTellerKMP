@@ -3,25 +3,26 @@ package com.retro99.reader.ui.navigator
 import android.webkit.JavascriptInterface
 
 /**
- * JavaScript interface for handling double-tap events on sentence elements.
+ * JavaScript interface for handling tap events on sentence elements.
  *
  * This interface is registered with the WebView and called from JavaScript
- * when the user double-taps on a sentence element.
+ * when the user taps on a sentence element. Double-tap detection is handled
+ * natively in the controller for consistent timing control.
  *
- * @param onDoubleTap Callback invoked with the fragment ID of the double-tapped element
+ * @param onTap Callback invoked with the fragment ID of the tapped element
  */
-class DoubleTapJsInterface(
-    private val onDoubleTap: (String) -> Unit,
+class SentenceTapJsInterface(
+    private val onTap: (String) -> Unit,
 ) {
     /**
-     * Called from JavaScript when a sentence element is double-tapped.
+     * Called from JavaScript when a sentence element is tapped.
      *
-     * @param fragmentId The ID of the element that was double-tapped
-     *                   (e.g., "chapter44.xhtml-sentence50")
+     * @param fragmentId The ID of the element that was tapped
+     *                   (e.g., "chapter44.xhtml-sentence50"), or empty string if no element found
      */
     @JavascriptInterface
-    fun onDoubleTap(fragmentId: String) {
-        onDoubleTap.invoke(fragmentId)
+    fun onTap(fragmentId: String) {
+        onTap.invoke(fragmentId)
     }
 }
 

@@ -21,7 +21,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.reader.ui.navigator.AndroidBookController
 import com.retro99.reader.ui.navigator.BookController
-import com.retro99.reader.ui.navigator.DoubleTapJsInterface
+import com.retro99.reader.ui.navigator.SentenceTapJsInterface
 import com.retro99.reader.ui.navigator.toAndroidLocator
 import com.retro99.reader.ui.navigator.toEpubPreferences
 import com.retro99.reader.ui.publication.PublicationState
@@ -84,17 +84,19 @@ internal actual fun EpubReaderViewInternal(
         EpubNavigatorFactory(readiumPublication)
     }
 
-    // Create navigator configuration with JavaScript interface for double-tap detection
+    // Create navigator configuration with JavaScript interface for tap detection
+    // Native code handles double-tap detection timing for consistent behavior
     // Use custom decoration templates that respect the user's alpha choice from the color picker
     // (Readium's default templates override alpha with 0.3, ignoring the user's selection)
     val navigatorConfiguration = remember(navigatorController) {
         EpubNavigatorFragment.Configuration(
             decorationTemplates = createUserAlphaDecorationTemplates()
         ).apply {
-            // Register JavaScript interface for double-tap detection on sentences
+            // Register JavaScript interface for tap detection on sentences
+            // Double-tap detection is handled natively in AndroidBookController
             navigatorController?.let { controller ->
-                registerJavascriptInterface("SentenceDoubleTap") { _ ->
-                    DoubleTapJsInterface(controller::onSentenceDoubleTap)
+                registerJavascriptInterface("SentenceTap") { _ ->
+                    SentenceTapJsInterface(controller::onSentenceTap)
                 }
             }
         }

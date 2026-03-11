@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import co.touchlab.kermit.Logger
 import com.retro99.base.nowMillis
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
@@ -89,6 +90,8 @@ import resources.translations.reader_toc_jumped_to_chapter
 import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
 import resources.translations.settings_icon_content_description
+
+private val logger = Logger.withTag("ReaderScreen")
 
 /** Duration in milliseconds before auto-hiding the media controls */
 private const val CONTROLS_AUTO_HIDE_DELAY_MS = 5000L
@@ -308,7 +311,7 @@ private fun ReaderContent(
                     .padding(vertical = settings.marginVertical.dp)
                     .readerGestures(
                         containerSize = containerSize,
-                        consumeDoubleTaps = !isReadAloud,
+                        detectDoubleTaps = isReadAloud,
                         onZoomChange = { scale ->
                             isZooming = true
                             tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)
@@ -335,6 +338,9 @@ private fun ReaderContent(
                                 lastInteractionTime = nowMillis()
                             }
                         },
+                        // Note: Sentence double-tap for ReadAloud is handled via JavaScript
+                        // in the WebView, which reports taps to BookController for native
+                        // double-tap timing detection. See DoubleTapDetector.kt.
                     ),
             )
 
