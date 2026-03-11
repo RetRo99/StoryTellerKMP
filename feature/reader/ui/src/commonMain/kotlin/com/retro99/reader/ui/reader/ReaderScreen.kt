@@ -383,6 +383,8 @@ private fun ReaderContent(
                         currentPositionMs = currentAudioPositionMs,
                         totalDurationMs = totalDurationMs,
                         playbackSpeed = settings.playbackSpeed,
+                        showAudioProgressBar = settings.showAudioProgressBar,
+                        areControlsVisible = areControlsVisible,
                         intentDispatcher = intentDispatcher,
                         onInteraction = onControlsInteraction,
                         onSwipeDown = { areControlsVisible = false },

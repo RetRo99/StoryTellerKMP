@@ -62,6 +62,8 @@ internal fun ReadAloudControls(
     currentPositionMs: Long,
     totalDurationMs: Long?,
     playbackSpeed: Float,
+    showAudioProgressBar: Boolean?,
+    areControlsVisible: Boolean,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     onInteraction: () -> Unit = {},
     onSwipeDown: () -> Unit = {},
@@ -102,15 +104,21 @@ internal fun ReadAloudControls(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
     ) {
+        // Determine if SeekBar should be visible based on showAudioProgressBar setting
+        // null = show when controls are visible (on tap, default), false = never show
+        val isSeekBarVisible = showAudioProgressBar != false && areControlsVisible
+
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            SeekBar(
-                currentPositionMs = currentPositionMs,
-                totalDurationMs = totalDurationMs,
-                onInteraction = onInteraction,
-            ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
-            Spacer(modifier = Modifier.height(8.dp))
+            if (isSeekBarVisible) {
+                SeekBar(
+                    currentPositionMs = currentPositionMs,
+                    totalDurationMs = totalDurationMs,
+                    onInteraction = onInteraction,
+                ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             PlaybackControlsRow(isPlaying, playbackSpeed, interactingDispatcher)
         }
     }

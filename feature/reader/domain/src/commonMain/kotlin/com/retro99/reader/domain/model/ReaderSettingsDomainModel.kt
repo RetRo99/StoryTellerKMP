@@ -51,6 +51,8 @@ data class ReaderSettingsDomainModel(
     // Double-tap timeout in milliseconds for detecting double-taps on sentences (ReadAloud) and page navigation
     // Lower values require faster taps, higher values allow more time between taps but delay single-tap actions
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
+    // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
+    val showAudioProgressBar: Boolean? = null,
 ) {
     companion object {
         /** Default reading speed in words per minute (average adult reading speed) */

@@ -42,6 +42,7 @@ data class SettingsViewState(
     val volumeUpAction: VolumeButtonAction get() = readerSettings.volumeUpAction
     val volumeDownAction: VolumeButtonAction get() = readerSettings.volumeDownAction
     val doubleTapTimeoutMs: Int get() = readerSettings.doubleTapTimeoutMs
+    val showAudioProgressBar: Boolean? get() = readerSettings.showAudioProgressBar
 
     fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
 }

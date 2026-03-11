@@ -269,6 +269,8 @@
     <string name="settings_highlight_style_underline">Underline</string>
     <string name="settings_double_tap_timeout">Double-Tap Timeout</string>
     <string name="settings_double_tap_timeout_description">Time allowed between taps to register as a double-tap. Higher values give more time but delay single-tap actions like page turns.</string>
+    <string name="settings_audio_progress_bar">Audio Progress Bar</string>
+    <string name="settings_audio_progress_bar_description">Controls when to show the audio playback progress bar (seek bar with current position and duration) during ReadAloud playback.</string>
 
     <!-- Statistics Screen -->
     <string name="statistics_title">Reading Statistics</string>

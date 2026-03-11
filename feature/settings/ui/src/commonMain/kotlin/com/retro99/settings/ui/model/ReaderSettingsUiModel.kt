@@ -51,6 +51,8 @@ data class ReaderSettingsUiModel(
     val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
     // Double-tap timeout in milliseconds for detecting double-taps on sentences and page navigation
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
+    // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
+    val showAudioProgressBar: Boolean? = null,
 )
 
 enum class ReaderThemeUiModel {

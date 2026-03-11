@@ -63,6 +63,8 @@ data class ReaderSettingsUiModel(
     val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
     // Double-tap timeout in milliseconds
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
+    // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
+    val showAudioProgressBar: Boolean? = null,
 )
 
 enum class ReaderThemeUi {
@@ -135,6 +137,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
+    showAudioProgressBar = showAudioProgressBar,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
@@ -165,6 +168,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
+    showAudioProgressBar = showAudioProgressBar,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {
