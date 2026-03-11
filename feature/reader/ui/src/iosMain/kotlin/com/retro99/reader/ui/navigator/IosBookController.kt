@@ -1,6 +1,5 @@
 package com.retro99.reader.ui.navigator
 
-import co.touchlab.kermit.Logger
 import com.retro99.base.nowMillis
 import com.retro99.reader.ui.bridge.AudioLocator
 import com.retro99.reader.ui.bridge.EpubReaderBridge
@@ -23,8 +22,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Scoped
 import kotlin.coroutines.resume
-
-private val logger = Logger.withTag("IosBookController")
 
 /**
  * iOS implementation of [BookController].
@@ -123,11 +120,8 @@ class IosBookController(
         val currentTimeMs = nowMillis()
         val timeSinceLastTap = currentTimeMs - lastTapTimeMs
 
-        logger.d { "Sentence tap: fragmentId='$fragmentId', timeSinceLastTap=${timeSinceLastTap}ms" }
-
         if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS && fragmentId.isNotEmpty()) {
             // This is a double-tap on a sentence element
-            logger.d { "Double-tap detected on sentence: $fragmentId" }
             lastTapTimeMs = 0L
             lastTapFragmentId = null
 

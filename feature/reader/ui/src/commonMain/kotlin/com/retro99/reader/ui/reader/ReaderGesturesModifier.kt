@@ -8,7 +8,6 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.IntSize
-import co.touchlab.kermit.Logger
 import com.retro99.base.nowMillis
 import com.retro99.reader.ui.navigator.DOUBLE_TAP_TIMEOUT_MS
 import kotlinx.coroutines.CoroutineScope
@@ -16,8 +15,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.coroutines.coroutineContext
-
-private val logger = Logger.withTag("testingtaps")
 
 /**
  * Modifier that handles common reader gestures:
@@ -113,13 +110,8 @@ internal fun Modifier.readerGestures(
                 else -> onMiddleTap
             }
 
-            val isMiddleTap = tapX >= leftThird && tapX <= rightThird
-
-            logger.d { "Tap detected: detectDoubleTaps=$detectDoubleTaps, isMiddleTap=$isMiddleTap, tapX=$tapX" }
-
             if (!detectDoubleTaps) {
                 // Original behavior: fire tap immediately
-                logger.d { "Firing tap immediately (detectDoubleTaps=false)" }
                 down.consume()
                 tapAction()
             } else {
@@ -127,11 +119,8 @@ internal fun Modifier.readerGestures(
                 val timeSinceLastTap = currentTimeMs - lastTapTimeMs
                 val isDoubleTap = timeSinceLastTap < DOUBLE_TAP_TIMEOUT_MS
 
-                logger.d { "Double-tap check: timeSinceLastTap=${timeSinceLastTap}ms, timeout=${DOUBLE_TAP_TIMEOUT_MS}ms, isDoubleTap=$isDoubleTap" }
-
                 if (isDoubleTap) {
                     // This is a double-tap - cancel pending single tap and fire double-tap callback
-                    logger.d { "Double-tap detected! Cancelling pending job and firing onDoubleTap" }
                     pendingTapJob?.cancel()
                     pendingTapJob = null
                     lastTapTimeMs = 0L
@@ -139,12 +128,10 @@ internal fun Modifier.readerGestures(
                     onDoubleTap()
                 } else {
                     // Might be first tap of double-tap, schedule with delay
-                    logger.d { "First tap - scheduling single tap action with ${DOUBLE_TAP_TIMEOUT_MS}ms delay" }
                     lastTapTimeMs = currentTimeMs
                     pendingTapJob?.cancel()
                     pendingTapJob = scope.launch {
                         delay(DOUBLE_TAP_TIMEOUT_MS)
-                        logger.d { "Delay elapsed - firing single tap action now" }
                         tapAction()
                     }
                 }
