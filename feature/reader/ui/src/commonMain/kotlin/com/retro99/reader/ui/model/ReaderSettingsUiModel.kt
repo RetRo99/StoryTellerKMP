@@ -14,7 +14,7 @@ import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAU
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel.Companion.DEFAULT_UNDERLINE_COLOR
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
-import com.retro99.reader.domain.model.VolumeButtonAction
+import com.retro99.reader.domain.model.NavigationAction
 
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
@@ -58,9 +58,15 @@ data class ReaderSettingsUiModel(
     // Whether volume buttons are used for page navigation (only applies to ebooks, not read-aloud)
     val volumeButtonsEnabled: Boolean = false,
     // Action for volume up button
-    val volumeUpAction: VolumeButtonAction = VolumeButtonAction.NEXT_PAGE,
+    val volumeUpAction: NavigationAction = NavigationAction.NEXT_PAGE,
     // Action for volume down button
-    val volumeDownAction: VolumeButtonAction = VolumeButtonAction.PREVIOUS_PAGE,
+    val volumeDownAction: NavigationAction = NavigationAction.PREVIOUS_PAGE,
+    // Whether tap navigation is enabled (tap left/right sides of screen to turn pages)
+    val tapNavigationEnabled: Boolean = true,
+    // Action for left tap
+    val leftTapAction: NavigationAction = NavigationAction.PREVIOUS_PAGE,
+    // Action for right tap
+    val rightTapAction: NavigationAction = NavigationAction.NEXT_PAGE,
     // Double-tap timeout in milliseconds
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
     // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
@@ -136,6 +142,9 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    tapNavigationEnabled = tapNavigationEnabled,
+    leftTapAction = leftTapAction,
+    rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
 )
@@ -167,6 +176,9 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     volumeButtonsEnabled = volumeButtonsEnabled,
     volumeUpAction = volumeUpAction,
     volumeDownAction = volumeDownAction,
+    tapNavigationEnabled = tapNavigationEnabled,
+    leftTapAction = leftTapAction,
+    rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
 )

@@ -69,7 +69,7 @@ import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.ProgressBarPosition
 import com.retro99.reader.domain.model.ProgressIndicatorMode
-import com.retro99.reader.domain.model.VolumeButtonAction
+import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
 import com.retro99.reader.ui.model.PositionUiModel
@@ -313,6 +313,7 @@ private fun ReaderContent(
                         containerSize = containerSize,
                         detectDoubleTaps = isReadAloud,
                         doubleTapTimeoutMs = settings.doubleTapTimeoutMs,
+                        tapNavigationEnabled = settings.tapNavigationEnabled,
                         onZoomChange = { scale ->
                             isZooming = true
                             tempScale = (settings.fontSize * scale).coerceIn(0.5, 3.0)
@@ -328,10 +329,18 @@ private fun ReaderContent(
                             isZooming = false
                         },
                         onLeftTap = {
-                            intentDispatcher(ReaderIntent.GoToPreviousPage)
+                            // Apply configured left tap action
+                            when (settings.leftTapAction) {
+                                NavigationAction.NEXT_PAGE -> intentDispatcher(ReaderIntent.GoToNextPage)
+                                NavigationAction.PREVIOUS_PAGE -> intentDispatcher(ReaderIntent.GoToPreviousPage)
+                            }
                         },
                         onRightTap = {
-                            intentDispatcher(ReaderIntent.GoToNextPage)
+                            // Apply configured right tap action
+                            when (settings.rightTapAction) {
+                                NavigationAction.NEXT_PAGE -> intentDispatcher(ReaderIntent.GoToNextPage)
+                                NavigationAction.PREVIOUS_PAGE -> intentDispatcher(ReaderIntent.GoToPreviousPage)
+                            }
                         },
                         onMiddleTap = {
                             areControlsVisible = !areControlsVisible
@@ -765,8 +774,8 @@ private fun handlePageNavigationKeyEvent(
     if (event.type != KeyEventType.KeyDown) return false
 
     // Get configured actions, with sensible defaults
-    val upAction = settings?.volumeUpAction ?: VolumeButtonAction.NEXT_PAGE
-    val downAction = settings?.volumeDownAction ?: VolumeButtonAction.PREVIOUS_PAGE
+    val upAction = settings?.volumeUpAction ?: NavigationAction.NEXT_PAGE
+    val downAction = settings?.volumeDownAction ?: NavigationAction.PREVIOUS_PAGE
 
     return when (event.key) {
         // Page Up/Down and Direction keys always control page navigation
@@ -804,11 +813,11 @@ private fun handlePageNavigationKeyEvent(
  * Dispatches the appropriate navigation intent based on the action.
  */
 private fun dispatchNavigationAction(
-    action: VolumeButtonAction,
+    action: NavigationAction,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
     when (action) {
-        VolumeButtonAction.NEXT_PAGE -> intentDispatcher(ReaderIntent.GoToNextPage)
-        VolumeButtonAction.PREVIOUS_PAGE -> intentDispatcher(ReaderIntent.GoToPreviousPage)
+        NavigationAction.NEXT_PAGE -> intentDispatcher(ReaderIntent.GoToNextPage)
+        NavigationAction.PREVIOUS_PAGE -> intentDispatcher(ReaderIntent.GoToPreviousPage)
     }
 }

@@ -7,7 +7,7 @@ import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
-import com.retro99.reader.domain.model.VolumeButtonAction
+import com.retro99.reader.domain.model.NavigationAction
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -77,6 +77,15 @@ data class ReaderSettingsLocalModel(
     val volumeUpAction: String = "NEXT_PAGE",
     @SerialName("volume_down_action")
     val volumeDownAction: String = "PREVIOUS_PAGE",
+    // Whether tap navigation is enabled (tap left/right sides of screen to turn pages)
+    @SerialName("tap_navigation_enabled")
+    val tapNavigationEnabled: Boolean = true,
+    // Action for left tap
+    @SerialName("left_tap_action")
+    val leftTapAction: String = "PREVIOUS_PAGE",
+    // Action for right tap
+    @SerialName("right_tap_action")
+    val rightTapAction: String = "NEXT_PAGE",
     // Double-tap timeout in milliseconds for detecting double-taps
     @SerialName("double_tap_timeout_ms")
     val doubleTapTimeoutMs: Int = ReaderSettingsDomainModel.DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
@@ -145,14 +154,25 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         readingSpeedWpm = readingSpeedWpm,
         volumeButtonsEnabled = volumeButtonsEnabled,
         volumeUpAction = try {
-            VolumeButtonAction.valueOf(volumeUpAction)
+            NavigationAction.valueOf(volumeUpAction)
         } catch (e: IllegalArgumentException) {
-            VolumeButtonAction.NEXT_PAGE
+            NavigationAction.NEXT_PAGE
         },
         volumeDownAction = try {
-            VolumeButtonAction.valueOf(volumeDownAction)
+            NavigationAction.valueOf(volumeDownAction)
         } catch (e: IllegalArgumentException) {
-            VolumeButtonAction.PREVIOUS_PAGE
+            NavigationAction.PREVIOUS_PAGE
+        },
+        tapNavigationEnabled = tapNavigationEnabled,
+        leftTapAction = try {
+            NavigationAction.valueOf(leftTapAction)
+        } catch (e: IllegalArgumentException) {
+            NavigationAction.PREVIOUS_PAGE
+        },
+        rightTapAction = try {
+            NavigationAction.valueOf(rightTapAction)
+        } catch (e: IllegalArgumentException) {
+            NavigationAction.NEXT_PAGE
         },
         doubleTapTimeoutMs = doubleTapTimeoutMs,
         showAudioProgressBar = showAudioProgressBar,
@@ -187,6 +207,9 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         volumeButtonsEnabled = volumeButtonsEnabled,
         volumeUpAction = volumeUpAction.name,
         volumeDownAction = volumeDownAction.name,
+        tapNavigationEnabled = tapNavigationEnabled,
+        leftTapAction = leftTapAction.name,
+        rightTapAction = rightTapAction.name,
         doubleTapTimeoutMs = doubleTapTimeoutMs,
         showAudioProgressBar = showAudioProgressBar,
     )

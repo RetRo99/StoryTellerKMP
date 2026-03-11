@@ -188,6 +188,27 @@ class SettingsViewModel(
                 it.copy(volumeDownAction = intent.action)
             }
 
+            is SettingsIntent.OnTapNavigationEnabledChanged -> updateReaderSetting(
+                "tap_navigation_enabled",
+                intent.enabled.toString(),
+            ) {
+                it.copy(tapNavigationEnabled = intent.enabled)
+            }
+
+            is SettingsIntent.OnLeftTapActionChanged -> updateReaderSetting(
+                "left_tap_action",
+                intent.action.name,
+            ) {
+                it.copy(leftTapAction = intent.action)
+            }
+
+            is SettingsIntent.OnRightTapActionChanged -> updateReaderSetting(
+                "right_tap_action",
+                intent.action.name,
+            ) {
+                it.copy(rightTapAction = intent.action)
+            }
+
             is SettingsIntent.OnDoubleTapTimeoutChanged -> updateReaderSetting(
                 "double_tap_timeout_ms",
                 intent.timeoutMs.toString(),
