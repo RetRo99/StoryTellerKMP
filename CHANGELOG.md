@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Configurable Tap Navigation** - Enable/disable tap navigation and customize left/right tap actions (Next Page or Previous Page)
+- **Configurable Double-Tap Timeout** - Adjust double-tap detection timing (200-800ms) in Settings under Read Aloud section
+- **Audio Progress Bar Visibility Setting** - Choose when to show the audio progress bar: On Tap (with controls) or Never
+
+### Changed
+- Moved double-tap detection from JavaScript to native code for more consistent behavior across platforms
+- Renamed `VolumeButtonAction` enum to `NavigationAction` for semantic clarity (now used for both volume buttons and tap zones)
+
 ## [0.3.0] - 2026-03-10
 
 ### Added
