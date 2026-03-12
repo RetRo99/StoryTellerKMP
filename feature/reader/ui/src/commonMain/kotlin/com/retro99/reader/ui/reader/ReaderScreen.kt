@@ -279,7 +279,6 @@ private fun ReaderContent(
     }
 
     val backgroundColor = settings.theme.backgroundColor()
-
     Column(
         modifier = Modifier
             .fillMaxSize()
