@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -31,6 +32,10 @@ import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.html.HtmlDecorationTemplate
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.navigator.html.toCss
+import org.readium.r2.navigator.preferences.FontFamily
+import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.util.toUrl
+import java.io.File
 
 private const val NAVIGATOR_FRAGMENT_TAG_PREFIX = "epub_navigator_"
 
@@ -58,6 +63,10 @@ internal actual fun EpubReaderViewInternal(
     val readiumPublication = publication.publication
 
     val navigatorController = bookController as? AndroidBookController
+    val customFontsKey = publicationState.customFonts.joinToString(separator = "|") {
+        "${it.id}:${it.filePath}"
+    }
+    var appliedCustomFontsKey by remember(bookUuid) { mutableStateOf<String?>(null) }
 
     // Observe permission denied dialog state
 //    val showPermissionDeniedDialog by navigatorController?.showPermissionDeniedDialog
@@ -88,10 +97,12 @@ internal actual fun EpubReaderViewInternal(
     // Native code handles double-tap detection timing for consistent behavior
     // Use custom decoration templates that respect the user's alpha choice from the color picker
     // (Readium's default templates override alpha with 0.3, ignoring the user's selection)
-    val navigatorConfiguration = remember(navigatorController) {
+    val navigatorConfiguration = remember(navigatorController, customFontsKey) {
         EpubNavigatorFragment.Configuration(
             decorationTemplates = createUserAlphaDecorationTemplates()
         ).apply {
+            registerBundledFonts()
+            registerCustomFonts(publicationState)
             // Register JavaScript interface for tap detection on sentences
             // Double-tap detection is handled natively in AndroidBookController
             navigatorController?.let { controller ->
@@ -152,8 +163,15 @@ internal actual fun EpubReaderViewInternal(
             val fragmentManager = activity.supportFragmentManager
 
             // Only add fragment if it doesn't exist for THIS book
-            val existingFragment = fragmentManager.findFragmentByTag(navigatorFragmentTag)
+            var existingFragment = fragmentManager.findFragmentByTag(navigatorFragmentTag)
                     as? EpubNavigatorFragment
+            if (existingFragment != null && appliedCustomFontsKey != customFontsKey) {
+                navigatorController?.close()
+                fragmentManager.commitNow(allowStateLoss = true) {
+                    remove(existingFragment)
+                }
+                existingFragment = null
+            }
             if (existingFragment == null) {
                 // Use current settings and position from PublicationState
                 // This ensures the fragment is created with up-to-date values on rotation
@@ -174,6 +192,7 @@ internal actual fun EpubReaderViewInternal(
                         navigatorFragmentTag,
                     )
                 }
+                appliedCustomFontsKey = customFontsKey
             }
 
             // Create navigator controller if needed
@@ -190,6 +209,68 @@ internal actual fun EpubReaderViewInternal(
         },
     )
 }
+
+@OptIn(ExperimentalReadiumApi::class)
+private fun EpubNavigatorFragment.Configuration.registerBundledFonts() {
+    servedAssets += "reader-fonts/.*"
+    bundledReaderFonts.forEach { font ->
+        addFontFamilyDeclaration(FontFamily(font.cssFamily)) {
+            addFontFace {
+                addSource(font.assetPath, preload = true)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalReadiumApi::class)
+private fun EpubNavigatorFragment.Configuration.registerCustomFonts(
+    publicationState: PublicationState,
+) {
+    publicationState.customFonts.forEach { font ->
+        val fontUrl = File(font.filePath).toUrl(isDirectory = false)
+        addFontFamilyDeclaration(FontFamily(font.cssFamily)) {
+            addFontFace {
+                addSource(fontUrl, preload = true)
+            }
+        }
+    }
+}
+
+private data class BundledReaderFont(
+    val cssFamily: String,
+    val assetPath: String,
+)
+
+private val bundledReaderFonts = listOf(
+    BundledReaderFont(
+        cssFamily = "Droid Sans",
+        assetPath = "reader-fonts/bundled/DroidSans.ttf",
+    ),
+    BundledReaderFont(
+        cssFamily = "Atkinson Hyperlegible",
+        assetPath = "reader-fonts/bundled/AtkinsonHyperlegible-Regular.ttf",
+    ),
+    BundledReaderFont(
+        cssFamily = "Literata",
+        assetPath = "reader-fonts/bundled/Literata.ttf",
+    ),
+    BundledReaderFont(
+        cssFamily = "Merriweather",
+        assetPath = "reader-fonts/bundled/Merriweather.ttf",
+    ),
+    BundledReaderFont(
+        cssFamily = "Source Serif 4",
+        assetPath = "reader-fonts/bundled/SourceSerif4.ttf",
+    ),
+    BundledReaderFont(
+        cssFamily = "Noto Sans",
+        assetPath = "reader-fonts/bundled/NotoSans.ttf",
+    ),
+    BundledReaderFont(
+        cssFamily = "Noto Serif",
+        assetPath = "reader-fonts/bundled/NotoSerif.ttf",
+    ),
+)
 
 /**
  * Creates decoration templates that respect the user's alpha choice from the color picker.

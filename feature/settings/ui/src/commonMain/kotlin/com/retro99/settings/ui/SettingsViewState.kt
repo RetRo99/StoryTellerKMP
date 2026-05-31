@@ -13,6 +13,7 @@ import com.retro99.settings.ui.model.ReaderThemeUiModel
 data class SettingsViewState(
     val isLoading: Boolean = false,
     val readerSettings: ReaderSettingsUiModel = ReaderSettingsUiModel(),
+    val customFonts: List<FontFamilyUiModel> = emptyList(),
     val expandedSections: Set<SettingsSection> = setOf(SettingsSection.APPEARANCE),
     val isFontsExpanded: Boolean = false,
 ) {
@@ -21,6 +22,7 @@ data class SettingsViewState(
     val fontSize: Double get() = readerSettings.fontSize
     val fontFamily: FontFamilyUiModel get() = readerSettings.fontFamily
     val lineHeight: Float get() = readerSettings.lineHeight
+    val paragraphSpacing: Double get() = readerSettings.paragraphSpacing
     val marginHorizontal: Int get() = readerSettings.marginHorizontal
     val marginVertical: Int get() = readerSettings.marginVertical
     val textAlign: ReaderTextAlignUiModel get() = readerSettings.textAlign

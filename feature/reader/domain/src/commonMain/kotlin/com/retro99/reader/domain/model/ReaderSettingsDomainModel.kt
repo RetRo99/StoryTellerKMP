@@ -8,6 +8,7 @@ data class ReaderSettingsDomainModel(
     val fontFamily: String = "default",
     val theme: ReaderTheme = ReaderTheme.SYSTEM,
     val lineHeight: Float = 1.5f,
+    val paragraphSpacing: Double = 0.0,
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
     val scrollMode: Boolean? = null,

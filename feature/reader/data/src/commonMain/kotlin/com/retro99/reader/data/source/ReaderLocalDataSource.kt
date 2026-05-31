@@ -13,6 +13,7 @@ import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.RemoveUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.books.domain.model.BookType
+import com.retro99.reader.data.model.CustomReaderFontLocalModel
 import com.retro99.reader.data.model.CurrentlyReadingLocalModel
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
@@ -44,6 +45,7 @@ class ReaderLocalDataSource(
 ) : ReaderLocalSource {
 
     private val _readerSettings = MutableStateFlow(loadReaderSettings())
+    private val _customFonts = MutableStateFlow(loadCustomFonts())
 
     override suspend fun getReadingProgress(
         bookUuid: String,
@@ -70,6 +72,16 @@ class ReaderLocalDataSource(
     ): CompletableResult {
         preferences.putObject(PreferencesKey.ReaderSettings, settings)
         _readerSettings.value = settings
+        return Ok(Unit)
+    }
+
+    override fun getCustomFonts(): Flow<List<CustomReaderFontLocalModel>> {
+        return _customFonts.asStateFlow()
+    }
+
+    override suspend fun saveCustomFonts(fonts: List<CustomReaderFontLocalModel>): CompletableResult {
+        preferences.putObject(PreferencesKey.ReaderCustomFonts, fonts)
+        _customFonts.value = fonts
         return Ok(Unit)
     }
 
@@ -110,6 +122,11 @@ class ReaderLocalDataSource(
             ?: ReaderSettingsLocalModel()
 
         return settings
+    }
+
+    private fun loadCustomFonts(): List<CustomReaderFontLocalModel> {
+        return preferences.getObject<List<CustomReaderFontLocalModel>>(PreferencesKey.ReaderCustomFonts)
+            ?: emptyList()
     }
 }
 

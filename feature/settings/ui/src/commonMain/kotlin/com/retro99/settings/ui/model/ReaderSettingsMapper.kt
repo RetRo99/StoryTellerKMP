@@ -1,6 +1,7 @@
 package com.retro99.settings.ui.model
 
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
+import com.retro99.reader.domain.model.CustomReaderFontDomainModel
 import com.retro99.reader.domain.model.ReaderTextAlign
 import com.retro99.reader.domain.model.ReaderTheme
 
@@ -9,6 +10,7 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     fontFamily = fontFamily.toUiModel(),
     theme = theme.toUiModel(),
     lineHeight = lineHeight,
+    paragraphSpacing = paragraphSpacing,
     marginHorizontal = marginHorizontal,
     marginVertical = marginVertical,
     scrollMode = scrollMode,
@@ -40,6 +42,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     fontFamily = fontFamily.toDomainModel(),
     theme = theme.toDomainModel(),
     lineHeight = lineHeight,
+    paragraphSpacing = paragraphSpacing,
     marginHorizontal = marginHorizontal,
     marginVertical = marginVertical,
     scrollMode = scrollMode,
@@ -95,6 +98,25 @@ fun ReaderTextAlignUiModel.toDomainModel(): ReaderTextAlign = when (this) {
 }
 
 fun String.toUiModel(): FontFamilyUiModel =
-    FontFamilyUiModel.entries.find { it.cssValue == this } ?: FontFamilyUiModel.DEFAULT
+    toUiModel(customFonts = emptyList())
+
+fun String.toUiModel(customFonts: List<CustomReaderFontDomainModel>): FontFamilyUiModel =
+    FontFamilyUiModel.BUILT_IN.find { it.cssValue == this }
+        ?: customFonts.firstOrNull { it.cssFamily == this }?.toUiModel()
+        ?: FontFamilyUiModel(
+            id = this,
+            cssValue = this,
+            displayName = this,
+            isCustom = true,
+        )
 
 fun FontFamilyUiModel.toDomainModel(): String = cssValue
+
+fun CustomReaderFontDomainModel.toUiModel(): FontFamilyUiModel =
+    FontFamilyUiModel(
+        id = id,
+        cssValue = cssFamily,
+        displayName = displayName,
+        isCustom = true,
+        previewFilePath = filePath,
+    )

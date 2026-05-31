@@ -9,6 +9,7 @@ import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
+import io.github.vinceglb.filekit.core.PlatformFile
 
 sealed interface SettingsIntent : BaseIntent {
     // Section expansion
@@ -19,7 +20,9 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnThemeChanged(val theme: ReaderThemeUiModel) : SettingsIntent
     data class OnFontSizeChanged(val fontSize: Double) : SettingsIntent
     data class OnFontFamilyChanged(val fontFamily: FontFamilyUiModel) : SettingsIntent
+    data class OnCustomFontSelected(val file: PlatformFile) : SettingsIntent
     data class OnLineHeightChanged(val lineHeight: Float) : SettingsIntent
+    data class OnParagraphSpacingChanged(val paragraphSpacing: Double) : SettingsIntent
     data class OnMarginHorizontalChanged(val margin: Int) : SettingsIntent
     data class OnMarginVerticalChanged(val margin: Int) : SettingsIntent
     data class OnTextAlignChanged(val textAlign: ReaderTextAlignUiModel) : SettingsIntent

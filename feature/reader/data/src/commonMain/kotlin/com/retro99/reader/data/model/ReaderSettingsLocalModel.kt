@@ -21,6 +21,8 @@ data class ReaderSettingsLocalModel(
     val theme: String = "SYSTEM",
     @SerialName("line_height")
     val lineHeight: Float = 1.5f,
+    @SerialName("paragraph_spacing")
+    val paragraphSpacing: Double = 0.0,
     @SerialName("margin_horizontal")
     val marginHorizontal: Int = 16,
     @SerialName("margin_vertical")
@@ -104,6 +106,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
             ReaderTheme.SYSTEM
         },
         lineHeight = lineHeight,
+        paragraphSpacing = paragraphSpacing,
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
         scrollMode = scrollMode,
@@ -185,6 +188,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         fontFamily = fontFamily,
         theme = theme.name,
         lineHeight = lineHeight,
+        paragraphSpacing = paragraphSpacing,
         marginHorizontal = marginHorizontal,
         marginVertical = marginVertical,
         scrollMode = scrollMode,

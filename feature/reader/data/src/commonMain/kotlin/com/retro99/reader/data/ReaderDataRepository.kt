@@ -15,6 +15,7 @@ import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.data.source.ReaderLocalSource
 import com.retro99.reader.domain.ReaderSettingsRepository
 import com.retro99.books.domain.model.BookType
+import com.retro99.reader.domain.model.CustomReaderFontDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,20 @@ internal class ReaderDataRepository(
     ): CompletableResult {
         return localSource.saveReaderSettings(settings.toLocal()).onFailure { error ->
             logError(error, "Failed to save reader settings")
+        }
+    }
+
+    override fun getCustomFonts(): Flow<List<CustomReaderFontDomainModel>> {
+        return localSource.getCustomFonts().map { fonts ->
+            fonts.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun saveCustomFonts(
+        fonts: List<CustomReaderFontDomainModel>,
+    ): CompletableResult {
+        return localSource.saveCustomFonts(fonts.map { it.toLocal() }).onFailure { error ->
+            logError(error, "Failed to save custom reader fonts")
         }
     }
 

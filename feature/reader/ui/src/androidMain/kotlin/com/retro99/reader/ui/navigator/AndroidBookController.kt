@@ -588,6 +588,7 @@ fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
         scroll = scrollMode,
         theme = theme.toReadiumTheme(),
         lineHeight = lineHeight.toDouble(),
+        paragraphSpacing = paragraphSpacing,
         pageMargins = calculatePageMargins(),
         textAlign = textAlign.toReadiumTextAlign(),
         publisherStyles = publisherStyles,

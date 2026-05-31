@@ -16,6 +16,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderInitializationData
+import com.retro99.reader.domain.usecase.GetCustomReaderFontsUseCase
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -60,6 +62,7 @@ class ReaderViewModel(
     @Provided private val initializeReaderUseCase: InitializeReaderUseCase,
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
+    @Provided private val getCustomReaderFontsUseCase: GetCustomReaderFontsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val saveReadingSessionUseCase: SaveReadingSessionUseCase,
     @Provided private val setCurrentlyReadingUseCase: SetCurrentlyReadingUseCase,
@@ -313,6 +316,7 @@ class ReaderViewModel(
 
     private suspend fun openPublication(data: ReaderInitializationData) {
         val settings = data.initialSettings.toUiModel()
+        val customFonts = getCustomReaderFontsUseCase().first()
         val bookType = data.bookType
         val (position, conflict) = data.progressResult.toUiData()
 
@@ -336,6 +340,7 @@ class ReaderViewModel(
                 publication = publication,
                 settings = settings,
                 position = position,
+                customFonts = customFonts,
             )
 
             updateState { state ->
@@ -356,6 +361,7 @@ class ReaderViewModel(
             observeReadingTimeInfo()
             observeReadingSpeedPersistence()
             observeSettingsChanges()
+            observeCustomFontChanges()
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()
@@ -376,6 +382,14 @@ class ReaderViewModel(
             )
             updateState { it.copy(error = error) }
         }
+    }
+
+    private fun observeCustomFontChanges() {
+        getCustomReaderFontsUseCase()
+            .onEach { customFonts ->
+                updatePublicationState { it.copy(customFonts = customFonts) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun initAudio() {
