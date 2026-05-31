@@ -4,6 +4,7 @@ import com.retro99.user.api.UserProfile
 
 data class AppSettingsViewState(
     val isLoggingEnabled: Boolean = false,
+    val logCrashesOnly: Boolean = false,
     val openLastBookOnLaunch: Boolean = false,
     val showLogsClearedMessage: Boolean = false,
     val showNoLogsMessage: Boolean = false,

@@ -74,6 +74,8 @@ import resources.translations.app_settings_enable_logging_description
 import resources.translations.app_settings_logout
 import resources.translations.app_settings_logout_description
 import resources.translations.app_settings_logs_cleared
+import resources.translations.app_settings_log_crashes_only
+import resources.translations.app_settings_log_crashes_only_description
 import resources.translations.app_settings_no_logs
 import resources.translations.app_settings_open_last_book
 import resources.translations.app_settings_open_last_book_description
@@ -251,6 +253,17 @@ private fun AppSettingsScreenContent(
                 },
             )
 
+            SettingsToggleItem(
+                icon = Icons.Default.Description,
+                title = stringResource(StringRes.app_settings_log_crashes_only),
+                description = stringResource(StringRes.app_settings_log_crashes_only_description),
+                isChecked = viewState.logCrashesOnly,
+                enabled = viewState.isLoggingEnabled,
+                onCheckedChange = { enabled ->
+                    intentDispatcher(AppSettingsIntent.OnLogCrashesOnlyToggled(enabled))
+                },
+            )
+
             SettingsItem(
                 icon = Icons.Default.Share,
                 title = stringResource(StringRes.app_settings_share_logs),
@@ -387,18 +400,25 @@ private fun SettingsToggleItem(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
+    val contentColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!isChecked) }
+            .clickable(enabled = enabled) { onCheckedChange(!isChecked) }
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = contentColor,
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -407,7 +427,7 @@ private fun SettingsToggleItem(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = contentColor,
             )
             Text(
                 text = description,
@@ -419,6 +439,7 @@ private fun SettingsToggleItem(
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
         )
     }
 }

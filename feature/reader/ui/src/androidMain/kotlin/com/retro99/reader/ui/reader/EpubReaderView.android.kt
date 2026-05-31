@@ -161,6 +161,9 @@ internal actual fun EpubReaderViewInternal(
         },
         update = { containerView ->
             val fragmentManager = activity.supportFragmentManager
+            if (fragmentManager.isStateSaved || activity.isFinishing || activity.isDestroyed) {
+                return@AndroidView
+            }
 
             // Only add fragment if it doesn't exist for THIS book
             var existingFragment = fragmentManager.findFragmentByTag(navigatorFragmentTag)
@@ -184,7 +187,7 @@ internal actual fun EpubReaderViewInternal(
 
                 // Use commitNow to make the transaction synchronous
                 // This ensures the fragment is immediately available after this call
-                fragmentManager.commitNow {
+                fragmentManager.commitNow(allowStateLoss = true) {
                     add(
                         containerView.id,
                         EpubNavigatorFragment::class.java,

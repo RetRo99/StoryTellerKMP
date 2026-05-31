@@ -76,7 +76,7 @@ class ReaderViewModel(
 ) {
 
     private val readerScope: Scope by lazy {
-        getKoin().createScope<ReaderScope>(bookUuid).apply {
+        getKoin().getOrCreateScope<ReaderScope>(bookUuid).apply {
             viewState.value.publicationState?.let { pubState ->
                 val initialPositionMs = pubState.position?.audioTimestampMs
                 val initialHref = pubState.position?.href

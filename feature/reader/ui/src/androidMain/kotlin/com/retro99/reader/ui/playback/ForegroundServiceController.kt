@@ -3,7 +3,6 @@ package com.retro99.reader.ui.playback
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.core.content.ContextCompat
 import com.retro99.analytics.api.Analytics
 import com.retro99.reader.ui.di.ReaderScope
 import org.koin.core.annotation.Provided
@@ -43,12 +42,12 @@ class ForegroundServiceController(
         Log.d(TAG, "ForegroundServiceController.startService() called", Exception("stack trace"))
         val intent = Intent(context, MediaPlaybackService::class.java)
         return try {
-            ContextCompat.startForegroundService(context, intent)
+            context.startService(intent)
             Log.d(TAG, "ForegroundServiceController.startService() SUCCESS")
             true
         } catch (e: Exception) {
-            // On Android 12+, ForegroundServiceStartNotAllowedException is thrown
-            // if the app isn't in a foreground-allowed state
+            // On Android 8+, background service starts are restricted. Playback is
+            // initiated from the foreground reader UI, so this should normally pass.
             Log.e(TAG, "ForegroundServiceController.startService() FAILED: ${e.message}")
             analytics.logException(e, "Failed to start foreground service")
             false
