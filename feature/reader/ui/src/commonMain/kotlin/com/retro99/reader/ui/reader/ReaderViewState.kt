@@ -38,6 +38,8 @@ data class ReaderViewState(
     val chapterReadingTimeInfo: ChapterReadingTimeInfo? = null,
     // Flag to show snackbar when ReadAloud book has no media overlays
     val showNoAudioMessage: Boolean = false,
+    // Sleep timer state for ReadAloud playback. Null means no active timer.
+    val sleepTimerRemainingMs: Long? = null,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.

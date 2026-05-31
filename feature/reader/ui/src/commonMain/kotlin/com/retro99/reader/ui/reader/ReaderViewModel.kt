@@ -116,6 +116,9 @@ class ReaderViewModel(
     /** Job for the time update coroutine, cancelled when showCurrentTime is disabled */
     private var timeUpdateJob: Job? = null
 
+    /** Job for the Read Aloud sleep timer countdown. */
+    private var sleepTimerJob: Job? = null
+
     /** Timestamp when the book was opened, used for calculating reading duration */
     private var bookOpenedTimestamp: Long = 0L
 
@@ -183,6 +186,8 @@ class ReaderViewModel(
             ReaderIntent.TogglePlayback -> togglePlayback()
             is ReaderIntent.SeekTo -> seekTo(intent.audioTimestampMs)
             is ReaderIntent.SetPlaybackSpeed -> setPlaybackSpeed(intent.speed)
+            is ReaderIntent.StartSleepTimer -> startSleepTimer(intent.durationMs)
+            ReaderIntent.CancelSleepTimer -> cancelSleepTimer()
             is ReaderIntent.SkipForward -> skipForward(intent.milliseconds)
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
             ReaderIntent.ToggleToc -> toggleToc()
@@ -521,6 +526,7 @@ class ReaderViewModel(
             if (viewState.value.isReadAloud) {
                 saveCurrentAudioPositionSync()
             }
+            cancelSleepTimer()
 
             // Track book closed event with reading duration and progress
             val currentState = viewState.value
@@ -607,6 +613,33 @@ class ReaderViewModel(
                 saveReaderSettingsUseCase(settings.copy(playbackSpeed = speed).toDomainModel())
             }
         }
+    }
+
+    private fun startSleepTimer(durationMs: Long) {
+        sleepTimerJob?.cancel()
+        updateState { it.copy(sleepTimerRemainingMs = durationMs) }
+        sleepTimerJob = viewModelScope.launch {
+            var remainingMs = durationMs
+            while (remainingMs > 0L) {
+                delay(SLEEP_TIMER_TICK_MS)
+                if (viewState.value.isPlaying) {
+                    remainingMs = (remainingMs - SLEEP_TIMER_TICK_MS).coerceAtLeast(0L)
+                    updateState { it.copy(sleepTimerRemainingMs = remainingMs) }
+                }
+            }
+            if (viewState.value.isPlaying) {
+                audioController.togglePlayback()
+                saveCurrentAudioPosition()
+            }
+            updateState { it.copy(sleepTimerRemainingMs = null) }
+            sleepTimerJob = null
+        }
+    }
+
+    private fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        updateState { it.copy(sleepTimerRemainingMs = null) }
     }
 
     private fun setHighlightColor(colorArgb: Int) {
@@ -734,5 +767,8 @@ class ReaderViewModel(
 
         /** Minimum reading duration to update "currently reading" book (1 minute) */
         private const val MINIMUM_READING_DURATION_MS = 60_000L
+
+        /** Sleep timer countdown granularity. */
+        private const val SLEEP_TIMER_TICK_MS = 1_000L
     }
 }

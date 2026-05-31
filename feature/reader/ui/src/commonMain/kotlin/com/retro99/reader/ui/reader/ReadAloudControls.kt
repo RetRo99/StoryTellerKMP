@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.TimerOff
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -62,6 +64,7 @@ internal fun ReadAloudControls(
     currentPositionMs: Long,
     totalDurationMs: Long?,
     playbackSpeed: Float,
+    sleepTimerRemainingMs: Long?,
     showAudioProgressBar: Boolean?,
     areControlsVisible: Boolean,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
@@ -119,7 +122,14 @@ internal fun ReadAloudControls(
                 ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            PlaybackControlsRow(isPlaying, playbackSpeed, interactingDispatcher)
+            PlaybackControlsRow(
+                isPlaying = isPlaying,
+                playbackSpeed = playbackSpeed,
+                currentPositionMs = currentPositionMs,
+                totalDurationMs = totalDurationMs,
+                sleepTimerRemainingMs = sleepTimerRemainingMs,
+                intentDispatcher = interactingDispatcher,
+            )
         }
     }
 }
@@ -128,6 +138,9 @@ internal fun ReadAloudControls(
 private fun PlaybackControlsRow(
     isPlaying: Boolean,
     playbackSpeed: Float,
+    currentPositionMs: Long,
+    totalDurationMs: Long?,
+    sleepTimerRemainingMs: Long?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
     Row(
@@ -154,7 +167,12 @@ private fun PlaybackControlsRow(
         IconButton(onClick = { intentDispatcher(ReaderIntent.SkipForward()) }) {
             Icon(Icons.Default.Forward10, "Skip forward", Modifier.size(32.dp))
         }
-        Spacer(modifier = Modifier.width(48.dp))
+        SleepTimerButton(
+            currentPositionMs = currentPositionMs,
+            totalDurationMs = totalDurationMs,
+            sleepTimerRemainingMs = sleepTimerRemainingMs,
+            intentDispatcher = intentDispatcher,
+        )
     }
 }
 
@@ -212,6 +230,82 @@ private fun formatDuration(durationMs: Long): String {
         "$hours:$paddedMinutes:$paddedSeconds"
     } else {
         "$minutes:$paddedSeconds"
+    }
+}
+
+@Composable
+private fun SleepTimerButton(
+    currentPositionMs: Long,
+    totalDurationMs: Long?,
+    sleepTimerRemainingMs: Long?,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val remainingToEndMs = totalDurationMs
+        ?.minus(currentPositionMs)
+        ?.takeIf { it > 0L }
+
+    TextButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = if (sleepTimerRemainingMs == null) Icons.Default.Timer else Icons.Default.TimerOff,
+            contentDescription = "Sleep timer",
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = sleepTimerRemainingMs?.let { formatTimerLabel(it) } ?: "Timer",
+            style = MaterialTheme.typography.labelLarge,
+        )
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            SleepTimerPreset.entries.forEach { preset ->
+                DropdownMenuItem(
+                    text = { Text(preset.label) },
+                    onClick = {
+                        intentDispatcher(ReaderIntent.StartSleepTimer(preset.durationMs))
+                        expanded = false
+                    },
+                )
+            }
+            if (remainingToEndMs != null) {
+                DropdownMenuItem(
+                    text = { Text("End of audio") },
+                    onClick = {
+                        intentDispatcher(ReaderIntent.StartSleepTimer(remainingToEndMs))
+                        expanded = false
+                    },
+                )
+            }
+            if (sleepTimerRemainingMs != null) {
+                DropdownMenuItem(
+                    text = { Text("Cancel timer") },
+                    onClick = {
+                        intentDispatcher(ReaderIntent.CancelSleepTimer)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+private enum class SleepTimerPreset(
+    val label: String,
+    val durationMs: Long,
+) {
+    FiveMinutes("5 minutes", 5 * 60_000L),
+    TenMinutes("10 minutes", 10 * 60_000L),
+    FifteenMinutes("15 minutes", 15 * 60_000L),
+    ThirtyMinutes("30 minutes", 30 * 60_000L),
+    SixtyMinutes("60 minutes", 60 * 60_000L),
+}
+
+private fun formatTimerLabel(durationMs: Long): String {
+    val totalMinutes = (durationMs / 60_000L).coerceAtLeast(0L)
+    val seconds = (durationMs / 1_000L) % 60L
+    return if (totalMinutes > 0L) {
+        "${totalMinutes}m"
+    } else {
+        "${seconds}s"
     }
 }
 
