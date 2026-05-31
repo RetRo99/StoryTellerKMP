@@ -47,7 +47,7 @@ class AndroidEpubMetadataExtractor(
                     )
                 }
 
-                val url = file.toUrl()
+                val url = file.toUrl(isDirectory = false)
                 val asset = assetRetriever.retrieve(url).getOrElse { error ->
                     analytics.logException(
                         Exception("Asset retrieval failed: ${error.message}"),
