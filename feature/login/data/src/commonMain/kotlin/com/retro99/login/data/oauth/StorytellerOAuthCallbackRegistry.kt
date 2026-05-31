@@ -14,10 +14,17 @@ import kotlin.coroutines.cancellation.CancellationException
 private const val CALLBACK_PREFIX = "storyteller://settings"
 private const val CALLBACK_TIMEOUT_MS = 5 * 60 * 1000L
 
+internal expect fun String.decodeUrlComponent(): String
+
 object StorytellerOAuthCallbackRegistry {
+
+    val shared = this
 
     private val mutex = Mutex()
     private var pendingToken: CompletableDeferred<AppResult<String>>? = null
+
+    val isPendingActive: Boolean
+        get() = pendingToken?.isActive == true
 
     suspend fun awaitToken(openBrowser: () -> Unit): AppResult<String> {
         val deferred = mutex.withLock {
@@ -75,49 +82,5 @@ object StorytellerOAuthCallbackRegistry {
 
     fun cancelPending(message: String): Boolean {
         return pendingToken?.complete(Err(AppError.AuthError(message))) == true
-    }
-
-    private fun String.decodeUrlComponent(): String {
-        val bytes = mutableListOf<Byte>()
-        val output = StringBuilder()
-        var index = 0
-
-        fun flushBytes() {
-            if (bytes.isNotEmpty()) {
-                output.append(bytes.toByteArray().decodeToString())
-                bytes.clear()
-            }
-        }
-
-        while (index < length) {
-            when (val char = this[index]) {
-                '%' -> {
-                    if (index + 2 < length) {
-                        val hex = substring(index + 1, index + 3).toIntOrNull(16)
-                        if (hex != null) {
-                            bytes.add(hex.toByte())
-                            index += 3
-                            continue
-                        }
-                    }
-                    flushBytes()
-                    output.append(char)
-                    index += 1
-                }
-                '+' -> {
-                    flushBytes()
-                    output.append(' ')
-                    index += 1
-                }
-                else -> {
-                    flushBytes()
-                    output.append(char)
-                    index += 1
-                }
-            }
-        }
-
-        flushBytes()
-        return output.toString()
     }
 }

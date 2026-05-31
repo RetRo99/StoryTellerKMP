@@ -33,9 +33,11 @@ class AndroidStorytellerOAuthSessionLauncher(
 
                 mainHandler.postDelayed(
                     {
-                        StorytellerOAuthCallbackRegistry.cancelPending(
-                            "OAuth sign-in was cancelled",
-                        )
+                        if (StorytellerOAuthCallbackRegistry.isPendingActive) {
+                            StorytellerOAuthCallbackRegistry.cancelPending(
+                                "OAuth sign-in was cancelled",
+                            )
+                        }
                     },
                     OAUTH_RETURN_CANCEL_DELAY_MS,
                 )
