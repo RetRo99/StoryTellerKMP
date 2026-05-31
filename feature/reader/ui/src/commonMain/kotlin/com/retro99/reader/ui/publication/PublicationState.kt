@@ -1,5 +1,6 @@
 package com.retro99.reader.ui.publication
 
+import com.retro99.reader.domain.model.CustomReaderFontDomainModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 
@@ -19,5 +20,6 @@ data class PublicationState(
     val publication: EpubPublication,
     val settings: ReaderSettingsUiModel,
     val position: PositionUiModel?,
+    val customFonts: List<CustomReaderFontDomainModel> = emptyList(),
 )
 

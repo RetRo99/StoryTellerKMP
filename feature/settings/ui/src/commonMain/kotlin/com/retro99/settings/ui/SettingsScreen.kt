@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -47,7 +48,12 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Add
@@ -70,7 +76,12 @@ import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
+import com.retro99.settings.ui.model.toPreviewFontFamily
 import com.retro99.translations.StringRes
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.settings_chapter_progress
@@ -79,8 +90,10 @@ import resources.translations.settings_chapter_progress_none
 import resources.translations.settings_chapter_progress_percentage
 import resources.translations.settings_chapter_progress_relative
 import resources.translations.settings_font_family
+import resources.translations.settings_font_family_add
 import resources.translations.settings_font_family_accessible_dfa
 import resources.translations.settings_font_family_cursive
+import resources.translations.settings_font_family_custom
 import resources.translations.settings_font_family_default
 import resources.translations.settings_font_family_fantasy
 import resources.translations.settings_font_family_ia_writer_duospace
@@ -104,6 +117,7 @@ import resources.translations.settings_audio_progress_bar_description
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
+import resources.translations.settings_paragraph_spacing
 import resources.translations.settings_progress_bar
 import resources.translations.settings_progress_bar_always
 import resources.translations.settings_progress_bar_never
@@ -117,6 +131,8 @@ import resources.translations.settings_progress_indicator_chapter
 import resources.translations.settings_progress_indicator_none
 import resources.translations.settings_publisher_styles
 import resources.translations.settings_publisher_styles_description
+import resources.translations.settings_reader_preview
+import resources.translations.settings_reader_preview_sample
 import resources.translations.settings_scroll_mode
 import resources.translations.settings_scroll_mode_auto
 import resources.translations.settings_scroll_mode_paginated
@@ -146,6 +162,7 @@ import resources.translations.settings_show_current_time_description
 import resources.translations.settings_show_reading_time
 import resources.translations.settings_show_reading_time_description
 import resources.translations.settings_show_total_progress
+import resources.translations.settings_selected
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
 import resources.translations.settings_text_align_end
@@ -183,6 +200,14 @@ private fun SettingsScreenContent(
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val fontPickerLauncher = rememberFilePickerLauncher(
+        type = PickerType.File(extensions = listOf("ttf", "otf", "woff", "woff2")),
+        mode = PickerMode.Single,
+    ) { file ->
+        file?.let {
+            intentDispatcher(SettingsIntent.OnCustomFontSelected(it))
+        }
+    }
 
     Column(
         modifier = modifier
@@ -198,6 +223,8 @@ private fun SettingsScreenContent(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        ReaderSettingsPreview(viewState = viewState)
 
         // Appearance Section - Theme & Font Size
         ExpandableSettingsSection(
@@ -227,9 +254,11 @@ private fun SettingsScreenContent(
 
             FontFamilySelector(
                 selectedFontFamily = viewState.fontFamily,
+                customFonts = viewState.customFonts,
                 onFontFamilySelected = {
                     intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
                 },
+                onAddFont = { fontPickerLauncher.launch() },
                 isExpanded = viewState.isFontsExpanded,
                 onToggle = { intentDispatcher(SettingsIntent.OnFontsToggled) },
             )
@@ -265,6 +294,18 @@ private fun SettingsScreenContent(
                             intentDispatcher(SettingsIntent.OnLineHeightChanged(it))
                         },
                         valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    SettingsSlider(
+                        label = stringResource(StringRes.settings_paragraph_spacing),
+                        value = viewState.paragraphSpacing.toFloat(),
+                        valueRange = 0.0f..2.0f,
+                        onValueChange = {
+                            intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(it.toDouble()))
+                        },
+                        valueDisplay = { "${(it * 100).roundToInt()}%" },
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -784,6 +825,79 @@ private fun HighlightStyleChip(
 }
 
 @Composable
+private fun ReaderSettingsPreview(
+    viewState: SettingsViewState,
+    modifier: Modifier = Modifier,
+) {
+    val (backgroundColor, textColor) = when (viewState.theme) {
+        ReaderThemeUiModel.LIGHT -> Color(0xFFFFFEFA) to Color(0xFF24211D)
+        ReaderThemeUiModel.DARK -> Color(0xFF171717) to Color(0xFFECE7DE)
+        ReaderThemeUiModel.SEPIA -> Color(0xFFF2E6CB) to Color(0xFF3B2E22)
+        ReaderThemeUiModel.SYSTEM -> MaterialTheme.colorScheme.surface to MaterialTheme.colorScheme.onSurface
+    }
+    val previewTextAlign = when (viewState.textAlign) {
+        ReaderTextAlignUiModel.START -> TextAlign.Start
+        ReaderTextAlignUiModel.END -> TextAlign.End
+        ReaderTextAlignUiModel.CENTER -> TextAlign.Center
+        ReaderTextAlignUiModel.JUSTIFY -> TextAlign.Justify
+    }
+    val previewFontSize = (16f * viewState.fontSize.toFloat()).coerceIn(11f, 26f).sp
+    val paragraphGap = with(LocalDensity.current) {
+        (previewFontSize.value * viewState.paragraphSpacing).sp.toDp()
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(StringRes.settings_reader_preview),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(backgroundColor)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .padding(
+                    horizontal = viewState.marginHorizontal.coerceIn(8, 48).dp,
+                    vertical = viewState.marginVertical.coerceIn(8, 40).dp,
+                ),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(paragraphGap),
+            ) {
+                previewParagraphs().forEach { paragraph ->
+                    Text(
+                        text = paragraph,
+                        style = TextStyle(
+                            color = textColor,
+                            fontFamily = viewState.fontFamily.toPreviewFontFamily(),
+                            fontSize = previewFontSize,
+                            lineHeight = (previewFontSize.value * viewState.lineHeight).sp,
+                            textAlign = previewTextAlign,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun previewParagraphs(): List<String> =
+    stringResource(StringRes.settings_reader_preview_sample).split("\n\n")
+
+@Composable
 private fun ExpandableSettingsSection(
     title: String,
     description: String,
@@ -815,11 +929,17 @@ private fun ExpandableSettingsSection(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(8.dp),
+            )
             .onGloballyPositioned { coordinates ->
                 sectionPosition = coordinates.positionInParent().y.toInt()
             },
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -835,19 +955,19 @@ private fun ExpandableSettingsSection(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
                     modifier = Modifier.rotate(rotationAngle),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -899,7 +1019,9 @@ private fun ThemeSelector(
 @Composable
 private fun FontFamilySelector(
     selectedFontFamily: FontFamilyUiModel,
+    customFonts: List<FontFamilyUiModel>,
     onFontFamilySelected: (FontFamilyUiModel) -> Unit,
+    onAddFont: () -> Unit,
     isExpanded: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -913,14 +1035,35 @@ private fun FontFamilySelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onToggle)
-                .padding(vertical = 8.dp),
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(StringRes.settings_font_family),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(StringRes.settings_font_family),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = selectedFontFamily.toDisplayString(),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = selectedFontFamily.toPreviewFontFamily(),
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = if (isExpanded) "Collapse" else "Expand",
@@ -938,102 +1081,96 @@ private fun FontFamilySelector(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
-            // First row: Default, Serif, Sans Serif
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.DEFAULT,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.DEFAULT,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.DEFAULT) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.SERIF,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.SERIF,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.SERIF) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.SANS_SERIF,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.SANS_SERIF,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.SANS_SERIF) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // Second row: Cursive, Fantasy, Monospace
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.CURSIVE,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.CURSIVE,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.CURSIVE) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.FANTASY,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.FANTASY,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.FANTASY) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.MONOSPACE,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.MONOSPACE,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.MONOSPACE) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // Third row: Accessibility fonts
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.ACCESSIBLE_DFA,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.ACCESSIBLE_DFA,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.ACCESSIBLE_DFA) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.IA_WRITER_DUOSPACE,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.IA_WRITER_DUOSPACE,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.IA_WRITER_DUOSPACE) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.OPEN_DYSLEXIC,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.OPEN_DYSLEXIC,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.OPEN_DYSLEXIC) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                (FontFamilyUiModel.BUILT_IN + customFonts).forEach { fontFamily ->
+                    FontFamilyOptionRow(
+                        fontFamily = fontFamily,
+                        isSelected = selectedFontFamily.cssValue == fontFamily.cssValue,
+                        onClick = { onFontFamilySelected(fontFamily) },
+                    )
+                }
+                TextButton(onClick = onAddFont) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(text = stringResource(StringRes.settings_font_family_add))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun FontFamilyChip(
+private fun FontFamilyOptionRow(
     fontFamily: FontFamilyUiModel,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FilterChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = {
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+    val backgroundColor = if (isSelected) {
+        MaterialTheme.colorScheme.surfaceVariant
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(8.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = fontFamily.toDisplayString(),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = fontFamily.toPreviewFontFamily(),
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-        },
-        modifier = modifier,
-    )
+            if (fontFamily.isCustom) {
+                Text(
+                    text = stringResource(StringRes.settings_font_family_custom),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (isSelected) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(StringRes.settings_selected),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -1050,6 +1187,7 @@ private fun FontFamilyUiModel.toDisplayString(): String = when (this) {
     )
 
     FontFamilyUiModel.OPEN_DYSLEXIC -> stringResource(StringRes.settings_font_family_open_dyslexic)
+    else -> displayName ?: cssValue
 }
 
 @Composable

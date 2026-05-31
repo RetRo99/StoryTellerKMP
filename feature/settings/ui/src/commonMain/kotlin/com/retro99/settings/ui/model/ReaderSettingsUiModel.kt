@@ -14,6 +14,7 @@ data class ReaderSettingsUiModel(
     val fontFamily: FontFamilyUiModel = FontFamilyUiModel.DEFAULT,
     val theme: ReaderThemeUiModel = ReaderThemeUiModel.SYSTEM,
     val lineHeight: Float = 1.5f,
+    val paragraphSpacing: Double = 0.0,
     val marginHorizontal: Int = 16,
     val marginVertical: Int = 16,
     val scrollMode: Boolean? = null,
@@ -75,25 +76,45 @@ enum class ReaderTextAlignUiModel {
     JUSTIFY,
 }
 
-/**
- * Font family options for the reader.
- * Based on Readium CSS supported fonts.
- * See https://readium.org/readium-css/docs/CSS10-libre_fonts
- */
-enum class FontFamilyUiModel(val cssValue: String) {
-    // Default - uses publisher's font or system default
-    DEFAULT("default"),
+data class FontFamilyUiModel(
+    val id: String,
+    val cssValue: String,
+    val displayName: String? = null,
+    val isCustom: Boolean = false,
+    val previewFilePath: String? = null,
+) {
+    companion object {
+        // Default - uses publisher's font or system default
+        val DEFAULT = FontFamilyUiModel("default", "default")
 
-    // Generic CSS font families
-    SERIF("serif"),
-    SANS_SERIF("sans-serif"),
-    CURSIVE("cursive"),
-    FANTASY("fantasy"),
-    MONOSPACE("monospace"),
+        // Generic CSS font families
+        val SERIF = FontFamilyUiModel("serif", "serif")
+        val SANS_SERIF = FontFamilyUiModel("sans_serif", "sans-serif")
+        val CURSIVE = FontFamilyUiModel("cursive", "cursive")
+        val FANTASY = FontFamilyUiModel("fantasy", "fantasy")
+        val MONOSPACE = FontFamilyUiModel("monospace", "monospace")
 
-    // Accessibility fonts embedded with Readium
-    ACCESSIBLE_DFA("AccessibleDfA"),
-    IA_WRITER_DUOSPACE("IA Writer Duospace"),
-    OPEN_DYSLEXIC("OpenDyslexic"),
+        // Accessibility fonts embedded with Readium
+        val ACCESSIBLE_DFA = FontFamilyUiModel("accessible_dfa", "AccessibleDfA")
+        val IA_WRITER_DUOSPACE = FontFamilyUiModel("ia_writer_duospace", "IA Writer Duospace")
+        val OPEN_DYSLEXIC = FontFamilyUiModel("open_dyslexic", "OpenDyslexic")
+
+        val CORE = listOf(
+            DEFAULT,
+            SERIF,
+            SANS_SERIF,
+            CURSIVE,
+            FANTASY,
+            MONOSPACE,
+            ACCESSIBLE_DFA,
+            IA_WRITER_DUOSPACE,
+            OPEN_DYSLEXIC,
+        )
+
+        val BUILT_IN: List<FontFamilyUiModel>
+            get() = CORE + platformBundledReaderFonts()
+    }
 }
+
+internal expect fun platformBundledReaderFonts(): List<FontFamilyUiModel>
 

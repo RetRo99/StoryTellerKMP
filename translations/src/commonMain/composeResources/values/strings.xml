@@ -184,6 +184,8 @@
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_icon_content_description">Settings</string>
+    <string name="settings_reader_preview">Preview</string>
+    <string name="settings_reader_preview_sample">The old library settled into silence as the first page opened. Words found their rhythm, and the margins gave them room to breathe.\n\nBy the second paragraph, the page felt calmer. The story became easy to follow.</string>
 
     <!-- Settings Sections -->
     <string name="settings_section_appearance">Appearance</string>
@@ -199,6 +201,9 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_font_size">Font Size</string>
     <string name="settings_font_family">Font Family</string>
+    <string name="settings_font_family_add">Add font</string>
+    <string name="settings_font_family_custom">Custom</string>
+    <string name="settings_selected">Selected</string>
     <string name="settings_font_family_default">Default</string>
     <string name="settings_font_family_serif">Serif</string>
     <string name="settings_font_family_sans_serif">Sans Serif</string>
@@ -209,6 +214,7 @@
     <string name="settings_font_family_ia_writer_duospace">IA Writer Duospace</string>
     <string name="settings_font_family_open_dyslexic">OpenDyslexic</string>
     <string name="settings_line_height">Line Height</string>
+    <string name="settings_paragraph_spacing">Paragraph Spacing</string>
     <string name="settings_margins">Margins</string>
     <string name="settings_margin_horizontal">Horizontal Margin</string>
     <string name="settings_margin_vertical">Vertical Margin</string>
