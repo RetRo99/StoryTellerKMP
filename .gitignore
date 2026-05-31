@@ -24,4 +24,5 @@ iosApp/Pods/
 # Signing keys
 *.jks
 *.keystore
+keystore.properties
 signing_key.txt
