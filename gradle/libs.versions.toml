@@ -142,7 +142,7 @@ media3-session = { module = "androidx.media3:media3-session", version.ref = "med
 androidx-media = { module = "androidx.media:media", version = "1.7.0" }
 
 # Core library desugaring (required for Readium 3.0 on API < 26)
-desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version = "2.1.4" }
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version = "2.1.5" }
 
 # SQLDelight
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }

@@ -2,6 +2,8 @@ package com.retro99.books.ui.list
 
 import com.retro99.base.result.AppError
 import com.retro99.books.ui.model.BookFilterState
+import com.retro99.books.ui.model.BookLibrarySection
+import com.retro99.books.ui.model.BookListViewMode
 import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookQuickFilter
 import com.retro99.books.ui.model.BookSortConfig
@@ -18,6 +20,8 @@ data class BooksListViewState(
     val bookProgressInfo: Map<String, BookProgressInfoUiModel> = emptyMap(),
     val filterState: BookFilterState = BookFilterState(),
     val sortConfig: BookSortConfig = BookSortConfig(),
+    val viewMode: BookListViewMode = BookListViewMode.LIST,
+    val selectedSection: BookLibrarySection = BookLibrarySection.ALL,
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isImporting: Boolean = false,
@@ -25,9 +29,37 @@ data class BooksListViewState(
 ) {
     val filteredBooks: List<BookUiModel>
         get() = books
+            .applyLibrarySection(selectedSection, favoriteBookUuids, bookProgressInfo)
             .applySearchFilter(searchQuery)
             .applyQuickFilters(filterState.activeQuickFilters, favoriteBookUuids, bookProgressInfo)
             .applySorting(sortConfig)
+
+    fun sectionCount(section: BookLibrarySection): Int {
+        return books.applyLibrarySection(section, favoriteBookUuids, bookProgressInfo).size
+    }
+
+    private fun List<BookUiModel>.applyLibrarySection(
+        section: BookLibrarySection,
+        favoriteUuids: Set<String>,
+        progressInfo: Map<String, BookProgressInfoUiModel>,
+    ): List<BookUiModel> {
+        return when (section) {
+            BookLibrarySection.ALL -> this
+            BookLibrarySection.IN_PROGRESS -> filter { book ->
+                (progressInfo[book.uuid]?.displayProgression ?: 0.0) > 0.0
+            }
+            BookLibrarySection.DOWNLOADED -> filter { book ->
+                progressInfo[book.uuid]?.hasAnyCached == true
+            }
+            BookLibrarySection.FAVORITES -> filter { book ->
+                book.uuid in favoriteUuids
+            }
+            BookLibrarySection.READ_ALOUD -> filter { book ->
+                book.hasReadaloud
+            }
+            BookLibrarySection.LOCAL -> filterIsInstance<BookUiModel.LocalBook>()
+        }
+    }
 
     private fun List<BookUiModel>.applySearchFilter(query: String): List<BookUiModel> {
         if (query.isBlank()) return this
