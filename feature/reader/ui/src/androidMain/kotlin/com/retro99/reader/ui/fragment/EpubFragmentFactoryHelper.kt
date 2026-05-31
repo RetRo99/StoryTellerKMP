@@ -31,7 +31,7 @@ import org.readium.r2.navigator.epub.EpubNavigatorFragment
 object EpubFragmentFactoryHelper {
 
     // Must match the tag used in EpubReaderView.android.kt
-    private const val NAVIGATOR_FRAGMENT_TAG = "epub_navigator"
+    private const val NAVIGATOR_FRAGMENT_TAG_PREFIX = "epub_navigator_"
 
     /**
      * Creates a dummy fragment factory that prevents crashes when Android
@@ -54,10 +54,16 @@ object EpubFragmentFactoryHelper {
      * @param fragmentManager The activity's supportFragmentManager
      */
     fun removeRestoredFragment(fragmentManager: FragmentManager) {
-        val restoredFragment = fragmentManager.findFragmentByTag(NAVIGATOR_FRAGMENT_TAG)
-        if (restoredFragment != null) {
+        val restoredFragments = fragmentManager.fragments.filter { fragment ->
+            fragment.tag?.startsWith(NAVIGATOR_FRAGMENT_TAG_PREFIX) == true ||
+                fragment is EpubNavigatorFragment
+        }
+
+        if (restoredFragments.isNotEmpty()) {
             fragmentManager.commitNow(allowStateLoss = true) {
-                remove(restoredFragment)
+                restoredFragments.forEach { fragment ->
+                    remove(fragment)
+                }
             }
         }
     }

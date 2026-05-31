@@ -8,6 +8,8 @@ import androidx.media3.common.util.UnstableApi
 import com.github.michaelbull.result.getOrElse
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.reader.domain.usecase.GetCachedReadAloudBooksUseCase
+import com.retro99.reader.ui.playback.MAX_EMBEDDED_ARTWORK_BYTES
+import com.retro99.reader.ui.playback.setArtworkDataIfSmall
 import com.retro99.server.api.ServerTokenProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -126,9 +128,7 @@ class AutoMediaBrowser(
                 .setArtist(author)
 
             // Embed artwork data directly if available
-            if (artworkData != null) {
-                metadataBuilder.setArtworkData(artworkData, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
-            }
+            metadataBuilder.setArtworkDataIfSmall(artworkData, TAG)
 
             MediaItem.Builder()
                 .setMediaId(AutoMediaIds.bookId(serverId, uuid))
@@ -167,9 +167,17 @@ class AutoMediaBrowser(
 
                 val responseCode = connection.responseCode
                 if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val contentLength = connection.contentLengthLong
+                    if (contentLength > MAX_EMBEDDED_ARTWORK_BYTES) {
+                        Log.w(
+                            TAG,
+                            "AutoMediaBrowser: skipping large cover ($contentLength bytes): $coverUrl",
+                        )
+                        return@withContext null
+                    }
                     val bytes = connection.inputStream.use { it.readBytes() }
                     Log.d(TAG, "AutoMediaBrowser: downloaded cover ($coverUrl): ${bytes.size} bytes")
-                    bytes
+                    bytes.takeIf { it.size <= MAX_EMBEDDED_ARTWORK_BYTES }
                 } else {
                     Log.e(TAG, "AutoMediaBrowser: failed to download cover ($coverUrl): HTTP $responseCode")
                     null

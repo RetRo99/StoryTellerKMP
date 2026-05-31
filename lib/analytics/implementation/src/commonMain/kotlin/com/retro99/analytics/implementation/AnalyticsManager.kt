@@ -20,8 +20,8 @@ class AnalyticsManager(
         message?.let { firebaseCrashlytics.log(it) }
         firebaseCrashlytics.recordException(throwable)
 
-        // Also log to file for user sharing (if enabled)
-        if (isFileLoggingEnabled()) {
+        // Also log to file for user sharing (if enabled and not crash-only)
+        if (shouldLogHandledExceptionsToFile()) {
             fileLogger.logException(throwable, message)
         }
     }
@@ -36,7 +36,7 @@ class AnalyticsManager(
         firebaseCrashlytics.setUserId(userId ?: "")
     }
 
-    private fun isFileLoggingEnabled(): Boolean {
-        return preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = false)
-    }
+    private fun shouldLogHandledExceptionsToFile(): Boolean =
+        preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = false) &&
+            !preferences.getBoolean(PreferencesKey.FileLoggingCrashesOnly, defaultValue = false)
 }
