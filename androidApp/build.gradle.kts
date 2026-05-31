@@ -46,6 +46,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(projects.composeApp)
     implementation(projects.base)
+    implementation(projects.feature.login.data)
     implementation(projects.feature.home.ui)
     implementation(projects.feature.reader.ui)
     implementation(libs.compose.uiToolingPreview)

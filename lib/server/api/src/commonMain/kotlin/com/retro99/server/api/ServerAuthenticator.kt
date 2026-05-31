@@ -1,5 +1,7 @@
 package com.retro99.server.api
 
+import com.github.michaelbull.result.Err
+import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 
 /**
@@ -27,6 +29,16 @@ interface ServerAuthenticator {
         baseUrl: String,
         refreshToken: String,
     ): AppResult<ServerCredentials>
+
+    /**
+     * Exchange a short-lived mobile app OAuth token for API credentials.
+     */
+    suspend fun loginWithAppToken(
+        baseUrl: String,
+        appToken: String,
+    ): AppResult<ServerCredentials> {
+        return Err(AppError.AuthError("OAuth app token login not supported for $serverType"))
+    }
 
     /**
      * Validate that a server URL is reachable and correct type.
