@@ -1,0 +1,16 @@
+package com.retro99.login.data.di
+
+import android.content.Context
+import com.retro99.login.data.oauth.AndroidStorytellerOAuthSessionLauncher
+import com.retro99.login.data.oauth.StorytellerOAuthSessionLauncher
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Single
+
+@Module
+actual class PlatformLoginDataModule {
+
+    @Single
+    fun provideStorytellerOAuthSessionLauncher(context: Context): StorytellerOAuthSessionLauncher {
+        return AndroidStorytellerOAuthSessionLauncher(context)
+    }
+}

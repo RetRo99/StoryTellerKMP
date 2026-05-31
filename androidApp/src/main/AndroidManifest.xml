@@ -36,6 +36,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="parrot" />
+                <data android:scheme="storyteller" />
             </intent-filter>
         </activity>
 

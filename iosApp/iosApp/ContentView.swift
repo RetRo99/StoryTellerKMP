@@ -14,6 +14,9 @@ struct ContentView: View {
     var body: some View {
         ComposeView()
             .ignoresSafeArea()
+            .onOpenURL { url in
+                StorytellerOAuthCallbackRegistry.shared.handleRedirect(uri: url.absoluteString)
+            }
     }
 }
 

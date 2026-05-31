@@ -20,6 +20,9 @@
     <string name="login_username_label">Username</string>
     <string name="login_password_label">Password</string>
     <string name="login_sign_in_button">Sign In</string>
+    <string name="login_oauth_sign_in_button">Continue in browser</string>
+    <string name="login_oauth_waiting_button">Waiting for browser</string>
+    <string name="login_oauth_waiting_message">Complete sign-in in the browser. Returning here without approving will cancel it.</string>
     <string name="login_hide_password">Hide password</string>
     <string name="login_show_password">Show password</string>
     <string name="login_url_tooltip_title">StoryTeller URL</string>
