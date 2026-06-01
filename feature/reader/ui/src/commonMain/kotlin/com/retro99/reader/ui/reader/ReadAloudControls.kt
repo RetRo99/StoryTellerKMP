@@ -177,7 +177,7 @@ private fun PlaybackControlsRow(
             totalDurationMs = totalDurationMs,
             sleepTimerRemainingMs = sleepTimerRemainingMs,
             intentDispatcher = intentDispatcher,
-            onCustomTimerDialogVisibilityChanged = onControlsDialogVisibilityChanged,
+            onTimerMenuVisibilityChanged = onControlsDialogVisibilityChanged,
         )
     }
 }
@@ -245,7 +245,7 @@ private fun SleepTimerButton(
     totalDurationMs: Long?,
     sleepTimerRemainingMs: Long?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
-    onCustomTimerDialogVisibilityChanged: (Boolean) -> Unit,
+    onTimerMenuVisibilityChanged: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showCustomTimerDialog by remember { mutableStateOf(false) }
@@ -253,12 +253,12 @@ private fun SleepTimerButton(
         ?.minus(currentPositionMs)
         ?.takeIf { it > 0L }
 
-    LaunchedEffect(showCustomTimerDialog) {
-        onCustomTimerDialogVisibilityChanged(showCustomTimerDialog)
+    LaunchedEffect(expanded, showCustomTimerDialog) {
+        onTimerMenuVisibilityChanged(expanded || showCustomTimerDialog)
     }
 
     DisposableEffect(Unit) {
-        onDispose { onCustomTimerDialogVisibilityChanged(false) }
+        onDispose { onTimerMenuVisibilityChanged(false) }
     }
 
     TextButton(onClick = { expanded = true }) {
