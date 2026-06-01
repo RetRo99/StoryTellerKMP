@@ -807,7 +807,7 @@ extension EpubReaderSettings {
     }
 
     private func fontWeightOverride() -> Double? {
-        if fontWeight >= 0.95 && fontWeight <= 1.05 {
+        if fontWeight == 1.0 {
             return nil
         }
         return fontWeight

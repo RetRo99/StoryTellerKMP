@@ -16,10 +16,7 @@ data class SettingsViewState(
     val undoReaderSettings: ReaderSettingsUiModel? = null,
     val undoRequestId: Int = 0,
     val customFonts: List<FontFamilyUiModel> = emptyList(),
-    val expandedSections: Set<SettingsSection> = setOf(
-        SettingsSection.APPEARANCE,
-        SettingsSection.TYPOGRAPHY,
-    ),
+    val expandedSections: Set<SettingsSection> = emptySet(),
     val isFontsExpanded: Boolean = false,
 ) {
     // Convenience accessors for UI
@@ -60,7 +57,6 @@ data class SettingsViewState(
 }
 
 enum class SettingsSection {
-    APPEARANCE,
     TYPOGRAPHY,
     LAYOUT,
     PROGRESS,
