@@ -65,6 +65,13 @@ class SettingsViewModel(
                 it.copy(fontWeight = intent.fontWeight)
             }
 
+            is SettingsIntent.OnTextNormalizationChanged -> updateReaderSetting(
+                "text_normalization",
+                intent.textNormalization.toString(),
+            ) {
+                it.copy(textNormalization = intent.textNormalization)
+            }
+
             is SettingsIntent.OnCustomFontSelected -> importCustomFont(intent.file)
 
             is SettingsIntent.OnLineHeightChanged -> updateReaderSetting(

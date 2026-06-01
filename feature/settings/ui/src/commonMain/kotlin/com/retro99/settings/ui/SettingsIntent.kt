@@ -23,6 +23,7 @@ sealed interface SettingsIntent : BaseIntent {
     data class OnFontSizeChanged(val fontSize: Double) : SettingsIntent
     data class OnFontFamilyChanged(val fontFamily: FontFamilyUiModel) : SettingsIntent
     data class OnFontWeightChanged(val fontWeight: Double) : SettingsIntent
+    data class OnTextNormalizationChanged(val textNormalization: Boolean) : SettingsIntent
     data class OnCustomFontSelected(val file: PlatformFile) : SettingsIntent
     data class OnLineHeightChanged(val lineHeight: Float) : SettingsIntent
     data class OnParagraphSpacingChanged(val paragraphSpacing: Double) : SettingsIntent

@@ -223,6 +223,8 @@
     <string name="settings_font_family_ia_writer_duospace">IA Writer Duospace</string>
     <string name="settings_font_family_open_dyslexic">OpenDyslexic</string>
     <string name="settings_font_weight">Boldness</string>
+    <string name="settings_text_normalization">Normalize Text Styles</string>
+    <string name="settings_text_normalization_description">Simplifies book styling by flattening bold, italic, variants, and decorations.</string>
     <string name="settings_line_height">Line Height</string>
     <string name="settings_paragraph_spacing">Paragraph Spacing</string>
     <string name="settings_margins">Margins</string>
