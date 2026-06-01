@@ -781,15 +781,18 @@ extension EpubReaderSettings {
     /// Converts reader settings to Readium EPUBPreferences.
     /// This is used both for initial preferences and dynamic updates.
     func toEpubPreferences() -> EPUBPreferences {
+        let fontWeightOverride = fontWeightOverride()
         return EPUBPreferences(
             fontFamily: fontFamilyToReadium(),
             fontSize: fontSize,
+            fontWeight: fontWeightOverride,
             lineHeight: Double(lineHeight),
             paragraphSpacing: paragraphSpacing,
             pageMargins: calculatePageMargins(),
             publisherStyles: publisherStyles,
             scroll: scrollMode?.boolValue,
             textAlign: textAlignToReadium(),
+            textNormalization: fontWeightOverride != nil,
             theme: themeToReadium()
         )
     }
@@ -801,6 +804,13 @@ extension EpubReaderSettings {
             return nil
         }
         return FontFamily(rawValue: fontFamily)
+    }
+
+    private func fontWeightOverride() -> Double? {
+        if fontWeight >= 0.95 && fontWeight <= 1.05 {
+            return nil
+        }
+        return fontWeight
     }
 
     /// Converts theme string to Readium's Theme enum.

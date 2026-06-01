@@ -8,6 +8,7 @@ import com.retro99.reader.domain.model.ReaderTheme
 fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSettingsUiModel(
     fontSize = fontSize,
     fontFamily = fontFamily.toUiModel(),
+    fontWeight = fontWeight,
     theme = theme.toUiModel(),
     lineHeight = lineHeight,
     paragraphSpacing = paragraphSpacing,
@@ -35,11 +36,13 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
+    keepScreenOnDuringAudio = keepScreenOnDuringAudio,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
     fontSize = fontSize,
     fontFamily = fontFamily.toDomainModel(),
+    fontWeight = fontWeight,
     theme = theme.toDomainModel(),
     lineHeight = lineHeight,
     paragraphSpacing = paragraphSpacing,
@@ -67,6 +70,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
+    keepScreenOnDuringAudio = keepScreenOnDuringAudio,
 )
 
 fun ReaderTheme.toUiModel(): ReaderThemeUiModel = when (this) {

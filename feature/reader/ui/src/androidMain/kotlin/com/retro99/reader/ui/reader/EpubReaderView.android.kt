@@ -29,6 +29,8 @@ import com.retro99.reader.ui.publication.PublicationState
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
+import org.readium.r2.navigator.epub.css.FontStyle
+import org.readium.r2.navigator.epub.css.FontWeight
 import org.readium.r2.navigator.html.HtmlDecorationTemplate
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.navigator.html.toCss
@@ -220,6 +222,8 @@ private fun EpubNavigatorFragment.Configuration.registerBundledFonts() {
         addFontFamilyDeclaration(FontFamily(font.cssFamily)) {
             addFontFace {
                 addSource(font.assetPath, preload = true)
+                setFontStyle(FontStyle.NORMAL)
+                setFontWeight(FontWeight.NORMAL)
             }
         }
     }
@@ -234,6 +238,8 @@ private fun EpubNavigatorFragment.Configuration.registerCustomFonts(
         addFontFamilyDeclaration(FontFamily(font.cssFamily)) {
             addFontFace {
                 addSource(fontUrl, preload = true)
+                setFontStyle(FontStyle.NORMAL)
+                setFontWeight(FontWeight.NORMAL)
             }
         }
     }

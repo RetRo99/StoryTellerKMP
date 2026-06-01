@@ -31,6 +31,14 @@ actual fun FontFamilyUiModel.toPreviewFontFamily(): FontFamily {
     return fallbackPreviewFontFamily()
 }
 
+@Composable
+actual fun FontFamilyUiModel.toWeightedPreviewFontFamily(fontWeight: Double): FontFamily =
+    if (fontWeight == 1.0 || previewFilePath != null) {
+        toPreviewFontFamily()
+    } else {
+        fallbackPreviewFontFamily()
+    }
+
 private fun FontFamilyUiModel.fallbackPreviewFontFamily(): FontFamily = when (cssValue) {
     FontFamilyUiModel.SERIF.cssValue,
     "Literata",

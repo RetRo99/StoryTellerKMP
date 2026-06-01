@@ -6,6 +6,7 @@ package com.retro99.reader.domain.model
 data class ReaderSettingsDomainModel(
     val fontSize: Double = 1.0,
     val fontFamily: String = "default",
+    val fontWeight: Double = 1.0,
     val theme: ReaderTheme = ReaderTheme.SYSTEM,
     val lineHeight: Float = 1.5f,
     val paragraphSpacing: Double = 0.0,
@@ -61,6 +62,8 @@ data class ReaderSettingsDomainModel(
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
     // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
     val showAudioProgressBar: Boolean? = null,
+    // Whether to keep the screen awake while ReadAloud audio is playing
+    val keepScreenOnDuringAudio: Boolean = true,
 ) {
     companion object {
         /** Default reading speed in words per minute (average adult reading speed) */

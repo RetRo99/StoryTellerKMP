@@ -17,6 +17,8 @@ data class ReaderSettingsLocalModel(
     val fontSize: Double = 1.0,
     @SerialName("font_family")
     val fontFamily: String = "default",
+    @SerialName("font_weight")
+    val fontWeight: Double = 1.0,
     @SerialName("theme")
     val theme: String = "SYSTEM",
     @SerialName("line_height")
@@ -94,12 +96,16 @@ data class ReaderSettingsLocalModel(
     // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
     @SerialName("show_audio_progress_bar")
     val showAudioProgressBar: Boolean? = null,
+    // Whether to keep the screen awake while ReadAloud audio is playing
+    @SerialName("keep_screen_on_during_audio")
+    val keepScreenOnDuringAudio: Boolean = true,
 )
 
 fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
     return ReaderSettingsDomainModel(
         fontSize = fontSize,
         fontFamily = fontFamily,
+        fontWeight = fontWeight,
         theme = try {
             ReaderTheme.valueOf(theme)
         } catch (e: IllegalArgumentException) {
@@ -179,6 +185,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         },
         doubleTapTimeoutMs = doubleTapTimeoutMs,
         showAudioProgressBar = showAudioProgressBar,
+        keepScreenOnDuringAudio = keepScreenOnDuringAudio,
     )
 }
 
@@ -186,6 +193,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
     return ReaderSettingsLocalModel(
         fontSize = fontSize,
         fontFamily = fontFamily,
+        fontWeight = fontWeight,
         theme = theme.name,
         lineHeight = lineHeight,
         paragraphSpacing = paragraphSpacing,
@@ -216,5 +224,6 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         rightTapAction = rightTapAction.name,
         doubleTapTimeoutMs = doubleTapTimeoutMs,
         showAudioProgressBar = showAudioProgressBar,
+        keepScreenOnDuringAudio = keepScreenOnDuringAudio,
     )
 }
