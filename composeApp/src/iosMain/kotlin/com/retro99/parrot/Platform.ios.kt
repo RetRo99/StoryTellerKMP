@@ -1,13 +1,13 @@
 package com.retro99.parrot
 
+import com.retro99.base.ui.platform.isEinkDisplay
 import platform.UIKit.UIDevice
 
 class IOSPlatform : Platform {
     override val name: String =
         UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
 
-    // iOS devices don't have e-ink displays
-    override val isEink: Boolean = false
+    override val isEink: Boolean = isEinkDisplay()
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
