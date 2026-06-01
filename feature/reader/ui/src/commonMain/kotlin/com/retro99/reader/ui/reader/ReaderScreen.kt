@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +80,7 @@ import com.retro99.reader.ui.model.backgroundColor
 import com.retro99.reader.ui.publication.PublicationState
 import com.retro99.translations.StringRes
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -89,7 +91,10 @@ import resources.translations.reader_time_remaining_minutes
 import resources.translations.reader_toc_jumped_to_chapter
 import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
+import resources.translations.settings_changed
 import resources.translations.settings_icon_content_description
+import resources.translations.settings_undo
+import kotlin.math.abs
 
 private val logger = Logger.withTag("ReaderScreen")
 
@@ -133,6 +138,15 @@ private fun ReaderScreenContent(
     viewState: ReaderViewState,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
+    KeepScreenOn(
+        enabled = viewState.currentSettings?.fullscreenMode == true ||
+            (
+                viewState.isReadAloud &&
+                    viewState.isPlaying &&
+                    viewState.currentSettings?.keepScreenOnDuringAudio == true
+                ),
+    )
+
     // Hide system bars (status bar, navigation bar) for immersive reading when enabled
     if (viewState.currentSettings?.fullscreenMode == true) {
         HideSystemBars()
@@ -267,6 +281,10 @@ private fun ReaderContent(
     var areControlsVisible by remember { mutableStateOf(true) }
     var lastInteractionTime by remember { mutableStateOf(0L) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    val fontSizeUndoSnackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val settingChangedMessage = stringResource(StringRes.settings_changed)
+    val undoLabel = stringResource(StringRes.settings_undo)
 
     LaunchedEffect(areControlsVisible, lastInteractionTime) {
         if (areControlsVisible) {
@@ -323,11 +341,25 @@ private fun ReaderContent(
                         },
                         onZoomEnd = { finalScale ->
                             val newFontSize = (settings.fontSize * finalScale).coerceIn(0.5, 3.0)
-                            intentDispatcher(
-                                ReaderIntent.UpdateSettings(
-                                    settings.copy(fontSize = newFontSize)
-                                )
-                            )
+                            if (abs(newFontSize - settings.fontSize) > 0.001) {
+                                val previousSettings = settings
+                                val updatedSettings = settings.copy(fontSize = newFontSize)
+                                intentDispatcher(ReaderIntent.UpdateSettings(updatedSettings))
+
+                                coroutineScope.launch {
+                                    fontSizeUndoSnackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = fontSizeUndoSnackbarHostState.showSnackbar(
+                                        message = settingChangedMessage,
+                                        actionLabel = undoLabel,
+                                        duration = SnackbarDuration.Short,
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        intentDispatcher(
+                                            ReaderIntent.UpdateSettings(previousSettings)
+                                        )
+                                    }
+                                }
+                            }
                             isZooming = false
                         },
                         onLeftTap = {
@@ -440,6 +472,11 @@ private fun ReaderContent(
                 onDismiss = {
                     intentDispatcher(ReaderIntent.DismissChapterNavigationUndo)
                 },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+
+            FontSizeUndoSnackbarHost(
+                hostState = fontSizeUndoSnackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -560,6 +597,31 @@ private fun ReaderToolbar(
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FontSizeUndoSnackbarHost(
+    hostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+) {
+    SnackbarHost(
+        hostState = hostState,
+        modifier = modifier,
+    ) { snackbarData ->
+        val dismissState = rememberSwipeToDismissBoxState()
+        LaunchedEffect(dismissState.currentValue) {
+            if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) {
+                snackbarData.dismiss()
+            }
+        }
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {},
+        ) {
+            Snackbar(snackbarData = snackbarData)
         }
     }
 }

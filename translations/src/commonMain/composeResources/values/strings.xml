@@ -191,14 +191,18 @@
     <string name="settings_icon_content_description">Settings</string>
     <string name="settings_reader_preview">Preview</string>
     <string name="settings_reader_preview_sample">The old library settled into silence as the first page opened. Words found their rhythm, and the margins gave them room to breathe.\n\nBy the second paragraph, the page felt calmer. The story became easy to follow.</string>
+    <string name="settings_changed">Setting changed</string>
+    <string name="settings_undo">Undo</string>
 
     <!-- Settings Sections -->
     <string name="settings_section_appearance">Appearance</string>
-    <string name="settings_section_appearance_description">Theme and font size</string>
+    <string name="settings_section_appearance_description">Reader theme</string>
     <string name="settings_section_typography">Typography</string>
-    <string name="settings_section_typography_description">Font family, line height, and text alignment</string>
+    <string name="settings_section_typography_description">Font, size, spacing, and alignment</string>
     <string name="settings_section_layout">Layout</string>
-    <string name="settings_section_layout_description">Margins, reading mode, and progress display</string>
+    <string name="settings_section_layout_description">Margins, reading mode, and fullscreen</string>
+    <string name="settings_section_progress">Progress</string>
+    <string name="settings_section_progress_description">Progress bar, page info, and time display</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
@@ -218,6 +222,7 @@
     <string name="settings_font_family_accessible_dfa">Accessible DfA</string>
     <string name="settings_font_family_ia_writer_duospace">IA Writer Duospace</string>
     <string name="settings_font_family_open_dyslexic">OpenDyslexic</string>
+    <string name="settings_font_weight">Boldness</string>
     <string name="settings_line_height">Line Height</string>
     <string name="settings_paragraph_spacing">Paragraph Spacing</string>
     <string name="settings_margins">Margins</string>
@@ -275,7 +280,7 @@
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
-    <string name="settings_section_readaloud_description">Text highlighting style and color</string>
+    <string name="settings_section_readaloud_description">Audio controls and sentence highlighting</string>
     <string name="settings_highlight_color">Highlight Color</string>
     <string name="settings_underline_color">Underline Color</string>
     <string name="settings_highlight_style">Highlight Style</string>
@@ -286,6 +291,8 @@
     <string name="settings_double_tap_timeout_description">Time allowed between taps to register as a double-tap. Higher values give more time but delay single-tap actions like page turns.</string>
     <string name="settings_audio_progress_bar">Audio Progress Bar</string>
     <string name="settings_audio_progress_bar_description">Controls when to show the audio playback progress bar (seek bar with current position and duration) during ReadAloud playback.</string>
+    <string name="settings_keep_screen_on_during_audio">Keep Screen On During Audio</string>
+    <string name="settings_keep_screen_on_during_audio_description">Prevent the screen from turning off while ReadAloud audio is playing and pages are turning automatically.</string>
 
     <!-- Statistics Screen -->
     <string name="statistics_title">Reading Statistics</string>
