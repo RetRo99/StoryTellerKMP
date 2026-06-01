@@ -15,11 +15,14 @@ sealed interface SettingsIntent : BaseIntent {
     // Section expansion
     data class OnSectionToggled(val section: SettingsSection) : SettingsIntent
     data object OnFontsToggled : SettingsIntent
+    data object OnUndoSettingsChange : SettingsIntent
+    data object OnDismissSettingsUndo : SettingsIntent
 
     // Reader settings intents
     data class OnThemeChanged(val theme: ReaderThemeUiModel) : SettingsIntent
     data class OnFontSizeChanged(val fontSize: Double) : SettingsIntent
     data class OnFontFamilyChanged(val fontFamily: FontFamilyUiModel) : SettingsIntent
+    data class OnFontWeightChanged(val fontWeight: Double) : SettingsIntent
     data class OnCustomFontSelected(val file: PlatformFile) : SettingsIntent
     data class OnLineHeightChanged(val lineHeight: Float) : SettingsIntent
     data class OnParagraphSpacingChanged(val paragraphSpacing: Double) : SettingsIntent
@@ -67,5 +70,8 @@ sealed interface SettingsIntent : BaseIntent {
 
     // Audio progress bar visibility intent
     data class OnShowAudioProgressBarChanged(val showAudioProgressBar: Boolean?) : SettingsIntent
+
+    // Keep screen awake during ReadAloud audio intent
+    data class OnKeepScreenOnDuringAudioChanged(val enabled: Boolean) : SettingsIntent
 }
 

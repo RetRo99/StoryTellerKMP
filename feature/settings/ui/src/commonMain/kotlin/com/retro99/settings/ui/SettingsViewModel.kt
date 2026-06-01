@@ -38,6 +38,8 @@ class SettingsViewModel(
         when (intent) {
             is SettingsIntent.OnSectionToggled -> toggleSection(intent.section)
             is SettingsIntent.OnFontsToggled -> toggleFonts()
+            SettingsIntent.OnUndoSettingsChange -> undoSettingsChange()
+            SettingsIntent.OnDismissSettingsUndo -> dismissSettingsUndo()
             is SettingsIntent.OnThemeChanged -> updateReaderSetting("theme", intent.theme.name) {
                 it.copy(theme = intent.theme)
             }
@@ -54,6 +56,13 @@ class SettingsViewModel(
                 intent.fontFamily.cssValue,
             ) {
                 it.copy(fontFamily = intent.fontFamily)
+            }
+
+            is SettingsIntent.OnFontWeightChanged -> updateReaderSetting(
+                "font_weight",
+                intent.fontWeight.toString(),
+            ) {
+                it.copy(fontWeight = intent.fontWeight)
             }
 
             is SettingsIntent.OnCustomFontSelected -> importCustomFont(intent.file)
@@ -239,6 +248,13 @@ class SettingsViewModel(
             ) {
                 it.copy(showAudioProgressBar = intent.showAudioProgressBar)
             }
+
+            is SettingsIntent.OnKeepScreenOnDuringAudioChanged -> updateReaderSetting(
+                "keep_screen_on_during_audio",
+                intent.enabled.toString(),
+            ) {
+                it.copy(keepScreenOnDuringAudio = intent.enabled)
+            }
         }
     }
 
@@ -322,11 +338,34 @@ class SettingsViewModel(
 
         val currentSettings = viewState.value.readerSettings
         val newSettings = update(currentSettings)
-        updateState { it.copy(readerSettings = newSettings) }
+        updateState {
+            it.copy(
+                readerSettings = newSettings,
+                undoReaderSettings = it.undoReaderSettings ?: currentSettings,
+                undoRequestId = it.undoRequestId + 1,
+            )
+        }
 
         viewModelScope.launch {
             saveReaderSettingsUseCase(newSettings.toDomainModel())
         }
+    }
+
+    private fun undoSettingsChange() {
+        val undoSettings = viewState.value.undoReaderSettings ?: return
+        updateState {
+            it.copy(
+                readerSettings = undoSettings,
+                undoReaderSettings = null,
+            )
+        }
+        viewModelScope.launch {
+            saveReaderSettingsUseCase(undoSettings.toDomainModel())
+        }
+    }
+
+    private fun dismissSettingsUndo() {
+        updateState { it.copy(undoReaderSettings = null) }
     }
 }
 

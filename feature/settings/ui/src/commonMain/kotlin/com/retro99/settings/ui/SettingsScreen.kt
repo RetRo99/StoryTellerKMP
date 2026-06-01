@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,6 +36,10 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +55,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,6 +74,7 @@ import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.base.ui.platform.isEinkDisplay
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
@@ -77,6 +84,7 @@ import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
 import com.retro99.settings.ui.model.toPreviewFontFamily
+import com.retro99.settings.ui.model.toWeightedPreviewFontFamily
 import com.retro99.translations.StringRes
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
@@ -89,6 +97,7 @@ import resources.translations.settings_chapter_progress_fixed
 import resources.translations.settings_chapter_progress_none
 import resources.translations.settings_chapter_progress_percentage
 import resources.translations.settings_chapter_progress_relative
+import resources.translations.settings_changed
 import resources.translations.settings_font_family
 import resources.translations.settings_font_family_add
 import resources.translations.settings_font_family_accessible_dfa
@@ -102,6 +111,7 @@ import resources.translations.settings_font_family_open_dyslexic
 import resources.translations.settings_font_family_sans_serif
 import resources.translations.settings_font_family_serif
 import resources.translations.settings_font_size
+import resources.translations.settings_font_weight
 import resources.translations.settings_fullscreen_mode
 import resources.translations.settings_fullscreen_mode_description
 import resources.translations.settings_highlight_color
@@ -114,6 +124,8 @@ import resources.translations.settings_double_tap_timeout
 import resources.translations.settings_double_tap_timeout_description
 import resources.translations.settings_audio_progress_bar
 import resources.translations.settings_audio_progress_bar_description
+import resources.translations.settings_keep_screen_on_during_audio
+import resources.translations.settings_keep_screen_on_during_audio_description
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
@@ -143,6 +155,8 @@ import resources.translations.settings_section_layout
 import resources.translations.settings_section_layout_description
 import resources.translations.settings_section_navigation
 import resources.translations.settings_section_navigation_description
+import resources.translations.settings_section_progress
+import resources.translations.settings_section_progress_description
 import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_readaloud_description
 import resources.translations.settings_section_typography
@@ -174,6 +188,7 @@ import resources.translations.settings_theme_light
 import resources.translations.settings_theme_sepia
 import resources.translations.settings_theme_system
 import resources.translations.settings_title
+import resources.translations.settings_undo
 
 @Composable
 fun SettingsScreen(
@@ -200,6 +215,10 @@ private fun SettingsScreenContent(
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val animationsEnabled = remember { !isEinkDisplay() }
+    val undoMessage = stringResource(StringRes.settings_changed)
+    val undoLabel = stringResource(StringRes.settings_undo)
     val fontPickerLauncher = rememberFilePickerLauncher(
         type = PickerType.File(extensions = listOf("ttf", "otf", "woff", "woff2")),
         mode = PickerMode.Single,
@@ -209,342 +228,397 @@ private fun SettingsScreenContent(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = stringResource(StringRes.settings_title),
-            style = MaterialTheme.typography.headlineMedium,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ReaderSettingsPreview(viewState = viewState)
-
-        // Appearance Section - Theme & Font Size
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_appearance),
-            description = stringResource(StringRes.settings_section_appearance_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.APPEARANCE),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.APPEARANCE)) },
-        ) {
-            ThemeSelector(
-                selectedTheme = viewState.theme,
-                onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
+    LaunchedEffect(viewState.undoRequestId) {
+        if (viewState.undoReaderSettings != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = undoMessage,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short,
             )
+            when (result) {
+                SnackbarResult.ActionPerformed ->
+                    intentDispatcher(SettingsIntent.OnUndoSettingsChange)
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsSlider(
-                label = stringResource(StringRes.settings_font_size),
-                value = viewState.fontSize.toFloat(),
-                valueRange = 0.5f..3.0f,
-                onValueChange = {
-                    intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
-                },
-                valueDisplay = { "${(it * 100).toInt()}%" },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FontFamilySelector(
-                selectedFontFamily = viewState.fontFamily,
-                customFonts = viewState.customFonts,
-                onFontFamilySelected = {
-                    intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
-                },
-                onAddFont = { fontPickerLauncher.launch() },
-                isExpanded = viewState.isFontsExpanded,
-                onToggle = { intentDispatcher(SettingsIntent.OnFontsToggled) },
-            )
+                SnackbarResult.Dismissed ->
+                    intentDispatcher(SettingsIntent.OnDismissSettingsUndo)
+            }
         }
+    }
 
-        // Typography Section - Publisher Styles, Line Height, Text Alignment
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_typography),
-            description = stringResource(StringRes.settings_section_typography_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.TYPOGRAPHY),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SettingsSwitch(
-                label = stringResource(StringRes.settings_publisher_styles),
-                description = stringResource(StringRes.settings_publisher_styles_description),
-                checked = viewState.publisherStyles,
-                onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
+            Text(
+                text = stringResource(StringRes.settings_title),
+                style = MaterialTheme.typography.headlineMedium,
             )
 
-            AnimatedVisibility(
-                visible = !viewState.publisherStyles,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ReaderSettingsPreview(viewState = viewState)
+
+            // Appearance: screen colors only, kept small for e-ink scanning.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_appearance),
+                description = stringResource(StringRes.settings_section_appearance_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.APPEARANCE),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.APPEARANCE)) },
+                animationsEnabled = animationsEnabled,
             ) {
+                ThemeSelector(
+                    selectedTheme = viewState.theme,
+                    onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
+                )
+            }
+
+            // Typography: all text shape controls live together.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_typography),
+                description = stringResource(StringRes.settings_section_typography_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.TYPOGRAPHY),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
+                animationsEnabled = animationsEnabled,
+            ) {
+                SettingsSlider(
+                    label = stringResource(StringRes.settings_font_size),
+                    value = viewState.fontSize.toFloat(),
+                    valueRange = 0.5f..3.0f,
+                    onValueChange = {
+                        intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
+                    },
+                    valueDisplay = { "${(it * 100).toInt()}%" },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                FontFamilySelector(
+                    selectedFontFamily = viewState.fontFamily,
+                    customFonts = viewState.customFonts,
+                    onFontFamilySelected = {
+                        intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
+                    },
+                    onAddFont = { fontPickerLauncher.launch() },
+                    isExpanded = viewState.isFontsExpanded,
+                    onToggle = { intentDispatcher(SettingsIntent.OnFontsToggled) },
+                    animationsEnabled = animationsEnabled,
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsSlider(
+                    label = stringResource(StringRes.settings_font_weight),
+                    value = viewState.fontWeight.toFloat(),
+                    valueRange = 0.5f..2.0f,
+                    onValueChange = {
+                        intentDispatcher(SettingsIntent.OnFontWeightChanged(it.normalizedFontWeight()))
+                    },
+                    valueDisplay = { "${(it * 100).roundToInt()}%" },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsSwitch(
+                    label = stringResource(StringRes.settings_publisher_styles),
+                    description = stringResource(StringRes.settings_publisher_styles_description),
+                    checked = viewState.publisherStyles,
+                    onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
+                )
+
+                SettingsAnimatedVisibility(
+                    visible = !viewState.publisherStyles,
+                    animationsEnabled = animationsEnabled,
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        SettingsSlider(
+                            label = stringResource(StringRes.settings_line_height),
+                            value = viewState.lineHeight,
+                            valueRange = 1.0f..2.5f,
+                            onValueChange = {
+                                intentDispatcher(SettingsIntent.OnLineHeightChanged(it))
+                            },
+                            valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        SettingsSlider(
+                            label = stringResource(StringRes.settings_paragraph_spacing),
+                            value = viewState.paragraphSpacing.toFloat(),
+                            valueRange = 0.0f..2.0f,
+                            onValueChange = {
+                                intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(it.toDouble()))
+                            },
+                            valueDisplay = { "${(it * 100).roundToInt()}%" },
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        TextAlignSelector(
+                            selectedAlign = viewState.textAlign,
+                            onAlignSelected = {
+                                intentDispatcher(SettingsIntent.OnTextAlignChanged(it))
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Layout: page geometry and reading flow.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_layout),
+                description = stringResource(StringRes.settings_section_layout_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.LAYOUT),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
+                animationsEnabled = animationsEnabled,
+            ) {
+                SettingsSlider(
+                    label = stringResource(StringRes.settings_margin_horizontal),
+                    value = viewState.marginHorizontal.toFloat(),
+                    valueRange = 0f..48f,
+                    onValueChange = {
+                        intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(it.toInt()))
+                    },
+                    valueDisplay = { "${it.toInt()}dp" },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsSlider(
+                    label = stringResource(StringRes.settings_margin_vertical),
+                    value = viewState.marginVertical.toFloat(),
+                    valueRange = 0f..64f,
+                    onValueChange = {
+                        intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
+                    },
+                    valueDisplay = { "${it.toInt()}dp" },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ScrollModeSelector(
+                    selectedMode = viewState.scrollMode,
+                    onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                FullscreenModeSwitch(
+                    isEnabled = viewState.fullscreenMode,
+                    onToggle = { intentDispatcher(SettingsIntent.OnFullscreenModeChanged(it)) },
+                )
+            }
+
+            // Progress: all reading telemetry and progress bar controls.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_progress),
+                description = stringResource(StringRes.settings_section_progress_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.PROGRESS),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.PROGRESS)) },
+                scrollState = scrollState,
+                coroutineScope = coroutineScope,
+                animationsEnabled = animationsEnabled,
+            ) {
+                ProgressBarModeSelector(
+                    selectedMode = viewState.showProgressBar,
+                    onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ProgressBarPositionSelector(
+                    selectedPosition = viewState.progressBarPosition,
+                    onPositionSelected = {
+                        intentDispatcher(SettingsIntent.OnProgressBarPositionChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ChapterProgressDisplayModeSelector(
+                    selectedMode = viewState.chapterProgressDisplayMode,
+                    onModeSelected = {
+                        intentDispatcher(SettingsIntent.OnChapterProgressDisplayModeChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ShowTotalProgressSwitch(
+                    isEnabled = viewState.showTotalProgress,
+                    onToggle = { intentDispatcher(SettingsIntent.OnShowTotalProgressChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ProgressIndicatorModeSelector(
+                    selectedMode = viewState.progressIndicatorMode,
+                    onModeSelected = {
+                        intentDispatcher(SettingsIntent.OnProgressIndicatorModeChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ShowCurrentTimeSwitch(
+                    isEnabled = viewState.showCurrentTime,
+                    onToggle = { intentDispatcher(SettingsIntent.OnShowCurrentTimeChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ShowReadingTimeSwitch(
+                    isEnabled = viewState.showReadingTime,
+                    onToggle = { intentDispatcher(SettingsIntent.OnShowReadingTimeChanged(it)) },
+                )
+            }
+
+            // Navigation: page-turn gestures and button behavior.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_navigation),
+                description = stringResource(StringRes.settings_section_navigation_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.NAVIGATION),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.NAVIGATION)) },
+                scrollState = scrollState,
+                coroutineScope = coroutineScope,
+                animationsEnabled = animationsEnabled,
+            ) {
+                TapNavigationEnabledSwitch(
+                    isEnabled = viewState.tapNavigationEnabled,
+                    onToggle = { intentDispatcher(SettingsIntent.OnTapNavigationEnabledChanged(it)) },
+                )
+
+                if (viewState.tapNavigationEnabled) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TapActionSelector(
+                        title = stringResource(StringRes.settings_left_tap_action),
+                        selectedAction = viewState.leftTapAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnLeftTapActionChanged(it)) },
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TapActionSelector(
+                        title = stringResource(StringRes.settings_right_tap_action),
+                        selectedAction = viewState.rightTapAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnRightTapActionChanged(it)) },
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Column {
+                    SettingsSlider(
+                        label = stringResource(StringRes.settings_double_tap_timeout),
+                        value = viewState.doubleTapTimeoutMs.toFloat(),
+                        valueRange = 200f..800f,
+                        onValueChange = {
+                            intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(it.toInt()))
+                        },
+                        valueDisplay = { "${it.toInt()}ms" },
+                    )
+                    Text(
+                        text = stringResource(StringRes.settings_double_tap_timeout_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                VolumeButtonsEnabledSwitch(
+                    isEnabled = viewState.volumeButtonsEnabled,
+                    onToggle = { intentDispatcher(SettingsIntent.OnVolumeButtonsEnabledChanged(it)) },
+                )
+
+                if (viewState.volumeButtonsEnabled) {
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    SettingsSlider(
-                        label = stringResource(StringRes.settings_line_height),
-                        value = viewState.lineHeight,
-                        valueRange = 1.0f..2.5f,
-                        onValueChange = {
-                            intentDispatcher(SettingsIntent.OnLineHeightChanged(it))
-                        },
-                        valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+                    VolumeButtonActionSelector(
+                        title = stringResource(StringRes.settings_volume_up_action),
+                        selectedAction = viewState.volumeUpAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeUpActionChanged(it)) },
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    SettingsSlider(
-                        label = stringResource(StringRes.settings_paragraph_spacing),
-                        value = viewState.paragraphSpacing.toFloat(),
-                        valueRange = 0.0f..2.0f,
-                        onValueChange = {
-                            intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(it.toDouble()))
-                        },
-                        valueDisplay = { "${(it * 100).roundToInt()}%" },
+                    VolumeButtonActionSelector(
+                        title = stringResource(StringRes.settings_volume_down_action),
+                        selectedAction = viewState.volumeDownAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeDownActionChanged(it)) },
                     )
+                }
+            }
 
+            // ReadAloud: audio playback and sentence highlight behavior.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_readaloud),
+                description = stringResource(StringRes.settings_section_readaloud_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
+                scrollState = scrollState,
+                coroutineScope = coroutineScope,
+                animationsEnabled = animationsEnabled,
+            ) {
+                SettingsSwitch(
+                    label = stringResource(StringRes.settings_keep_screen_on_during_audio),
+                    description = stringResource(StringRes.settings_keep_screen_on_during_audio_description),
+                    checked = viewState.keepScreenOnDuringAudio,
+                    onCheckedChange = {
+                        intentDispatcher(SettingsIntent.OnKeepScreenOnDuringAudioChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AudioProgressBarModeSelector(
+                    selectedMode = viewState.showAudioProgressBar,
+                    onModeSelected = { intentDispatcher(SettingsIntent.OnShowAudioProgressBarChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                HighlightStyleSelector(
+                    selectedStyle = viewState.highlightStyle,
+                    onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
+                )
+                if (viewState.highlightStyle == HighlightStyle.HIGHLIGHT ||
+                    viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
+                ) {
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    TextAlignSelector(
-                        selectedAlign = viewState.textAlign,
-                        onAlignSelected = {
-                            intentDispatcher(SettingsIntent.OnTextAlignChanged(it))
-                        },
+                    ColorSelector(
+                        title = stringResource(StringRes.settings_highlight_color),
+                        selectedColor = viewState.highlightColor,
+                        onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+                    )
+                }
+                if (viewState.highlightStyle == HighlightStyle.UNDERLINE ||
+                    viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ColorSelector(
+                        title = stringResource(StringRes.settings_underline_color),
+                        selectedColor = viewState.underlineColor,
+                        onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
                     )
                 }
             }
         }
 
-        // Layout Section - Margins & Reading Mode
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_layout),
-            description = stringResource(StringRes.settings_section_layout_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.LAYOUT),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
-        ) {
-            SettingsSlider(
-                label = stringResource(StringRes.settings_margin_horizontal),
-                value = viewState.marginHorizontal.toFloat(),
-                valueRange = 0f..48f,
-                onValueChange = {
-                    intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(it.toInt()))
-                },
-                valueDisplay = { "${it.toInt()}dp" },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsSlider(
-                label = stringResource(StringRes.settings_margin_vertical),
-                value = viewState.marginVertical.toFloat(),
-                valueRange = 0f..64f,
-                onValueChange = {
-                    intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
-                },
-                valueDisplay = { "${it.toInt()}dp" },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ScrollModeSelector(
-                selectedMode = viewState.scrollMode,
-                onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProgressBarModeSelector(
-                selectedMode = viewState.showProgressBar,
-                onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProgressBarPositionSelector(
-                selectedPosition = viewState.progressBarPosition,
-                onPositionSelected = {
-                    intentDispatcher(SettingsIntent.OnProgressBarPositionChanged(it))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ChapterProgressDisplayModeSelector(
-                selectedMode = viewState.chapterProgressDisplayMode,
-                onModeSelected = {
-                    intentDispatcher(SettingsIntent.OnChapterProgressDisplayModeChanged(it))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ShowTotalProgressSwitch(
-                isEnabled = viewState.showTotalProgress,
-                onToggle = { intentDispatcher(SettingsIntent.OnShowTotalProgressChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProgressIndicatorModeSelector(
-                selectedMode = viewState.progressIndicatorMode,
-                onModeSelected = {
-                    intentDispatcher(SettingsIntent.OnProgressIndicatorModeChanged(it))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FullscreenModeSwitch(
-                isEnabled = viewState.fullscreenMode,
-                onToggle = { intentDispatcher(SettingsIntent.OnFullscreenModeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ShowCurrentTimeSwitch(
-                isEnabled = viewState.showCurrentTime,
-                onToggle = { intentDispatcher(SettingsIntent.OnShowCurrentTimeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ShowReadingTimeSwitch(
-                isEnabled = viewState.showReadingTime,
-                onToggle = { intentDispatcher(SettingsIntent.OnShowReadingTimeChanged(it)) },
-            )
-        }
-
-        // Navigation Section - Tap and Volume Button Settings
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_navigation),
-            description = stringResource(StringRes.settings_section_navigation_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.NAVIGATION),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.NAVIGATION)) },
-            scrollState = scrollState,
-            coroutineScope = coroutineScope,
-        ) {
-            // Tap Navigation Settings
-            TapNavigationEnabledSwitch(
-                isEnabled = viewState.tapNavigationEnabled,
-                onToggle = { intentDispatcher(SettingsIntent.OnTapNavigationEnabledChanged(it)) },
-            )
-
-            // Only show action selectors when tap navigation is enabled
-            if (viewState.tapNavigationEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TapActionSelector(
-                    title = stringResource(StringRes.settings_left_tap_action),
-                    selectedAction = viewState.leftTapAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnLeftTapActionChanged(it)) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TapActionSelector(
-                    title = stringResource(StringRes.settings_right_tap_action),
-                    selectedAction = viewState.rightTapAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnRightTapActionChanged(it)) },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Volume Button Navigation Settings
-            VolumeButtonsEnabledSwitch(
-                isEnabled = viewState.volumeButtonsEnabled,
-                onToggle = { intentDispatcher(SettingsIntent.OnVolumeButtonsEnabledChanged(it)) },
-            )
-
-            // Only show action selectors when volume buttons are enabled
-            if (viewState.volumeButtonsEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                VolumeButtonActionSelector(
-                    title = stringResource(StringRes.settings_volume_up_action),
-                    selectedAction = viewState.volumeUpAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeUpActionChanged(it)) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                VolumeButtonActionSelector(
-                    title = stringResource(StringRes.settings_volume_down_action),
-                    selectedAction = viewState.volumeDownAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeDownActionChanged(it)) },
-                )
-            }
-        }
-
-        // ReadAloud Section - Highlight Style and Color
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_readaloud),
-            description = stringResource(StringRes.settings_section_readaloud_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
-            scrollState = scrollState,
-            coroutineScope = coroutineScope,
-        ) {
-            HighlightStyleSelector(
-                selectedStyle = viewState.highlightStyle,
-                onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
-            )
-            // Show highlight color picker only if style includes highlight
-            if (viewState.highlightStyle == HighlightStyle.HIGHLIGHT ||
-                viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ColorSelector(
-                    title = stringResource(StringRes.settings_highlight_color),
-                    selectedColor = viewState.highlightColor,
-                    onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
-                )
-            }
-            // Show underline color picker only if style includes underline
-            if (viewState.highlightStyle == HighlightStyle.UNDERLINE ||
-                viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ColorSelector(
-                    title = stringResource(StringRes.settings_underline_color),
-                    selectedColor = viewState.underlineColor,
-                    onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Double-tap timeout slider
-            Column {
-                SettingsSlider(
-                    label = stringResource(StringRes.settings_double_tap_timeout),
-                    value = viewState.doubleTapTimeoutMs.toFloat(),
-                    valueRange = 200f..800f,
-                    onValueChange = {
-                        intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(it.toInt()))
-                    },
-                    valueDisplay = { "${it.toInt()}ms" },
-                )
-                Text(
-                    text = stringResource(StringRes.settings_double_tap_timeout_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Audio progress bar visibility selector
-            AudioProgressBarModeSelector(
-                selectedMode = viewState.showAudioProgressBar,
-                onModeSelected = { intentDispatcher(SettingsIntent.OnShowAudioProgressBarChanged(it)) },
-            )
-        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+        )
     }
 }
 
@@ -879,7 +953,10 @@ private fun ReaderSettingsPreview(
                         text = paragraph,
                         style = TextStyle(
                             color = textColor,
-                            fontFamily = viewState.fontFamily.toPreviewFontFamily(),
+                            fontFamily = viewState.fontFamily.toWeightedPreviewFontFamily(
+                                fontWeight = viewState.fontWeight,
+                            ),
+                            fontWeight = viewState.fontWeight.toPreviewFontWeight(),
                             fontSize = previewFontSize,
                             lineHeight = (previewFontSize.value * viewState.lineHeight).sp,
                             textAlign = previewTextAlign,
@@ -897,6 +974,33 @@ private fun ReaderSettingsPreview(
 private fun previewParagraphs(): List<String> =
     stringResource(StringRes.settings_reader_preview_sample).split("\n\n")
 
+private fun Double.toPreviewFontWeight(): FontWeight =
+    FontWeight((400 * this).roundToInt().coerceIn(1, 1000))
+
+private fun Float.normalizedFontWeight(): Double {
+    val rounded = (this * 20).roundToInt() / 20.0
+    return if (rounded in 0.95..1.05) 1.0 else rounded
+}
+
+@Composable
+private fun SettingsAnimatedVisibility(
+    visible: Boolean,
+    animationsEnabled: Boolean,
+    content: @Composable () -> Unit,
+) {
+    if (animationsEnabled) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            content()
+        }
+    } else if (visible) {
+        content()
+    }
+}
+
 @Composable
 private fun ExpandableSettingsSection(
     title: String,
@@ -906,12 +1010,15 @@ private fun ExpandableSettingsSection(
     modifier: Modifier = Modifier,
     scrollState: ScrollState? = null,
     coroutineScope: CoroutineScope? = null,
+    animationsEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val rotationAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "arrow_rotation",
+    val targetRotation = if (isExpanded) 180f else 0f
+    val animatedRotation by animateFloatAsState(
+        targetValue = targetRotation,
+        label = "settings_section_arrow_rotation",
     )
+    val rotationAngle = if (animationsEnabled) animatedRotation else targetRotation
 
     var sectionPosition by remember { mutableStateOf(0) }
 
@@ -919,8 +1026,9 @@ private fun ExpandableSettingsSection(
     LaunchedEffect(isExpanded) {
         if (isExpanded && scrollState != null && coroutineScope != null) {
             coroutineScope.launch {
-                // Small delay to allow the expansion animation to start
-                kotlinx.coroutines.delay(100)
+                if (animationsEnabled) {
+                    kotlinx.coroutines.delay(100)
+                }
                 scrollState.animateScrollTo(sectionPosition)
             }
         }
@@ -971,10 +1079,9 @@ private fun ExpandableSettingsSection(
                 )
             }
 
-            AnimatedVisibility(
+            SettingsAnimatedVisibility(
                 visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
+                animationsEnabled = animationsEnabled,
             ) {
                 Column(
                     modifier = Modifier
@@ -1024,11 +1131,14 @@ private fun FontFamilySelector(
     onAddFont: () -> Unit,
     isExpanded: Boolean,
     onToggle: () -> Unit,
+    animationsEnabled: Boolean,
 ) {
-    val rotationAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "font_arrow_rotation",
+    val targetRotation = if (isExpanded) 180f else 0f
+    val animatedRotation by animateFloatAsState(
+        targetValue = targetRotation,
+        label = "settings_font_arrow_rotation",
     )
+    val rotationAngle = if (animationsEnabled) animatedRotation else targetRotation
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -1071,10 +1181,9 @@ private fun FontFamilySelector(
             )
         }
 
-        AnimatedVisibility(
+        SettingsAnimatedVisibility(
             visible = isExpanded,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut(),
+            animationsEnabled = animationsEnabled,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
