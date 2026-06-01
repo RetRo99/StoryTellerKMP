@@ -13,3 +13,7 @@ actual fun FontFamilyUiModel.toPreviewFontFamily(): FontFamily = when (cssValue)
     FontFamilyUiModel.CURSIVE.cssValue -> FontFamily.Cursive
     else -> FontFamily.SansSerif
 }
+
+@Composable
+actual fun FontFamilyUiModel.toWeightedPreviewFontFamily(fontWeight: Double): FontFamily =
+    toPreviewFontFamily()

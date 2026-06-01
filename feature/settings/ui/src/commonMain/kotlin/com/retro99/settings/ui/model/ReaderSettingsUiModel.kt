@@ -12,6 +12,7 @@ import com.retro99.reader.domain.model.NavigationAction
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
     val fontFamily: FontFamilyUiModel = FontFamilyUiModel.DEFAULT,
+    val fontWeight: Double = 1.0,
     val theme: ReaderThemeUiModel = ReaderThemeUiModel.SYSTEM,
     val lineHeight: Float = 1.5f,
     val paragraphSpacing: Double = 0.0,
@@ -60,6 +61,8 @@ data class ReaderSettingsUiModel(
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
     // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
     val showAudioProgressBar: Boolean? = null,
+    // Whether to keep the screen awake while ReadAloud audio is playing
+    val keepScreenOnDuringAudio: Boolean = true,
 )
 
 enum class ReaderThemeUiModel {

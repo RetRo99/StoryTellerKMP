@@ -18,6 +18,7 @@ data class EpubReaderCustomFont(
 data class EpubReaderSettings(
     val fontSize: Double,
     val fontFamily: String,
+    val fontWeight: Double,
     val theme: String,
     val lineHeight: Float,
     val paragraphSpacing: Double,
@@ -43,6 +44,7 @@ data class EpubReaderSettings(
             return EpubReaderSettings(
                 fontSize = settings.fontSize,
                 fontFamily = settings.fontFamily,
+                fontWeight = settings.fontWeight,
                 theme = settings.theme.name,
                 lineHeight = settings.lineHeight,
                 paragraphSpacing = settings.paragraphSpacing,

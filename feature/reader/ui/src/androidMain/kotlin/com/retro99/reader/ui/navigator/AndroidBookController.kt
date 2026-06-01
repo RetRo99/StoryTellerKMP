@@ -582,9 +582,12 @@ class AndroidBookController internal constructor() : BookController {
  * This is used for initial preferences when creating the navigator and for dynamic updates.
  */
 fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
+    val fontWeightOverride = fontWeight.toReadiumFontWeightOverride()
     return EpubPreferences(
         fontSize = fontSize,
         fontFamily = fontFamily.toReadiumFontFamily(),
+        fontWeight = fontWeightOverride,
+        textNormalization = fontWeightOverride != null,
         scroll = scrollMode,
         theme = theme.toReadiumTheme(),
         lineHeight = lineHeight.toDouble(),
@@ -603,6 +606,9 @@ private fun String.toReadiumFontFamily(): FontFamily? = when (this) {
     "default" -> null
     else -> FontFamily(this)
 }
+
+private fun Double.toReadiumFontWeightOverride(): Double? =
+    takeUnless { it in 0.95..1.05 }
 
 /**
  * Converts ReaderThemeUi to Readium's Theme.

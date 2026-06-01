@@ -19,6 +19,7 @@ import com.retro99.reader.domain.model.NavigationAction
 data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
     val fontFamily: String = "default",
+    val fontWeight: Double = 1.0,
     val theme: ReaderThemeUi = ReaderThemeUi.SYSTEM,
     val lineHeight: Float = 1.5f,
     val paragraphSpacing: Double = 0.0,
@@ -72,6 +73,8 @@ data class ReaderSettingsUiModel(
     val doubleTapTimeoutMs: Int = DEFAULT_DOUBLE_TAP_TIMEOUT_MS,
     // Audio progress bar visibility for ReadAloud: null = on tap (with controls), false = never
     val showAudioProgressBar: Boolean? = null,
+    // Whether to keep the screen awake while ReadAloud audio is playing
+    val keepScreenOnDuringAudio: Boolean = true,
 )
 
 enum class ReaderThemeUi {
@@ -119,6 +122,7 @@ enum class ReadAloudHighlightStyle {
 fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSettingsUiModel(
     fontSize = fontSize,
     fontFamily = fontFamily,
+    fontWeight = fontWeight,
     theme = theme.toUiTheme(),
     lineHeight = lineHeight,
     paragraphSpacing = paragraphSpacing,
@@ -149,11 +153,13 @@ fun ReaderSettingsDomainModel.toUiModel(): ReaderSettingsUiModel = ReaderSetting
     rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
+    keepScreenOnDuringAudio = keepScreenOnDuringAudio,
 )
 
 fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSettingsDomainModel(
     fontSize = fontSize,
     fontFamily = fontFamily,
+    fontWeight = fontWeight,
     theme = theme.toDomainTheme(),
     lineHeight = lineHeight,
     paragraphSpacing = paragraphSpacing,
@@ -184,6 +190,7 @@ fun ReaderSettingsUiModel.toDomainModel(): ReaderSettingsDomainModel = ReaderSet
     rightTapAction = rightTapAction,
     doubleTapTimeoutMs = doubleTapTimeoutMs,
     showAudioProgressBar = showAudioProgressBar,
+    keepScreenOnDuringAudio = keepScreenOnDuringAudio,
 )
 
 private fun ReaderTheme.toUiTheme(): ReaderThemeUi = when (this) {
