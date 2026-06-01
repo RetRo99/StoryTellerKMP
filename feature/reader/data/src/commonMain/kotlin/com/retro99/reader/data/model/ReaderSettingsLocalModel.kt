@@ -19,6 +19,8 @@ data class ReaderSettingsLocalModel(
     val fontFamily: String = "default",
     @SerialName("font_weight")
     val fontWeight: Double = 1.0,
+    @SerialName("text_normalization")
+    val textNormalization: Boolean = false,
     @SerialName("theme")
     val theme: String = "SYSTEM",
     @SerialName("line_height")
@@ -106,6 +108,7 @@ fun ReaderSettingsLocalModel.toDomain(): ReaderSettingsDomainModel {
         fontSize = fontSize,
         fontFamily = fontFamily,
         fontWeight = fontWeight,
+        textNormalization = textNormalization,
         theme = try {
             ReaderTheme.valueOf(theme)
         } catch (e: IllegalArgumentException) {
@@ -194,6 +197,7 @@ fun ReaderSettingsDomainModel.toLocal(): ReaderSettingsLocalModel {
         fontSize = fontSize,
         fontFamily = fontFamily,
         fontWeight = fontWeight,
+        textNormalization = textNormalization,
         theme = theme.name,
         lineHeight = lineHeight,
         paragraphSpacing = paragraphSpacing,

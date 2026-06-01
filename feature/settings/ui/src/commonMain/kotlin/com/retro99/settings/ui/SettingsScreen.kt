@@ -184,6 +184,8 @@ import resources.translations.settings_text_align_center
 import resources.translations.settings_text_align_end
 import resources.translations.settings_text_align_justify
 import resources.translations.settings_text_align_start
+import resources.translations.settings_text_normalization
+import resources.translations.settings_text_normalization_description
 import resources.translations.settings_theme
 import resources.translations.settings_theme_dark
 import resources.translations.settings_theme_light
@@ -311,6 +313,15 @@ private fun SettingsScreenContent(
                             true
                         } ?: false
                     },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsSwitch(
+                    label = stringResource(StringRes.settings_text_normalization),
+                    description = stringResource(StringRes.settings_text_normalization_description),
+                    checked = viewState.textNormalization,
+                    onCheckedChange = { intentDispatcher(SettingsIntent.OnTextNormalizationChanged(it)) },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

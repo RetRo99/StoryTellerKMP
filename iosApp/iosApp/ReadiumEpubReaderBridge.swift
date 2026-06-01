@@ -792,7 +792,7 @@ extension EpubReaderSettings {
             publisherStyles: publisherStyles,
             scroll: scrollMode?.boolValue,
             textAlign: textAlignToReadium(),
-            textNormalization: fontWeightOverride != nil,
+            textNormalization: textNormalization,
             theme: themeToReadium()
         )
     }

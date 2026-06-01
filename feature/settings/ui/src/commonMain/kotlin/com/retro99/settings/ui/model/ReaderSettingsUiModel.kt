@@ -13,6 +13,7 @@ data class ReaderSettingsUiModel(
     val fontSize: Double = 1.0,
     val fontFamily: FontFamilyUiModel = FontFamilyUiModel.DEFAULT,
     val fontWeight: Double = 1.0,
+    val textNormalization: Boolean = false,
     val theme: ReaderThemeUiModel = ReaderThemeUiModel.SYSTEM,
     val lineHeight: Float = 1.5f,
     val paragraphSpacing: Double = 0.0,

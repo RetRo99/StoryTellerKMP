@@ -587,7 +587,7 @@ fun ReaderSettingsUiModel.toEpubPreferences(): EpubPreferences {
         fontSize = fontSize,
         fontFamily = fontFamily.toReadiumFontFamily(),
         fontWeight = fontWeightOverride,
-        textNormalization = fontWeightOverride != null,
+        textNormalization = textNormalization,
         scroll = scrollMode,
         theme = theme.toReadiumTheme(),
         lineHeight = lineHeight.toDouble(),

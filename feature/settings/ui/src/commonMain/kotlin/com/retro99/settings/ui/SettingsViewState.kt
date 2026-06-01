@@ -24,6 +24,7 @@ data class SettingsViewState(
     val fontSize: Double get() = readerSettings.fontSize
     val fontFamily: FontFamilyUiModel get() = readerSettings.fontFamily
     val fontWeight: Double get() = readerSettings.fontWeight
+    val textNormalization: Boolean get() = readerSettings.textNormalization
     val lineHeight: Float get() = readerSettings.lineHeight
     val paragraphSpacing: Double get() = readerSettings.paragraphSpacing
     val marginHorizontal: Int get() = readerSettings.marginHorizontal
