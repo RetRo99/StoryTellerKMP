@@ -40,6 +40,8 @@ data class ReaderViewState(
     val showNoAudioMessage: Boolean = false,
     // Sleep timer state for ReadAloud playback. Null means no active timer.
     val sleepTimerRemainingMs: Long? = null,
+    // Shows a one-time prompt when the sleep timer is close to ending.
+    val showSleepTimerWarningPrompt: Boolean = false,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.

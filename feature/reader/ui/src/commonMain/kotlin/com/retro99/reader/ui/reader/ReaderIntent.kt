@@ -107,6 +107,11 @@ sealed interface ReaderIntent : BaseIntent {
     data object CancelSleepTimer : ReaderIntent
 
     /**
+     * Dismiss the sleep timer ending soon prompt without changing the timer.
+     */
+    data object DismissSleepTimerWarning : ReaderIntent
+
+    /**
      * Skip forward by a specified amount.
      *
      * @param milliseconds The amount to skip forward in milliseconds
