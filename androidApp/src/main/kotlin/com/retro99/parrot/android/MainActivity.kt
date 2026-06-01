@@ -52,14 +52,6 @@ class MainActivity : FragmentActivity() {
         handleDeepLinkIntent(intent)
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        // Readium's EpubNavigatorFragment cannot be restored after process death.
-        // Remove it before FragmentActivity saves fragment state so Android never
-        // resurrects the unsupported dummy fragment into onResume().
-        EpubFragmentFactoryHelper.removeRestoredFragment(supportFragmentManager)
-        super.onSaveInstanceState(outState)
-    }
-
     /**
      * Handles deep link intents from notification clicks or external links.
      * Extracts the URI data and passes it to the DeepLinkHandler for navigation.
