@@ -5,6 +5,7 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.onFailure
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.AuthAnalyticsEvent
 import com.retro99.base.result.AppError
 import com.retro99.base.result.CompletableResult
 import com.retro99.base.server.ServerType
@@ -68,6 +69,12 @@ internal class LoginDataRepository(
                 authenticator.loginWithAppToken(serverUrl, appToken)
             }
             .onFailure { error ->
+                analytics.logEvent(
+                    AuthAnalyticsEvent.OAuthLoginStepFailed(
+                        step = "oauth_flow",
+                        errorType = error::class.simpleName ?: "AppError",
+                    )
+                )
                 analytics.logException(
                     error.toThrowable(),
                     "LoginRepository: OAuth login failed | errorType=${error::class.simpleName}"

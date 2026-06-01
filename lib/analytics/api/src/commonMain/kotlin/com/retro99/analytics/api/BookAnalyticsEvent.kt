@@ -142,6 +142,19 @@ sealed interface AuthAnalyticsEvent : AnalyticsEvent {
         )
     }
 
+    data class OAuthLoginStepFailed(
+        val step: String,
+        val errorType: String,
+        val statusCode: Int? = null,
+    ) : AuthAnalyticsEvent {
+        override val name: String = "oauth_login_step_failed"
+        override val parameters: Map<String, Any> = buildMap {
+            put("step", step)
+            put("error_type", errorType)
+            statusCode?.let { put("status_code", it) }
+        }
+    }
+
     data object LogoutClicked : AuthAnalyticsEvent {
         override val name: String = "logout_clicked"
     }

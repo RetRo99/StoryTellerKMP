@@ -23,8 +23,8 @@ android {
         applicationId = "com.retro99.parrot"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 16
-        versionName = "0.4.0"
+        versionCode = 19
+        versionName = "0.4.3"
     }
     packaging {
         resources {
@@ -37,7 +37,8 @@ android {
                 storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword"
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
         }
     }
     buildTypes {
@@ -74,4 +75,3 @@ dependencies {
     implementation(libs.datetime)
     debugImplementation(libs.compose.uiTooling)
 }
-
