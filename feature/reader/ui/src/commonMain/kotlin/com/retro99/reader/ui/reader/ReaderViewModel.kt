@@ -188,6 +188,7 @@ class ReaderViewModel(
             is ReaderIntent.SetPlaybackSpeed -> setPlaybackSpeed(intent.speed)
             is ReaderIntent.StartSleepTimer -> startSleepTimer(intent.durationMs)
             ReaderIntent.CancelSleepTimer -> cancelSleepTimer()
+            ReaderIntent.DismissSleepTimerWarning -> dismissSleepTimerWarning()
             is ReaderIntent.SkipForward -> skipForward(intent.milliseconds)
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
             ReaderIntent.ToggleToc -> toggleToc()
@@ -617,21 +618,47 @@ class ReaderViewModel(
 
     private fun startSleepTimer(durationMs: Long) {
         sleepTimerJob?.cancel()
-        updateState { it.copy(sleepTimerRemainingMs = durationMs) }
+        updateState {
+            it.copy(
+                sleepTimerRemainingMs = durationMs,
+                showSleepTimerWarningPrompt = false,
+            )
+        }
         sleepTimerJob = viewModelScope.launch {
             var remainingMs = durationMs
+            var hasShownWarning = false
             while (remainingMs > 0L) {
                 delay(SLEEP_TIMER_TICK_MS)
                 if (viewState.value.isPlaying) {
                     remainingMs = (remainingMs - SLEEP_TIMER_TICK_MS).coerceAtLeast(0L)
-                    updateState { it.copy(sleepTimerRemainingMs = remainingMs) }
+                    updateState {
+                        it.copy(
+                            sleepTimerRemainingMs = remainingMs,
+                            showSleepTimerWarningPrompt = if (
+                                !hasShownWarning &&
+                                remainingMs in 1L..SLEEP_TIMER_WARNING_THRESHOLD_MS
+                            ) {
+                                true
+                            } else {
+                                it.showSleepTimerWarningPrompt
+                            },
+                        )
+                    }
+                    if (remainingMs in 1L..SLEEP_TIMER_WARNING_THRESHOLD_MS) {
+                        hasShownWarning = true
+                    }
                 }
             }
             if (viewState.value.isPlaying) {
                 audioController.togglePlayback()
                 saveCurrentAudioPosition()
             }
-            updateState { it.copy(sleepTimerRemainingMs = null) }
+            updateState {
+                it.copy(
+                    sleepTimerRemainingMs = null,
+                    showSleepTimerWarningPrompt = false,
+                )
+            }
             sleepTimerJob = null
         }
     }
@@ -639,7 +666,16 @@ class ReaderViewModel(
     private fun cancelSleepTimer() {
         sleepTimerJob?.cancel()
         sleepTimerJob = null
-        updateState { it.copy(sleepTimerRemainingMs = null) }
+        updateState {
+            it.copy(
+                sleepTimerRemainingMs = null,
+                showSleepTimerWarningPrompt = false,
+            )
+        }
+    }
+
+    private fun dismissSleepTimerWarning() {
+        updateState { it.copy(showSleepTimerWarningPrompt = false) }
     }
 
     private fun setHighlightColor(colorArgb: Int) {
@@ -770,5 +806,8 @@ class ReaderViewModel(
 
         /** Sleep timer countdown granularity. */
         private const val SLEEP_TIMER_TICK_MS = 1_000L
+
+        /** Remaining time when the user is prompted to extend the sleep timer. */
+        private const val SLEEP_TIMER_WARNING_THRESHOLD_MS = 60_000L
     }
 }

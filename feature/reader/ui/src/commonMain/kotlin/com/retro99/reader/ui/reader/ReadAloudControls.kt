@@ -241,6 +241,7 @@ private fun SleepTimerButton(
     intentDispatcher: IntentDispatcher<ReaderIntent>,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showCustomTimerDialog by remember { mutableStateOf(false) }
     val remainingToEndMs = totalDurationMs
         ?.minus(currentPositionMs)
         ?.takeIf { it > 0L }
@@ -253,7 +254,7 @@ private fun SleepTimerButton(
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = sleepTimerRemainingMs?.let { formatTimerLabel(it) } ?: "Timer",
+            text = sleepTimerRemainingMs?.let { formatSleepTimerLabel(it) } ?: "Timer",
             style = MaterialTheme.typography.labelLarge,
         )
         DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
@@ -266,6 +267,13 @@ private fun SleepTimerButton(
                     },
                 )
             }
+            DropdownMenuItem(
+                text = { Text("Custom...") },
+                onClick = {
+                    expanded = false
+                    showCustomTimerDialog = true
+                },
+            )
             if (remainingToEndMs != null) {
                 DropdownMenuItem(
                     text = { Text("End of audio") },
@@ -286,6 +294,23 @@ private fun SleepTimerButton(
             }
         }
     }
+
+    if (showCustomTimerDialog) {
+        SleepTimerDurationDialog(
+            title = "Custom sleep timer",
+            message = "Choose how long playback should continue before pausing.",
+            confirmLabel = "Start",
+            dismissLabel = "Cancel",
+            initialMinutes = sleepTimerRemainingMs
+                ?.let { ((it + 59_999L) / 60_000L).toInt().coerceAtLeast(1) }
+                ?: 5,
+            onConfirm = { minutes ->
+                intentDispatcher(ReaderIntent.StartSleepTimer(minutes * 60_000L))
+                showCustomTimerDialog = false
+            },
+            onDismiss = { showCustomTimerDialog = false },
+        )
+    }
 }
 
 private enum class SleepTimerPreset(
@@ -297,15 +322,5 @@ private enum class SleepTimerPreset(
     FifteenMinutes("15 minutes", 15 * 60_000L),
     ThirtyMinutes("30 minutes", 30 * 60_000L),
     SixtyMinutes("60 minutes", 60 * 60_000L),
-}
-
-private fun formatTimerLabel(durationMs: Long): String {
-    val totalMinutes = (durationMs / 60_000L).coerceAtLeast(0L)
-    val seconds = (durationMs / 1_000L) % 60L
-    return if (totalMinutes > 0L) {
-        "${totalMinutes}m"
-    } else {
-        "${seconds}s"
-    }
 }
 

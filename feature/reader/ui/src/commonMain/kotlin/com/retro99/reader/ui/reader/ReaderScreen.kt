@@ -224,6 +224,24 @@ private fun ReaderScreenContent(
             onDismiss = { intentDispatcher(ReaderIntent.DismissNoAudioMessage) },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+
+        if (viewState.showSleepTimerWarningPrompt && viewState.sleepTimerRemainingMs != null) {
+            SleepTimerDurationDialog(
+                title = "Sleep timer ending soon",
+                message = "Playback will pause in ${
+                    formatSleepTimerLabel(viewState.sleepTimerRemainingMs)
+                }. Choose how many more minutes to keep listening.",
+                confirmLabel = "Postpone",
+                dismissLabel = "Let it end",
+                initialMinutes = 5,
+                onConfirm = { minutes ->
+                    intentDispatcher(ReaderIntent.StartSleepTimer(minutes * 60_000L))
+                },
+                onDismiss = {
+                    intentDispatcher(ReaderIntent.DismissSleepTimerWarning)
+                },
+            )
+        }
     }
 }
 
