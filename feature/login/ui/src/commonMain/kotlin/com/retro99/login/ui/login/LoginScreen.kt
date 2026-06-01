@@ -54,6 +54,8 @@ import org.koin.core.parameter.parametersOf
 import resources.translations.general_back
 import resources.translations.login_hide_password
 import resources.translations.login_oauth_sign_in_button
+import resources.translations.login_oauth_waiting_button
+import resources.translations.login_oauth_waiting_message
 import resources.translations.login_password_label
 import resources.translations.login_show_password
 import resources.translations.login_sign_in_button

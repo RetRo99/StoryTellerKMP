@@ -2,6 +2,8 @@ package com.retro99.server.storyteller
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.AuthAnalyticsEvent
 import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.server.api.ServerAuthenticator
@@ -9,11 +11,9 @@ import com.retro99.server.api.ServerCredentials
 import com.retro99.server.api.ServerType
 import com.retro99.server.api.ServerValidationResult
 import com.retro99.server.storyteller.model.StorytellerAppTokenRequest
-import com.retro99.server.storyteller.model.StorytellerCurrentUserResponse
 import com.retro99.server.storyteller.model.StorytellerTokenResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -22,12 +22,20 @@ import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Provided
 
 @Factory
 class StorytellerAuthenticator(
     private val httpClient: HttpClient,
+    @Provided private val analytics: Analytics,
 ) : ServerAuthenticator {
 
     override val serverType: ServerType = ServerType.Storyteller
@@ -87,21 +95,27 @@ class StorytellerAuthenticator(
             }
 
             if (!tokenResponse.status.isSuccess()) {
+                logOAuthFailure(
+                    step = OAuthStep.AppTokenExchange,
+                    errorType = "HttpStatus",
+                    statusCode = tokenResponse.status.value,
+                    throwable = null,
+                )
                 return Err(AppError.AuthError("OAuth login failed: ${tokenResponse.status}"))
             }
 
+            val username = appToken.decodeJwtSubject()
+                ?: return Err(
+                    AppError.AuthError("OAuth login succeeded, but the app token did not include a username")
+                ).also {
+                    logOAuthFailure(
+                        step = OAuthStep.DecodeCallbackToken,
+                        errorType = "MissingSubject",
+                        statusCode = null,
+                        throwable = null,
+                    )
+                }
             val sessionToken = tokenResponse.body<StorytellerTokenResponse>()
-            val userResponse = httpClient.get("${baseUrl.trimEnd('/')}/api/v2/user") {
-                bearerAuth(sessionToken.accessToken)
-            }
-
-            if (!userResponse.status.isSuccess()) {
-                return Err(AppError.AuthError("OAuth login succeeded, but user lookup failed: ${userResponse.status}"))
-            }
-
-            val currentUser = userResponse.body<StorytellerCurrentUserResponse>()
-            val username = currentUser.username
-                ?: return Err(AppError.AuthError("OAuth login succeeded, but the server did not return a username"))
 
             Ok(
                 ServerCredentials(
@@ -113,6 +127,12 @@ class StorytellerAuthenticator(
                 )
             )
         } catch (e: Exception) {
+            logOAuthFailure(
+                step = OAuthStep.AppTokenLogin,
+                errorType = e::class.simpleName ?: "Exception",
+                statusCode = null,
+                throwable = e,
+            )
             Err(mapException(e))
         }
     }
@@ -158,6 +178,73 @@ class StorytellerAuthenticator(
             e.message?.contains("timeout", ignoreCase = true) == true -> AppError.NetworkError(e)
             else -> AppError.UnknownError(e)
         }
+    }
+
+    private fun logOAuthFailure(
+        step: OAuthStep,
+        errorType: String,
+        statusCode: Int?,
+        throwable: Throwable?,
+    ) {
+        analytics.logEvent(
+            AuthAnalyticsEvent.OAuthLoginStepFailed(
+                step = step.analyticsName,
+                errorType = errorType,
+                statusCode = statusCode,
+            )
+        )
+        analytics.logException(
+            throwable ?: OAuthLoginFailureException(step, errorType, statusCode),
+            buildString {
+                append("StorytellerAuthenticator: OAuth login failed | step=")
+                append(step.analyticsName)
+                append(" | errorType=")
+                append(errorType)
+                statusCode?.let {
+                    append(" | statusCode=")
+                    append(it)
+                }
+            }
+        )
+    }
+
+    private enum class OAuthStep(val analyticsName: String) {
+        AppTokenExchange("app_token_exchange"),
+        DecodeCallbackToken("decode_callback_token"),
+        AppTokenLogin("app_token_login"),
+    }
+
+    private class OAuthLoginFailureException(
+        step: OAuthStep,
+        errorType: String,
+        statusCode: Int?,
+    ) : Exception(
+        buildString {
+            append("OAuth login failed at ")
+            append(step.analyticsName)
+            append(": ")
+            append(errorType)
+            statusCode?.let {
+                append(" (HTTP ")
+                append(it)
+                append(")")
+            }
+        }
+    )
+
+    @OptIn(ExperimentalEncodingApi::class)
+    private fun String.decodeJwtSubject(): String? {
+        return runCatching {
+            val payload = split('.').getOrNull(1) ?: return null
+            val paddedPayload = payload.padEnd(payload.length + ((4 - payload.length % 4) % 4), '=')
+            val payloadJson = Base64.UrlSafe.decode(paddedPayload).decodeToString()
+
+            Json.parseToJsonElement(payloadJson)
+                .jsonObject["sub"]
+                ?.jsonPrimitive
+                ?.contentOrNull
+                ?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 }
 
