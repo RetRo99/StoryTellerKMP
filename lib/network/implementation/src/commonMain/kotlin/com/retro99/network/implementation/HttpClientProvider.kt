@@ -45,7 +45,7 @@ class HttpClientProvider(
                     sendWithoutRequest { true }
                     loadTokens {
                         val token = tokenProvider.getBearerToken()
-                        token?.let { BearerTokens(it, "") }
+                        token?.let { BearerTokens(  it, "") }
                     }
                     refreshTokens {
                         val token = tokenRefresher.refreshBearerToken()

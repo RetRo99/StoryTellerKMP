@@ -195,8 +195,8 @@
     <string name="settings_undo">Undo</string>
 
     <!-- Settings Sections -->
-    <string name="settings_section_appearance">Appearance</string>
-    <string name="settings_section_appearance_description">Reader theme</string>
+    <string name="settings_section_core">Reading Basics</string>
+    <string name="settings_section_core_description">Theme, text size, font, and page flow</string>
     <string name="settings_section_typography">Typography</string>
     <string name="settings_section_typography_description">Font, size, spacing, and alignment</string>
     <string name="settings_section_layout">Layout</string>

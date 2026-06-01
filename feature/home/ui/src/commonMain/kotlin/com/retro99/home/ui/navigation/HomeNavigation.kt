@@ -248,7 +248,9 @@ fun HomeNavigation(
                     }
 
                     entry<HomeDestination.Settings> {
-                        SettingsScreen()
+                        SettingsScreen(
+                            onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
+                        )
                     }
 
                     entry<HomeDestination.AppSettings> {

@@ -608,7 +608,7 @@ private fun String.toReadiumFontFamily(): FontFamily? = when (this) {
 }
 
 private fun Double.toReadiumFontWeightOverride(): Double? =
-    takeUnless { it in 0.95..1.05 }
+    takeUnless { it == 1.0 }
 
 /**
  * Converts ReaderThemeUi to Readium's Theme.

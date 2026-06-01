@@ -26,22 +26,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,15 +49,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -68,8 +71,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.github.skydoves.colorpicker.compose.AlphaSlider
-import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import com.retro99.base.ui.BaseScreen
@@ -97,6 +98,7 @@ import resources.translations.settings_chapter_progress_fixed
 import resources.translations.settings_chapter_progress_none
 import resources.translations.settings_chapter_progress_percentage
 import resources.translations.settings_chapter_progress_relative
+import resources.translations.general_close
 import resources.translations.settings_changed
 import resources.translations.settings_font_family
 import resources.translations.settings_font_family_add
@@ -149,8 +151,8 @@ import resources.translations.settings_scroll_mode
 import resources.translations.settings_scroll_mode_auto
 import resources.translations.settings_scroll_mode_paginated
 import resources.translations.settings_scroll_mode_scroll
-import resources.translations.settings_section_appearance
-import resources.translations.settings_section_appearance_description
+import resources.translations.settings_section_core
+import resources.translations.settings_section_core_description
 import resources.translations.settings_section_layout
 import resources.translations.settings_section_layout_description
 import resources.translations.settings_section_navigation
@@ -193,6 +195,7 @@ import resources.translations.settings_undo
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
+    onClose: (() -> Unit)? = null,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     BaseScreen(
@@ -202,6 +205,7 @@ fun SettingsScreen(
         SettingsScreenContent(
             viewState = viewState,
             intentDispatcher = intentDispatcher,
+            onClose = onClose,
             modifier = modifier,
         )
     }
@@ -211,6 +215,7 @@ fun SettingsScreen(
 private fun SettingsScreenContent(
     viewState: SettingsViewState,
     intentDispatcher: IntentDispatcher<SettingsIntent>,
+    onClose: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -254,28 +259,24 @@ private fun SettingsScreenContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(StringRes.settings_title),
-                style = MaterialTheme.typography.headlineMedium,
-            )
+            SettingsSheetHeader(onClose = onClose)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            ReaderSettingsPreview(viewState = viewState)
-
-            // Appearance: screen colors only, kept small for e-ink scanning.
-            ExpandableSettingsSection(
-                title = stringResource(StringRes.settings_section_appearance),
-                description = stringResource(StringRes.settings_section_appearance_description),
-                isExpanded = viewState.isSectionExpanded(SettingsSection.APPEARANCE),
-                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.APPEARANCE)) },
+            CoreReaderSettingsPanel(
+                viewState = viewState,
                 animationsEnabled = animationsEnabled,
-            ) {
-                ThemeSelector(
-                    selectedTheme = viewState.theme,
-                    onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
-                )
-            }
+                onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
+                onFontSizeChanged = {
+                    intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
+                },
+                onFontFamilySelected = {
+                    intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
+                },
+                onAddFont = { fontPickerLauncher.launch() },
+                onFontsToggled = { intentDispatcher(SettingsIntent.OnFontsToggled) },
+                onScrollModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+            )
 
             // Typography: all text shape controls live together.
             ExpandableSettingsSection(
@@ -285,40 +286,31 @@ private fun SettingsScreenContent(
                 onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
                 animationsEnabled = animationsEnabled,
             ) {
-                SettingsSlider(
-                    label = stringResource(StringRes.settings_font_size),
-                    value = viewState.fontSize.toFloat(),
-                    valueRange = 0.5f..3.0f,
-                    onValueChange = {
-                        intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
-                    },
-                    valueDisplay = { "${(it * 100).toInt()}%" },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                FontFamilySelector(
-                    selectedFontFamily = viewState.fontFamily,
-                    customFonts = viewState.customFonts,
-                    onFontFamilySelected = {
-                        intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
-                    },
-                    onAddFont = { fontPickerLauncher.launch() },
-                    isExpanded = viewState.isFontsExpanded,
-                    onToggle = { intentDispatcher(SettingsIntent.OnFontsToggled) },
-                    animationsEnabled = animationsEnabled,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SettingsSlider(
+                StepperSetting(
                     label = stringResource(StringRes.settings_font_weight),
-                    value = viewState.fontWeight.toFloat(),
-                    valueRange = 0.5f..2.0f,
-                    onValueChange = {
-                        intentDispatcher(SettingsIntent.OnFontWeightChanged(it.normalizedFontWeight()))
+                    value = "${(viewState.fontWeight * 100).roundToInt()}%",
+                    manualInputValue = "${(viewState.fontWeight * 100).roundToInt()}",
+                    onDecrease = {
+                        val newValue = (viewState.fontWeight.toFloat() - FONT_WEIGHT_STEP)
+                            .coerceAtLeast(MIN_FONT_WEIGHT)
+                            .normalizedFontWeight()
+                        intentDispatcher(SettingsIntent.OnFontWeightChanged(newValue))
                     },
-                    valueDisplay = { "${(it * 100).roundToInt()}%" },
+                    onIncrease = {
+                        val newValue = (viewState.fontWeight.toFloat() + FONT_WEIGHT_STEP)
+                            .coerceAtMost(MAX_FONT_WEIGHT)
+                            .normalizedFontWeight()
+                        intentDispatcher(SettingsIntent.OnFontWeightChanged(newValue))
+                    },
+                    onManualValueSubmit = { input ->
+                        input.toFloatOrNull()?.let { percent ->
+                            val newValue = (percent / 100f)
+                                .coerceIn(MIN_FONT_WEIGHT, MAX_FONT_WEIGHT)
+                                .normalizedFontWeight()
+                            intentDispatcher(SettingsIntent.OnFontWeightChanged(newValue))
+                            true
+                        } ?: false
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -337,26 +329,65 @@ private fun SettingsScreenContent(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        SettingsSlider(
+                        StepperSetting(
                             label = stringResource(StringRes.settings_line_height),
-                            value = viewState.lineHeight,
-                            valueRange = 1.0f..2.5f,
-                            onValueChange = {
-                                intentDispatcher(SettingsIntent.OnLineHeightChanged(it))
+                            value = viewState.lineHeight.toSingleDecimalString(),
+                            manualInputValue = viewState.lineHeight.toSingleDecimalString(),
+                            onDecrease = {
+                                intentDispatcher(
+                                    SettingsIntent.OnLineHeightChanged(
+                                        (viewState.lineHeight - LINE_HEIGHT_STEP)
+                                            .coerceAtLeast(MIN_LINE_HEIGHT)
+                                            .roundToSingleDecimal(),
+                                    ),
+                                )
                             },
-                            valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
+                            onIncrease = {
+                                intentDispatcher(
+                                    SettingsIntent.OnLineHeightChanged(
+                                        (viewState.lineHeight + LINE_HEIGHT_STEP)
+                                            .coerceAtMost(MAX_LINE_HEIGHT)
+                                            .roundToSingleDecimal(),
+                                    ),
+                                )
+                            },
+                            onManualValueSubmit = { input ->
+                                input.toFloatOrNull()?.let { lineHeight ->
+                                    intentDispatcher(
+                                        SettingsIntent.OnLineHeightChanged(
+                                            lineHeight.coerceIn(MIN_LINE_HEIGHT, MAX_LINE_HEIGHT)
+                                                .roundToSingleDecimal(),
+                                        ),
+                                    )
+                                    true
+                                } ?: false
+                            },
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        SettingsSlider(
+                        StepperSetting(
                             label = stringResource(StringRes.settings_paragraph_spacing),
-                            value = viewState.paragraphSpacing.toFloat(),
-                            valueRange = 0.0f..2.0f,
-                            onValueChange = {
-                                intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(it.toDouble()))
+                            value = "${(viewState.paragraphSpacing * 100).roundToInt()}%",
+                            manualInputValue = "${(viewState.paragraphSpacing * 100).roundToInt()}",
+                            onDecrease = {
+                                val newValue = (viewState.paragraphSpacing - PARAGRAPH_SPACING_STEP)
+                                    .coerceAtLeast(MIN_PARAGRAPH_SPACING)
+                                intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(newValue))
                             },
-                            valueDisplay = { "${(it * 100).roundToInt()}%" },
+                            onIncrease = {
+                                val newValue = (viewState.paragraphSpacing + PARAGRAPH_SPACING_STEP)
+                                    .coerceAtMost(MAX_PARAGRAPH_SPACING)
+                                intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(newValue))
+                            },
+                            onManualValueSubmit = { input ->
+                                input.toFloatOrNull()?.let { percent ->
+                                    val newValue = (percent / 100.0)
+                                        .coerceIn(MIN_PARAGRAPH_SPACING, MAX_PARAGRAPH_SPACING)
+                                    intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(newValue))
+                                    true
+                                } ?: false
+                            },
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -379,26 +410,58 @@ private fun SettingsScreenContent(
                 onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
                 animationsEnabled = animationsEnabled,
             ) {
-                SettingsSlider(
+                StepperSetting(
                     label = stringResource(StringRes.settings_margin_horizontal),
-                    value = viewState.marginHorizontal.toFloat(),
-                    valueRange = 0f..48f,
-                    onValueChange = {
-                        intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(it.toInt()))
+                    value = "${viewState.marginHorizontal}dp",
+                    manualInputValue = viewState.marginHorizontal.toString(),
+                    onDecrease = {
+                        val newValue = (viewState.marginHorizontal - MARGIN_STEP)
+                            .coerceAtLeast(MIN_HORIZONTAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(newValue))
                     },
-                    valueDisplay = { "${it.toInt()}dp" },
+                    onIncrease = {
+                        val newValue = (viewState.marginHorizontal + MARGIN_STEP)
+                            .coerceAtMost(MAX_HORIZONTAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(newValue))
+                    },
+                    onManualValueSubmit = { input ->
+                        input.toIntOrNull()?.let { margin ->
+                            intentDispatcher(
+                                SettingsIntent.OnMarginHorizontalChanged(
+                                    margin.coerceIn(MIN_HORIZONTAL_MARGIN, MAX_HORIZONTAL_MARGIN),
+                                ),
+                            )
+                            true
+                        } ?: false
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                SettingsSlider(
+                StepperSetting(
                     label = stringResource(StringRes.settings_margin_vertical),
-                    value = viewState.marginVertical.toFloat(),
-                    valueRange = 0f..64f,
-                    onValueChange = {
-                        intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
+                    value = "${viewState.marginVertical}dp",
+                    manualInputValue = viewState.marginVertical.toString(),
+                    onDecrease = {
+                        val newValue = (viewState.marginVertical - MARGIN_STEP)
+                            .coerceAtLeast(MIN_VERTICAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginVerticalChanged(newValue))
                     },
-                    valueDisplay = { "${it.toInt()}dp" },
+                    onIncrease = {
+                        val newValue = (viewState.marginVertical + MARGIN_STEP)
+                            .coerceAtMost(MAX_VERTICAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginVerticalChanged(newValue))
+                    },
+                    onManualValueSubmit = { input ->
+                        input.toIntOrNull()?.let { margin ->
+                            intentDispatcher(
+                                SettingsIntent.OnMarginVerticalChanged(
+                                    margin.coerceIn(MIN_VERTICAL_MARGIN, MAX_VERTICAL_MARGIN),
+                                ),
+                            )
+                            true
+                        } ?: false
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -516,14 +579,30 @@ private fun SettingsScreenContent(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Column {
-                    SettingsSlider(
+                    StepperSetting(
                         label = stringResource(StringRes.settings_double_tap_timeout),
-                        value = viewState.doubleTapTimeoutMs.toFloat(),
-                        valueRange = 200f..800f,
-                        onValueChange = {
-                            intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(it.toInt()))
+                        value = "${viewState.doubleTapTimeoutMs}ms",
+                        manualInputValue = viewState.doubleTapTimeoutMs.toString(),
+                        onDecrease = {
+                            val newValue = (viewState.doubleTapTimeoutMs - DOUBLE_TAP_TIMEOUT_STEP)
+                                .coerceAtLeast(MIN_DOUBLE_TAP_TIMEOUT)
+                            intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(newValue))
                         },
-                        valueDisplay = { "${it.toInt()}ms" },
+                        onIncrease = {
+                            val newValue = (viewState.doubleTapTimeoutMs + DOUBLE_TAP_TIMEOUT_STEP)
+                                .coerceAtMost(MAX_DOUBLE_TAP_TIMEOUT)
+                            intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(newValue))
+                        },
+                        onManualValueSubmit = { input ->
+                            input.toIntOrNull()?.let { timeout ->
+                                intentDispatcher(
+                                    SettingsIntent.OnDoubleTapTimeoutChanged(
+                                        timeout.coerceIn(MIN_DOUBLE_TAP_TIMEOUT, MAX_DOUBLE_TAP_TIMEOUT),
+                                    ),
+                                )
+                                true
+                            } ?: false
+                        },
                     )
                     Text(
                         text = stringResource(StringRes.settings_double_tap_timeout_description),
@@ -611,14 +690,55 @@ private fun SettingsScreenContent(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(FLOATING_PREVIEW_SPACE))
         }
+
+        FloatingReaderSettingsPreview(
+            viewState = viewState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
 
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp),
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = FLOATING_PREVIEW_SPACE,
+                ),
         )
+    }
+}
+
+private val FLOATING_PREVIEW_HEIGHT = 132.dp
+private val FLOATING_PREVIEW_SPACE = 172.dp
+
+@Composable
+private fun SettingsSheetHeader(
+    onClose: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(StringRes.settings_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (onClose != null) {
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(StringRes.general_close),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
     }
 }
 
@@ -630,6 +750,239 @@ private val PresetHighlightColors = listOf(
     0x80F48FB1.toInt(), // Pink
     0x80FFB74D.toInt(), // Orange
 )
+
+@Composable
+private fun CoreReaderSettingsPanel(
+    viewState: SettingsViewState,
+    animationsEnabled: Boolean,
+    onThemeSelected: (ReaderThemeUiModel) -> Unit,
+    onFontSizeChanged: (Float) -> Unit,
+    onFontFamilySelected: (FontFamilyUiModel) -> Unit,
+    onAddFont: () -> Unit,
+    onFontsToggled: () -> Unit,
+    onScrollModeSelected: (Boolean?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(8.dp),
+            ),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_section_core),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(StringRes.settings_section_core_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ThemeSelector(
+                selectedTheme = viewState.theme,
+                onThemeSelected = onThemeSelected,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            StepperSetting(
+                label = stringResource(StringRes.settings_font_size),
+                value = "${(viewState.fontSize * 100).roundToInt()}%",
+                manualInputValue = "${(viewState.fontSize * 100).roundToInt()}",
+                onDecrease = {
+                    onFontSizeChanged(
+                        (viewState.fontSize.toFloat() - FONT_SIZE_STEP).coerceAtLeast(MIN_FONT_SIZE),
+                    )
+                },
+                onIncrease = {
+                    onFontSizeChanged(
+                        (viewState.fontSize.toFloat() + FONT_SIZE_STEP).coerceAtMost(MAX_FONT_SIZE),
+                    )
+                },
+                onManualValueSubmit = { input ->
+                    input.toFloatOrNull()?.let { percent ->
+                        onFontSizeChanged((percent / 100f).coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE))
+                        true
+                    } ?: false
+                },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FontFamilySelector(
+                selectedFontFamily = viewState.fontFamily,
+                customFonts = viewState.customFonts,
+                onFontFamilySelected = onFontFamilySelected,
+                onAddFont = onAddFont,
+                isExpanded = viewState.isFontsExpanded,
+                onToggle = onFontsToggled,
+                animationsEnabled = animationsEnabled,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ScrollModeSelector(
+                selectedMode = viewState.scrollMode,
+                onModeSelected = onScrollModeSelected,
+            )
+        }
+    }
+}
+
+private const val MIN_FONT_SIZE = 0.5f
+private const val MAX_FONT_SIZE = 3.0f
+private const val FONT_SIZE_STEP = 0.05f
+private const val MIN_FONT_WEIGHT = 0.5f
+private const val MAX_FONT_WEIGHT = 2.0f
+private const val FONT_WEIGHT_STEP = 0.1f
+private const val MIN_LINE_HEIGHT = 1.0f
+private const val MAX_LINE_HEIGHT = 2.5f
+private const val LINE_HEIGHT_STEP = 0.1f
+private const val MIN_PARAGRAPH_SPACING = 0.0
+private const val MAX_PARAGRAPH_SPACING = 2.0
+private const val PARAGRAPH_SPACING_STEP = 0.05
+private const val MIN_HORIZONTAL_MARGIN = 0
+private const val MAX_HORIZONTAL_MARGIN = 48
+private const val MIN_VERTICAL_MARGIN = 0
+private const val MAX_VERTICAL_MARGIN = 64
+private const val MARGIN_STEP = 4
+private const val MIN_DOUBLE_TAP_TIMEOUT = 200
+private const val MAX_DOUBLE_TAP_TIMEOUT = 800
+private const val DOUBLE_TAP_TIMEOUT_STEP = 50
+
+@Composable
+private fun StepperSetting(
+    label: String,
+    value: String,
+    manualInputValue: String,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    onManualValueSubmit: (String) -> Boolean,
+) {
+    var showManualDialog by remember { mutableStateOf(false) }
+    var inputValue by remember { mutableStateOf(manualInputValue) }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StepperButton(
+                text = "-",
+                onClick = onDecrease,
+            )
+            Text(
+                text = value,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                    .clickable {
+                        inputValue = manualInputValue
+                        showManualDialog = true
+                    }
+                    .padding(vertical = 12.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            StepperButton(
+                text = "+",
+                onClick = onIncrease,
+            )
+        }
+    }
+
+    if (showManualDialog) {
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+
+        AlertDialog(
+            onDismissRequest = { showManualDialog = false },
+            title = { Text(text = label) },
+            text = {
+                TextField(
+                    value = inputValue,
+                    onValueChange = { inputValue = it },
+                    modifier = Modifier.focusRequester(focusRequester),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (onManualValueSubmit(inputValue)) {
+                            showManualDialog = false
+                        }
+                    },
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showManualDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun StepperButton(
+    text: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(4.dp),
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
 
 @Composable
 private fun ColorSelector(
@@ -787,36 +1140,6 @@ private fun ColorPickerDialog(
                     },
                     initialColor = initialComposeColor,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Alpha slider
-                Text(
-                    text = "Opacity",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start),
-                )
-                AlphaSlider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(35.dp),
-                    controller = controller,
-                    initialColor = initialComposeColor,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Brightness slider
-                Text(
-                    text = "Brightness",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start),
-                )
-                BrightnessSlider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(35.dp),
-                    controller = controller,
-                    initialColor = initialComposeColor,
-                )
             }
         },
         confirmButton = {
@@ -899,9 +1222,32 @@ private fun HighlightStyleChip(
 }
 
 @Composable
+private fun FloatingReaderSettingsPreview(
+    viewState: SettingsViewState,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            .padding(12.dp),
+    ) {
+        ReaderSettingsPreview(
+            viewState = viewState,
+            previewHeight = FLOATING_PREVIEW_HEIGHT,
+        )
+    }
+}
+
+@Composable
 private fun ReaderSettingsPreview(
     viewState: SettingsViewState,
     modifier: Modifier = Modifier,
+    previewHeight: Dp = 150.dp,
 ) {
     val (backgroundColor, textColor) = when (viewState.theme) {
         ReaderThemeUiModel.LIGHT -> Color(0xFFFFFEFA) to Color(0xFF24211D)
@@ -932,7 +1278,7 @@ private fun ReaderSettingsPreview(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .height(previewHeight)
                 .clip(RoundedCornerShape(8.dp))
                 .background(backgroundColor)
                 .border(
@@ -979,7 +1325,87 @@ private fun Double.toPreviewFontWeight(): FontWeight =
 
 private fun Float.normalizedFontWeight(): Double {
     val rounded = (this * 20).roundToInt() / 20.0
-    return if (rounded in 0.95..1.05) 1.0 else rounded
+    return if (rounded == 1.0) 1.0 else rounded
+}
+
+private fun Float.roundToSingleDecimal(): Float =
+    (this * 10).roundToInt() / 10f
+
+private fun Float.toSingleDecimalString(): String =
+    ((this * 10).roundToInt() / 10.0).toString()
+
+@Composable
+private fun <T> OutlinedChoiceGroup(
+    title: String,
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    optionLabel: @Composable (T) -> String,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedChoiceRow(
+            options = options,
+            selectedOption = selectedOption,
+            onOptionSelected = onOptionSelected,
+            optionLabel = optionLabel,
+        )
+    }
+}
+
+@Composable
+private fun <T> OutlinedChoiceRow(
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    optionLabel: @Composable (T) -> String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        options.forEach { option ->
+            val selected = option == selectedOption
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        if (selected) {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    )
+                    .border(
+                        width = if (selected) 2.dp else 1.dp,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.outline
+                        },
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                    .clickable { onOptionSelected(option) }
+                    .padding(horizontal = 6.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = optionLabel(option),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -1034,62 +1460,63 @@ private fun ExpandableSettingsSection(
         }
     }
 
-    Card(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(4.dp),
             )
             .onGloballyPositioned { coordinates ->
                 sectionPosition = coordinates.positionInParent().y.toInt()
             },
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onToggle)
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(rotationAngle),
-                    tint = MaterialTheme.colorScheme.onSurface,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                modifier = Modifier.rotate(rotationAngle),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
 
-            SettingsAnimatedVisibility(
-                visible = isExpanded,
-                animationsEnabled = animationsEnabled,
+        SettingsAnimatedVisibility(
+            visible = isExpanded,
+            animationsEnabled = animationsEnabled,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(0.dp),
+                    )
+                    .padding(14.dp),
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                ) {
-                    content()
-                }
+                content()
             }
         }
     }
@@ -1100,27 +1527,13 @@ private fun ThemeSelector(
     selectedTheme: ReaderThemeUiModel,
     onThemeSelected: (ReaderThemeUiModel) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_theme),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ReaderThemeUiModel.entries.forEachIndexed { index, theme ->
-                SegmentedButton(
-                    selected = theme == selectedTheme,
-                    onClick = { onThemeSelected(theme) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ReaderThemeUiModel.entries.size,
-                    ),
-                ) {
-                    Text(text = theme.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_theme),
+        options = ReaderThemeUiModel.entries,
+        selectedOption = selectedTheme,
+        onOptionSelected = onThemeSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1304,27 +1717,13 @@ private fun TextAlignSelector(
     selectedAlign: ReaderTextAlignUiModel,
     onAlignSelected: (ReaderTextAlignUiModel) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_text_align),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ReaderTextAlignUiModel.entries.forEachIndexed { index, align ->
-                SegmentedButton(
-                    selected = align == selectedAlign,
-                    onClick = { onAlignSelected(align) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ReaderTextAlignUiModel.entries.size,
-                    ),
-                ) {
-                    Text(text = align.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_text_align),
+        options = ReaderTextAlignUiModel.entries,
+        selectedOption = selectedAlign,
+        onOptionSelected = onAlignSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 /**
@@ -1341,27 +1740,13 @@ private fun ScrollModeSelector(
     // Options: null = Auto, false = Paginated, true = Scroll
     val options = listOf<Boolean?>(null, false, true)
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_scroll_mode),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = options.size,
-                    ),
-                ) {
-                    Text(text = mode.toScrollModeDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_scroll_mode),
+        options = options,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toScrollModeDisplayString() },
+    )
 }
 
 @Composable
@@ -1386,27 +1771,13 @@ private fun ProgressBarModeSelector(
     // Options: true = Always, null = On Tap, false = Never
     val options = listOf<Boolean?>(true, null, false)
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_progress_bar),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = options.size,
-                    ),
-                ) {
-                    Text(text = mode.toProgressBarModeDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_progress_bar),
+        options = options,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toProgressBarModeDisplayString() },
+    )
 }
 
 @Composable
@@ -1441,20 +1812,12 @@ private fun AudioProgressBarModeSelector(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = options.size,
-                    ),
-                ) {
-                    Text(text = mode.toProgressBarModeDisplayString())
-                }
-            }
-        }
+        OutlinedChoiceRow(
+            options = options,
+            selectedOption = selectedMode,
+            onOptionSelected = onModeSelected,
+            optionLabel = { it.toProgressBarModeDisplayString() },
+        )
     }
 }
 
@@ -1469,27 +1832,13 @@ private fun ProgressBarPositionSelector(
     selectedPosition: ProgressBarPosition,
     onPositionSelected: (ProgressBarPosition) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_progress_bar_position),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ProgressBarPosition.entries.forEachIndexed { index, position ->
-                SegmentedButton(
-                    selected = position == selectedPosition,
-                    onClick = { onPositionSelected(position) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ProgressBarPosition.entries.size,
-                    ),
-                ) {
-                    Text(text = position.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_progress_bar_position),
+        options = ProgressBarPosition.entries,
+        selectedOption = selectedPosition,
+        onOptionSelected = onPositionSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1511,27 +1860,13 @@ private fun ChapterProgressDisplayModeSelector(
     selectedMode: ChapterProgressDisplayMode,
     onModeSelected: (ChapterProgressDisplayMode) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_chapter_progress),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ChapterProgressDisplayMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ChapterProgressDisplayMode.entries.size,
-                    ),
-                ) {
-                    Text(text = mode.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_chapter_progress),
+        options = ChapterProgressDisplayMode.entries,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1707,32 +2042,11 @@ private fun TapActionSelector(
     selectedAction: NavigationAction,
     onActionSelected: (NavigationAction) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            NavigationAction.entries.forEachIndexed { index, action ->
-                SegmentedButton(
-                    selected = action == selectedAction,
-                    onClick = { onActionSelected(action) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = NavigationAction.entries.size,
-                    ),
-                ) {
-                    Text(
-                        text = when (action) {
-                            NavigationAction.NEXT_PAGE -> stringResource(StringRes.settings_navigation_action_next_page)
-                            NavigationAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_navigation_action_previous_page)
-                        },
-                    )
-                }
-            }
-        }
-    }
+    NavigationActionSelector(
+        title = title,
+        selectedAction = selectedAction,
+        onActionSelected = onActionSelected,
+    )
 }
 
 /**
@@ -1780,32 +2094,34 @@ private fun VolumeButtonActionSelector(
     selectedAction: NavigationAction,
     onActionSelected: (NavigationAction) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            NavigationAction.entries.forEachIndexed { index, action ->
-                SegmentedButton(
-                    selected = action == selectedAction,
-                    onClick = { onActionSelected(action) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = NavigationAction.entries.size,
-                    ),
-                ) {
-                    Text(
-                        text = when (action) {
-                            NavigationAction.NEXT_PAGE -> stringResource(StringRes.settings_navigation_action_next_page)
-                            NavigationAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_navigation_action_previous_page)
-                        },
-                    )
-                }
+    NavigationActionSelector(
+        title = title,
+        selectedAction = selectedAction,
+        onActionSelected = onActionSelected,
+    )
+}
+
+@Composable
+private fun NavigationActionSelector(
+    title: String,
+    selectedAction: NavigationAction,
+    onActionSelected: (NavigationAction) -> Unit,
+) {
+    OutlinedChoiceGroup(
+        title = title,
+        options = NavigationAction.entries,
+        selectedOption = selectedAction,
+        onOptionSelected = onActionSelected,
+        optionLabel = {
+            when (it) {
+                NavigationAction.NEXT_PAGE ->
+                    stringResource(StringRes.settings_navigation_action_next_page)
+
+                NavigationAction.PREVIOUS_PAGE ->
+                    stringResource(StringRes.settings_navigation_action_previous_page)
             }
-        }
-    }
+        },
+    )
 }
 
 /**
@@ -1820,27 +2136,13 @@ private fun ProgressIndicatorModeSelector(
     selectedMode: ProgressIndicatorMode,
     onModeSelected: (ProgressIndicatorMode) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_progress_indicator),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ProgressIndicatorMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ProgressIndicatorMode.entries.size,
-                    ),
-                ) {
-                    Text(text = mode.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_progress_indicator),
+        options = ProgressIndicatorMode.entries,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1848,39 +2150,6 @@ private fun ProgressIndicatorMode.toDisplayString(): String = when (this) {
     ProgressIndicatorMode.NONE -> stringResource(StringRes.settings_progress_indicator_none)
     ProgressIndicatorMode.CHAPTER -> stringResource(StringRes.settings_progress_indicator_chapter)
     ProgressIndicatorMode.BOOK -> stringResource(StringRes.settings_progress_indicator_book)
-}
-
-@Composable
-private fun SettingsSlider(
-    label: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    valueDisplay: (Float) -> String,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = valueDisplay(value),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Slider(
-            modifier = Modifier.fillMaxWidth(),
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = valueRange,
-        )
-    }
 }
 
 @Composable
