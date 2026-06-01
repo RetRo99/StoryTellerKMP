@@ -11,3 +11,9 @@ import androidx.compose.runtime.Composable
 @Composable
 expect fun HideSystemBars()
 
+/**
+ * Composable effect that keeps the device display awake while [enabled].
+ */
+@Composable
+expect fun KeepScreenOn(enabled: Boolean)
+

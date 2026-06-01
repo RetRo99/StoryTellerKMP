@@ -22,3 +22,8 @@ actual fun HideSystemBars() {
     }
 }
 
+@Composable
+actual fun KeepScreenOn(enabled: Boolean) {
+    // No-op on iOS for now.
+}
+

@@ -3,6 +3,8 @@ package com.retro99.reader.ui.reader
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -37,6 +39,7 @@ import kotlin.coroutines.coroutineContext
  * @param onMiddleTap Callback when user taps middle third of screen
  * @param onDoubleTap Callback when user double-taps (only called when detectDoubleTaps is true)
  */
+@Composable
 internal fun Modifier.readerGestures(
     containerSize: IntSize,
     detectDoubleTaps: Boolean = false,
@@ -48,106 +51,108 @@ internal fun Modifier.readerGestures(
     onRightTap: () -> Unit,
     onMiddleTap: () -> Unit,
     onDoubleTap: () -> Unit = {},
-): Modifier = this.pointerInput(containerSize, detectDoubleTaps, doubleTapTimeoutMs, tapNavigationEnabled) {
-    val touchSlop = viewConfiguration.touchSlop
-    var lastTapTimeMs = 0L
-    var pendingTapJob: Job? = null
-    val scope = CoroutineScope(coroutineContext)
+): Modifier {
+    val currentOnZoomChange = rememberUpdatedState(onZoomChange)
+    val currentOnZoomEnd = rememberUpdatedState(onZoomEnd)
+    val currentOnLeftTap = rememberUpdatedState(onLeftTap)
+    val currentOnRightTap = rememberUpdatedState(onRightTap)
+    val currentOnMiddleTap = rememberUpdatedState(onMiddleTap)
+    val currentOnDoubleTap = rememberUpdatedState(onDoubleTap)
 
-    awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
-        val downPosition = down.position
-        var zoomAccumulator = 1f
-        var gestureActive = false
-        var isSingleTap = true
+    return this.pointerInput(containerSize, detectDoubleTaps, doubleTapTimeoutMs, tapNavigationEnabled) {
+        val touchSlop = viewConfiguration.touchSlop
+        var lastTapTimeMs = 0L
+        var pendingTapJob: Job? = null
+        val scope = CoroutineScope(coroutineContext)
 
-        do {
-            val event = awaitPointerEvent(PointerEventPass.Main)
-            if (event.changes.size >= 2) {
-                isSingleTap = false
-                val zoomChange = event.calculateZoom()
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            val downPosition = down.position
+            var zoomAccumulator = 1f
+            var gestureActive = false
+            var isSingleTap = true
 
-                if (!gestureActive) {
-                    zoomAccumulator *= zoomChange
-                    val isZoomingOut = zoomAccumulator < 0.80f
-                    val isZoomingIn = zoomAccumulator > 1.20f
+            do {
+                val event = awaitPointerEvent(PointerEventPass.Main)
+                if (event.changes.size >= 2) {
+                    isSingleTap = false
+                    val zoomChange = event.calculateZoom()
 
-                    if (isZoomingIn || isZoomingOut) {
-                        gestureActive = true
-                        onZoomChange(zoomAccumulator.toDouble())
-                    }
-                } else {
                     if (zoomChange != 1f) {
                         zoomAccumulator *= zoomChange
-                        onZoomChange(zoomAccumulator.toDouble())
                     }
-                    event.changes.forEach {
-                        if (it.positionChanged()) it.consume()
+
+                    val shouldStartZoom = zoomAccumulator < 0.80f || zoomAccumulator > 1.20f
+                    if (gestureActive || shouldStartZoom) {
+                        gestureActive = true
+                        currentOnZoomChange.value(zoomAccumulator.toDouble())
+                        event.changes.forEach {
+                            if (it.positionChanged()) it.consume()
+                        }
+                    }
+                } else if (isSingleTap) {
+                    // Check if any pointer moved beyond touch slop threshold
+                    val hasDragged = event.changes.any { change ->
+                        val distance = (change.position - downPosition).getDistance()
+                        distance > touchSlop
+                    }
+                    if (hasDragged) {
+                        isSingleTap = false
                     }
                 }
-            } else if (isSingleTap) {
-                // Check if any pointer moved beyond touch slop threshold
-                val hasDragged = event.changes.any { change ->
-                    val distance = (change.position - downPosition).getDistance()
-                    distance > touchSlop
+            } while (event.changes.any { it.pressed })
+
+            // Gesture ended
+            if (gestureActive) {
+                currentOnZoomEnd.value(zoomAccumulator.toDouble())
+            }
+
+            // Handle taps for page navigation and controls toggle
+            if (isSingleTap && containerSize.width > 0) {
+                val tapX = down.position.x
+                val leftThird = containerSize.width / 3f
+                val rightThird = containerSize.width * 2f / 3f
+                val currentTimeMs = nowMillis()
+
+                // Determine tap action based on region and whether tap navigation is enabled
+                val tapAction: (() -> Unit)? = when {
+                    tapX < leftThird -> if (tapNavigationEnabled) currentOnLeftTap.value else null
+                    tapX > rightThird -> if (tapNavigationEnabled) currentOnRightTap.value else null
+                    else -> currentOnMiddleTap.value // Middle tap always works (toggles controls)
                 }
-                if (hasDragged) {
-                    isSingleTap = false
+
+                // If no action (tap navigation disabled for left/right), do nothing
+                if (tapAction == null) {
+                    return@awaitEachGesture
                 }
-            }
-        } while (event.changes.any { it.pressed })
 
-        // Gesture ended
-        if (gestureActive) {
-            onZoomEnd(zoomAccumulator.toDouble())
-        }
-
-        // Handle taps for page navigation and controls toggle
-        if (isSingleTap && containerSize.width > 0) {
-            val tapX = down.position.x
-            val leftThird = containerSize.width / 3f
-            val rightThird = containerSize.width * 2f / 3f
-            val currentTimeMs = nowMillis()
-
-            // Determine tap action based on region and whether tap navigation is enabled
-            val tapAction: (() -> Unit)? = when {
-                tapX < leftThird -> if (tapNavigationEnabled) onLeftTap else null
-                tapX > rightThird -> if (tapNavigationEnabled) onRightTap else null
-                else -> onMiddleTap // Middle tap always works (toggles controls)
-            }
-
-            // If no action (tap navigation disabled for left/right), do nothing
-            if (tapAction == null) {
-                return@awaitEachGesture
-            }
-
-            if (!detectDoubleTaps) {
-                // Original behavior: fire tap immediately
-                down.consume()
-                tapAction()
-            } else {
-                // Double-tap detection enabled: wait before firing single taps
-                val timeSinceLastTap = currentTimeMs - lastTapTimeMs
-                val isDoubleTap = timeSinceLastTap < doubleTapTimeoutMs
-
-                if (isDoubleTap) {
-                    // This is a double-tap - cancel pending single tap and fire double-tap callback
-                    pendingTapJob?.cancel()
-                    pendingTapJob = null
-                    lastTapTimeMs = 0L
+                if (!detectDoubleTaps) {
+                    // Original behavior: fire tap immediately
                     down.consume()
-                    onDoubleTap()
+                    tapAction()
                 } else {
-                    // Might be first tap of double-tap, schedule with delay
-                    lastTapTimeMs = currentTimeMs
-                    pendingTapJob?.cancel()
-                    pendingTapJob = scope.launch {
-                        delay(doubleTapTimeoutMs.toLong())
-                        tapAction()
+                    // Double-tap detection enabled: wait before firing single taps
+                    val timeSinceLastTap = currentTimeMs - lastTapTimeMs
+                    val isDoubleTap = timeSinceLastTap < doubleTapTimeoutMs
+
+                    if (isDoubleTap) {
+                        // This is a double-tap - cancel pending single tap and fire double-tap callback
+                        pendingTapJob?.cancel()
+                        pendingTapJob = null
+                        lastTapTimeMs = 0L
+                        down.consume()
+                        currentOnDoubleTap.value()
+                    } else {
+                        // Might be first tap of double-tap, schedule with delay
+                        lastTapTimeMs = currentTimeMs
+                        pendingTapJob?.cancel()
+                        pendingTapJob = scope.launch {
+                            delay(doubleTapTimeoutMs.toLong())
+                            tapAction()
+                        }
                     }
                 }
             }
         }
     }
 }
-
