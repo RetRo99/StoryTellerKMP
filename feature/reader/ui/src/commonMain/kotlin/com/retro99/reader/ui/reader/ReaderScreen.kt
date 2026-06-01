@@ -297,6 +297,7 @@ private fun ReaderContent(
     var isZooming by remember { mutableStateOf(false) }
 
     var areControlsVisible by remember { mutableStateOf(true) }
+    var isAudioControlsDialogVisible by remember { mutableStateOf(false) }
     var lastInteractionTime by remember { mutableStateOf(0L) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val fontSizeUndoSnackbarHostState = remember { SnackbarHostState() }
@@ -304,8 +305,8 @@ private fun ReaderContent(
     val settingChangedMessage = stringResource(StringRes.settings_changed)
     val undoLabel = stringResource(StringRes.settings_undo)
 
-    LaunchedEffect(areControlsVisible, lastInteractionTime) {
-        if (areControlsVisible) {
+    LaunchedEffect(areControlsVisible, lastInteractionTime, isAudioControlsDialogVisible) {
+        if (areControlsVisible && !isAudioControlsDialogVisible) {
             delay(CONTROLS_AUTO_HIDE_DELAY_MS)
             areControlsVisible = false
         }
@@ -450,6 +451,12 @@ private fun ReaderContent(
                         intentDispatcher = intentDispatcher,
                         onInteraction = onControlsInteraction,
                         onSwipeDown = { areControlsVisible = false },
+                        onControlsDialogVisibilityChanged = { isVisible ->
+                            isAudioControlsDialogVisible = isVisible
+                            if (isVisible) {
+                                onControlsInteraction()
+                            }
+                        },
                     )
                 }
             }

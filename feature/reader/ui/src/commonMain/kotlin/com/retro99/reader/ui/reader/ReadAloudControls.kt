@@ -32,6 +32,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +72,7 @@ internal fun ReadAloudControls(
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     onInteraction: () -> Unit = {},
     onSwipeDown: () -> Unit = {},
+    onControlsDialogVisibilityChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // Wrapper that calls onInteraction before dispatching intent
@@ -129,6 +132,7 @@ internal fun ReadAloudControls(
                 totalDurationMs = totalDurationMs,
                 sleepTimerRemainingMs = sleepTimerRemainingMs,
                 intentDispatcher = interactingDispatcher,
+                onControlsDialogVisibilityChanged = onControlsDialogVisibilityChanged,
             )
         }
     }
@@ -142,6 +146,7 @@ private fun PlaybackControlsRow(
     totalDurationMs: Long?,
     sleepTimerRemainingMs: Long?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    onControlsDialogVisibilityChanged: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -172,6 +177,7 @@ private fun PlaybackControlsRow(
             totalDurationMs = totalDurationMs,
             sleepTimerRemainingMs = sleepTimerRemainingMs,
             intentDispatcher = intentDispatcher,
+            onCustomTimerDialogVisibilityChanged = onControlsDialogVisibilityChanged,
         )
     }
 }
@@ -239,12 +245,21 @@ private fun SleepTimerButton(
     totalDurationMs: Long?,
     sleepTimerRemainingMs: Long?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    onCustomTimerDialogVisibilityChanged: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showCustomTimerDialog by remember { mutableStateOf(false) }
     val remainingToEndMs = totalDurationMs
         ?.minus(currentPositionMs)
         ?.takeIf { it > 0L }
+
+    LaunchedEffect(showCustomTimerDialog) {
+        onCustomTimerDialogVisibilityChanged(showCustomTimerDialog)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { onCustomTimerDialogVisibilityChanged(false) }
+    }
 
     TextButton(onClick = { expanded = true }) {
         Icon(

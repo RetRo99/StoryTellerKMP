@@ -57,9 +57,11 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
@@ -887,7 +889,9 @@ private fun StepperSetting(
     onManualValueSubmit: (String) -> Boolean,
 ) {
     var showManualDialog by remember { mutableStateOf(false) }
-    var inputValue by remember { mutableStateOf(manualInputValue) }
+    var inputValue by remember {
+        mutableStateOf(manualInputValue.toTextFieldValueWithCursorAtEnd())
+    }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -918,7 +922,7 @@ private fun StepperSetting(
                         shape = RoundedCornerShape(4.dp),
                     )
                     .clickable {
-                        inputValue = manualInputValue
+                        inputValue = manualInputValue.toTextFieldValueWithCursorAtEnd()
                         showManualDialog = true
                     }
                     .padding(vertical = 12.dp),
@@ -934,8 +938,11 @@ private fun StepperSetting(
     }
 
     if (showManualDialog) {
-        LaunchedEffect(Unit) {
+        LaunchedEffect(showManualDialog) {
+            kotlinx.coroutines.delay(120)
             focusRequester.requestFocus()
+            keyboardController?.show()
+            kotlinx.coroutines.delay(250)
             keyboardController?.show()
         }
 
@@ -953,7 +960,7 @@ private fun StepperSetting(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (onManualValueSubmit(inputValue)) {
+                        if (onManualValueSubmit(inputValue.text)) {
                             showManualDialog = false
                         }
                     },
@@ -969,6 +976,12 @@ private fun StepperSetting(
         )
     }
 }
+
+private fun String.toTextFieldValueWithCursorAtEnd(): TextFieldValue =
+    TextFieldValue(
+        text = this,
+        selection = TextRange(length),
+    )
 
 @Composable
 private fun StepperButton(
