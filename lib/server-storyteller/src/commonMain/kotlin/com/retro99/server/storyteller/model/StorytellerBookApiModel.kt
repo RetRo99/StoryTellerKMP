@@ -93,7 +93,7 @@ data class StorytellerSeriesApiModel(
     val position: Float? = null,
 
     @SerialName("featured")
-    val featured: Int? = null,
+    val featured: Boolean? = null,
 )
 
 @Serializable
