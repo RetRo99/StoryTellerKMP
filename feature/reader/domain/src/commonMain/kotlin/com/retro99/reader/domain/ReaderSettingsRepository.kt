@@ -3,6 +3,7 @@ package com.retro99.reader.domain
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.books.domain.model.BookType
+import com.retro99.reader.domain.model.CustomReaderFontDomainModel
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderSettingsDomainModel
@@ -46,6 +47,16 @@ interface ReaderSettingsRepository {
      * @param settings The settings to save
      */
     suspend fun saveReaderSettings(settings: ReaderSettingsDomainModel): CompletableResult
+
+    /**
+     * Gets custom fonts imported by the active user.
+     */
+    fun getCustomFonts(): Flow<List<CustomReaderFontDomainModel>>
+
+    /**
+     * Persists the active user's custom reader fonts.
+     */
+    suspend fun saveCustomFonts(fonts: List<CustomReaderFontDomainModel>): CompletableResult
 
     /**
      * Checks if an ebook file is cached locally.

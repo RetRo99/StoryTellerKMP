@@ -5,10 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.1] - 2026-03-12
+## [0.4.4] - 2026-06-02
+
+### Added
+- Added reader font weight controls for EPUB reading settings.
+- Added a reader text normalization setting.
+- Added a sleep timer postpone prompt.
+
+### Changed
+- Reorganized and refined reader settings controls for clearer configuration.
+- Improved reader gestures, input dialogs, and screen-awake behavior while reading.
+- Kept reader controls visible while the sleep timer menu is open.
+- Moved e-ink display detection into shared base UI platform code.
 
 ### Fixed
-- Fragment restoration crash when multiple EPUB navigator fragments are restored after process death
+- Removed redundant Android reader fragment state saving during activity shutdown.
+
+## [0.4.3] - 2026-06-01
+
+### Fixed
+- Fixed Storyteller browser/OIDC login by completing authentication from the callback app token instead of requiring an additional user lookup.
+
+### Changed
+- Added sanitized analytics breadcrumbs for OAuth login failures, including browser flow, app-token exchange, callback token decoding, and unexpected exceptions.
 
 ## [0.4.0] - 2026-03-11
 

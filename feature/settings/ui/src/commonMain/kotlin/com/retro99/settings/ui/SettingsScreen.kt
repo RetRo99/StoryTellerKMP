@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,21 +22,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,10 +49,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Add
@@ -56,12 +73,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.github.skydoves.colorpicker.compose.AlphaSlider
-import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
+import com.retro99.base.ui.platform.isEinkDisplay
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.HighlightStyle
 import com.retro99.reader.domain.model.ProgressBarPosition
@@ -70,7 +86,13 @@ import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.settings.ui.model.FontFamilyUiModel
 import com.retro99.settings.ui.model.ReaderTextAlignUiModel
 import com.retro99.settings.ui.model.ReaderThemeUiModel
+import com.retro99.settings.ui.model.toPreviewFontFamily
+import com.retro99.settings.ui.model.toWeightedPreviewFontFamily
 import com.retro99.translations.StringRes
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.settings_chapter_progress
@@ -78,9 +100,13 @@ import resources.translations.settings_chapter_progress_fixed
 import resources.translations.settings_chapter_progress_none
 import resources.translations.settings_chapter_progress_percentage
 import resources.translations.settings_chapter_progress_relative
+import resources.translations.general_close
+import resources.translations.settings_changed
 import resources.translations.settings_font_family
+import resources.translations.settings_font_family_add
 import resources.translations.settings_font_family_accessible_dfa
 import resources.translations.settings_font_family_cursive
+import resources.translations.settings_font_family_custom
 import resources.translations.settings_font_family_default
 import resources.translations.settings_font_family_fantasy
 import resources.translations.settings_font_family_ia_writer_duospace
@@ -89,6 +115,7 @@ import resources.translations.settings_font_family_open_dyslexic
 import resources.translations.settings_font_family_sans_serif
 import resources.translations.settings_font_family_serif
 import resources.translations.settings_font_size
+import resources.translations.settings_font_weight
 import resources.translations.settings_fullscreen_mode
 import resources.translations.settings_fullscreen_mode_description
 import resources.translations.settings_highlight_color
@@ -101,9 +128,12 @@ import resources.translations.settings_double_tap_timeout
 import resources.translations.settings_double_tap_timeout_description
 import resources.translations.settings_audio_progress_bar
 import resources.translations.settings_audio_progress_bar_description
+import resources.translations.settings_keep_screen_on_during_audio
+import resources.translations.settings_keep_screen_on_during_audio_description
 import resources.translations.settings_line_height
 import resources.translations.settings_margin_horizontal
 import resources.translations.settings_margin_vertical
+import resources.translations.settings_paragraph_spacing
 import resources.translations.settings_progress_bar
 import resources.translations.settings_progress_bar_always
 import resources.translations.settings_progress_bar_never
@@ -117,16 +147,20 @@ import resources.translations.settings_progress_indicator_chapter
 import resources.translations.settings_progress_indicator_none
 import resources.translations.settings_publisher_styles
 import resources.translations.settings_publisher_styles_description
+import resources.translations.settings_reader_preview
+import resources.translations.settings_reader_preview_sample
 import resources.translations.settings_scroll_mode
 import resources.translations.settings_scroll_mode_auto
 import resources.translations.settings_scroll_mode_paginated
 import resources.translations.settings_scroll_mode_scroll
-import resources.translations.settings_section_appearance
-import resources.translations.settings_section_appearance_description
+import resources.translations.settings_section_core
+import resources.translations.settings_section_core_description
 import resources.translations.settings_section_layout
 import resources.translations.settings_section_layout_description
 import resources.translations.settings_section_navigation
 import resources.translations.settings_section_navigation_description
+import resources.translations.settings_section_progress
+import resources.translations.settings_section_progress_description
 import resources.translations.settings_section_readaloud
 import resources.translations.settings_section_readaloud_description
 import resources.translations.settings_section_typography
@@ -146,21 +180,26 @@ import resources.translations.settings_show_current_time_description
 import resources.translations.settings_show_reading_time
 import resources.translations.settings_show_reading_time_description
 import resources.translations.settings_show_total_progress
+import resources.translations.settings_selected
 import resources.translations.settings_text_align
 import resources.translations.settings_text_align_center
 import resources.translations.settings_text_align_end
 import resources.translations.settings_text_align_justify
 import resources.translations.settings_text_align_start
+import resources.translations.settings_text_normalization
+import resources.translations.settings_text_normalization_description
 import resources.translations.settings_theme
 import resources.translations.settings_theme_dark
 import resources.translations.settings_theme_light
 import resources.translations.settings_theme_sepia
 import resources.translations.settings_theme_system
 import resources.translations.settings_title
+import resources.translations.settings_undo
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
+    onClose: (() -> Unit)? = null,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     BaseScreen(
@@ -170,6 +209,7 @@ fun SettingsScreen(
         SettingsScreenContent(
             viewState = viewState,
             intentDispatcher = intentDispatcher,
+            onClose = onClose,
             modifier = modifier,
         )
     }
@@ -179,330 +219,538 @@ fun SettingsScreen(
 private fun SettingsScreenContent(
     viewState: SettingsViewState,
     intentDispatcher: IntentDispatcher<SettingsIntent>,
+    onClose: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val animationsEnabled = remember { !isEinkDisplay() }
+    val undoMessage = stringResource(StringRes.settings_changed)
+    val undoLabel = stringResource(StringRes.settings_undo)
+    val fontPickerLauncher = rememberFilePickerLauncher(
+        type = PickerType.File(extensions = listOf("ttf", "otf", "woff", "woff2")),
+        mode = PickerMode.Single,
+    ) { file ->
+        file?.let {
+            intentDispatcher(SettingsIntent.OnCustomFontSelected(it))
+        }
+    }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    LaunchedEffect(viewState.undoRequestId) {
+        if (viewState.undoReaderSettings != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = undoMessage,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short,
+            )
+            when (result) {
+                SnackbarResult.ActionPerformed ->
+                    intentDispatcher(SettingsIntent.OnUndoSettingsChange)
+
+                SnackbarResult.Dismissed ->
+                    intentDispatcher(SettingsIntent.OnDismissSettingsUndo)
+            }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SettingsSheetHeader(onClose = onClose)
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CoreReaderSettingsPanel(
+                viewState = viewState,
+                animationsEnabled = animationsEnabled,
+                onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
+                onFontSizeChanged = {
+                    intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
+                },
+                onFontFamilySelected = {
+                    intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
+                },
+                onAddFont = { fontPickerLauncher.launch() },
+                onFontsToggled = { intentDispatcher(SettingsIntent.OnFontsToggled) },
+                onScrollModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+            )
+
+            // Typography: all text shape controls live together.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_typography),
+                description = stringResource(StringRes.settings_section_typography_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.TYPOGRAPHY),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
+                animationsEnabled = animationsEnabled,
+            ) {
+                StepperSetting(
+                    label = stringResource(StringRes.settings_font_weight),
+                    value = "${(viewState.fontWeight * 100).roundToInt()}%",
+                    manualInputValue = "${(viewState.fontWeight * 100).roundToInt()}",
+                    onDecrease = {
+                        val newValue = (viewState.fontWeight.toFloat() - FONT_WEIGHT_STEP)
+                            .coerceAtLeast(MIN_FONT_WEIGHT)
+                            .normalizedFontWeight()
+                        intentDispatcher(SettingsIntent.OnFontWeightChanged(newValue))
+                    },
+                    onIncrease = {
+                        val newValue = (viewState.fontWeight.toFloat() + FONT_WEIGHT_STEP)
+                            .coerceAtMost(MAX_FONT_WEIGHT)
+                            .normalizedFontWeight()
+                        intentDispatcher(SettingsIntent.OnFontWeightChanged(newValue))
+                    },
+                    onManualValueSubmit = { input ->
+                        input.toFloatOrNull()?.let { percent ->
+                            val newValue = (percent / 100f)
+                                .coerceIn(MIN_FONT_WEIGHT, MAX_FONT_WEIGHT)
+                                .normalizedFontWeight()
+                            intentDispatcher(SettingsIntent.OnFontWeightChanged(newValue))
+                            true
+                        } ?: false
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsSwitch(
+                    label = stringResource(StringRes.settings_text_normalization),
+                    description = stringResource(StringRes.settings_text_normalization_description),
+                    checked = viewState.textNormalization,
+                    onCheckedChange = { intentDispatcher(SettingsIntent.OnTextNormalizationChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsSwitch(
+                    label = stringResource(StringRes.settings_publisher_styles),
+                    description = stringResource(StringRes.settings_publisher_styles_description),
+                    checked = viewState.publisherStyles,
+                    onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
+                )
+
+                SettingsAnimatedVisibility(
+                    visible = !viewState.publisherStyles,
+                    animationsEnabled = animationsEnabled,
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        StepperSetting(
+                            label = stringResource(StringRes.settings_line_height),
+                            value = viewState.lineHeight.toSingleDecimalString(),
+                            manualInputValue = viewState.lineHeight.toSingleDecimalString(),
+                            onDecrease = {
+                                intentDispatcher(
+                                    SettingsIntent.OnLineHeightChanged(
+                                        (viewState.lineHeight - LINE_HEIGHT_STEP)
+                                            .coerceAtLeast(MIN_LINE_HEIGHT)
+                                            .roundToSingleDecimal(),
+                                    ),
+                                )
+                            },
+                            onIncrease = {
+                                intentDispatcher(
+                                    SettingsIntent.OnLineHeightChanged(
+                                        (viewState.lineHeight + LINE_HEIGHT_STEP)
+                                            .coerceAtMost(MAX_LINE_HEIGHT)
+                                            .roundToSingleDecimal(),
+                                    ),
+                                )
+                            },
+                            onManualValueSubmit = { input ->
+                                input.toFloatOrNull()?.let { lineHeight ->
+                                    intentDispatcher(
+                                        SettingsIntent.OnLineHeightChanged(
+                                            lineHeight.coerceIn(MIN_LINE_HEIGHT, MAX_LINE_HEIGHT)
+                                                .roundToSingleDecimal(),
+                                        ),
+                                    )
+                                    true
+                                } ?: false
+                            },
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        StepperSetting(
+                            label = stringResource(StringRes.settings_paragraph_spacing),
+                            value = "${(viewState.paragraphSpacing * 100).roundToInt()}%",
+                            manualInputValue = "${(viewState.paragraphSpacing * 100).roundToInt()}",
+                            onDecrease = {
+                                val newValue = (viewState.paragraphSpacing - PARAGRAPH_SPACING_STEP)
+                                    .coerceAtLeast(MIN_PARAGRAPH_SPACING)
+                                intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(newValue))
+                            },
+                            onIncrease = {
+                                val newValue = (viewState.paragraphSpacing + PARAGRAPH_SPACING_STEP)
+                                    .coerceAtMost(MAX_PARAGRAPH_SPACING)
+                                intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(newValue))
+                            },
+                            onManualValueSubmit = { input ->
+                                input.toFloatOrNull()?.let { percent ->
+                                    val newValue = (percent / 100.0)
+                                        .coerceIn(MIN_PARAGRAPH_SPACING, MAX_PARAGRAPH_SPACING)
+                                    intentDispatcher(SettingsIntent.OnParagraphSpacingChanged(newValue))
+                                    true
+                                } ?: false
+                            },
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        TextAlignSelector(
+                            selectedAlign = viewState.textAlign,
+                            onAlignSelected = {
+                                intentDispatcher(SettingsIntent.OnTextAlignChanged(it))
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Layout: page geometry and reading flow.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_layout),
+                description = stringResource(StringRes.settings_section_layout_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.LAYOUT),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
+                animationsEnabled = animationsEnabled,
+            ) {
+                StepperSetting(
+                    label = stringResource(StringRes.settings_margin_horizontal),
+                    value = "${viewState.marginHorizontal}dp",
+                    manualInputValue = viewState.marginHorizontal.toString(),
+                    onDecrease = {
+                        val newValue = (viewState.marginHorizontal - MARGIN_STEP)
+                            .coerceAtLeast(MIN_HORIZONTAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(newValue))
+                    },
+                    onIncrease = {
+                        val newValue = (viewState.marginHorizontal + MARGIN_STEP)
+                            .coerceAtMost(MAX_HORIZONTAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(newValue))
+                    },
+                    onManualValueSubmit = { input ->
+                        input.toIntOrNull()?.let { margin ->
+                            intentDispatcher(
+                                SettingsIntent.OnMarginHorizontalChanged(
+                                    margin.coerceIn(MIN_HORIZONTAL_MARGIN, MAX_HORIZONTAL_MARGIN),
+                                ),
+                            )
+                            true
+                        } ?: false
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                StepperSetting(
+                    label = stringResource(StringRes.settings_margin_vertical),
+                    value = "${viewState.marginVertical}dp",
+                    manualInputValue = viewState.marginVertical.toString(),
+                    onDecrease = {
+                        val newValue = (viewState.marginVertical - MARGIN_STEP)
+                            .coerceAtLeast(MIN_VERTICAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginVerticalChanged(newValue))
+                    },
+                    onIncrease = {
+                        val newValue = (viewState.marginVertical + MARGIN_STEP)
+                            .coerceAtMost(MAX_VERTICAL_MARGIN)
+                        intentDispatcher(SettingsIntent.OnMarginVerticalChanged(newValue))
+                    },
+                    onManualValueSubmit = { input ->
+                        input.toIntOrNull()?.let { margin ->
+                            intentDispatcher(
+                                SettingsIntent.OnMarginVerticalChanged(
+                                    margin.coerceIn(MIN_VERTICAL_MARGIN, MAX_VERTICAL_MARGIN),
+                                ),
+                            )
+                            true
+                        } ?: false
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ScrollModeSelector(
+                    selectedMode = viewState.scrollMode,
+                    onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                FullscreenModeSwitch(
+                    isEnabled = viewState.fullscreenMode,
+                    onToggle = { intentDispatcher(SettingsIntent.OnFullscreenModeChanged(it)) },
+                )
+            }
+
+            // Progress: all reading telemetry and progress bar controls.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_progress),
+                description = stringResource(StringRes.settings_section_progress_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.PROGRESS),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.PROGRESS)) },
+                scrollState = scrollState,
+                coroutineScope = coroutineScope,
+                animationsEnabled = animationsEnabled,
+            ) {
+                ProgressBarModeSelector(
+                    selectedMode = viewState.showProgressBar,
+                    onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ProgressBarPositionSelector(
+                    selectedPosition = viewState.progressBarPosition,
+                    onPositionSelected = {
+                        intentDispatcher(SettingsIntent.OnProgressBarPositionChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ChapterProgressDisplayModeSelector(
+                    selectedMode = viewState.chapterProgressDisplayMode,
+                    onModeSelected = {
+                        intentDispatcher(SettingsIntent.OnChapterProgressDisplayModeChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ShowTotalProgressSwitch(
+                    isEnabled = viewState.showTotalProgress,
+                    onToggle = { intentDispatcher(SettingsIntent.OnShowTotalProgressChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ProgressIndicatorModeSelector(
+                    selectedMode = viewState.progressIndicatorMode,
+                    onModeSelected = {
+                        intentDispatcher(SettingsIntent.OnProgressIndicatorModeChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ShowCurrentTimeSwitch(
+                    isEnabled = viewState.showCurrentTime,
+                    onToggle = { intentDispatcher(SettingsIntent.OnShowCurrentTimeChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ShowReadingTimeSwitch(
+                    isEnabled = viewState.showReadingTime,
+                    onToggle = { intentDispatcher(SettingsIntent.OnShowReadingTimeChanged(it)) },
+                )
+            }
+
+            // Navigation: page-turn gestures and button behavior.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_navigation),
+                description = stringResource(StringRes.settings_section_navigation_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.NAVIGATION),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.NAVIGATION)) },
+                scrollState = scrollState,
+                coroutineScope = coroutineScope,
+                animationsEnabled = animationsEnabled,
+            ) {
+                TapNavigationEnabledSwitch(
+                    isEnabled = viewState.tapNavigationEnabled,
+                    onToggle = { intentDispatcher(SettingsIntent.OnTapNavigationEnabledChanged(it)) },
+                )
+
+                if (viewState.tapNavigationEnabled) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TapActionSelector(
+                        title = stringResource(StringRes.settings_left_tap_action),
+                        selectedAction = viewState.leftTapAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnLeftTapActionChanged(it)) },
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TapActionSelector(
+                        title = stringResource(StringRes.settings_right_tap_action),
+                        selectedAction = viewState.rightTapAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnRightTapActionChanged(it)) },
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column {
+                    StepperSetting(
+                        label = stringResource(StringRes.settings_double_tap_timeout),
+                        value = "${viewState.doubleTapTimeoutMs}ms",
+                        manualInputValue = viewState.doubleTapTimeoutMs.toString(),
+                        onDecrease = {
+                            val newValue = (viewState.doubleTapTimeoutMs - DOUBLE_TAP_TIMEOUT_STEP)
+                                .coerceAtLeast(MIN_DOUBLE_TAP_TIMEOUT)
+                            intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(newValue))
+                        },
+                        onIncrease = {
+                            val newValue = (viewState.doubleTapTimeoutMs + DOUBLE_TAP_TIMEOUT_STEP)
+                                .coerceAtMost(MAX_DOUBLE_TAP_TIMEOUT)
+                            intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(newValue))
+                        },
+                        onManualValueSubmit = { input ->
+                            input.toIntOrNull()?.let { timeout ->
+                                intentDispatcher(
+                                    SettingsIntent.OnDoubleTapTimeoutChanged(
+                                        timeout.coerceIn(MIN_DOUBLE_TAP_TIMEOUT, MAX_DOUBLE_TAP_TIMEOUT),
+                                    ),
+                                )
+                                true
+                            } ?: false
+                        },
+                    )
+                    Text(
+                        text = stringResource(StringRes.settings_double_tap_timeout_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                VolumeButtonsEnabledSwitch(
+                    isEnabled = viewState.volumeButtonsEnabled,
+                    onToggle = { intentDispatcher(SettingsIntent.OnVolumeButtonsEnabledChanged(it)) },
+                )
+
+                if (viewState.volumeButtonsEnabled) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    VolumeButtonActionSelector(
+                        title = stringResource(StringRes.settings_volume_up_action),
+                        selectedAction = viewState.volumeUpAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeUpActionChanged(it)) },
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    VolumeButtonActionSelector(
+                        title = stringResource(StringRes.settings_volume_down_action),
+                        selectedAction = viewState.volumeDownAction,
+                        onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeDownActionChanged(it)) },
+                    )
+                }
+            }
+
+            // ReadAloud: audio playback and sentence highlight behavior.
+            ExpandableSettingsSection(
+                title = stringResource(StringRes.settings_section_readaloud),
+                description = stringResource(StringRes.settings_section_readaloud_description),
+                isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
+                onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
+                scrollState = scrollState,
+                coroutineScope = coroutineScope,
+                animationsEnabled = animationsEnabled,
+            ) {
+                SettingsSwitch(
+                    label = stringResource(StringRes.settings_keep_screen_on_during_audio),
+                    description = stringResource(StringRes.settings_keep_screen_on_during_audio_description),
+                    checked = viewState.keepScreenOnDuringAudio,
+                    onCheckedChange = {
+                        intentDispatcher(SettingsIntent.OnKeepScreenOnDuringAudioChanged(it))
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AudioProgressBarModeSelector(
+                    selectedMode = viewState.showAudioProgressBar,
+                    onModeSelected = { intentDispatcher(SettingsIntent.OnShowAudioProgressBarChanged(it)) },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                HighlightStyleSelector(
+                    selectedStyle = viewState.highlightStyle,
+                    onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
+                )
+                if (viewState.highlightStyle == HighlightStyle.HIGHLIGHT ||
+                    viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ColorSelector(
+                        title = stringResource(StringRes.settings_highlight_color),
+                        selectedColor = viewState.highlightColor,
+                        onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
+                    )
+                }
+                if (viewState.highlightStyle == HighlightStyle.UNDERLINE ||
+                    viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ColorSelector(
+                        title = stringResource(StringRes.settings_underline_color),
+                        selectedColor = viewState.underlineColor,
+                        onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(FLOATING_PREVIEW_SPACE))
+        }
+
+        FloatingReaderSettingsPreview(
+            viewState = viewState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = FLOATING_PREVIEW_SPACE,
+                ),
+        )
+    }
+}
+
+private val FLOATING_PREVIEW_HEIGHT = 132.dp
+private val FLOATING_PREVIEW_SPACE = 172.dp
+
+@Composable
+private fun SettingsSheetHeader(
+    onClose: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = stringResource(StringRes.settings_title),
             style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Appearance Section - Theme & Font Size
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_appearance),
-            description = stringResource(StringRes.settings_section_appearance_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.APPEARANCE),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.APPEARANCE)) },
-        ) {
-            ThemeSelector(
-                selectedTheme = viewState.theme,
-                onThemeSelected = { intentDispatcher(SettingsIntent.OnThemeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsSlider(
-                label = stringResource(StringRes.settings_font_size),
-                value = viewState.fontSize.toFloat(),
-                valueRange = 0.5f..3.0f,
-                onValueChange = {
-                    intentDispatcher(SettingsIntent.OnFontSizeChanged(it.toDouble()))
-                },
-                valueDisplay = { "${(it * 100).toInt()}%" },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FontFamilySelector(
-                selectedFontFamily = viewState.fontFamily,
-                onFontFamilySelected = {
-                    intentDispatcher(SettingsIntent.OnFontFamilyChanged(it))
-                },
-                isExpanded = viewState.isFontsExpanded,
-                onToggle = { intentDispatcher(SettingsIntent.OnFontsToggled) },
-            )
-        }
-
-        // Typography Section - Publisher Styles, Line Height, Text Alignment
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_typography),
-            description = stringResource(StringRes.settings_section_typography_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.TYPOGRAPHY),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.TYPOGRAPHY)) },
-        ) {
-            SettingsSwitch(
-                label = stringResource(StringRes.settings_publisher_styles),
-                description = stringResource(StringRes.settings_publisher_styles_description),
-                checked = viewState.publisherStyles,
-                onCheckedChange = { intentDispatcher(SettingsIntent.OnPublisherStylesChanged(it)) },
-            )
-
-            AnimatedVisibility(
-                visible = !viewState.publisherStyles,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    SettingsSlider(
-                        label = stringResource(StringRes.settings_line_height),
-                        value = viewState.lineHeight,
-                        valueRange = 1.0f..2.5f,
-                        onValueChange = {
-                            intentDispatcher(SettingsIntent.OnLineHeightChanged(it))
-                        },
-                        valueDisplay = { ((it * 10).toInt() / 10.0).toString() },
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    TextAlignSelector(
-                        selectedAlign = viewState.textAlign,
-                        onAlignSelected = {
-                            intentDispatcher(SettingsIntent.OnTextAlignChanged(it))
-                        },
-                    )
-                }
-            }
-        }
-
-        // Layout Section - Margins & Reading Mode
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_layout),
-            description = stringResource(StringRes.settings_section_layout_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.LAYOUT),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.LAYOUT)) },
-        ) {
-            SettingsSlider(
-                label = stringResource(StringRes.settings_margin_horizontal),
-                value = viewState.marginHorizontal.toFloat(),
-                valueRange = 0f..48f,
-                onValueChange = {
-                    intentDispatcher(SettingsIntent.OnMarginHorizontalChanged(it.toInt()))
-                },
-                valueDisplay = { "${it.toInt()}dp" },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsSlider(
-                label = stringResource(StringRes.settings_margin_vertical),
-                value = viewState.marginVertical.toFloat(),
-                valueRange = 0f..64f,
-                onValueChange = {
-                    intentDispatcher(SettingsIntent.OnMarginVerticalChanged(it.toInt()))
-                },
-                valueDisplay = { "${it.toInt()}dp" },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ScrollModeSelector(
-                selectedMode = viewState.scrollMode,
-                onModeSelected = { intentDispatcher(SettingsIntent.OnScrollModeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProgressBarModeSelector(
-                selectedMode = viewState.showProgressBar,
-                onModeSelected = { intentDispatcher(SettingsIntent.OnShowProgressBarChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProgressBarPositionSelector(
-                selectedPosition = viewState.progressBarPosition,
-                onPositionSelected = {
-                    intentDispatcher(SettingsIntent.OnProgressBarPositionChanged(it))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ChapterProgressDisplayModeSelector(
-                selectedMode = viewState.chapterProgressDisplayMode,
-                onModeSelected = {
-                    intentDispatcher(SettingsIntent.OnChapterProgressDisplayModeChanged(it))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ShowTotalProgressSwitch(
-                isEnabled = viewState.showTotalProgress,
-                onToggle = { intentDispatcher(SettingsIntent.OnShowTotalProgressChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProgressIndicatorModeSelector(
-                selectedMode = viewState.progressIndicatorMode,
-                onModeSelected = {
-                    intentDispatcher(SettingsIntent.OnProgressIndicatorModeChanged(it))
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FullscreenModeSwitch(
-                isEnabled = viewState.fullscreenMode,
-                onToggle = { intentDispatcher(SettingsIntent.OnFullscreenModeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ShowCurrentTimeSwitch(
-                isEnabled = viewState.showCurrentTime,
-                onToggle = { intentDispatcher(SettingsIntent.OnShowCurrentTimeChanged(it)) },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ShowReadingTimeSwitch(
-                isEnabled = viewState.showReadingTime,
-                onToggle = { intentDispatcher(SettingsIntent.OnShowReadingTimeChanged(it)) },
-            )
-        }
-
-        // Navigation Section - Tap and Volume Button Settings
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_navigation),
-            description = stringResource(StringRes.settings_section_navigation_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.NAVIGATION),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.NAVIGATION)) },
-            scrollState = scrollState,
-            coroutineScope = coroutineScope,
-        ) {
-            // Tap Navigation Settings
-            TapNavigationEnabledSwitch(
-                isEnabled = viewState.tapNavigationEnabled,
-                onToggle = { intentDispatcher(SettingsIntent.OnTapNavigationEnabledChanged(it)) },
-            )
-
-            // Only show action selectors when tap navigation is enabled
-            if (viewState.tapNavigationEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TapActionSelector(
-                    title = stringResource(StringRes.settings_left_tap_action),
-                    selectedAction = viewState.leftTapAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnLeftTapActionChanged(it)) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TapActionSelector(
-                    title = stringResource(StringRes.settings_right_tap_action),
-                    selectedAction = viewState.rightTapAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnRightTapActionChanged(it)) },
+        if (onClose != null) {
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(StringRes.general_close),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Volume Button Navigation Settings
-            VolumeButtonsEnabledSwitch(
-                isEnabled = viewState.volumeButtonsEnabled,
-                onToggle = { intentDispatcher(SettingsIntent.OnVolumeButtonsEnabledChanged(it)) },
-            )
-
-            // Only show action selectors when volume buttons are enabled
-            if (viewState.volumeButtonsEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                VolumeButtonActionSelector(
-                    title = stringResource(StringRes.settings_volume_up_action),
-                    selectedAction = viewState.volumeUpAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeUpActionChanged(it)) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                VolumeButtonActionSelector(
-                    title = stringResource(StringRes.settings_volume_down_action),
-                    selectedAction = viewState.volumeDownAction,
-                    onActionSelected = { intentDispatcher(SettingsIntent.OnVolumeDownActionChanged(it)) },
-                )
-            }
-        }
-
-        // ReadAloud Section - Highlight Style and Color
-        ExpandableSettingsSection(
-            title = stringResource(StringRes.settings_section_readaloud),
-            description = stringResource(StringRes.settings_section_readaloud_description),
-            isExpanded = viewState.isSectionExpanded(SettingsSection.READALOUD),
-            onToggle = { intentDispatcher(SettingsIntent.OnSectionToggled(SettingsSection.READALOUD)) },
-            scrollState = scrollState,
-            coroutineScope = coroutineScope,
-        ) {
-            HighlightStyleSelector(
-                selectedStyle = viewState.highlightStyle,
-                onStyleSelected = { intentDispatcher(SettingsIntent.OnHighlightStyleChanged(it)) },
-            )
-            // Show highlight color picker only if style includes highlight
-            if (viewState.highlightStyle == HighlightStyle.HIGHLIGHT ||
-                viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ColorSelector(
-                    title = stringResource(StringRes.settings_highlight_color),
-                    selectedColor = viewState.highlightColor,
-                    onColorSelected = { intentDispatcher(SettingsIntent.OnHighlightColorChanged(it)) },
-                )
-            }
-            // Show underline color picker only if style includes underline
-            if (viewState.highlightStyle == HighlightStyle.UNDERLINE ||
-                viewState.highlightStyle == HighlightStyle.HIGHLIGHT_UNDERLINE
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ColorSelector(
-                    title = stringResource(StringRes.settings_underline_color),
-                    selectedColor = viewState.underlineColor,
-                    onColorSelected = { intentDispatcher(SettingsIntent.OnUnderlineColorChanged(it)) },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Double-tap timeout slider
-            Column {
-                SettingsSlider(
-                    label = stringResource(StringRes.settings_double_tap_timeout),
-                    value = viewState.doubleTapTimeoutMs.toFloat(),
-                    valueRange = 200f..800f,
-                    onValueChange = {
-                        intentDispatcher(SettingsIntent.OnDoubleTapTimeoutChanged(it.toInt()))
-                    },
-                    valueDisplay = { "${it.toInt()}ms" },
-                )
-                Text(
-                    text = stringResource(StringRes.settings_double_tap_timeout_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Audio progress bar visibility selector
-            AudioProgressBarModeSelector(
-                selectedMode = viewState.showAudioProgressBar,
-                onModeSelected = { intentDispatcher(SettingsIntent.OnShowAudioProgressBarChanged(it)) },
-            )
         }
     }
 }
@@ -515,6 +763,250 @@ private val PresetHighlightColors = listOf(
     0x80F48FB1.toInt(), // Pink
     0x80FFB74D.toInt(), // Orange
 )
+
+@Composable
+private fun CoreReaderSettingsPanel(
+    viewState: SettingsViewState,
+    animationsEnabled: Boolean,
+    onThemeSelected: (ReaderThemeUiModel) -> Unit,
+    onFontSizeChanged: (Float) -> Unit,
+    onFontFamilySelected: (FontFamilyUiModel) -> Unit,
+    onAddFont: () -> Unit,
+    onFontsToggled: () -> Unit,
+    onScrollModeSelected: (Boolean?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(8.dp),
+            ),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            Text(
+                text = stringResource(StringRes.settings_section_core),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(StringRes.settings_section_core_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ThemeSelector(
+                selectedTheme = viewState.theme,
+                onThemeSelected = onThemeSelected,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            StepperSetting(
+                label = stringResource(StringRes.settings_font_size),
+                value = "${(viewState.fontSize * 100).roundToInt()}%",
+                manualInputValue = "${(viewState.fontSize * 100).roundToInt()}",
+                onDecrease = {
+                    onFontSizeChanged(
+                        (viewState.fontSize.toFloat() - FONT_SIZE_STEP).coerceAtLeast(MIN_FONT_SIZE),
+                    )
+                },
+                onIncrease = {
+                    onFontSizeChanged(
+                        (viewState.fontSize.toFloat() + FONT_SIZE_STEP).coerceAtMost(MAX_FONT_SIZE),
+                    )
+                },
+                onManualValueSubmit = { input ->
+                    input.toFloatOrNull()?.let { percent ->
+                        onFontSizeChanged((percent / 100f).coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE))
+                        true
+                    } ?: false
+                },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FontFamilySelector(
+                selectedFontFamily = viewState.fontFamily,
+                customFonts = viewState.customFonts,
+                onFontFamilySelected = onFontFamilySelected,
+                onAddFont = onAddFont,
+                isExpanded = viewState.isFontsExpanded,
+                onToggle = onFontsToggled,
+                animationsEnabled = animationsEnabled,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ScrollModeSelector(
+                selectedMode = viewState.scrollMode,
+                onModeSelected = onScrollModeSelected,
+            )
+        }
+    }
+}
+
+private const val MIN_FONT_SIZE = 0.5f
+private const val MAX_FONT_SIZE = 3.0f
+private const val FONT_SIZE_STEP = 0.05f
+private const val MIN_FONT_WEIGHT = 0.5f
+private const val MAX_FONT_WEIGHT = 2.0f
+private const val FONT_WEIGHT_STEP = 0.1f
+private const val MIN_LINE_HEIGHT = 1.0f
+private const val MAX_LINE_HEIGHT = 2.5f
+private const val LINE_HEIGHT_STEP = 0.1f
+private const val MIN_PARAGRAPH_SPACING = 0.0
+private const val MAX_PARAGRAPH_SPACING = 2.0
+private const val PARAGRAPH_SPACING_STEP = 0.05
+private const val MIN_HORIZONTAL_MARGIN = 0
+private const val MAX_HORIZONTAL_MARGIN = 48
+private const val MIN_VERTICAL_MARGIN = 0
+private const val MAX_VERTICAL_MARGIN = 64
+private const val MARGIN_STEP = 4
+private const val MIN_DOUBLE_TAP_TIMEOUT = 200
+private const val MAX_DOUBLE_TAP_TIMEOUT = 800
+private const val DOUBLE_TAP_TIMEOUT_STEP = 50
+
+@Composable
+private fun StepperSetting(
+    label: String,
+    value: String,
+    manualInputValue: String,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    onManualValueSubmit: (String) -> Boolean,
+) {
+    var showManualDialog by remember { mutableStateOf(false) }
+    var inputValue by remember {
+        mutableStateOf(manualInputValue.toTextFieldValueWithCursorAtEnd())
+    }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StepperButton(
+                text = "-",
+                onClick = onDecrease,
+            )
+            Text(
+                text = value,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                    .clickable {
+                        inputValue = manualInputValue.toTextFieldValueWithCursorAtEnd()
+                        showManualDialog = true
+                    }
+                    .padding(vertical = 12.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            StepperButton(
+                text = "+",
+                onClick = onIncrease,
+            )
+        }
+    }
+
+    if (showManualDialog) {
+        LaunchedEffect(showManualDialog) {
+            kotlinx.coroutines.delay(120)
+            focusRequester.requestFocus()
+            keyboardController?.show()
+            kotlinx.coroutines.delay(250)
+            keyboardController?.show()
+        }
+
+        AlertDialog(
+            onDismissRequest = { showManualDialog = false },
+            title = { Text(text = label) },
+            text = {
+                TextField(
+                    value = inputValue,
+                    onValueChange = { inputValue = it },
+                    modifier = Modifier.focusRequester(focusRequester),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (onManualValueSubmit(inputValue.text)) {
+                            showManualDialog = false
+                        }
+                    },
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showManualDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+}
+
+private fun String.toTextFieldValueWithCursorAtEnd(): TextFieldValue =
+    TextFieldValue(
+        text = this,
+        selection = TextRange(length),
+    )
+
+@Composable
+private fun StepperButton(
+    text: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(4.dp),
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
 
 @Composable
 private fun ColorSelector(
@@ -672,36 +1164,6 @@ private fun ColorPickerDialog(
                     },
                     initialColor = initialComposeColor,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Alpha slider
-                Text(
-                    text = "Opacity",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start),
-                )
-                AlphaSlider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(35.dp),
-                    controller = controller,
-                    initialColor = initialComposeColor,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Brightness slider
-                Text(
-                    text = "Brightness",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start),
-                )
-                BrightnessSlider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(35.dp),
-                    controller = controller,
-                    initialColor = initialComposeColor,
-                )
             }
         },
         confirmButton = {
@@ -784,6 +1246,212 @@ private fun HighlightStyleChip(
 }
 
 @Composable
+private fun FloatingReaderSettingsPreview(
+    viewState: SettingsViewState,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            .padding(12.dp),
+    ) {
+        ReaderSettingsPreview(
+            viewState = viewState,
+            previewHeight = FLOATING_PREVIEW_HEIGHT,
+        )
+    }
+}
+
+@Composable
+private fun ReaderSettingsPreview(
+    viewState: SettingsViewState,
+    modifier: Modifier = Modifier,
+    previewHeight: Dp = 150.dp,
+) {
+    val (backgroundColor, textColor) = when (viewState.theme) {
+        ReaderThemeUiModel.LIGHT -> Color(0xFFFFFEFA) to Color(0xFF24211D)
+        ReaderThemeUiModel.DARK -> Color(0xFF171717) to Color(0xFFECE7DE)
+        ReaderThemeUiModel.SEPIA -> Color(0xFFF2E6CB) to Color(0xFF3B2E22)
+        ReaderThemeUiModel.SYSTEM -> MaterialTheme.colorScheme.surface to MaterialTheme.colorScheme.onSurface
+    }
+    val previewTextAlign = when (viewState.textAlign) {
+        ReaderTextAlignUiModel.START -> TextAlign.Start
+        ReaderTextAlignUiModel.END -> TextAlign.End
+        ReaderTextAlignUiModel.CENTER -> TextAlign.Center
+        ReaderTextAlignUiModel.JUSTIFY -> TextAlign.Justify
+    }
+    val previewFontSize = (16f * viewState.fontSize.toFloat()).coerceIn(11f, 26f).sp
+    val paragraphGap = with(LocalDensity.current) {
+        (previewFontSize.value * viewState.paragraphSpacing).sp.toDp()
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(StringRes.settings_reader_preview),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(previewHeight)
+                .clip(RoundedCornerShape(8.dp))
+                .background(backgroundColor)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .padding(
+                    horizontal = viewState.marginHorizontal.coerceIn(8, 48).dp,
+                    vertical = viewState.marginVertical.coerceIn(8, 40).dp,
+                ),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(paragraphGap),
+            ) {
+                previewParagraphs().forEach { paragraph ->
+                    Text(
+                        text = paragraph,
+                        style = TextStyle(
+                            color = textColor,
+                            fontFamily = viewState.fontFamily.toWeightedPreviewFontFamily(
+                                fontWeight = viewState.fontWeight,
+                            ),
+                            fontWeight = viewState.fontWeight.toPreviewFontWeight(),
+                            fontSize = previewFontSize,
+                            lineHeight = (previewFontSize.value * viewState.lineHeight).sp,
+                            textAlign = previewTextAlign,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun previewParagraphs(): List<String> =
+    stringResource(StringRes.settings_reader_preview_sample).split("\n\n")
+
+private fun Double.toPreviewFontWeight(): FontWeight =
+    FontWeight((400 * this).roundToInt().coerceIn(1, 1000))
+
+private fun Float.normalizedFontWeight(): Double {
+    val rounded = (this * 20).roundToInt() / 20.0
+    return if (rounded == 1.0) 1.0 else rounded
+}
+
+private fun Float.roundToSingleDecimal(): Float =
+    (this * 10).roundToInt() / 10f
+
+private fun Float.toSingleDecimalString(): String =
+    ((this * 10).roundToInt() / 10.0).toString()
+
+@Composable
+private fun <T> OutlinedChoiceGroup(
+    title: String,
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    optionLabel: @Composable (T) -> String,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedChoiceRow(
+            options = options,
+            selectedOption = selectedOption,
+            onOptionSelected = onOptionSelected,
+            optionLabel = optionLabel,
+        )
+    }
+}
+
+@Composable
+private fun <T> OutlinedChoiceRow(
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    optionLabel: @Composable (T) -> String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        options.forEach { option ->
+            val selected = option == selectedOption
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        if (selected) {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    )
+                    .border(
+                        width = if (selected) 2.dp else 1.dp,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.outline
+                        },
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                    .clickable { onOptionSelected(option) }
+                    .padding(horizontal = 6.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = optionLabel(option),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsAnimatedVisibility(
+    visible: Boolean,
+    animationsEnabled: Boolean,
+    content: @Composable () -> Unit,
+) {
+    if (animationsEnabled) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            content()
+        }
+    } else if (visible) {
+        content()
+    }
+}
+
+@Composable
 private fun ExpandableSettingsSection(
     title: String,
     description: String,
@@ -792,12 +1460,15 @@ private fun ExpandableSettingsSection(
     modifier: Modifier = Modifier,
     scrollState: ScrollState? = null,
     coroutineScope: CoroutineScope? = null,
+    animationsEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val rotationAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "arrow_rotation",
+    val targetRotation = if (isExpanded) 180f else 0f
+    val animatedRotation by animateFloatAsState(
+        targetValue = targetRotation,
+        label = "settings_section_arrow_rotation",
     )
+    val rotationAngle = if (animationsEnabled) animatedRotation else targetRotation
 
     var sectionPosition by remember { mutableStateOf(0) }
 
@@ -805,64 +1476,71 @@ private fun ExpandableSettingsSection(
     LaunchedEffect(isExpanded) {
         if (isExpanded && scrollState != null && coroutineScope != null) {
             coroutineScope.launch {
-                // Small delay to allow the expansion animation to start
-                kotlinx.coroutines.delay(100)
+                if (animationsEnabled) {
+                    kotlinx.coroutines.delay(100)
+                }
                 scrollState.animateScrollTo(sectionPosition)
             }
         }
     }
 
-    Card(
+    Column(
         modifier = modifier
             .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(4.dp),
+            )
             .onGloballyPositioned { coordinates ->
                 sectionPosition = coordinates.positionInParent().y.toInt()
             },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onToggle)
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(rotationAngle),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                modifier = Modifier.rotate(rotationAngle),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
 
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
+        SettingsAnimatedVisibility(
+            visible = isExpanded,
+            animationsEnabled = animationsEnabled,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(0.dp),
+                    )
+                    .padding(14.dp),
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                ) {
-                    content()
-                }
+                content()
             }
         }
     }
@@ -873,54 +1551,66 @@ private fun ThemeSelector(
     selectedTheme: ReaderThemeUiModel,
     onThemeSelected: (ReaderThemeUiModel) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_theme),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ReaderThemeUiModel.entries.forEachIndexed { index, theme ->
-                SegmentedButton(
-                    selected = theme == selectedTheme,
-                    onClick = { onThemeSelected(theme) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ReaderThemeUiModel.entries.size,
-                    ),
-                ) {
-                    Text(text = theme.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_theme),
+        options = ReaderThemeUiModel.entries,
+        selectedOption = selectedTheme,
+        onOptionSelected = onThemeSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
 private fun FontFamilySelector(
     selectedFontFamily: FontFamilyUiModel,
+    customFonts: List<FontFamilyUiModel>,
     onFontFamilySelected: (FontFamilyUiModel) -> Unit,
+    onAddFont: () -> Unit,
     isExpanded: Boolean,
     onToggle: () -> Unit,
+    animationsEnabled: Boolean,
 ) {
-    val rotationAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "font_arrow_rotation",
+    val targetRotation = if (isExpanded) 180f else 0f
+    val animatedRotation by animateFloatAsState(
+        targetValue = targetRotation,
+        label = "settings_font_arrow_rotation",
     )
+    val rotationAngle = if (animationsEnabled) animatedRotation else targetRotation
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onToggle)
-                .padding(vertical = 8.dp),
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(StringRes.settings_font_family),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(StringRes.settings_font_family),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = selectedFontFamily.toDisplayString(),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = selectedFontFamily.toPreviewFontFamily(),
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = if (isExpanded) "Collapse" else "Expand",
@@ -928,112 +1618,105 @@ private fun FontFamilySelector(
             )
         }
 
-        AnimatedVisibility(
+        SettingsAnimatedVisibility(
             visible = isExpanded,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut(),
+            animationsEnabled = animationsEnabled,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
-            // First row: Default, Serif, Sans Serif
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.DEFAULT,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.DEFAULT,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.DEFAULT) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.SERIF,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.SERIF,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.SERIF) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.SANS_SERIF,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.SANS_SERIF,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.SANS_SERIF) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // Second row: Cursive, Fantasy, Monospace
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.CURSIVE,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.CURSIVE,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.CURSIVE) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.FANTASY,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.FANTASY,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.FANTASY) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.MONOSPACE,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.MONOSPACE,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.MONOSPACE) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // Third row: Accessibility fonts
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.ACCESSIBLE_DFA,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.ACCESSIBLE_DFA,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.ACCESSIBLE_DFA) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.IA_WRITER_DUOSPACE,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.IA_WRITER_DUOSPACE,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.IA_WRITER_DUOSPACE) },
-                    modifier = Modifier.weight(1f),
-                )
-                FontFamilyChip(
-                    fontFamily = FontFamilyUiModel.OPEN_DYSLEXIC,
-                    isSelected = selectedFontFamily == FontFamilyUiModel.OPEN_DYSLEXIC,
-                    onClick = { onFontFamilySelected(FontFamilyUiModel.OPEN_DYSLEXIC) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                (FontFamilyUiModel.BUILT_IN + customFonts).forEach { fontFamily ->
+                    FontFamilyOptionRow(
+                        fontFamily = fontFamily,
+                        isSelected = selectedFontFamily.cssValue == fontFamily.cssValue,
+                        onClick = { onFontFamilySelected(fontFamily) },
+                    )
+                }
+                TextButton(onClick = onAddFont) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(text = stringResource(StringRes.settings_font_family_add))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun FontFamilyChip(
+private fun FontFamilyOptionRow(
     fontFamily: FontFamilyUiModel,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FilterChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = {
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+    val backgroundColor = if (isSelected) {
+        MaterialTheme.colorScheme.surfaceVariant
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(8.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = fontFamily.toDisplayString(),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = fontFamily.toPreviewFontFamily(),
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-        },
-        modifier = modifier,
-    )
+            if (fontFamily.isCustom) {
+                Text(
+                    text = stringResource(StringRes.settings_font_family_custom),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (isSelected) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(StringRes.settings_selected),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -1050,6 +1733,7 @@ private fun FontFamilyUiModel.toDisplayString(): String = when (this) {
     )
 
     FontFamilyUiModel.OPEN_DYSLEXIC -> stringResource(StringRes.settings_font_family_open_dyslexic)
+    else -> displayName ?: cssValue
 }
 
 @Composable
@@ -1057,27 +1741,13 @@ private fun TextAlignSelector(
     selectedAlign: ReaderTextAlignUiModel,
     onAlignSelected: (ReaderTextAlignUiModel) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_text_align),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ReaderTextAlignUiModel.entries.forEachIndexed { index, align ->
-                SegmentedButton(
-                    selected = align == selectedAlign,
-                    onClick = { onAlignSelected(align) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ReaderTextAlignUiModel.entries.size,
-                    ),
-                ) {
-                    Text(text = align.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_text_align),
+        options = ReaderTextAlignUiModel.entries,
+        selectedOption = selectedAlign,
+        onOptionSelected = onAlignSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 /**
@@ -1094,27 +1764,13 @@ private fun ScrollModeSelector(
     // Options: null = Auto, false = Paginated, true = Scroll
     val options = listOf<Boolean?>(null, false, true)
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_scroll_mode),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = options.size,
-                    ),
-                ) {
-                    Text(text = mode.toScrollModeDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_scroll_mode),
+        options = options,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toScrollModeDisplayString() },
+    )
 }
 
 @Composable
@@ -1139,27 +1795,13 @@ private fun ProgressBarModeSelector(
     // Options: true = Always, null = On Tap, false = Never
     val options = listOf<Boolean?>(true, null, false)
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_progress_bar),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = options.size,
-                    ),
-                ) {
-                    Text(text = mode.toProgressBarModeDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_progress_bar),
+        options = options,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toProgressBarModeDisplayString() },
+    )
 }
 
 @Composable
@@ -1194,20 +1836,12 @@ private fun AudioProgressBarModeSelector(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = options.size,
-                    ),
-                ) {
-                    Text(text = mode.toProgressBarModeDisplayString())
-                }
-            }
-        }
+        OutlinedChoiceRow(
+            options = options,
+            selectedOption = selectedMode,
+            onOptionSelected = onModeSelected,
+            optionLabel = { it.toProgressBarModeDisplayString() },
+        )
     }
 }
 
@@ -1222,27 +1856,13 @@ private fun ProgressBarPositionSelector(
     selectedPosition: ProgressBarPosition,
     onPositionSelected: (ProgressBarPosition) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_progress_bar_position),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ProgressBarPosition.entries.forEachIndexed { index, position ->
-                SegmentedButton(
-                    selected = position == selectedPosition,
-                    onClick = { onPositionSelected(position) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ProgressBarPosition.entries.size,
-                    ),
-                ) {
-                    Text(text = position.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_progress_bar_position),
+        options = ProgressBarPosition.entries,
+        selectedOption = selectedPosition,
+        onOptionSelected = onPositionSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1264,27 +1884,13 @@ private fun ChapterProgressDisplayModeSelector(
     selectedMode: ChapterProgressDisplayMode,
     onModeSelected: (ChapterProgressDisplayMode) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_chapter_progress),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ChapterProgressDisplayMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ChapterProgressDisplayMode.entries.size,
-                    ),
-                ) {
-                    Text(text = mode.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_chapter_progress),
+        options = ChapterProgressDisplayMode.entries,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1460,32 +2066,11 @@ private fun TapActionSelector(
     selectedAction: NavigationAction,
     onActionSelected: (NavigationAction) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            NavigationAction.entries.forEachIndexed { index, action ->
-                SegmentedButton(
-                    selected = action == selectedAction,
-                    onClick = { onActionSelected(action) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = NavigationAction.entries.size,
-                    ),
-                ) {
-                    Text(
-                        text = when (action) {
-                            NavigationAction.NEXT_PAGE -> stringResource(StringRes.settings_navigation_action_next_page)
-                            NavigationAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_navigation_action_previous_page)
-                        },
-                    )
-                }
-            }
-        }
-    }
+    NavigationActionSelector(
+        title = title,
+        selectedAction = selectedAction,
+        onActionSelected = onActionSelected,
+    )
 }
 
 /**
@@ -1533,32 +2118,34 @@ private fun VolumeButtonActionSelector(
     selectedAction: NavigationAction,
     onActionSelected: (NavigationAction) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            NavigationAction.entries.forEachIndexed { index, action ->
-                SegmentedButton(
-                    selected = action == selectedAction,
-                    onClick = { onActionSelected(action) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = NavigationAction.entries.size,
-                    ),
-                ) {
-                    Text(
-                        text = when (action) {
-                            NavigationAction.NEXT_PAGE -> stringResource(StringRes.settings_navigation_action_next_page)
-                            NavigationAction.PREVIOUS_PAGE -> stringResource(StringRes.settings_navigation_action_previous_page)
-                        },
-                    )
-                }
+    NavigationActionSelector(
+        title = title,
+        selectedAction = selectedAction,
+        onActionSelected = onActionSelected,
+    )
+}
+
+@Composable
+private fun NavigationActionSelector(
+    title: String,
+    selectedAction: NavigationAction,
+    onActionSelected: (NavigationAction) -> Unit,
+) {
+    OutlinedChoiceGroup(
+        title = title,
+        options = NavigationAction.entries,
+        selectedOption = selectedAction,
+        onOptionSelected = onActionSelected,
+        optionLabel = {
+            when (it) {
+                NavigationAction.NEXT_PAGE ->
+                    stringResource(StringRes.settings_navigation_action_next_page)
+
+                NavigationAction.PREVIOUS_PAGE ->
+                    stringResource(StringRes.settings_navigation_action_previous_page)
             }
-        }
-    }
+        },
+    )
 }
 
 /**
@@ -1573,27 +2160,13 @@ private fun ProgressIndicatorModeSelector(
     selectedMode: ProgressIndicatorMode,
     onModeSelected: (ProgressIndicatorMode) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.settings_progress_indicator),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ProgressIndicatorMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selectedMode,
-                    onClick = { onModeSelected(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ProgressIndicatorMode.entries.size,
-                    ),
-                ) {
-                    Text(text = mode.toDisplayString())
-                }
-            }
-        }
-    }
+    OutlinedChoiceGroup(
+        title = stringResource(StringRes.settings_progress_indicator),
+        options = ProgressIndicatorMode.entries,
+        selectedOption = selectedMode,
+        onOptionSelected = onModeSelected,
+        optionLabel = { it.toDisplayString() },
+    )
 }
 
 @Composable
@@ -1601,39 +2174,6 @@ private fun ProgressIndicatorMode.toDisplayString(): String = when (this) {
     ProgressIndicatorMode.NONE -> stringResource(StringRes.settings_progress_indicator_none)
     ProgressIndicatorMode.CHAPTER -> stringResource(StringRes.settings_progress_indicator_chapter)
     ProgressIndicatorMode.BOOK -> stringResource(StringRes.settings_progress_indicator_book)
-}
-
-@Composable
-private fun SettingsSlider(
-    label: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    valueDisplay: (Float) -> String,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = valueDisplay(value),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Slider(
-            modifier = Modifier.fillMaxWidth(),
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = valueRange,
-        )
-    }
 }
 
 @Composable

@@ -20,6 +20,9 @@
     <string name="login_username_label">Username</string>
     <string name="login_password_label">Password</string>
     <string name="login_sign_in_button">Sign In</string>
+    <string name="login_oauth_sign_in_button">Continue in browser</string>
+    <string name="login_oauth_waiting_button">Waiting for browser</string>
+    <string name="login_oauth_waiting_message">Complete sign-in in the browser. Returning here without approving will cancel it.</string>
     <string name="login_hide_password">Hide password</string>
     <string name="login_show_password">Show password</string>
     <string name="login_url_tooltip_title">StoryTeller URL</string>
@@ -62,6 +65,8 @@
     <string name="app_settings_no_logs">No logs to share</string>
     <string name="app_settings_enable_logging">Enable File Logging</string>
     <string name="app_settings_enable_logging_description">Write logs to file for debugging</string>
+    <string name="app_settings_log_crashes_only">Only Log Crashes</string>
+    <string name="app_settings_log_crashes_only_description">Save full stack traces for fatal crashes and skip handled errors</string>
     <string name="app_settings_section_reading">Reading</string>
     <string name="app_settings_open_last_book">Open Last Book on Launch</string>
     <string name="app_settings_open_last_book_description">Automatically open your currently reading book when the app starts</string>
@@ -184,14 +189,20 @@
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_icon_content_description">Settings</string>
+    <string name="settings_reader_preview">Preview</string>
+    <string name="settings_reader_preview_sample">The old library settled into silence as the first page opened. Words found their rhythm, and the margins gave them room to breathe.\n\nBy the second paragraph, the page felt calmer. The story became easy to follow.</string>
+    <string name="settings_changed">Setting changed</string>
+    <string name="settings_undo">Undo</string>
 
     <!-- Settings Sections -->
-    <string name="settings_section_appearance">Appearance</string>
-    <string name="settings_section_appearance_description">Theme and font size</string>
+    <string name="settings_section_core">Reading Basics</string>
+    <string name="settings_section_core_description">Theme, text size, font, and page flow</string>
     <string name="settings_section_typography">Typography</string>
-    <string name="settings_section_typography_description">Font family, line height, and text alignment</string>
+    <string name="settings_section_typography_description">Font, size, spacing, and alignment</string>
     <string name="settings_section_layout">Layout</string>
-    <string name="settings_section_layout_description">Margins, reading mode, and progress display</string>
+    <string name="settings_section_layout_description">Margins, reading mode, and fullscreen</string>
+    <string name="settings_section_progress">Progress</string>
+    <string name="settings_section_progress_description">Progress bar, page info, and time display</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
@@ -199,6 +210,9 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_font_size">Font Size</string>
     <string name="settings_font_family">Font Family</string>
+    <string name="settings_font_family_add">Add font</string>
+    <string name="settings_font_family_custom">Custom</string>
+    <string name="settings_selected">Selected</string>
     <string name="settings_font_family_default">Default</string>
     <string name="settings_font_family_serif">Serif</string>
     <string name="settings_font_family_sans_serif">Sans Serif</string>
@@ -208,7 +222,11 @@
     <string name="settings_font_family_accessible_dfa">Accessible DfA</string>
     <string name="settings_font_family_ia_writer_duospace">IA Writer Duospace</string>
     <string name="settings_font_family_open_dyslexic">OpenDyslexic</string>
+    <string name="settings_font_weight">Boldness</string>
+    <string name="settings_text_normalization">Normalize Text Styles</string>
+    <string name="settings_text_normalization_description">Simplifies book styling by flattening bold, italic, variants, and decorations.</string>
     <string name="settings_line_height">Line Height</string>
+    <string name="settings_paragraph_spacing">Paragraph Spacing</string>
     <string name="settings_margins">Margins</string>
     <string name="settings_margin_horizontal">Horizontal Margin</string>
     <string name="settings_margin_vertical">Vertical Margin</string>
@@ -264,7 +282,7 @@
 
     <!-- ReadAloud Settings -->
     <string name="settings_section_readaloud">Read Aloud</string>
-    <string name="settings_section_readaloud_description">Text highlighting style and color</string>
+    <string name="settings_section_readaloud_description">Audio controls and sentence highlighting</string>
     <string name="settings_highlight_color">Highlight Color</string>
     <string name="settings_underline_color">Underline Color</string>
     <string name="settings_highlight_style">Highlight Style</string>
@@ -275,6 +293,8 @@
     <string name="settings_double_tap_timeout_description">Time allowed between taps to register as a double-tap. Higher values give more time but delay single-tap actions like page turns.</string>
     <string name="settings_audio_progress_bar">Audio Progress Bar</string>
     <string name="settings_audio_progress_bar_description">Controls when to show the audio playback progress bar (seek bar with current position and duration) during ReadAloud playback.</string>
+    <string name="settings_keep_screen_on_during_audio">Keep Screen On During Audio</string>
+    <string name="settings_keep_screen_on_during_audio_description">Prevent the screen from turning off while ReadAloud audio is playing and pages are turning automatically.</string>
 
     <!-- Statistics Screen -->
     <string name="statistics_title">Reading Statistics</string>

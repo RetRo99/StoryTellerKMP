@@ -13,14 +13,20 @@ import com.retro99.settings.ui.model.ReaderThemeUiModel
 data class SettingsViewState(
     val isLoading: Boolean = false,
     val readerSettings: ReaderSettingsUiModel = ReaderSettingsUiModel(),
-    val expandedSections: Set<SettingsSection> = setOf(SettingsSection.APPEARANCE),
+    val undoReaderSettings: ReaderSettingsUiModel? = null,
+    val undoRequestId: Int = 0,
+    val customFonts: List<FontFamilyUiModel> = emptyList(),
+    val expandedSections: Set<SettingsSection> = emptySet(),
     val isFontsExpanded: Boolean = false,
 ) {
     // Convenience accessors for UI
     val theme: ReaderThemeUiModel get() = readerSettings.theme
     val fontSize: Double get() = readerSettings.fontSize
     val fontFamily: FontFamilyUiModel get() = readerSettings.fontFamily
+    val fontWeight: Double get() = readerSettings.fontWeight
+    val textNormalization: Boolean get() = readerSettings.textNormalization
     val lineHeight: Float get() = readerSettings.lineHeight
+    val paragraphSpacing: Double get() = readerSettings.paragraphSpacing
     val marginHorizontal: Int get() = readerSettings.marginHorizontal
     val marginVertical: Int get() = readerSettings.marginVertical
     val textAlign: ReaderTextAlignUiModel get() = readerSettings.textAlign
@@ -46,14 +52,15 @@ data class SettingsViewState(
     val rightTapAction: NavigationAction get() = readerSettings.rightTapAction
     val doubleTapTimeoutMs: Int get() = readerSettings.doubleTapTimeoutMs
     val showAudioProgressBar: Boolean? get() = readerSettings.showAudioProgressBar
+    val keepScreenOnDuringAudio: Boolean get() = readerSettings.keepScreenOnDuringAudio
 
     fun isSectionExpanded(section: SettingsSection): Boolean = section in expandedSections
 }
 
 enum class SettingsSection {
-    APPEARANCE,
     TYPOGRAPHY,
     LAYOUT,
+    PROGRESS,
     NAVIGATION,
     READALOUD,
 }

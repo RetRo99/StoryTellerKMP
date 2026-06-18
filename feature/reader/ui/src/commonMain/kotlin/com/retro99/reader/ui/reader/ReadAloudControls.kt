@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.TimerOff
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -30,6 +32,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,11 +66,13 @@ internal fun ReadAloudControls(
     currentPositionMs: Long,
     totalDurationMs: Long?,
     playbackSpeed: Float,
+    sleepTimerRemainingMs: Long?,
     showAudioProgressBar: Boolean?,
     areControlsVisible: Boolean,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     onInteraction: () -> Unit = {},
     onSwipeDown: () -> Unit = {},
+    onControlsDialogVisibilityChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // Wrapper that calls onInteraction before dispatching intent
@@ -119,7 +125,15 @@ internal fun ReadAloudControls(
                 ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            PlaybackControlsRow(isPlaying, playbackSpeed, interactingDispatcher)
+            PlaybackControlsRow(
+                isPlaying = isPlaying,
+                playbackSpeed = playbackSpeed,
+                currentPositionMs = currentPositionMs,
+                totalDurationMs = totalDurationMs,
+                sleepTimerRemainingMs = sleepTimerRemainingMs,
+                intentDispatcher = interactingDispatcher,
+                onControlsDialogVisibilityChanged = onControlsDialogVisibilityChanged,
+            )
         }
     }
 }
@@ -128,7 +142,11 @@ internal fun ReadAloudControls(
 private fun PlaybackControlsRow(
     isPlaying: Boolean,
     playbackSpeed: Float,
+    currentPositionMs: Long,
+    totalDurationMs: Long?,
+    sleepTimerRemainingMs: Long?,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
+    onControlsDialogVisibilityChanged: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -154,7 +172,13 @@ private fun PlaybackControlsRow(
         IconButton(onClick = { intentDispatcher(ReaderIntent.SkipForward()) }) {
             Icon(Icons.Default.Forward10, "Skip forward", Modifier.size(32.dp))
         }
-        Spacer(modifier = Modifier.width(48.dp))
+        SleepTimerButton(
+            currentPositionMs = currentPositionMs,
+            totalDurationMs = totalDurationMs,
+            sleepTimerRemainingMs = sleepTimerRemainingMs,
+            intentDispatcher = intentDispatcher,
+            onTimerMenuVisibilityChanged = onControlsDialogVisibilityChanged,
+        )
     }
 }
 
@@ -213,5 +237,105 @@ private fun formatDuration(durationMs: Long): String {
     } else {
         "$minutes:$paddedSeconds"
     }
+}
+
+@Composable
+private fun SleepTimerButton(
+    currentPositionMs: Long,
+    totalDurationMs: Long?,
+    sleepTimerRemainingMs: Long?,
+    intentDispatcher: IntentDispatcher<ReaderIntent>,
+    onTimerMenuVisibilityChanged: (Boolean) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var showCustomTimerDialog by remember { mutableStateOf(false) }
+    val remainingToEndMs = totalDurationMs
+        ?.minus(currentPositionMs)
+        ?.takeIf { it > 0L }
+
+    LaunchedEffect(expanded, showCustomTimerDialog) {
+        onTimerMenuVisibilityChanged(expanded || showCustomTimerDialog)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { onTimerMenuVisibilityChanged(false) }
+    }
+
+    TextButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = if (sleepTimerRemainingMs == null) Icons.Default.Timer else Icons.Default.TimerOff,
+            contentDescription = "Sleep timer",
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = sleepTimerRemainingMs?.let { formatSleepTimerLabel(it) } ?: "Timer",
+            style = MaterialTheme.typography.labelLarge,
+        )
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            SleepTimerPreset.entries.forEach { preset ->
+                DropdownMenuItem(
+                    text = { Text(preset.label) },
+                    onClick = {
+                        intentDispatcher(ReaderIntent.StartSleepTimer(preset.durationMs))
+                        expanded = false
+                    },
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("Custom...") },
+                onClick = {
+                    expanded = false
+                    showCustomTimerDialog = true
+                },
+            )
+            if (remainingToEndMs != null) {
+                DropdownMenuItem(
+                    text = { Text("End of audio") },
+                    onClick = {
+                        intentDispatcher(ReaderIntent.StartSleepTimer(remainingToEndMs))
+                        expanded = false
+                    },
+                )
+            }
+            if (sleepTimerRemainingMs != null) {
+                DropdownMenuItem(
+                    text = { Text("Cancel timer") },
+                    onClick = {
+                        intentDispatcher(ReaderIntent.CancelSleepTimer)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+
+    if (showCustomTimerDialog) {
+        SleepTimerDurationDialog(
+            title = "Custom sleep timer",
+            message = "Choose how long playback should continue before pausing.",
+            confirmLabel = "Start",
+            dismissLabel = "Cancel",
+            initialMinutes = sleepTimerRemainingMs
+                ?.let { ((it + 59_999L) / 60_000L).toInt().coerceAtLeast(1) }
+                ?: 5,
+            onConfirm = { minutes ->
+                intentDispatcher(ReaderIntent.StartSleepTimer(minutes * 60_000L))
+                showCustomTimerDialog = false
+            },
+            onDismiss = { showCustomTimerDialog = false },
+        )
+    }
+}
+
+private enum class SleepTimerPreset(
+    val label: String,
+    val durationMs: Long,
+) {
+    FiveMinutes("5 minutes", 5 * 60_000L),
+    TenMinutes("10 minutes", 10 * 60_000L),
+    FifteenMinutes("15 minutes", 15 * 60_000L),
+    ThirtyMinutes("30 minutes", 30 * 60_000L),
+    SixtyMinutes("60 minutes", 60 * 60_000L),
 }
 

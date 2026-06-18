@@ -58,6 +58,7 @@ internal actual fun EpubReaderViewInternal(
             val settings = EpubReaderSettings.from(
                 settings = publicationState.settings,
                 initialPosition = publicationState.position,
+                customFonts = publicationState.customFonts,
             )
 
             val viewController = publication.bridge.createReaderViewController(settings = settings)

@@ -1,8 +1,14 @@
 package com.retro99.reader.ui.bridge
 
+import com.retro99.reader.domain.model.CustomReaderFontDomainModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import platform.UIKit.UIViewController
+
+data class EpubReaderCustomFont(
+    val cssFamily: String,
+    val filePath: String,
+)
 
 /**
  * Reader settings data class for iOS bridge.
@@ -12,8 +18,11 @@ import platform.UIKit.UIViewController
 data class EpubReaderSettings(
     val fontSize: Double,
     val fontFamily: String,
+    val fontWeight: Double,
+    val textNormalization: Boolean,
     val theme: String,
     val lineHeight: Float,
+    val paragraphSpacing: Double,
     val marginHorizontal: Int,
     val marginVertical: Int,
     val scrollMode: Boolean?,
@@ -25,17 +34,22 @@ data class EpubReaderSettings(
     val underlineColorArgb: Int,
     val highlightStyle: String,
     val initialPosition: PositionUiModel?,
+    val customFonts: List<EpubReaderCustomFont>,
 ) {
     companion object {
         fun from(
             settings: ReaderSettingsUiModel,
             initialPosition: PositionUiModel? = null,
+            customFonts: List<CustomReaderFontDomainModel> = emptyList(),
         ): EpubReaderSettings {
             return EpubReaderSettings(
                 fontSize = settings.fontSize,
                 fontFamily = settings.fontFamily,
+                fontWeight = settings.fontWeight,
+                textNormalization = settings.textNormalization,
                 theme = settings.theme.name,
                 lineHeight = settings.lineHeight,
+                paragraphSpacing = settings.paragraphSpacing,
                 marginHorizontal = settings.marginHorizontal,
                 marginVertical = settings.marginVertical,
                 scrollMode = settings.scrollMode,
@@ -45,6 +59,12 @@ data class EpubReaderSettings(
                 underlineColorArgb = settings.underlineColor,
                 highlightStyle = settings.highlightStyle.name,
                 initialPosition = initialPosition,
+                customFonts = customFonts.map {
+                    EpubReaderCustomFont(
+                        cssFamily = it.cssFamily,
+                        filePath = it.filePath,
+                    )
+                },
             )
         }
     }

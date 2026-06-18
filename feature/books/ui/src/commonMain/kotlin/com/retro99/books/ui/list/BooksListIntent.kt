@@ -1,6 +1,8 @@
 package com.retro99.books.ui.list
 
 import com.retro99.base.ui.BaseIntent
+import com.retro99.books.ui.model.BookLibrarySection
+import com.retro99.books.ui.model.BookListViewMode
 import com.retro99.books.ui.model.BookQuickFilter
 import com.retro99.books.ui.model.BookSortConfig
 import com.retro99.books.ui.model.BookUiModel
@@ -20,5 +22,9 @@ sealed interface BooksListIntent : BaseIntent {
 
     // Sort intents
     data class OnSortChanged(val sortConfig: BookSortConfig) : BooksListIntent
+
+    // Browse controls
+    data class OnViewModeChanged(val viewMode: BookListViewMode) : BooksListIntent
+    data class OnSectionSelected(val section: BookLibrarySection) : BooksListIntent
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RichTooltip
@@ -52,6 +53,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import resources.translations.general_back
 import resources.translations.login_hide_password
+import resources.translations.login_oauth_sign_in_button
+import resources.translations.login_oauth_waiting_button
+import resources.translations.login_oauth_waiting_message
 import resources.translations.login_password_label
 import resources.translations.login_show_password
 import resources.translations.login_sign_in_button
@@ -79,6 +83,8 @@ fun LoginScreen(
             usernameState = viewModel.usernameState,
             passwordState = viewModel.passwordState,
             isSignInEnabled = viewState.isSignInEnabled,
+            isOAuthSignInEnabled = viewState.isOAuthSignInEnabled,
+            isOAuthInProgress = viewState.isOAuthInProgress,
             loginError = viewState.loginError,
             intentDispatcher = intentDispatcher,
             onBackClick = onBackClick,
@@ -94,6 +100,8 @@ private fun LoginScreenContent(
     usernameState: TextFieldState,
     passwordState: TextFieldState,
     isSignInEnabled: Boolean,
+    isOAuthSignInEnabled: Boolean,
+    isOAuthInProgress: Boolean,
     loginError: String?,
     intentDispatcher: IntentDispatcher<LoginIntent>,
     onBackClick: () -> Unit,
@@ -205,6 +213,34 @@ private fun LoginScreenContent(
                 enabled = isSignInEnabled,
             ) {
                 Text(stringResource(StringRes.login_sign_in_button))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = { intentDispatcher(LoginIntent.OnOAuthSignInClicked) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isOAuthSignInEnabled,
+            ) {
+                Text(
+                    stringResource(
+                        if (isOAuthInProgress) {
+                            StringRes.login_oauth_waiting_button
+                        } else {
+                            StringRes.login_oauth_sign_in_button
+                        }
+                    )
+                )
+            }
+
+            if (isOAuthInProgress) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(StringRes.login_oauth_waiting_message),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

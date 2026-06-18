@@ -3,12 +3,18 @@ package com.retro99.settings.ui
 import androidx.lifecycle.viewModelScope
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.ReaderAnalyticsEvent
+import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
+import com.retro99.reader.domain.usecase.GetCustomReaderFontsUseCase
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
+import com.retro99.reader.domain.usecase.ImportCustomReaderFontUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.settings.ui.model.ReaderSettingsUiModel
 import com.retro99.settings.ui.model.toDomainModel
 import com.retro99.settings.ui.model.toUiModel
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -19,6 +25,8 @@ import org.koin.core.annotation.Provided
 class SettingsViewModel(
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
+    @Provided private val getCustomReaderFontsUseCase: GetCustomReaderFontsUseCase,
+    @Provided private val importCustomReaderFontUseCase: ImportCustomReaderFontUseCase,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<SettingsViewState, SettingsIntent>(SettingsViewState()) {
 
@@ -30,6 +38,8 @@ class SettingsViewModel(
         when (intent) {
             is SettingsIntent.OnSectionToggled -> toggleSection(intent.section)
             is SettingsIntent.OnFontsToggled -> toggleFonts()
+            SettingsIntent.OnUndoSettingsChange -> undoSettingsChange()
+            SettingsIntent.OnDismissSettingsUndo -> dismissSettingsUndo()
             is SettingsIntent.OnThemeChanged -> updateReaderSetting("theme", intent.theme.name) {
                 it.copy(theme = intent.theme)
             }
@@ -43,16 +53,39 @@ class SettingsViewModel(
 
             is SettingsIntent.OnFontFamilyChanged -> updateReaderSetting(
                 "font_family",
-                intent.fontFamily.name,
+                intent.fontFamily.cssValue,
             ) {
                 it.copy(fontFamily = intent.fontFamily)
             }
+
+            is SettingsIntent.OnFontWeightChanged -> updateReaderSetting(
+                "font_weight",
+                intent.fontWeight.toString(),
+            ) {
+                it.copy(fontWeight = intent.fontWeight)
+            }
+
+            is SettingsIntent.OnTextNormalizationChanged -> updateReaderSetting(
+                "text_normalization",
+                intent.textNormalization.toString(),
+            ) {
+                it.copy(textNormalization = intent.textNormalization)
+            }
+
+            is SettingsIntent.OnCustomFontSelected -> importCustomFont(intent.file)
 
             is SettingsIntent.OnLineHeightChanged -> updateReaderSetting(
                 "line_height",
                 intent.lineHeight.toString(),
             ) {
                 it.copy(lineHeight = intent.lineHeight)
+            }
+
+            is SettingsIntent.OnParagraphSpacingChanged -> updateReaderSetting(
+                "paragraph_spacing",
+                intent.paragraphSpacing.toString(),
+            ) {
+                it.copy(paragraphSpacing = intent.paragraphSpacing)
             }
 
             is SettingsIntent.OnMarginHorizontalChanged -> updateReaderSetting(
@@ -222,6 +255,13 @@ class SettingsViewModel(
             ) {
                 it.copy(showAudioProgressBar = intent.showAudioProgressBar)
             }
+
+            is SettingsIntent.OnKeepScreenOnDuringAudioChanged -> updateReaderSetting(
+                "keep_screen_on_during_audio",
+                intent.enabled.toString(),
+            ) {
+                it.copy(keepScreenOnDuringAudio = intent.enabled)
+            }
         }
     }
 
@@ -252,12 +292,48 @@ class SettingsViewModel(
     }
 
     private fun observeReaderSettings() {
-        getReaderSettingsUseCase()
-            .onEach { settings ->
-                val uiModel = settings.toUiModel()
-                updateState { it.copy(readerSettings = uiModel) }
+        combine(
+            getReaderSettingsUseCase(),
+            getCustomReaderFontsUseCase(),
+        ) { settings, customFonts ->
+            settings to customFonts
+        }
+            .onEach { (settings, customFonts) ->
+                val uiCustomFonts = customFonts.map { it.toUiModel() }
+                val uiModel = settings.toUiModel().copy(
+                    fontFamily = settings.fontFamily.toUiModel(customFonts),
+                )
+                updateState {
+                    it.copy(
+                        readerSettings = uiModel,
+                        customFonts = uiCustomFonts,
+                    )
+                }
             }
             .launchIn(viewModelScope)
+    }
+
+    private fun importCustomFont(file: io.github.vinceglb.filekit.core.PlatformFile) {
+        viewModelScope.launch {
+            importCustomReaderFontUseCase(file)
+                .onSuccess { font ->
+                    val uiFont = font.toUiModel()
+                    updateReaderSetting("font_family", uiFont.cssValue) {
+                        it.copy(fontFamily = uiFont)
+                    }
+                }
+                .onFailure { error ->
+                    val throwable = when (error) {
+                        is AppError.NetworkError -> error.throwable
+                        is AppError.DatabaseError -> error.throwable
+                        is AppError.UnknownError -> error.throwable
+                        is AppError.ApiError -> Exception(error.message)
+                        is AppError.AuthError -> Exception(error.message)
+                        is AppError.NotFoundError -> Exception(error.message)
+                    }
+                    analytics.logException(throwable, "SettingsViewModel: Failed to import custom font")
+                }
+        }
     }
 
     private fun updateReaderSetting(
@@ -269,11 +345,34 @@ class SettingsViewModel(
 
         val currentSettings = viewState.value.readerSettings
         val newSettings = update(currentSettings)
-        updateState { it.copy(readerSettings = newSettings) }
+        updateState {
+            it.copy(
+                readerSettings = newSettings,
+                undoReaderSettings = it.undoReaderSettings ?: currentSettings,
+                undoRequestId = it.undoRequestId + 1,
+            )
+        }
 
         viewModelScope.launch {
             saveReaderSettingsUseCase(newSettings.toDomainModel())
         }
+    }
+
+    private fun undoSettingsChange() {
+        val undoSettings = viewState.value.undoReaderSettings ?: return
+        updateState {
+            it.copy(
+                readerSettings = undoSettings,
+                undoReaderSettings = null,
+            )
+        }
+        viewModelScope.launch {
+            saveReaderSettingsUseCase(undoSettings.toDomainModel())
+        }
+    }
+
+    private fun dismissSettingsUndo() {
+        updateState { it.copy(undoReaderSettings = null) }
     }
 }
 

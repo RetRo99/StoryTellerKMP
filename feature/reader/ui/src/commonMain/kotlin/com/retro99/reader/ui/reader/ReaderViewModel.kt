@@ -16,6 +16,7 @@ import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReaderInitializationData
+import com.retro99.reader.domain.usecase.GetCustomReaderFontsUseCase
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -60,6 +62,7 @@ class ReaderViewModel(
     @Provided private val initializeReaderUseCase: InitializeReaderUseCase,
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReaderSettingsUseCase: GetReaderSettingsUseCase,
+    @Provided private val getCustomReaderFontsUseCase: GetCustomReaderFontsUseCase,
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val saveReadingSessionUseCase: SaveReadingSessionUseCase,
     @Provided private val setCurrentlyReadingUseCase: SetCurrentlyReadingUseCase,
@@ -73,7 +76,7 @@ class ReaderViewModel(
 ) {
 
     private val readerScope: Scope by lazy {
-        getKoin().createScope<ReaderScope>(bookUuid).apply {
+        getKoin().getOrCreateScope<ReaderScope>(bookUuid).apply {
             viewState.value.publicationState?.let { pubState ->
                 val initialPositionMs = pubState.position?.audioTimestampMs
                 val initialHref = pubState.position?.href
@@ -112,6 +115,9 @@ class ReaderViewModel(
 
     /** Job for the time update coroutine, cancelled when showCurrentTime is disabled */
     private var timeUpdateJob: Job? = null
+
+    /** Job for the Read Aloud sleep timer countdown. */
+    private var sleepTimerJob: Job? = null
 
     /** Timestamp when the book was opened, used for calculating reading duration */
     private var bookOpenedTimestamp: Long = 0L
@@ -180,6 +186,9 @@ class ReaderViewModel(
             ReaderIntent.TogglePlayback -> togglePlayback()
             is ReaderIntent.SeekTo -> seekTo(intent.audioTimestampMs)
             is ReaderIntent.SetPlaybackSpeed -> setPlaybackSpeed(intent.speed)
+            is ReaderIntent.StartSleepTimer -> startSleepTimer(intent.durationMs)
+            ReaderIntent.CancelSleepTimer -> cancelSleepTimer()
+            ReaderIntent.DismissSleepTimerWarning -> dismissSleepTimerWarning()
             is ReaderIntent.SkipForward -> skipForward(intent.milliseconds)
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
             ReaderIntent.ToggleToc -> toggleToc()
@@ -313,6 +322,7 @@ class ReaderViewModel(
 
     private suspend fun openPublication(data: ReaderInitializationData) {
         val settings = data.initialSettings.toUiModel()
+        val customFonts = getCustomReaderFontsUseCase().first()
         val bookType = data.bookType
         val (position, conflict) = data.progressResult.toUiData()
 
@@ -336,6 +346,7 @@ class ReaderViewModel(
                 publication = publication,
                 settings = settings,
                 position = position,
+                customFonts = customFonts,
             )
 
             updateState { state ->
@@ -356,6 +367,7 @@ class ReaderViewModel(
             observeReadingTimeInfo()
             observeReadingSpeedPersistence()
             observeSettingsChanges()
+            observeCustomFontChanges()
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()
@@ -376,6 +388,14 @@ class ReaderViewModel(
             )
             updateState { it.copy(error = error) }
         }
+    }
+
+    private fun observeCustomFontChanges() {
+        getCustomReaderFontsUseCase()
+            .onEach { customFonts ->
+                updatePublicationState { it.copy(customFonts = customFonts) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun initAudio() {
@@ -507,6 +527,7 @@ class ReaderViewModel(
             if (viewState.value.isReadAloud) {
                 saveCurrentAudioPositionSync()
             }
+            cancelSleepTimer()
 
             // Track book closed event with reading duration and progress
             val currentState = viewState.value
@@ -593,6 +614,68 @@ class ReaderViewModel(
                 saveReaderSettingsUseCase(settings.copy(playbackSpeed = speed).toDomainModel())
             }
         }
+    }
+
+    private fun startSleepTimer(durationMs: Long) {
+        sleepTimerJob?.cancel()
+        updateState {
+            it.copy(
+                sleepTimerRemainingMs = durationMs,
+                showSleepTimerWarningPrompt = false,
+            )
+        }
+        sleepTimerJob = viewModelScope.launch {
+            var remainingMs = durationMs
+            var hasShownWarning = false
+            while (remainingMs > 0L) {
+                delay(SLEEP_TIMER_TICK_MS)
+                if (viewState.value.isPlaying) {
+                    remainingMs = (remainingMs - SLEEP_TIMER_TICK_MS).coerceAtLeast(0L)
+                    updateState {
+                        it.copy(
+                            sleepTimerRemainingMs = remainingMs,
+                            showSleepTimerWarningPrompt = if (
+                                !hasShownWarning &&
+                                remainingMs in 1L..SLEEP_TIMER_WARNING_THRESHOLD_MS
+                            ) {
+                                true
+                            } else {
+                                it.showSleepTimerWarningPrompt
+                            },
+                        )
+                    }
+                    if (remainingMs in 1L..SLEEP_TIMER_WARNING_THRESHOLD_MS) {
+                        hasShownWarning = true
+                    }
+                }
+            }
+            if (viewState.value.isPlaying) {
+                audioController.togglePlayback()
+                saveCurrentAudioPosition()
+            }
+            updateState {
+                it.copy(
+                    sleepTimerRemainingMs = null,
+                    showSleepTimerWarningPrompt = false,
+                )
+            }
+            sleepTimerJob = null
+        }
+    }
+
+    private fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        updateState {
+            it.copy(
+                sleepTimerRemainingMs = null,
+                showSleepTimerWarningPrompt = false,
+            )
+        }
+    }
+
+    private fun dismissSleepTimerWarning() {
+        updateState { it.copy(showSleepTimerWarningPrompt = false) }
     }
 
     private fun setHighlightColor(colorArgb: Int) {
@@ -720,5 +803,11 @@ class ReaderViewModel(
 
         /** Minimum reading duration to update "currently reading" book (1 minute) */
         private const val MINIMUM_READING_DURATION_MS = 60_000L
+
+        /** Sleep timer countdown granularity. */
+        private const val SLEEP_TIMER_TICK_MS = 1_000L
+
+        /** Remaining time when the user is prompted to extend the sleep timer. */
+        private const val SLEEP_TIMER_WARNING_THRESHOLD_MS = 60_000L
     }
 }

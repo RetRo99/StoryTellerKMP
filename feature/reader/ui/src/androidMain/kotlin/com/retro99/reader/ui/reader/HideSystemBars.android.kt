@@ -32,18 +32,33 @@ actual fun HideSystemBars() {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        // Keep screen on while reading
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
         onDispose {
             // Restore system bars
             insetsController.apply {
                 show(WindowInsetsCompat.Type.statusBars())
                 systemBarsBehavior = originalSystemBarsBehavior
             }
+        }
+    }
+}
 
-            // Remove keep screen on flag
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+@Composable
+actual fun KeepScreenOn(enabled: Boolean) {
+    val view = LocalView.current
+
+    DisposableEffect(enabled) {
+        val window = (view.context as? Activity)?.window ?: return@DisposableEffect onDispose {}
+        val wasAlreadyKeepingScreenOn =
+            window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+
+        if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+
+        onDispose {
+            if (enabled && !wasAlreadyKeepingScreenOn) {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
         }
     }
 }
