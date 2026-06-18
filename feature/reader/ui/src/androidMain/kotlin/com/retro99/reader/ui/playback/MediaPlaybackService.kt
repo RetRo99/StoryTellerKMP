@@ -425,9 +425,7 @@ class MediaPlaybackService : MediaLibraryService() {
             .setArtist(if (chapterTitle != null) bookTitle else "Parrot")
             .setDisplayTitle(chapterTitle ?: bookTitle)
             .apply {
-                coverArtwork?.let { artwork ->
-                    setArtworkData(artwork, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
-                }
+                setArtworkDataIfSmall(coverArtwork, TAG)
             }
             .build()
     }

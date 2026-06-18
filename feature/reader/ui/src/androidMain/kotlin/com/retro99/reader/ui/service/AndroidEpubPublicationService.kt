@@ -54,7 +54,7 @@ class AndroidEpubPublicationService(
                     return@withContext createError("Ebook file not found: $filePath")
                 }
 
-                val url = file.toUrl()
+                val url = file.toUrl(isDirectory = false)
                 val asset = assetRetriever.retrieve(url).getOrElse { error ->
                     // Don't log file path for privacy - only log book UUID
                     analytics.logException(

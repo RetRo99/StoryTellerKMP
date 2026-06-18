@@ -95,6 +95,23 @@ sealed interface ReaderIntent : BaseIntent {
     data class SetPlaybackSpeed(val speed: Float) : ReaderIntent
 
     /**
+     * Start or replace the active sleep timer.
+     *
+     * @param durationMs The duration in milliseconds before playback pauses.
+     */
+    data class StartSleepTimer(val durationMs: Long) : ReaderIntent
+
+    /**
+     * Cancel the active sleep timer.
+     */
+    data object CancelSleepTimer : ReaderIntent
+
+    /**
+     * Dismiss the sleep timer ending soon prompt without changing the timer.
+     */
+    data object DismissSleepTimerWarning : ReaderIntent
+
+    /**
      * Skip forward by a specified amount.
      *
      * @param milliseconds The amount to skip forward in milliseconds

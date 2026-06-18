@@ -10,5 +10,7 @@ import kotlinx.serialization.Serializable
 data class BookListSettings(
     val filterState: BookFilterState = BookFilterState(),
     val sortConfig: BookSortConfig = BookSortConfig(),
+    val viewMode: BookListViewMode = BookListViewMode.LIST,
+    val selectedSection: BookLibrarySection = BookLibrarySection.ALL,
 )
 

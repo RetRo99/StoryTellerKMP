@@ -31,6 +31,11 @@ class LoginViewModel(
 
     init {
         observeTextFieldChanges()
+        updateFormState(
+            url = urlState.text.toString(),
+            username = usernameState.text.toString(),
+            password = passwordState.text.toString(),
+        )
     }
 
     private fun observeTextFieldChanges() {
@@ -41,35 +46,45 @@ class LoginViewModel(
                 passwordState.text.toString(),
             )
         }.onEach { (url, username, password) ->
-            updateState { currentState ->
-                val urlError = validateUrl(url)
-                val usernameError = validateUsername(username)
-                val passwordError = validatePassword(password)
-
-                val allFieldsNotEmpty =
-                    url.isNotBlank() && username.isNotBlank() && password.isNotBlank()
-                val noErrors =
-                    urlError == null && usernameError == null && passwordError == null
-
-                currentState.copy(
-                    urlError = urlError,
-                    usernameError = usernameError,
-                    passwordError = passwordError,
-                    isSignInEnabled = allFieldsNotEmpty && noErrors && !currentState.isLoading,
-                )
-            }
+            updateFormState(url, username, password)
         }.launchIn(viewModelScope)
+    }
+
+    private fun updateFormState(
+        url: String,
+        username: String,
+        password: String,
+    ) {
+        updateState { currentState ->
+            val urlError = validateUrl(url)
+            val usernameError = validateUsername(username)
+            val passwordError = validatePassword(password)
+
+            val allFieldsNotEmpty =
+                url.isNotBlank() && username.isNotBlank() && password.isNotBlank()
+            val noErrors =
+                urlError == null && usernameError == null && passwordError == null
+
+            currentState.copy(
+                urlError = urlError,
+                usernameError = usernameError,
+                passwordError = passwordError,
+                isSignInEnabled = allFieldsNotEmpty && noErrors && !currentState.isLoading,
+                isOAuthSignInEnabled = isValidServerUrl(url) && !currentState.isLoading,
+            )
+        }
     }
 
     override fun onIntent(intent: LoginIntent) {
         when (intent) {
             LoginIntent.OnSignInClicked -> handleSignInClicked()
+            LoginIntent.OnOAuthSignInClicked -> handleOAuthSignInClicked()
             LoginIntent.OnBackClicked -> onBackClick()
         }
     }
 
     private fun handleSignInClicked() {
-        val url = urlState.text.toString()
+        val url = urlState.text.toString().trim()
         // TODO: Allow user to select server type in the future
         val serverType = ServerType.Storyteller
 
@@ -78,7 +93,15 @@ class LoginViewModel(
             AuthAnalyticsEvent.LoginAttempted(serverUrlHash = url.hashCode().toString())
         )
 
-        updateState { it.copy(isLoading = true, isSignInEnabled = false, loginError = null) }
+        updateState {
+            it.copy(
+                isLoading = true,
+                isOAuthInProgress = false,
+                isSignInEnabled = false,
+                isOAuthSignInEnabled = false,
+                loginError = null,
+            )
+        }
 
         viewModelScope.launch {
             val username = usernameState.text.toString()
@@ -97,21 +120,71 @@ class LoginViewModel(
                         )
                     )
                     error.log(analytics, "LoginViewModel: Failed to login")
-                    updateState { state ->
-                        state.copy(
-                            isLoading = false,
-                            isSignInEnabled = true,
-                            loginError = error.message,
-                        )
-                    }
+                    updateAfterLoginFailure(error.message)
                 },
             )
         }
     }
 
+    private fun handleOAuthSignInClicked() {
+        val url = urlState.text.toString().trim()
+        val serverType = ServerType.Storyteller
+
+        analytics.logEvent(
+            AuthAnalyticsEvent.LoginAttempted(serverUrlHash = url.hashCode().toString())
+        )
+
+        updateState {
+            it.copy(
+                isLoading = true,
+                isOAuthInProgress = true,
+                isSignInEnabled = false,
+                isOAuthSignInEnabled = false,
+                loginError = null,
+            )
+        }
+
+        viewModelScope.launch {
+            loginUseCase.withOAuth(serverType, url).fold(
+                success = {
+                    analytics.logEvent(AuthAnalyticsEvent.LoginSucceeded)
+                    onSignInSuccess()
+                },
+                failure = { error ->
+                    analytics.logEvent(
+                        AuthAnalyticsEvent.LoginFailed(
+                            errorType = error::class.simpleName ?: "unknown",
+                        )
+                    )
+                    error.log(analytics, "LoginViewModel: Failed to login with OAuth")
+                    updateAfterLoginFailure(error.message)
+                },
+            )
+        }
+    }
+
+    private fun updateAfterLoginFailure(errorMessage: String?) {
+        updateState {
+            it.copy(
+                isLoading = false,
+                isOAuthInProgress = false,
+                loginError = errorMessage,
+            )
+        }
+        updateFormState(
+            url = urlState.text.toString(),
+            username = usernameState.text.toString(),
+            password = passwordState.text.toString(),
+        )
+    }
+
     // Validation functions - return null if valid, error message string if invalid
     private fun validateUrl(url: String): String? {
-        return null
+        val trimmedUrl = url.trim()
+        if (trimmedUrl.isBlank() || trimmedUrl == "https://" || trimmedUrl == "http://") {
+            return null
+        }
+        return if (isValidServerUrl(trimmedUrl)) null else "Enter a valid http(s) URL"
     }
 
     private fun validateUsername(username: String): String? {
@@ -120,5 +193,30 @@ class LoginViewModel(
 
     private fun validatePassword(password: String): String? {
         return null
+    }
+
+    private fun isValidServerUrl(url: String): Boolean {
+        val trimmedUrl = url.trim()
+        val schemeSeparator = trimmedUrl.indexOf("://")
+        if (schemeSeparator <= 0) return false
+
+        val scheme = trimmedUrl.substring(0, schemeSeparator).lowercase()
+        if (scheme != "http" && scheme != "https") return false
+
+        val authority = trimmedUrl
+            .substring(schemeSeparator + 3)
+            .substringBefore('/')
+            .substringBefore('?')
+            .substringBefore('#')
+
+        if (authority.isBlank()) return false
+
+        val host = when {
+            authority.startsWith('[') -> authority.substringAfter('[').substringBefore(']')
+            authority.count { it == ':' } == 1 -> authority.substringBefore(':')
+            else -> authority
+        }
+
+        return host.isNotBlank()
     }
 }

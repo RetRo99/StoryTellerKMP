@@ -28,6 +28,7 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
             export(projects.feature.reader.ui)
+            export(projects.feature.login.data)
         }
     }
 
@@ -44,6 +45,7 @@ kotlin {
             implementation(libs.kotzilla.sdk.compose)
             // Use api() to allow export in framework block
             api(projects.feature.reader.ui)
+            api(projects.feature.login.data)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

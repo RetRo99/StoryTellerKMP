@@ -1,6 +1,7 @@
 package com.retro99.books.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -270,6 +272,101 @@ fun BookItemCard(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BookGridCard(
+    book: BookUiModel,
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    progressInfo: BookProgressInfoUiModel? = null,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(4.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f),
+        ) {
+            CoilImage(
+                data = book.coverUrl,
+                cacheKey = book.uuid,
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(10.dp)),
+                contentScale = ContentScale.Crop,
+                contentDescription = book.title,
+            )
+            IconButton(
+                onClick = onFavoriteClick,
+                modifier = Modifier.align(Alignment.TopEnd),
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) {
+                        Icons.Filled.Favorite
+                    } else {
+                        Icons.Outlined.FavoriteBorder
+                    },
+                    contentDescription = null,
+                    tint = if (isFavorite) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
+                )
+            }
+            if (progressInfo?.hasAnyCached == true) {
+                Icon(
+                    imageVector = Icons.Outlined.DownloadDone,
+                    contentDescription = stringResource(StringRes.books_cached_indicator),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                            shape = RoundedCornerShape(topStart = 8.dp),
+                        )
+                        .padding(6.dp)
+                        .size(16.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = book.title,
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (book.authors.isNotEmpty()) {
+            Text(
+                text = book.authors.joinToString(", "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        progressInfo?.displayProgression?.let { progress ->
+            if (progress > 0.0) {
+                Spacer(modifier = Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { progress.toFloat() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
                 )
             }
         }

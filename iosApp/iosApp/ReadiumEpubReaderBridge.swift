@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import WebKit
+import CoreText
 import ComposeApp
 import ReadiumShared
 import ReadiumStreamer
@@ -191,6 +192,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
         do {
             // Create initial preferences from settings
             let initialPreferences = settings.toEpubPreferences()
+            registerCustomFonts(settings.customFonts)
 
             // Create initial locator from settings if available
             var initialLocation: Locator? = nil
@@ -270,6 +272,7 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
 
     func setSettings(settings: EpubReaderSettings) {
         Task { @MainActor in
+            registerCustomFonts(settings.customFonts)
             let oldHighlightColor = currentHighlightColor
             let oldUnderlineColor = currentUnderlineColor
             let oldStyle = currentHighlightStyle
@@ -299,6 +302,13 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
                let locator = currentHighlightedLocator {
                 refreshCurrentDecoration(locator: locator)
             }
+        }
+    }
+
+    private func registerCustomFonts(_ customFonts: [EpubReaderCustomFont]) {
+        for font in customFonts {
+            let url = URL(fileURLWithPath: font.filePath)
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
     }
 
@@ -771,14 +781,18 @@ extension EpubReaderSettings {
     /// Converts reader settings to Readium EPUBPreferences.
     /// This is used both for initial preferences and dynamic updates.
     func toEpubPreferences() -> EPUBPreferences {
+        let fontWeightOverride = fontWeightOverride()
         return EPUBPreferences(
             fontFamily: fontFamilyToReadium(),
             fontSize: fontSize,
+            fontWeight: fontWeightOverride,
             lineHeight: Double(lineHeight),
+            paragraphSpacing: paragraphSpacing,
             pageMargins: calculatePageMargins(),
             publisherStyles: publisherStyles,
             scroll: scrollMode?.boolValue,
             textAlign: textAlignToReadium(),
+            textNormalization: textNormalization,
             theme: themeToReadium()
         )
     }
@@ -790,6 +804,13 @@ extension EpubReaderSettings {
             return nil
         }
         return FontFamily(rawValue: fontFamily)
+    }
+
+    private func fontWeightOverride() -> Double? {
+        if fontWeight == 1.0 {
+            return nil
+        }
+        return fontWeight
     }
 
     /// Converts theme string to Readium's Theme enum.

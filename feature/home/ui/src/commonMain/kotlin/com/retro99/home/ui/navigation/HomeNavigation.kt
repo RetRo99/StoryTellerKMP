@@ -152,6 +152,23 @@ fun HomeNavigation(
                                     )
                                 )
                             },
+                            headerContent = {
+                                currentlyReading?.let { book ->
+                                    ContinueReadingShelf(
+                                        currentlyReading = book,
+                                        onClick = {
+                                            intentDispatcher(
+                                                HomeNavigationIntent.RequestOpenReader(
+                                                    serverId = book.serverId,
+                                                    bookUuid = book.bookUuid,
+                                                    bookType = book.bookType,
+                                                    bookTitle = book.bookTitle,
+                                                )
+                                            )
+                                        },
+                                    )
+                                }
+                            },
                         )
                     }
 
@@ -231,7 +248,9 @@ fun HomeNavigation(
                     }
 
                     entry<HomeDestination.Settings> {
-                        SettingsScreen()
+                        SettingsScreen(
+                            onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
+                        )
                     }
 
                     entry<HomeDestination.AppSettings> {
@@ -258,7 +277,7 @@ fun HomeNavigation(
         // Draggable floating bubble for Continue Reading
         // Only show when position is loaded (not null) to avoid flicker
         val bubblePosition = uiState.bubblePosition
-        if (!isInReader && currentlyReading != null && bubblePosition != null) {
+        if (!isInReader && currentDestination !is HomeDestination.BooksList && currentlyReading != null && bubblePosition != null) {
             DraggableFloatingBubble(
                 modifier = Modifier.fillMaxSize(),
                 initialSide = bubblePosition.toBubbleSide(),

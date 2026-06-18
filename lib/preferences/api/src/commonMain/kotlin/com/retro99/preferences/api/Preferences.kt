@@ -42,8 +42,10 @@ inline fun <reified T> Preferences.getObject(key: PreferencesKey): T? {
 
 sealed class PreferencesKey(val name: String) {
     data object ReaderSettings : PreferencesKey("ReaderSettings")
+    data object ReaderCustomFonts : PreferencesKey("ReaderCustomFonts")
     data object DatabaseSchemaVersion : PreferencesKey("DatabaseSchemaVersion")
     data object FileLoggingEnabled : PreferencesKey("FileLoggingEnabled")
+    data object FileLoggingCrashesOnly : PreferencesKey("FileLoggingCrashesOnly")
     data object CurrentlyReading : PreferencesKey("CurrentlyReading")
     data object BubblePosition : PreferencesKey("BubblePosition")
     data object OpenLastBookOnLaunch : PreferencesKey("OpenLastBookOnLaunch")

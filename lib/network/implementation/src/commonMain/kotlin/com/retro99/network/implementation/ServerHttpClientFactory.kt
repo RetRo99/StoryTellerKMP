@@ -51,6 +51,7 @@ class ServerHttpClientFactory(
             }
             install(Auth) {
                 bearer {
+                    sendWithoutRequest { true }
                     loadTokens {
                         val token = tokenProvider()
                         token?.let { BearerTokens(it, "") }

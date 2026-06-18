@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.fragment.app.FragmentActivity
 import com.retro99.home.ui.deeplink.DeepLinkHandler
+import com.retro99.login.data.oauth.StorytellerOAuthCallbackRegistry
 import com.retro99.parrot.App
 import com.retro99.reader.ui.fragment.EpubFragmentFactoryHelper
 import com.retro99.reader.ui.playback.NotificationPermissionHandler
@@ -58,7 +59,10 @@ class MainActivity : FragmentActivity() {
     private fun handleDeepLinkIntent(intent: Intent?) {
         val uri = intent?.data?.toString()
         if (uri != null) {
-            deepLinkHandler.handleDeepLink(uri)
+            val handledByOAuth = StorytellerOAuthCallbackRegistry.handleRedirect(uri)
+            if (!handledByOAuth) {
+                deepLinkHandler.handleDeepLink(uri)
+            }
         }
     }
 

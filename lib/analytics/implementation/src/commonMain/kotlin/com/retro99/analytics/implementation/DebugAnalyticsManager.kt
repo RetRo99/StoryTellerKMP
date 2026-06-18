@@ -22,8 +22,8 @@ class DebugAnalyticsManager(
                 "Exception occurred with message: $message"
             }
         }
-        // Also log to file for user sharing (if enabled)
-        if (isFileLoggingEnabled()) {
+        // Also log to file for user sharing (if enabled and not crash-only)
+        if (shouldLogHandledExceptionsToFile()) {
             fileLogger.logException(throwable, message)
         }
     }
@@ -42,7 +42,7 @@ class DebugAnalyticsManager(
         logger.d { "Set User ID: ${userId ?: "null (cleared)"}" }
     }
 
-    private fun isFileLoggingEnabled(): Boolean {
-        return preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = false)
-    }
+    private fun shouldLogHandledExceptionsToFile(): Boolean =
+        preferences.getBoolean(PreferencesKey.FileLoggingEnabled, defaultValue = false) &&
+            !preferences.getBoolean(PreferencesKey.FileLoggingCrashesOnly, defaultValue = false)
 }

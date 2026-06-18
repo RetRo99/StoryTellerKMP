@@ -16,6 +16,8 @@ import com.retro99.books.domain.usecase.ImportEpubUseCase
 import com.retro99.books.domain.usecase.ObserveAllFavoritesUseCase
 import com.retro99.books.domain.usecase.ToggleFavoriteUseCase
 import com.retro99.books.ui.model.BookFilterState
+import com.retro99.books.ui.model.BookLibrarySection
+import com.retro99.books.ui.model.BookListViewMode
 import com.retro99.books.ui.model.BookListSettings
 import com.retro99.books.ui.model.BookQuickFilter
 import com.retro99.books.ui.model.BookSortConfig
@@ -68,6 +70,8 @@ class BooksListViewModel(
             is BooksListIntent.OnQuickFilterToggled -> toggleQuickFilter(intent.filter)
             BooksListIntent.OnClearAllFilters -> clearAllFilters()
             is BooksListIntent.OnSortChanged -> updateSort(intent.sortConfig)
+            is BooksListIntent.OnViewModeChanged -> updateViewMode(intent.viewMode)
+            is BooksListIntent.OnSectionSelected -> updateSection(intent.section)
         }
     }
 
@@ -126,6 +130,16 @@ class BooksListViewModel(
         saveFilterSortSettings()
     }
 
+    private fun updateViewMode(viewMode: BookListViewMode) {
+        updateState { it.copy(viewMode = viewMode) }
+        saveFilterSortSettings()
+    }
+
+    private fun updateSection(section: BookLibrarySection) {
+        updateState { it.copy(selectedSection = section) }
+        saveFilterSortSettings()
+    }
+
     private fun loadFilterSortSettings() {
         val settings = getUserPreferenceUseCase<BookListSettings>(PreferencesKey.BookListFilterSort)
         if (settings != null) {
@@ -133,6 +147,8 @@ class BooksListViewModel(
                 it.copy(
                     filterState = settings.filterState,
                     sortConfig = settings.sortConfig,
+                    viewMode = settings.viewMode,
+                    selectedSection = settings.selectedSection,
                 )
             }
         }
@@ -143,6 +159,8 @@ class BooksListViewModel(
         val settings = BookListSettings(
             filterState = state.filterState,
             sortConfig = state.sortConfig,
+            viewMode = state.viewMode,
+            selectedSection = state.selectedSection,
         )
         saveUserPreferenceUseCase(PreferencesKey.BookListFilterSort, settings)
     }

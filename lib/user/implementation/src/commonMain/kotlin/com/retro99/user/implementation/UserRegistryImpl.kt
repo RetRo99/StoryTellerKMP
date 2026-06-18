@@ -193,6 +193,7 @@ class UserRegistryImpl(
             PreferencesKey.ServerCredentials,
             PreferencesKey.ActiveServerId,
             PreferencesKey.ReaderSettings,
+            PreferencesKey.ReaderCustomFonts,
             PreferencesKey.CurrentlyReading,
             PreferencesKey.SkippedLogin,
             PreferencesKey.BubblePosition,

@@ -17,6 +17,7 @@ import com.retro99.reader.ui.media.smil.SmilClipRepository
 import com.retro99.reader.ui.media.smil.SmilLoadingManager
 import com.retro99.reader.ui.media.smil.SmilParser
 import com.retro99.reader.ui.media.smil.SmilQuickScanner
+import com.retro99.reader.ui.playback.MAX_EMBEDDED_ARTWORK_BYTES
 import com.retro99.reader.ui.service.EpubPublicationService
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.ServerTokenProvider
@@ -207,9 +208,17 @@ class HeadlessSessionFactory(
 
                 val responseCode = connection.responseCode
                 if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val contentLength = connection.contentLengthLong
+                    if (contentLength > MAX_EMBEDDED_ARTWORK_BYTES) {
+                        Log.w(
+                            TAG,
+                            "HeadlessSessionFactory: skipping large cover ($contentLength bytes): $coverUrl",
+                        )
+                        return@withContext null
+                    }
                     val bytes = connection.inputStream.use { it.readBytes() }
                     Log.d(TAG, "HeadlessSessionFactory: downloaded cover ($coverUrl): ${bytes.size} bytes")
-                    bytes
+                    bytes.takeIf { it.size <= MAX_EMBEDDED_ARTWORK_BYTES }
                 } else {
                     Log.e(TAG, "HeadlessSessionFactory: failed to download cover ($coverUrl): HTTP $responseCode")
                     null
