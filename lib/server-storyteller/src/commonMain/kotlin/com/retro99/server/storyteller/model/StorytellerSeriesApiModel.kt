@@ -18,7 +18,7 @@ data class StorytellerSeriesListApiModel(
     val name: String,
 
     @SerialName("featured")
-    val featured: Int? = null,
+    val featured: Boolean? = null,
 
     @SerialName("position")
     val position: Double? = null,
@@ -35,7 +35,7 @@ fun StorytellerSeriesListApiModel.toServerSeries(serverId: String): ServerSeries
         uuid = uuid,
         serverId = serverId,
         name = name,
-        featured = featured,
+        featured = featured?.let { if (it) 1 else 0 },
         position = position,
         createdAt = createdAt,
         updatedAt = updatedAt,
