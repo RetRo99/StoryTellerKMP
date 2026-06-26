@@ -3,6 +3,7 @@ import AVFoundation
 import ComposeApp
 import ReadiumShared
 import ReadiumNavigator
+import MediaPlayer
 
 /// Represents a single text-audio synchronization point from SMIL.
 struct MediaOverlayClip {
@@ -90,6 +91,10 @@ class MediaOverlayPlayer {
     /// Callback when chapter audio playback completes. Provides the completed chapter href.
     var onChapterAudioCompleted: ((String) -> Void)?
 
+    /// Callbacks for chapter navigation from lock screen / Control Center.
+    var onSkipNextChapter: (() -> Void)?
+    var onSkipPreviousChapter: (() -> Void)?
+
     init(publication: Publication) {
         self.publication = publication
         self.smilParser = SmilParserProvider.shared.smilParser
@@ -119,6 +124,7 @@ class MediaOverlayPlayer {
 
         // Set up initial Now Playing info with book metadata
         updateNowPlayingInfo()
+        setupRemoteCommandHandlers()
 
         // Build initial index for current chapter and nearby chapters
         let chapterHref = initialChapterHref ?? publication.readingOrder.first?.href.description ?? ""
@@ -186,6 +192,7 @@ class MediaOverlayPlayer {
     }
 
     private func startPlayback() {
+        configureAudioSession()
         player?.play()
         isPlaying = true
         notifyPlaybackStateChanged()
@@ -274,6 +281,9 @@ class MediaOverlayPlayer {
         player = nil
         playerItem = nil
 
+        // Deactivate audio session
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+
         // Clean up all cached temp files
         for (_, tempURL) in tempFileCache {
             try? FileManager.default.removeItem(at: tempURL)
@@ -287,6 +297,46 @@ class MediaOverlayPlayer {
 
         // Clear Now Playing info
         NowPlayingInfo.shared.clear()
+    }
+
+    // MARK: - Audio Session
+
+    private func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(
+                .playback,
+                mode: .spokenAudio,
+                options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers]
+            )
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            // Audio session configuration failed - playback will continue but may not work in background
+        }
+    }
+
+    // MARK: - Remote Command Handlers
+
+    private func setupRemoteCommandHandlers() {
+        let nowPlaying = NowPlayingInfo.shared
+        nowPlaying.onPlay = { [weak self] in
+            self?.resume()
+        }
+        nowPlaying.onPause = { [weak self] in
+            self?.pause()
+        }
+        nowPlaying.onSkipForward = { [weak self] in
+            self?.skipForward()
+        }
+        nowPlaying.onSkipBackward = { [weak self] in
+            self?.skipBackward()
+        }
+        nowPlaying.onNextChapter = { [weak self] in
+            self?.onSkipNextChapter?()
+        }
+        nowPlaying.onPreviousChapter = { [weak self] in
+            self?.onSkipPreviousChapter?()
+        }
     }
 
     // MARK: - Private Methods
