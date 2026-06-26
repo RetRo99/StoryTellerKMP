@@ -334,4 +334,7 @@
     <string name="books_filter_sheet_title" tools:ignore="MissingTranslation">Filters</string>
     <string name="books_filter_clear_all" tools:ignore="MissingTranslation">Clear All</string>
     <string name="books_filter_active_count" tools:ignore="MissingTranslation">%1$d active</string>
+    <string name="books_detail_show_more" tools:ignore="MissingTranslation">Show more</string>
+    <string name="books_detail_show_less" tools:ignore="MissingTranslation">Show less</string>
+    <string name="books_detail_publication_date" tools:ignore="MissingTranslation">Published</string>
 </resources>

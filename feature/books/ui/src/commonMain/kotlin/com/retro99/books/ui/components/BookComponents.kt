@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -20,6 +23,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
@@ -27,14 +31,14 @@ import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.RecordVoiceOver
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -86,16 +91,20 @@ fun BookItemCard(
     headerContent: @Composable (() -> Unit)? = null,
     subtitleContent: @Composable (() -> Unit)? = null,
 ) {
-    ElevatedCard(
+    Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        ),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                .height(IntrinsicSize.Min)
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Book cover with optional cache indicator
             Box(
@@ -106,11 +115,12 @@ fun BookItemCard(
                     cacheKey = book.uuid,
                     modifier = Modifier
                         .matchParentSize()
-                        .clip(RoundedCornerShape(8.dp)),
+                        .shadow(4.dp, RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop,
                     contentDescription = book.title,
                 )
-                // Cache indicator badge - prominent badge at bottom of cover
+                // Cache indicator badge
                 if (progressInfo?.hasAnyCached == true) {
                     Row(
                         modifier = Modifier
@@ -118,7 +128,7 @@ fun BookItemCard(
                             .fillMaxWidth()
                             .background(
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
-                                shape = RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp),
+                                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
                             )
                             .padding(horizontal = 4.dp, vertical = 2.dp),
                         horizontalArrangement = Arrangement.Center,
@@ -145,7 +155,11 @@ fun BookItemCard(
                 }
             }
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            ) {
                 headerContent?.invoke()
 
                 Text(
@@ -189,8 +203,9 @@ fun BookItemCard(
                                     progress = { localProgress.toFloat() },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(4.dp)
-                                        .clip(RoundedCornerShape(2.dp)),
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                 )
                                 Text(
                                     text = "${progressInfo.localProgressPercent}%",
@@ -215,8 +230,8 @@ fun BookItemCard(
                                     progress = { remoteProgress.toFloat() },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(4.dp)
-                                        .clip(RoundedCornerShape(2.dp)),
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
                                     color = MaterialTheme.colorScheme.tertiary,
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                 )
@@ -241,20 +256,27 @@ fun BookItemCard(
                                     progress = { progress.toFloat() },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(4.dp)
-                                        .clip(RoundedCornerShape(2.dp)),
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
+                                    trackColor = MaterialTheme.colorScheme.surfaceContainer,
                                 )
                                 Text(
                                     text = "${progressInfo.progressPercent}%",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
                 MediaTypeRow(book = book)
             }
@@ -365,8 +387,9 @@ fun BookGridCard(
                     progress = { progress.toFloat() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp)),
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
             }
         }
@@ -415,20 +438,29 @@ fun StatusChip(
     status: String,
     modifier: Modifier = Modifier,
 ) {
-    SuggestionChip(
-        onClick = { },
-        label = {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+            )
             Text(
                 text = status,
                 style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
-        },
-        modifier = modifier,
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        ),
-    )
+        }
+    }
 }
 
 @Composable
@@ -437,15 +469,17 @@ fun MediaTypeIndicator(
     label: String,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(4.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
