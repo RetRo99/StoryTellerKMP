@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- General -->
     <string name="general_back">Back</string>
     <string name="general_cancel">Cancel</string>
@@ -328,4 +328,10 @@
     <string name="statistics_sessions_no_sessions">No reading sessions yet</string>
     <string name="statistics_sessions_recent">Recent Sessions</string>
     <string name="statistics_session_speed">Speed: %1$d wpm</string>
+    <string name="books_filter_in_progress" tools:ignore="MissingTranslation">In Progress</string>
+    <string name="books_view_list" tools:ignore="MissingTranslation">List</string>
+    <string name="books_view_grid" tools:ignore="MissingTranslation">Grid</string>
+    <string name="books_filter_sheet_title" tools:ignore="MissingTranslation">Filters</string>
+    <string name="books_filter_clear_all" tools:ignore="MissingTranslation">Clear All</string>
+    <string name="books_filter_active_count" tools:ignore="MissingTranslation">%1$d active</string>
 </resources>

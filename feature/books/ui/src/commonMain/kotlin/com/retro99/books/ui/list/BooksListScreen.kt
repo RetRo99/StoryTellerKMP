@@ -5,7 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,28 +23,42 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,14 +68,15 @@ import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
-import com.retro99.books.ui.components.BookFilterChipsRow
+import com.retro99.books.ui.components.BookFilterBottomSheet
 import com.retro99.books.ui.components.BookGridCard
 import com.retro99.books.ui.components.BookItemCard
 import com.retro99.books.ui.components.BookSearchBar
-import com.retro99.books.ui.components.BookSortSelector
-import com.retro99.books.ui.model.BookLibrarySection
 import com.retro99.books.ui.model.BookListViewMode
+import com.retro99.books.ui.model.BookSortConfig
+import com.retro99.books.ui.model.BookSortOption
 import com.retro99.books.ui.model.BookUiModel
+import com.retro99.books.ui.model.SortDirection
 import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -74,6 +88,19 @@ import resources.translations.books_empty_title
 import resources.translations.books_importing
 import resources.translations.books_reset_filters
 import resources.translations.books_series_with_position
+import resources.translations.books_sort_a_to_z
+import resources.translations.books_sort_author
+import resources.translations.books_sort_date_added
+import resources.translations.books_sort_date_published
+import resources.translations.books_sort_highest
+import resources.translations.books_sort_lowest
+import resources.translations.books_sort_newest
+import resources.translations.books_sort_oldest
+import resources.translations.books_sort_rating
+import resources.translations.books_sort_title
+import resources.translations.books_sort_z_to_a
+import resources.translations.books_view_grid
+import resources.translations.books_view_list
 
 @Composable
 fun BooksListScreen(
@@ -115,8 +142,8 @@ private fun BooksListScreenContent(
     }
 
     val listState = rememberLazyListState()
+    var showFilterSheet by remember { mutableStateOf(false) }
 
-    // Scroll to top when sort or filters change
     LaunchedEffect(viewState.sortConfig, viewState.filterState.activeQuickFilters) {
         listState.scrollToItem(0)
     }
@@ -125,31 +152,29 @@ private fun BooksListScreenContent(
         ImportingDialog()
     }
 
+    if (showFilterSheet) {
+        BookFilterBottomSheet(
+            filterState = viewState.filterState,
+            onFilterToggle = { filter ->
+                intentDispatcher(BooksListIntent.OnQuickFilterToggled(filter))
+            },
+            onClearAllFilters = {
+                intentDispatcher(BooksListIntent.OnClearAllFilters)
+            },
+            onDismiss = { showFilterSheet = false },
+        )
+    }
+
     Scaffold(
         modifier = modifier,
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
-                SmallFloatingActionButton(
-                    onClick = { filePickerLauncher.launch() },
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = null,
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                FloatingActionButton(
-                    onClick = { intentDispatcher(BooksListIntent.OnSearchToggled) },
-                ) {
-                    Icon(
-                        imageVector = if (viewState.isSearchVisible) {
-                            Icons.Filled.Close
-                        } else {
-                            Icons.Filled.Search
-                        },
-                        contentDescription = null,
-                    )
-                }
+            FloatingActionButton(
+                onClick = { filePickerLauncher.launch() },
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                )
             }
         },
     ) { paddingValues ->
@@ -161,7 +186,21 @@ private fun BooksListScreenContent(
                 .padding(paddingValues),
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                headerContent?.invoke()
+                BooksListToolbar(
+                    isSearchVisible = viewState.isSearchVisible,
+                    onSearchToggled = { intentDispatcher(BooksListIntent.OnSearchToggled) },
+                    activeFilterCount = viewState.filterState.activeFilterCount,
+                    onFiltersClicked = { showFilterSheet = true },
+                    sortConfig = viewState.sortConfig,
+                    onSortChanged = { sortConfig ->
+                        intentDispatcher(BooksListIntent.OnSortChanged(sortConfig))
+                    },
+                    viewMode = viewState.viewMode,
+                    onViewModeChanged = { viewMode ->
+                        intentDispatcher(BooksListIntent.OnViewModeChanged(viewMode))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
                 AnimatedVisibility(
                     visible = viewState.isSearchVisible,
@@ -177,42 +216,6 @@ private fun BooksListScreenContent(
                     )
                 }
 
-                LibrarySectionRow(
-                    viewState = viewState,
-                    onSectionSelected = { section ->
-                        intentDispatcher(BooksListIntent.OnSectionSelected(section))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                BookFilterChipsRow(
-                    activeFilters = viewState.filterState.activeQuickFilters,
-                    onFilterToggle = { filter ->
-                        intentDispatcher(BooksListIntent.OnQuickFilterToggled(filter))
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                )
-
-                BookSortSelector(
-                    sortConfig = viewState.sortConfig,
-                    onSortChanged = { sortConfig ->
-                        intentDispatcher(BooksListIntent.OnSortChanged(sortConfig))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                ViewModeSelector(
-                    viewMode = viewState.viewMode,
-                    onViewModeChanged = { viewMode ->
-                        intentDispatcher(BooksListIntent.OnViewModeChanged(viewMode))
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-
                 if (viewState.filteredBooks.isEmpty() && !viewState.isLoading) {
                     EmptyBooksState(
                         hasActiveFilters = viewState.filterState.hasActiveFilters || viewState.searchQuery.isNotBlank(),
@@ -226,6 +229,7 @@ private fun BooksListScreenContent(
                     BooksGrid(
                         viewState = viewState,
                         intentDispatcher = intentDispatcher,
+                        headerContent = headerContent,
                         modifier = Modifier.fillMaxSize(),
                     )
                 } else {
@@ -235,6 +239,9 @@ private fun BooksListScreenContent(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        if (headerContent != null) {
+                            item(key = "header") { headerContent() }
+                        }
                         items(
                             items = viewState.filteredBooks,
                             key = { it.uuid },
@@ -282,10 +289,194 @@ private fun BooksListScreenContent(
 }
 
 @Composable
+private fun BooksListToolbar(
+    isSearchVisible: Boolean,
+    onSearchToggled: () -> Unit,
+    activeFilterCount: Int,
+    onFiltersClicked: () -> Unit,
+    sortConfig: BookSortConfig,
+    onSortChanged: (BookSortConfig) -> Unit,
+    viewMode: BookListViewMode,
+    onViewModeChanged: (BookListViewMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        tonalElevation = 3.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onSearchToggled) {
+                Icon(
+                    imageVector = if (isSearchVisible) {
+                        Icons.Filled.Clear
+                    } else {
+                        Icons.Filled.Search
+                    },
+                    contentDescription = null,
+                )
+            }
+
+            BadgedBox(
+                badge = {
+                    if (activeFilterCount > 0) {
+                        Badge {
+                            Text(text = activeFilterCount.toString())
+                        }
+                    }
+                },
+            ) {
+                IconButton(onClick = onFiltersClicked) {
+                    Icon(
+                        imageVector = Icons.Filled.FilterList,
+                        contentDescription = null,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.size(4.dp))
+
+            CompactSortSelector(
+                sortConfig = sortConfig,
+                onSortChanged = onSortChanged,
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            ViewModeIconToggle(
+                viewMode = viewMode,
+                onViewModeChanged = onViewModeChanged,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactSortSelector(
+    sortConfig: BookSortConfig,
+    onSortChanged: (BookSortConfig) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val option = sortConfig.option
+    val directionLabel = if (sortConfig.direction == SortDirection.ASCENDING) {
+        option.ascendingLabel
+    } else {
+        option.descendingLabel
+    }
+
+    Box(modifier = modifier) {
+        SuggestionChip(
+            onClick = { expanded = true },
+            label = {
+                Text(
+                    text = "${stringResource(option.labelRes)} ${stringResource(directionLabel)}",
+                )
+            },
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            BookSortOption.entries.forEach { sortOption ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(sortOption.labelRes)) },
+                    onClick = {
+                        if (sortOption == option) {
+                            onSortChanged(sortConfig.copy(direction = sortConfig.direction.toggle()))
+                        } else {
+                            onSortChanged(sortConfig.copy(option = sortOption))
+                        }
+                        expanded = false
+                    },
+                )
+            }
+
+            HorizontalDivider()
+
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (sortConfig.direction == SortDirection.ASCENDING) {
+                                Icons.Filled.ArrowUpward
+                            } else {
+                                Icons.Filled.ArrowDownward
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            text = stringResource(
+                                if (sortConfig.direction == SortDirection.ASCENDING) {
+                                    option.ascendingLabel
+                                } else {
+                                    option.descendingLabel
+                                }
+                            ),
+                        )
+                    }
+                },
+                onClick = {
+                    onSortChanged(sortConfig.copy(direction = sortConfig.direction.toggle()))
+                    expanded = false
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ViewModeIconToggle(
+    viewMode: BookListViewMode,
+    onViewModeChanged: (BookListViewMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = { onViewModeChanged(BookListViewMode.LIST) }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ViewList,
+                contentDescription = stringResource(StringRes.books_view_list),
+                tint = if (viewMode == BookListViewMode.LIST) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+
+        IconButton(onClick = { onViewModeChanged(BookListViewMode.GRID) }) {
+            Icon(
+                imageVector = Icons.Filled.GridView,
+                contentDescription = stringResource(StringRes.books_view_grid),
+                tint = if (viewMode == BookListViewMode.GRID) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+    }
+}
+
+@Composable
 private fun BooksGrid(
     viewState: BooksListViewState,
     intentDispatcher: IntentDispatcher<BooksListIntent>,
     modifier: Modifier = Modifier,
+    headerContent: @Composable (() -> Unit)? = null,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 128.dp),
@@ -294,6 +485,11 @@ private fun BooksGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (headerContent != null) {
+            item(span = { GridItemSpan(maxLineSpan) }, key = "header") {
+                headerContent()
+            }
+        }
         if (viewState.isLoading) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Box(
@@ -324,70 +520,6 @@ private fun BooksGrid(
             )
         }
     }
-}
-
-@Composable
-private fun LibrarySectionRow(
-    viewState: BooksListViewState,
-    onSectionSelected: (BookLibrarySection) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        BookLibrarySection.entries.forEach { section ->
-            val count = viewState.sectionCount(section)
-            FilterChip(
-                selected = viewState.selectedSection == section,
-                onClick = { onSectionSelected(section) },
-                label = { Text("${section.toDisplayLabel()} $count") },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ViewModeSelector(
-    viewMode: BookListViewMode,
-    onViewModeChanged: (BookListViewMode) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "${viewMode.toDisplayLabel()} view",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        BookListViewMode.entries.forEach { mode ->
-            FilterChip(
-                selected = viewMode == mode,
-                onClick = { onViewModeChanged(mode) },
-                label = { Text(mode.toDisplayLabel()) },
-            )
-        }
-    }
-}
-
-private fun BookLibrarySection.toDisplayLabel(): String = when (this) {
-    BookLibrarySection.ALL -> "All"
-    BookLibrarySection.IN_PROGRESS -> "Reading"
-    BookLibrarySection.DOWNLOADED -> "Downloaded"
-    BookLibrarySection.FAVORITES -> "Favorites"
-    BookLibrarySection.READ_ALOUD -> "Read Aloud"
-    BookLibrarySection.LOCAL -> "Local"
-}
-
-private fun BookListViewMode.toDisplayLabel(): String = when (this) {
-    BookListViewMode.LIST -> "List"
-    BookListViewMode.GRID -> "Grid"
 }
 
 @Composable
@@ -449,9 +581,9 @@ private fun ImportingDialog(
     modifier: Modifier = Modifier,
 ) {
     AlertDialog(
-        onDismissRequest = { /* Non-dismissible while importing */ },
+        onDismissRequest = { },
         modifier = modifier,
-        confirmButton = { /* No buttons - auto-dismisses when done */ },
+        confirmButton = { },
         title = {
             Text(
                 text = stringResource(StringRes.books_importing),
@@ -472,3 +604,37 @@ private fun ImportingDialog(
         },
     )
 }
+
+private val BookSortOption.labelRes
+    get() = when (this) {
+        BookSortOption.TITLE -> StringRes.books_sort_title
+        BookSortOption.AUTHOR -> StringRes.books_sort_author
+        BookSortOption.RATING -> StringRes.books_sort_rating
+        BookSortOption.DATE_PUBLISHED -> StringRes.books_sort_date_published
+        BookSortOption.DATE_ADDED -> StringRes.books_sort_date_added
+    }
+
+private val BookSortOption.ascendingLabel
+    get() = when (this) {
+        BookSortOption.TITLE -> StringRes.books_sort_a_to_z
+        BookSortOption.AUTHOR -> StringRes.books_sort_a_to_z
+        BookSortOption.RATING -> StringRes.books_sort_lowest
+        BookSortOption.DATE_PUBLISHED -> StringRes.books_sort_oldest
+        BookSortOption.DATE_ADDED -> StringRes.books_sort_oldest
+    }
+
+private val BookSortOption.descendingLabel
+    get() = when (this) {
+        BookSortOption.TITLE -> StringRes.books_sort_z_to_a
+        BookSortOption.AUTHOR -> StringRes.books_sort_z_to_a
+        BookSortOption.RATING -> StringRes.books_sort_highest
+        BookSortOption.DATE_PUBLISHED -> StringRes.books_sort_newest
+        BookSortOption.DATE_ADDED -> StringRes.books_sort_newest
+    }
+
+private fun SortDirection.toggle(): SortDirection =
+    if (this == SortDirection.ASCENDING) {
+        SortDirection.DESCENDING
+    } else {
+        SortDirection.ASCENDING
+    }
