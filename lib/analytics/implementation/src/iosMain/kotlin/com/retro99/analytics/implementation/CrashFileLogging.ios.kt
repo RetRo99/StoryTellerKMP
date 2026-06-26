@@ -5,6 +5,7 @@ import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.staticCFunction
+import platform.Foundation.NSException
 import platform.Foundation.NSSetUncaughtExceptionHandler
 
 private var crashFileLogger: FileLogger? = null

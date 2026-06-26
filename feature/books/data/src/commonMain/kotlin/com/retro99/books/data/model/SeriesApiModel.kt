@@ -13,7 +13,8 @@ data class SeriesApiModel(
     val name: String,
 
     @SerialName("featured")
-    val featured: Boolean? = null,
+    @Serializable(with = BooleanOrIntSerializer::class)
+    val featured: Int? = null,
 
     @SerialName("position")
     val position: Double? = null,
@@ -29,10 +30,9 @@ fun SeriesApiModel.toDomain(): SeriesDomainModel {
     return SeriesDomainModel(
         uuid = uuid,
         name = name,
-        featured = featured?.let { if (it) 1 else 0 },
+        featured = featured,
         position = position,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
 }
-

@@ -13,10 +13,8 @@ class ServerTokenProviderImpl(
     override suspend fun getToken(serverId: String): String? {
         val credentials = serverRegistry.getCredentials(serverId) ?: return null
 
-        // Check if token is expired
         credentials.expiresAt?.let { expiresAt ->
             if (expiresAt < Clock.System.now().toEpochMilliseconds()) {
-                // Token expired, try to refresh
                 return refreshToken(serverId)
             }
         }
@@ -30,14 +28,10 @@ class ServerTokenProviderImpl(
     }
 
     override suspend fun refreshToken(serverId: String): String? {
-        // Get server config to determine refresh strategy
         val server = serverRegistry.getServer(serverId) ?: return null
         val credentials = serverRegistry.getCredentials(serverId) ?: return null
         val refreshToken = credentials.refreshToken ?: return null
 
-        // TODO: Delegate to server-specific refresh logic via ServerAuthenticatorFactory
-        // For now, return null to indicate refresh not yet implemented
         return null
     }
 }
-

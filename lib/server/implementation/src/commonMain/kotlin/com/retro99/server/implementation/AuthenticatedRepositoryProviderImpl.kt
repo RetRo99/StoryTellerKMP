@@ -1,6 +1,5 @@
 package com.retro99.server.implementation
 
-import co.touchlab.kermit.Logger
 import com.retro99.server.api.AuthenticatedRepositoryProvider
 import com.retro99.server.api.BooksRepositoryFactory
 import com.retro99.server.api.ReaderRepositoryFactory
@@ -11,7 +10,6 @@ import com.retro99.server.api.ServerRegistry
 import com.retro99.server.api.ServerSeriesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import org.koin.core.annotation.Single
 
 @Single(binds = [AuthenticatedRepositoryProvider::class])
@@ -22,16 +20,10 @@ class AuthenticatedRepositoryProviderImpl(
     private val seriesRepositoryFactory: SeriesRepositoryFactory,
 ) : AuthenticatedRepositoryProvider {
 
-    private val logger = Logger.withTag("čič")
-
     override fun observeBooksRepositories(): Flow<List<ServerBooksRepository>> {
         return serverRegistry.observeAuthenticatedServers()
-            .onEach { servers ->
-                logger.d { "observeAuthenticatedServers emitted ${servers.size} servers: ${servers.map { it.name }}" }
-            }
             .map { servers ->
                 servers.map { server ->
-                    logger.d { "Creating repository for server: ${server.name} (${server.id})" }
                     booksRepositoryFactory.create(server)
                 }
             }
@@ -82,4 +74,3 @@ class AuthenticatedRepositoryProviderImpl(
         return servers.map { seriesRepositoryFactory.create(it) }
     }
 }
-
