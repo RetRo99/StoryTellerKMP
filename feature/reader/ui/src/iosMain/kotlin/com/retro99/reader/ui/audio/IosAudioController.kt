@@ -8,6 +8,8 @@ import com.retro99.reader.ui.model.AudioPlaybackState
 import com.retro99.reader.ui.model.LocatorState
 import com.retro99.reader.ui.model.PlaybackState
 import com.retro99.reader.ui.navigator.AudioController
+import com.retro99.reader.ui.playback.IosNowPlayingProvider
+import com.retro99.reader.ui.playback.NowPlayingInfo
 import com.retro99.reader.ui.publication.EpubPublication
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,6 +30,7 @@ import org.koin.core.annotation.Scoped
 class IosAudioController(
     @Provided private val publication: EpubPublication,
     @Provided private val initialAudioPosition: InitialAudioPosition,
+    private val nowPlayingProvider: IosNowPlayingProvider,
 ) : AudioController {
 
     private val bridge = publication.bridge
@@ -107,7 +110,7 @@ class IosAudioController(
 
     private fun setupCallbacks() {
         bridge.setOnPlaybackStateChangedCallback { state ->
-            // Map isPlaying to PlaybackState enum
+            nowPlayingProvider.updateIsPlaying(state.isPlaying)
             _playbackState.value = if (state.isPlaying) {
                 PlaybackState.PLAYING
             } else {
@@ -219,7 +222,15 @@ class IosAudioController(
     }
 
     override fun setNowPlayingInfo(bookUuid: String, bookTitle: String, coverUrl: String?) {
-        // No-op on iOS - audio playback not yet supported
+        nowPlayingProvider.updateNowPlayingInfo(
+            NowPlayingInfo(
+                serverId = publication.serverId,
+                bookUuid = bookUuid,
+                bookType = publication.bookType,
+                bookTitle = bookTitle,
+                coverUrl = coverUrl,
+            )
+        )
     }
 
     private fun ensureMediaOverlaysInitialized(onReady: () -> Unit) {
@@ -235,10 +246,6 @@ class IosAudioController(
     }
 
     override fun close() {
-        bridge.setOnPlaybackStateChangedCallback(null)
-        bridge.setOnMediaPlayerReadyCallback(null)
-        bridge.setOnAudioLocatorChangedCallback(null)
-        bridge.setOnChapterAudioCompletedCallback(null)
     }
 }
 

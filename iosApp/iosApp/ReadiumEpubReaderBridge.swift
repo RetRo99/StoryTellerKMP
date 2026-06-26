@@ -211,6 +211,12 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
             return nil
         }
 
+        if let oldNavigator = navigatorViewController {
+            oldNavigator.willMove(toParent: nil)
+            oldNavigator.view.removeFromSuperview()
+            oldNavigator.removeFromParent()
+        }
+
         do {
             // Create initial preferences from settings
             let initialPreferences = settings.toEpubPreferences()
@@ -449,6 +455,17 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     func initializeMediaOverlays(onReady: @escaping () -> Void) {
         guard let publication = self.publication else {
             onReady()
+            return
+        }
+
+        if let existingPlayer = mediaOverlayPlayer {
+            handlePlaybackStateChanged(MediaPlaybackState(
+                isPlaying: existingPlayer.isPlaying,
+                currentPositionMs: existingPlayer.currentPositionMs,
+                durationMs: existingPlayer.durationMs
+            ))
+            onReady()
+            self.onMediaPlayerReadyCallback?()
             return
         }
 

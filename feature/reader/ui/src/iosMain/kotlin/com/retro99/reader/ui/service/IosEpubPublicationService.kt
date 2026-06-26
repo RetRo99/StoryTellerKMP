@@ -10,19 +10,13 @@ import org.koin.core.annotation.Single
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-/**
- * iOS implementation of [EpubPublicationService].
- *
- * Uses the [EpubReaderBridgeRegistry] to delegate to the Swift Readium implementation.
- */
 @Single(binds = [EpubPublicationService::class])
 class IosEpubPublicationService(
     analytics: Analytics,
 ) : BaseEpubPublicationService(analytics) {
 
-    /**
-     * Gets the bridge instance, if registered.
-     */
+    private var currentBookUuid: String? = null
+
     val bridge get() = EpubReaderBridgeRegistry.getBridge()
 
     override suspend fun openPublication(
@@ -36,8 +30,11 @@ class IosEpubPublicationService(
             return createError("EPUB reader bridge not registered")
         }
 
-        // Close any existing publication before opening a new one
-        // This ensures proper cleanup of the previous view controller
+        if (currentBookUuid == bookUuid) {
+            return Ok(EpubPublication(currentBridge, serverId, bookUuid, bookType))
+        }
+
+        currentBookUuid = bookUuid
         currentBridge.closePublication()
 
         return suspendCoroutine { continuation ->
@@ -53,10 +50,10 @@ class IosEpubPublicationService(
                     continuation.resume(Ok(publication))
                 },
                 onError = { errorMessage ->
+                    currentBookUuid = null
                     continuation.resume(createError(errorMessage))
                 },
             )
         }
     }
 }
-
