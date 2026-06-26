@@ -24,7 +24,7 @@ data class NowPlayingInfo(
  *
  * Platform implementations:
  * - Android: AndroidNowPlayingProvider wraps MediaPlaybackController
- * - iOS: Stub implementation returning empty flows (audio playback not yet supported)
+ * - iOS: IosNowPlayingProvider bridges state from MediaOverlayPlayer via EpubReaderBridge
  */
 interface NowPlayingProvider {
 
