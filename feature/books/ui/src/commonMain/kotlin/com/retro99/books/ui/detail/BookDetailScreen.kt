@@ -1,18 +1,23 @@
 package com.retro99.books.ui.detail
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,37 +37,39 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.RecordVoiceOver
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -87,17 +94,17 @@ import org.koin.core.parameter.parametersOf
 import resources.translations.books_delete_cache_confirm
 import resources.translations.books_delete_cache_message
 import resources.translations.books_delete_cache_title
+import resources.translations.books_detail_add_favorite
 import resources.translations.books_delete_local_button
-import resources.translations.books_progress_local
-import resources.translations.books_progress_remote
-import resources.translations.books_reading_progress
 import resources.translations.books_delete_local_confirm
 import resources.translations.books_delete_local_message
 import resources.translations.books_delete_local_title
-import resources.translations.books_detail_add_favorite
 import resources.translations.books_detail_description
+import resources.translations.books_detail_publication_date
 import resources.translations.books_detail_remove_favorite
 import resources.translations.books_detail_series
+import resources.translations.books_detail_show_less
+import resources.translations.books_detail_show_more
 import resources.translations.books_detail_tags
 import resources.translations.books_media_audio
 import resources.translations.books_media_delete
@@ -105,11 +112,18 @@ import resources.translations.books_media_download
 import resources.translations.books_media_ebook
 import resources.translations.books_media_readaloud
 import resources.translations.books_media_ready
+import resources.translations.books_progress_local
+import resources.translations.books_progress_remote
+import resources.translations.books_reading_progress
 import resources.translations.general_back
 import resources.translations.general_cancel
 import resources.translations.reader_conflict_use_local
 import resources.translations.reader_conflict_use_remote
 import com.retro99.books.ui.components.PositionConflictDialog
+
+private val CoverWidth = 120.dp
+private val DescriptionCollapsedMaxHeight = 140.dp
+private const val DescriptionExpandThreshold = 200
 
 @Composable
 fun BookDetailScreen(
@@ -166,7 +180,6 @@ private fun BookDetailScreenContent(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Show error snackbar when conflict resolution fails
     LaunchedEffect(conflictResolutionError) {
         conflictResolutionError?.let { error ->
             snackbarHostState.showSnackbar(
@@ -192,7 +205,6 @@ private fun BookDetailScreenContent(
         )
     }
 
-    // Show conflict resolution dialog when user tries to open a book with conflicting progress
     if (pendingOpenBookType != null && progressInfo?.hasConflict == true) {
         PositionConflictDialog(
             localProgressPercent = progressInfo.localProgressPercent ?: 0,
@@ -249,11 +261,13 @@ private fun BookDetailScreenContent(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 20.dp),
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
             BookHeader(book = book)
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             MediaActionButtons(
                 book = book,
@@ -263,10 +277,9 @@ private fun BookDetailScreenContent(
                 intentDispatcher = intentDispatcher,
             )
 
-            // Reading progress section
             progressInfo?.displayProgression?.let { progress ->
                 if (progress > 0.0) {
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     ReadingProgressSection(
                         progress = progress,
                         progressPercent = progressInfo.progressPercent,
@@ -283,14 +296,18 @@ private fun BookDetailScreenContent(
             }
 
             book.description?.let { description ->
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-                DescriptionSection(description = description)
+                if (description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    SectionDivider()
+                    Spacer(modifier = Modifier.height(20.dp))
+                    DescriptionSection(description = description)
+                }
             }
 
             if (book.tags.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+                SectionDivider()
+                Spacer(modifier = Modifier.height(20.dp))
                 TagsSection(
                     tags = book.tags,
                     onTagClick = { intentDispatcher(BookDetailIntent.OnTagClicked(it)) },
@@ -298,18 +315,19 @@ private fun BookDetailScreenContent(
             }
 
             if (book.series.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+                SectionDivider()
+                Spacer(modifier = Modifier.height(20.dp))
                 SeriesSection(
                     series = book.series,
                     onSeriesClick = { intentDispatcher(BookDetailIntent.OnSeriesClicked(it)) },
                 )
             }
 
-            // Delete button for local books
             if (book is BookUiModel.LocalBook) {
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+                SectionDivider()
+                Spacer(modifier = Modifier.height(20.dp))
                 DeleteLocalBookButton(
                     onClick = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookClicked) },
                 )
@@ -325,71 +343,144 @@ private fun BookHeader(
     book: BookUiModel,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         CoilImage(
             data = book.coverUrl,
             cacheKey = "${book.uuid}_detail",
             modifier = Modifier
-                .width(180.dp)
+                .width(CoverWidth)
                 .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(4.dp))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    shape = RoundedCornerShape(4.dp),
+                ),
             contentScale = ContentScale.Crop,
             contentDescription = book.title,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = book.title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        book.subtitle?.let { subtitle ->
-            Spacer(modifier = Modifier.height(4.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+        ) {
             Text(
-                text = subtitle,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                text = book.title,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
 
-        if (book.authors.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = book.authors.joinToString(", "),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+            book.subtitle?.let { subtitle ->
+                if (subtitle.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
 
-        book.rating?.let { rating ->
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.size(20.dp),
+            if (book.authors.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                MetadataItem(
+                    label = "Author",
+                    value = book.authors.joinToString(", "),
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = rating.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            }
+
+            val ratingValue = book.rating
+            if (ratingValue != null && ratingValue > 0f) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        text = ratingValue.toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+
+            book.publicationDate?.let { date ->
+                if (date.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    MetadataItem(
+                        label = stringResource(StringRes.books_detail_publication_date),
+                        value = date,
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun MetadataItem(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun SectionDivider(
+    modifier: Modifier = Modifier,
+) {
+    HorizontalDivider(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.outlineVariant,
+        thickness = 0.5.dp,
+    )
+}
+
+@Composable
+private fun SectionTitle(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall.copy(
+            fontWeight = FontWeight.SemiBold,
+        ),
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -407,73 +498,24 @@ private fun ReadingProgressSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.books_reading_progress),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        SectionTitle(text = stringResource(StringRes.books_reading_progress))
         Spacer(modifier = Modifier.height(12.dp))
 
         if (hasConflict && localProgression != null && remoteProgression != null) {
-            // Show both local and remote progress bars when there's a conflict
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Local progress
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        text = stringResource(StringRes.books_progress_local),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.width(56.dp),
-                    )
-                    LinearProgressIndicator(
-                        progress = { localProgression.toFloat() },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                    Text(
-                        text = "$localProgressPercent%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                // Remote progress
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        text = stringResource(StringRes.books_progress_remote),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.width(56.dp),
-                    )
-                    LinearProgressIndicator(
-                        progress = { remoteProgression.toFloat() },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                    Text(
-                        text = "$remoteProgressPercent%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProgressRow(
+                    label = stringResource(StringRes.books_progress_local),
+                    progression = localProgression,
+                    percentText = "$localProgressPercent%",
+                    barColor = MaterialTheme.colorScheme.primary,
+                )
+                ProgressRow(
+                    label = stringResource(StringRes.books_progress_remote),
+                    progression = remoteProgression,
+                    percentText = "$remoteProgressPercent%",
+                    barColor = MaterialTheme.colorScheme.tertiary,
+                )
 
-                // Resolve conflict buttons
-                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -495,7 +537,6 @@ private fun ReadingProgressSection(
                 }
             }
         } else {
-            // Single progress bar when no conflict
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -510,14 +551,52 @@ private fun ReadingProgressSection(
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "$progressPercent%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ProgressRow(
+    label: String,
+    progression: Double,
+    percentText: String,
+    barColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(50.dp),
+        )
+        LinearProgressIndicator(
+            progress = { progression.toFloat() },
+            modifier = Modifier
+                .weight(1f)
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            color = barColor,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+        Text(
+            text = percentText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -533,7 +612,7 @@ private fun MediaActionButtons(
     val isLocalBook = book is BookUiModel.LocalBook
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (book.hasEbook) {
             MediaButton(
@@ -546,21 +625,9 @@ private fun MediaActionButtons(
                 onDeleteClick = {
                     intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.EBOOK))
                 },
+                modifier = Modifier.weight(1f),
             )
         }
-//        if (book.hasAudiobook) {
-//            MediaButton(
-//                icon = Icons.Outlined.Headphones,
-//                label = stringResource(StringRes.books_media_audio),
-//                downloadState = audiobookDownloadState,
-//                isLocalBook = isLocalBook,
-//                onReadClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
-//                onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.AUDIOBOOK)) },
-//                onDeleteClick = {
-//                    intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.AUDIOBOOK))
-//                },
-//            )
-//        }
         if (book.hasReadaloud) {
             MediaButton(
                 icon = Icons.Outlined.RecordVoiceOver,
@@ -572,6 +639,7 @@ private fun MediaActionButtons(
                 onDeleteClick = {
                     intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.READALOUD))
                 },
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -588,78 +656,81 @@ private fun MediaButton(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Local books are always "ready" - they don't need downloading
     val effectiveState = if (isLocalBook) DownloadState.Cached else downloadState
     val isDownloading = effectiveState is DownloadState.Downloading
     val isCached = effectiveState is DownloadState.Cached
-    effectiveState is DownloadState.Idle ||
-            effectiveState is DownloadState.Failed
     val downloadProgress = (effectiveState as? DownloadState.Downloading)?.progress
 
-    ElevatedCard(
+    Surface(
         onClick = {
             when {
                 isCached -> onReadClick()
-                else -> onDownloadClick() // Handles both idle (start) and downloading (cancel)
+                else -> onDownloadClick()
             }
         },
-        modifier = modifier.width(100.dp),
+        modifier = modifier.border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            shape = RoundedCornerShape(16.dp),
+        ),
         shape = RoundedCornerShape(16.dp),
+        color = if (isCached) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.background
+        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 12.dp),
+                .padding(vertical = 18.dp, horizontal = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = CircleShape,
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 if (isDownloading) {
-                    // Show progress indicator around a close icon
                     Box(contentAlignment = Alignment.Center) {
                         if (downloadProgress != null) {
-                            // Determinate progress indicator when progress is known
                             CircularProgressIndicator(
                                 progress = { downloadProgress },
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.size(32.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                    alpha = 0.3f,
-                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         } else {
-                            // Indeterminate progress indicator when progress is unknown
                             CircularProgressIndicator(
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.size(32.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
-                        // Close icon in the center to indicate tap to cancel
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(StringRes.general_cancel),
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 } else {
                     Icon(
-                        imageVector = icon,
+                        imageVector = if (isCached) Icons.AutoMirrored.Outlined.MenuBook else icon,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = label,
@@ -667,22 +738,18 @@ private fun MediaButton(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = 6.sp,
-                    maxFontSize = MaterialTheme.typography.labelLarge.fontSize,
-                ),
+                overflow = TextOverflow.Ellipsis,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             when {
                 isDownloading -> {
-                    // Show progress percentage
                     if (downloadProgress != null) {
                         Text(
                             text = "${(downloadProgress * 100).toInt()}%",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(
                                 minFontSize = 6.sp,
@@ -690,7 +757,6 @@ private fun MediaButton(
                             ),
                         )
                     }
-                    // Show cancel hint
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
@@ -698,7 +764,7 @@ private fun MediaButton(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = null,
-                            modifier = Modifier.size(12.dp),
+                            modifier = Modifier.size(10.dp),
                             tint = MaterialTheme.colorScheme.error,
                         )
                         Spacer(modifier = Modifier.width(2.dp))
@@ -723,10 +789,10 @@ private fun MediaButton(
                         Icon(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(12.dp),
                             tint = MaterialTheme.colorScheme.primary,
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = stringResource(StringRes.books_media_ready),
                             style = MaterialTheme.typography.labelSmall,
@@ -739,10 +805,8 @@ private fun MediaButton(
                         )
                     }
 
-                    // Don't show delete option for local books - they are the source files
                     if (!isLocalBook) {
-                        Spacer(modifier = Modifier.height(8.dp))
-
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(StringRes.books_media_delete),
                             style = MaterialTheme.typography.labelSmall,
@@ -755,13 +819,12 @@ private fun MediaButton(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .clickable(onClick = onDeleteClick)
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                 }
 
                 else -> {
-                    // Idle or Failed - show download option
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
@@ -769,14 +832,14 @@ private fun MediaButton(
                         Icon(
                             imageVector = Icons.Outlined.Download,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = stringResource(StringRes.books_media_download),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(
                                 minFontSize = 6.sp,
@@ -795,23 +858,67 @@ private fun DescriptionSection(
     description: String,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.books_detail_description),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Markdown(
-            content = description,
-            colors = markdownColor(
-                text = MaterialTheme.colorScheme.onSurfaceVariant,
+    var expanded by remember { mutableStateOf(false) }
+    val isLongDescription = description.length > DescriptionExpandThreshold
 
-                ),
-            typography = markdownTypography(
-                text = MaterialTheme.typography.bodyMedium,
-            )
-        )
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionTitle(text = stringResource(StringRes.books_detail_description))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Column(
+            modifier = Modifier.animateContentSize(
+                animationSpec = tween(durationMillis = 200),
+            ),
+        ) {
+            if (isLongDescription && !expanded) {
+                Box(
+                    modifier = Modifier.heightIn(max = DescriptionCollapsedMaxHeight),
+                ) {
+                    Markdown(
+                        content = description,
+                        colors = markdownColor(
+                            text = MaterialTheme.colorScheme.onSurface,
+                        ),
+                        typography = markdownTypography(
+                            text = MaterialTheme.typography.bodyMedium,
+                        ),
+                    )
+                }
+            } else {
+                Markdown(
+                    content = description,
+                    colors = markdownColor(
+                        text = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    typography = markdownTypography(
+                        text = MaterialTheme.typography.bodyMedium,
+                    ),
+                )
+            }
+
+            if (isLongDescription) {
+                Spacer(modifier = Modifier.height(4.dp))
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    contentPadding = PaddingValues(
+                        start = 0.dp,
+                        end = 0.dp,
+                        top = 0.dp,
+                        bottom = 0.dp,
+                    ),
+                ) {
+                    Text(
+                        text = if (expanded) {
+                            stringResource(StringRes.books_detail_show_less)
+                        } else {
+                            stringResource(StringRes.books_detail_show_more)
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -823,12 +930,8 @@ private fun TagsSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.books_detail_tags),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        SectionTitle(text = stringResource(StringRes.books_detail_tags))
+        Spacer(modifier = Modifier.height(12.dp))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -836,10 +939,20 @@ private fun TagsSection(
             tags.forEach { tag ->
                 SuggestionChip(
                     onClick = { onTagClick(tag) },
-                    label = { Text(text = tag) },
+                    label = {
+                        Text(
+                            text = tag,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                    ),
                     colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 )
             }
@@ -847,6 +960,7 @@ private fun TagsSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SeriesSection(
     series: List<SeriesUiModel>,
@@ -854,28 +968,35 @@ private fun SeriesSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(StringRes.books_detail_series),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        series.forEach { seriesItem ->
-            SuggestionChip(
-                onClick = { onSeriesClick(seriesItem.uuid) },
-                label = {
-                    Text(
-                        text = buildString {
-                            append(seriesItem.name)
-                            seriesItem.position?.also { append(" #$it") }
-                        },
-                    )
-                },
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    labelColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                ),
-            )
+        SectionTitle(text = stringResource(StringRes.books_detail_series))
+        Spacer(modifier = Modifier.height(12.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            series.forEach { seriesItem ->
+                SuggestionChip(
+                    onClick = { onSeriesClick(seriesItem.uuid) },
+                    label = {
+                        Text(
+                            text = buildString {
+                                append(seriesItem.name)
+                                seriesItem.position?.also { append(" #$it") }
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                    ),
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                )
+            }
         }
     }
 }
@@ -967,12 +1088,12 @@ private fun DeleteLocalBookButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Button(
+    OutlinedButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.error,
         ),
     ) {
         Icon(
