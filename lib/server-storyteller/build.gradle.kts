@@ -33,6 +33,10 @@ kotlin {
             implementation(projects.lib.network.implementation)
             implementation(projects.lib.database.api)
         }
+
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 }
 

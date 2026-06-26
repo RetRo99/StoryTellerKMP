@@ -10,4 +10,3 @@ fun MainViewController() = ComposeUIViewController(
         koinApp.koin.getAll<AppInitializer>().forEach { it.initialize() }
     },
 ) { App() }
-
