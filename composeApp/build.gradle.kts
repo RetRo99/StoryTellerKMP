@@ -29,6 +29,7 @@ kotlin {
             isStatic = true
             export(projects.feature.reader.ui)
             export(projects.feature.login.data)
+            export(projects.feature.books.data)
         }
     }
 
@@ -46,6 +47,7 @@ kotlin {
             // Use api() to allow export in framework block
             api(projects.feature.reader.ui)
             api(projects.feature.login.data)
+            api(projects.feature.books.data)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

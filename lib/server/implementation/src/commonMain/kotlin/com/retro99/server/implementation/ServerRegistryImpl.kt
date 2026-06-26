@@ -24,9 +24,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.time.Clock
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
+import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -47,7 +47,6 @@ class ServerRegistryImpl(
     private val _activeServerId = MutableStateFlow<String?>(null)
 
     // Track current user to detect switches
-    @Volatile
     private var currentUserId: String? = null
 
     init {

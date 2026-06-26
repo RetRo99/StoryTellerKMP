@@ -24,6 +24,15 @@ actual fun HideSystemBars() {
 
 @Composable
 actual fun KeepScreenOn(enabled: Boolean) {
-    // No-op on iOS for now.
+    DisposableEffect(enabled) {
+        if (enabled) {
+            UIApplication.sharedApplication.setIdleTimerDisabled(true)
+        }
+        onDispose {
+            if (enabled) {
+                UIApplication.sharedApplication.setIdleTimerDisabled(false)
+            }
+        }
+    }
 }
 

@@ -1,6 +1,7 @@
 package com.retro99.home.ui.navigation
 
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.ui.BaseViewModel
@@ -55,6 +56,8 @@ class HomeNavigationViewModel(
 ) {
 
     private val _navigationEvents = MutableSharedFlow<HomeNavigationEvent>(replay = 1, extraBufferCapacity = 1)
+
+    private val logger = Logger.withTag("HomeNavigationViewModel")
 
     /**
      * Navigation events that should be consumed by the composable to perform navigation.
@@ -174,11 +177,10 @@ class HomeNavigationViewModel(
         }
             .onEach { (info, isPlaying) ->
                 val previousInfo = viewState.value.nowPlayingInfo
-                android.util.Log.d(
-                    "bomba",
+                logger.d {
                     "observeNowPlaying: info=${info?.bookTitle}, isPlaying=$isPlaying, " +
                         "prevBook=${previousInfo?.bookUuid}, newBook=${info?.bookUuid}"
-                )
+                }
 
                 // Check if a different book was selected (e.g., from Android Auto)
                 // Navigate to that book's reader to keep phone in sync
@@ -189,10 +191,7 @@ class HomeNavigationViewModel(
                 updateState { it.copy(nowPlayingInfo = info, isAudioPlaying = isPlaying) }
 
                 if (bookChanged) {
-                    android.util.Log.d(
-                        "bomba",
-                        "observeNowPlaying: NAVIGATING to reader for ${info?.bookTitle}"
-                    )
+                    logger.d { "observeNowPlaying: NAVIGATING to reader for ${info?.bookTitle}" }
                     emitNavigationEvent(
                         HomeNavigationEvent.NavigateToReaderReplacing(
                             serverId = info!!.serverId,

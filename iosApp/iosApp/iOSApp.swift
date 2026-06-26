@@ -11,6 +11,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
         // Register the EPUB reader bridge for iOS Readium integration
         EpubReaderBridgeRegistry.shared.register(bridge: ReadiumEpubReaderBridge())
+        EpubMetadataBridgeRegistry.shared.register(bridge: ReadiumEpubMetadataBridge())
 
         return true
     }

@@ -124,6 +124,28 @@ class ReadiumEpubReaderBridge: EpubReaderBridge {
     )
 
     init() {
+        registerBundledFonts()
+    }
+
+    private static let bundledFontNames: [String] = [
+        "DroidSans",
+        "AtkinsonHyperlegible-Regular",
+        "Literata",
+        "Merriweather",
+        "SourceSerif4",
+        "NotoSans",
+        "NotoSerif",
+    ]
+
+    private func registerBundledFonts() {
+        for fontName in Self.bundledFontNames {
+            guard let url = Bundle.main.url(forResource: fontName, withExtension: "ttf", subdirectory: "reader-fonts")
+                ?? Bundle.main.url(forResource: fontName, withExtension: "ttf")
+            else {
+                continue
+            }
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
     }
 
     func openPublication(
@@ -787,8 +809,8 @@ extension EpubReaderSettings {
             fontSize: fontSize,
             fontWeight: fontWeightOverride,
             lineHeight: Double(lineHeight),
-            paragraphSpacing: paragraphSpacing,
             pageMargins: calculatePageMargins(),
+            paragraphSpacing: paragraphSpacing,
             publisherStyles: publisherStyles,
             scroll: scrollMode?.boolValue,
             textAlign: textAlignToReadium(),
