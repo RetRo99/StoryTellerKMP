@@ -9,11 +9,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class BookQuickFilter {
     FAVORITES,
+    IN_PROGRESS,
+    CACHED,
     HAS_EBOOK,
     HAS_READALOUD,
     IN_SERIES,
     LOCAL_BOOKS,
     REMOTE_BOOKS,
-    CACHED,
 }
 
