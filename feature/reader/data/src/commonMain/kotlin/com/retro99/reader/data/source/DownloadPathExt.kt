@@ -1,9 +1,16 @@
 package com.retro99.reader.data.source
 
+private const val MULTI_FILE_DELIMITER = "|"
+
 internal data class ParsedDownloadPath(
     val path: String,
     val queryParams: Map<String, String>,
 )
+
+internal fun String.isMultiFileDownload(): Boolean = contains(MULTI_FILE_DELIMITER)
+
+internal fun String.multiFilePaths(): List<String> =
+    split(MULTI_FILE_DELIMITER).filter { it.isNotEmpty() }
 
 internal fun String.parseDownloadPath(): ParsedDownloadPath {
     val questionIndex = indexOf('?')

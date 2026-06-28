@@ -1,6 +1,7 @@
 package com.retro99.reader.data.source
 
 import android.content.Context
+import com.github.michaelbull.result.Ok
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.model.BookType
 import kotlinx.coroutines.Dispatchers
@@ -24,14 +25,11 @@ actual class EbookFileDownloader(
         bookUuid: String,
         bookType: BookType,
     ): AppResult<String> = withContext(Dispatchers.IO) {
-        val localFile = File(ebooksDir, getFileName(bookUuid, bookType))
-        val (path, queryParams) = ebookFilePath.parseDownloadPath()
-
-        networkClient.downloadFileToPath(
-            path = path,
-            destinationPath = localFile.absolutePath,
-            queryBuilder = { queryParams.forEach { (k, v) -> k to v } },
-        )
+        if (ebookFilePath.isMultiFileDownload()) {
+            downloadMultipleFiles(ebookFilePath, bookUuid, bookType)
+        } else {
+            downloadSingleFile(ebookFilePath, bookUuid, bookType)
+        }
     }
 
     actual suspend fun downloadEbookWithProgress(
@@ -40,10 +38,64 @@ actual class EbookFileDownloader(
         bookType: BookType,
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {
-        val localFile = File(ebooksDir, getFileName(bookUuid, bookType))
+        if (ebookFilePath.isMultiFileDownload()) {
+            downloadMultipleFilesWithProgress(ebookFilePath, bookUuid, bookType, onProgress)
+        } else {
+            downloadSingleFileWithProgress(ebookFilePath, bookUuid, bookType, onProgress)
+        }
+    }
+
+    actual fun getCachedEbookPath(bookUuid: String, bookType: BookType): String? {
+        val multiFileDir = File(ebooksDir, getDirectoryName(bookUuid, bookType))
+        if (multiFileDir.exists() && multiFileDir.isDirectory && multiFileDir.listFiles()?.isNotEmpty() == true) {
+            return multiFileDir.absolutePath
+        }
+        val singleFile = File(ebooksDir, getSingleFileName(bookUuid, bookType))
+        return if (singleFile.exists()) singleFile.absolutePath else null
+    }
+
+    actual fun isEbookCached(bookUuid: String, bookType: BookType): Boolean {
+        val multiFileDir = File(ebooksDir, getDirectoryName(bookUuid, bookType))
+        if (multiFileDir.exists() && multiFileDir.isDirectory && multiFileDir.listFiles()?.isNotEmpty() == true) {
+            return true
+        }
+        return File(ebooksDir, getSingleFileName(bookUuid, bookType)).exists()
+    }
+
+    actual fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
+        val multiFileDir = File(ebooksDir, getDirectoryName(bookUuid, bookType))
+        if (multiFileDir.exists()) {
+            return multiFileDir.deleteRecursively()
+        }
+        val singleFile = File(ebooksDir, getSingleFileName(bookUuid, bookType))
+        return if (singleFile.exists()) singleFile.delete() else true
+    }
+
+    private suspend fun downloadSingleFile(
+        ebookFilePath: String,
+        bookUuid: String,
+        bookType: BookType,
+    ): AppResult<String> {
+        val localFile = File(ebooksDir, getSingleFileName(bookUuid, bookType))
         val (path, queryParams) = ebookFilePath.parseDownloadPath()
 
-        networkClient.downloadFileToPathWithProgress(
+        return networkClient.downloadFileToPath(
+            path = path,
+            destinationPath = localFile.absolutePath,
+            queryBuilder = { queryParams.forEach { (k, v) -> k to v } },
+        )
+    }
+
+    private suspend fun downloadSingleFileWithProgress(
+        ebookFilePath: String,
+        bookUuid: String,
+        bookType: BookType,
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+    ): AppResult<String> {
+        val localFile = File(ebooksDir, getSingleFileName(bookUuid, bookType))
+        val (path, queryParams) = ebookFilePath.parseDownloadPath()
+
+        return networkClient.downloadFileToPathWithProgress(
             path = path,
             destinationPath = localFile.absolutePath,
             onProgress = onProgress,
@@ -51,22 +103,61 @@ actual class EbookFileDownloader(
         )
     }
 
-    actual fun getCachedEbookPath(bookUuid: String, bookType: BookType): String? {
-        val file = File(ebooksDir, getFileName(bookUuid, bookType))
-        return if (file.exists()) file.absolutePath else null
+    private suspend fun downloadMultipleFiles(
+        ebookFilePath: String,
+        bookUuid: String,
+        bookType: BookType,
+    ): AppResult<String> {
+        val paths = ebookFilePath.multiFilePaths()
+        val targetDir = File(ebooksDir, getDirectoryName(bookUuid, bookType)).apply { mkdirs() }
+
+        for ((index, path) in paths.withIndex()) {
+            val localFile = File(targetDir, formatFileIndex(index))
+            val (urlPath, queryParams) = path.parseDownloadPath()
+
+            val result = networkClient.downloadFileToPath(
+                path = urlPath,
+                destinationPath = localFile.absolutePath,
+                queryBuilder = { queryParams.forEach { (k, v) -> k to v } },
+            )
+            if (result.isErr) return result
+        }
+        return Ok(targetDir.absolutePath)
     }
 
-    actual fun isEbookCached(bookUuid: String, bookType: BookType): Boolean {
-        return File(ebooksDir, getFileName(bookUuid, bookType)).exists()
+    private suspend fun downloadMultipleFilesWithProgress(
+        ebookFilePath: String,
+        bookUuid: String,
+        bookType: BookType,
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
+    ): AppResult<String> {
+        val paths = ebookFilePath.multiFilePaths()
+        val targetDir = File(ebooksDir, getDirectoryName(bookUuid, bookType)).apply { mkdirs() }
+
+        for ((index, path) in paths.withIndex()) {
+            val localFile = File(targetDir, formatFileIndex(index))
+            val (urlPath, queryParams) = path.parseDownloadPath()
+
+            onProgress(index.toLong(), paths.size.toLong())
+
+            val result = networkClient.downloadFileToPathWithProgress(
+                path = urlPath,
+                destinationPath = localFile.absolutePath,
+                onProgress = { _, _ -> },
+                queryBuilder = { queryParams.forEach { (k, v) -> k to v } },
+            )
+            if (result.isErr) return result
+        }
+        onProgress(paths.size.toLong(), paths.size.toLong())
+        return Ok(targetDir.absolutePath)
     }
 
-    actual fun deleteEbookCache(bookUuid: String, bookType: BookType): Boolean {
-        val file = File(ebooksDir, getFileName(bookUuid, bookType))
-        return if (file.exists()) file.delete() else true
-    }
+    private fun formatFileIndex(index: Int): String =
+        (index + 1).toString().padStart(2, '0')
 
-    private fun getFileName(bookUuid: String, bookType: BookType): String {
-        return "${bookUuid}_${bookType.value}.epub"
-    }
+    private fun getSingleFileName(bookUuid: String, bookType: BookType): String =
+        "${bookUuid}_${bookType.value}.epub"
+
+    private fun getDirectoryName(bookUuid: String, bookType: BookType): String =
+        "${bookUuid}_${bookType.value}"
 }
-
