@@ -266,9 +266,10 @@ class BookDetailViewModel(
             .onEach { result ->
                 result
                     .onSuccess { bookWithProgress ->
+                        val uiModel = bookWithProgress.book.toUiModel()
                         updateState {
                             it.copy(
-                                book = bookWithProgress.book.toUiModel(),
+                                book = uiModel,
                                 progressInfo = bookWithProgress.progressInfo?.toUiModel(),
                                 isLoading = false,
                                 error = null,
