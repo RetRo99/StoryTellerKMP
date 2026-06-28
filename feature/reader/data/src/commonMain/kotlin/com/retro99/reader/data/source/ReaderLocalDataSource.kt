@@ -4,6 +4,7 @@ import com.github.michaelbull.result.Ok
 import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.database.api.DatabaseExecutor
+import com.retro99.database.api.books.BookmarksDatabase
 import com.retro99.database.api.books.PositionDatabase
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
@@ -14,6 +15,7 @@ import com.retro99.preferences.implementation.usecase.RemoveUserPreferenceUseCas
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.data.model.CustomReaderFontLocalModel
+import com.retro99.reader.data.model.BookmarkLocalModel
 import com.retro99.reader.data.model.CurrentlyReadingLocalModel
 import com.retro99.reader.data.model.PositionLocalModel
 import com.retro99.reader.data.model.ReaderSettingsLocalModel
@@ -24,6 +26,7 @@ import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -38,6 +41,7 @@ class ReaderLocalDataSource(
     @Provided private val preferences: Preferences,
     @Provided private val fileDownloader: EbookFileDownloader,
     @Provided private val positionDatabase: PositionDatabase,
+    @Provided private val bookmarksDatabase: BookmarksDatabase,
     @Provided private val databaseExecutor: DatabaseExecutor,
     @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
     @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
@@ -112,6 +116,23 @@ class ReaderLocalDataSource(
     override suspend fun getAllPositions(): AppResult<List<PositionLocalModel>> {
         return databaseExecutor.executeDatabaseOperation {
             positionDatabase.getAllPositions().map { it.toLocalModel() }
+        }
+    }
+
+    override fun observeBookmarks(bookUuid: String): Flow<List<BookmarkLocalModel>> {
+        return bookmarksDatabase.observeBookmarks(bookUuid)
+            .map { bookmarks -> bookmarks.map { it.toLocalModel() } }
+    }
+
+    override suspend fun addBookmark(bookmark: BookmarkLocalModel): CompletableResult {
+        return databaseExecutor.executeDatabaseOperation {
+            bookmarksDatabase.addBookmark(bookmark)
+        }
+    }
+
+    override suspend fun deleteBookmark(id: String): CompletableResult {
+        return databaseExecutor.executeDatabaseOperation {
+            bookmarksDatabase.deleteBookmark(id)
         }
     }
 
