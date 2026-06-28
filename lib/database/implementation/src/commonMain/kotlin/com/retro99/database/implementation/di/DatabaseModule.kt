@@ -2,6 +2,7 @@ package com.retro99.database.implementation.di
 
 import com.retro99.database.api.DataClearable
 import com.retro99.database.api.books.AuthorsDatabase
+import com.retro99.database.api.books.BookmarksDatabase
 import com.retro99.database.api.books.BooksDatabase
 import com.retro99.database.api.books.PositionDatabase
 import com.retro99.database.api.favorites.FavoritesDatabase
@@ -10,6 +11,8 @@ import com.retro99.database.api.statistics.ReadingSessionDatabase
 import com.retro99.database.implementation.DatabaseManager
 import com.retro99.database.implementation.dao.books.AuthorsDatabaseImpl
 import com.retro99.database.implementation.dao.books.AuthorsSqlDelightDao
+import com.retro99.database.implementation.dao.books.BookmarksDatabaseImpl
+import com.retro99.database.implementation.dao.books.BookmarksSqlDelightDao
 import com.retro99.database.implementation.dao.books.BooksDatabaseImpl
 import com.retro99.database.implementation.dao.books.BooksSqlDelightDao
 import com.retro99.database.implementation.dao.favorites.FavoritesDatabaseImpl
@@ -54,6 +57,16 @@ class DatabaseModule {
     @Single
     internal fun providePositionDatabase(booksSqlDelightDao: BooksSqlDelightDao): PositionDatabase {
         return BooksDatabaseImpl(booksSqlDelightDao)
+    }
+
+    @Single
+    internal fun provideBookmarksSqlDelightDao(databaseManager: DatabaseManager): BookmarksSqlDelightDao {
+        return BookmarksSqlDelightDao(databaseManager)
+    }
+
+    @Single
+    internal fun provideBookmarksDatabase(bookmarksSqlDelightDao: BookmarksSqlDelightDao): BookmarksDatabase {
+        return BookmarksDatabaseImpl(bookmarksSqlDelightDao)
     }
 
     @Single
@@ -107,12 +120,14 @@ class DatabaseModule {
     @Single
     internal fun provideDataClearables(
         booksDatabase: BooksDatabase,
+        bookmarksDatabase: BookmarksDatabase,
         favoritesDatabase: FavoritesDatabase,
         authorsDatabase: AuthorsDatabase,
         readingSessionDatabase: ReadingSessionDatabase,
     ): List<DataClearable> {
         return listOf(
             booksDatabase,
+            bookmarksDatabase,
             favoritesDatabase,
             authorsDatabase,
             readingSessionDatabase,

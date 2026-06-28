@@ -32,6 +32,7 @@ internal class BooksSqlDelightDao(
     private val mediaFileQueries get() = database.mediaFileQueries
     private val readaloudQueries get() = database.readaloudQueries
     private val positionQueries get() = database.positionQueries
+    private val bookmarkQueries get() = database.bookmarkQueries
 
     // ==================== BOOK OPERATIONS ====================
 
@@ -700,6 +701,7 @@ internal class BooksSqlDelightDao(
                 mediaFileQueries.deleteAllMediaFiles()
                 readaloudQueries.deleteAllReadalouds()
                 positionQueries.deleteAllPositions()
+                bookmarkQueries.deleteAllBookmarks()
                 personQueries.deleteAllPersons()
                 seriesQueries.deleteAllSeries()
                 tagQueries.deleteAllTags()
