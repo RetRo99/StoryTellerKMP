@@ -8,8 +8,13 @@ fun AudiobookshelfLibraryItemApiModel.toDomain(
     baseUrl: String?,
 ): ServerBook {
     val metadata = media?.metadata
-    val hasEbook = media?.ebookFile != null
+    val ebookFile = media?.ebookFile
+    val hasEbook = ebookFile?.ino != null
     val hasAudiobook = media?.numAudioFiles?.let { it > 0 } ?: false
+
+    val ebookDownloadPath = ebookFile?.ino?.let { ino ->
+        "/api/items/$id/file/$ino"
+    }
 
     return ServerBook(
         uuid = id,
@@ -30,9 +35,9 @@ fun AudiobookshelfLibraryItemApiModel.toDomain(
         hasEbook = hasEbook,
         hasAudiobook = hasAudiobook,
         hasReadaloud = false,
-        ebookFilepath = media?.ebookFile?.path,
-        audiobookFilepath = media?.let { if (hasAudiobook) it.toString() else null },
-        ebookFileSize = media?.ebookFile?.size,
+        ebookFilepath = ebookDownloadPath,
+        audiobookFilepath = null,
+        ebookFileSize = ebookFile?.metadata?.size ?: ebookFile?.size,
         audiobookFileSize = media?.size,
         createdAt = addedAt?.toString(),
         lastOpenedAt = null,
