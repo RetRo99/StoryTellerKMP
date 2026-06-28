@@ -210,7 +210,7 @@ data class AudiobookshelfAudioFileApiModel(
 @Serializable
 data class AudiobookshelfChapterApiModel(
     @SerialName("id")
-    val id: String? = null,
+    val id: Double? = null,
 
     @SerialName("start")
     val start: Double? = null,
