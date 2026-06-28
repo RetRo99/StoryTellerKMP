@@ -26,8 +26,8 @@ internal class BookmarksSqlDelightDao(
                 locator_title = bookmark.locatorTitle,
                 progression = bookmark.progression,
                 total_progression = bookmark.totalProgression,
-                chapter_index = bookmark.chapterIndex,
-                position = bookmark.position,
+                chapter_index = bookmark.chapterIndex?.toLong(),
+                position = bookmark.position?.toLong(),
                 created_at = bookmark.createdAt,
             )
         }
@@ -75,8 +75,8 @@ internal class BookmarksSqlDelightDao(
             locatorTitle = locator_title,
             progression = progression,
             totalProgression = total_progression,
-            chapterIndex = chapter_index,
-            position = position,
+            chapterIndex = chapter_index?.toInt(),
+            position = position?.toInt(),
             createdAt = created_at,
         )
     }

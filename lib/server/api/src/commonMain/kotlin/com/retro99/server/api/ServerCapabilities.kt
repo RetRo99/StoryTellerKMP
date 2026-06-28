@@ -26,6 +26,16 @@ fun ServerType.getCapabilities(): ServerCapabilities = when (this) {
         supportsSearch = true,
         supportsUserLibrary = true,
     )
+    ServerType.Audiobookshelf -> ServerCapabilities(
+        supportsEbooks = true,
+        supportsAudiobooks = true,
+        supportsReadAloud = false,
+        supportsReadingProgress = true,
+        supportsCollections = true,
+        supportsSeries = true,
+        supportsSearch = true,
+        supportsUserLibrary = true,
+    )
     ServerType.Local -> ServerCapabilities(
         supportsEbooks = true,
         supportsAudiobooks = false,
