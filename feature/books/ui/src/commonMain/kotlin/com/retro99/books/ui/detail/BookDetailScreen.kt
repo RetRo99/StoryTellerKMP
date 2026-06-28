@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
@@ -624,6 +625,20 @@ private fun MediaActionButtons(
                 onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.EBOOK)) },
                 onDeleteClick = {
                     intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.EBOOK))
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (book.hasAudiobook) {
+            MediaButton(
+                icon = Icons.Filled.Headphones,
+                label = stringResource(StringRes.books_media_audio),
+                downloadState = audiobookDownloadState,
+                isLocalBook = isLocalBook,
+                onReadClick = { intentDispatcher(BookDetailIntent.OnPlayAudiobookClicked) },
+                onDownloadClick = { intentDispatcher(BookDetailIntent.OnDownloadClicked(BookType.AUDIOBOOK)) },
+                onDeleteClick = {
+                    intentDispatcher(BookDetailIntent.OnDeleteCacheClicked(BookType.AUDIOBOOK))
                 },
                 modifier = Modifier.weight(1f),
             )
