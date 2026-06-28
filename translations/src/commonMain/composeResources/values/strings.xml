@@ -343,4 +343,6 @@
     <string name="reader_bookmark_default_title" tools:ignore="MissingTranslation">Bookmark</string>
     <string name="reader_bookmark_save_failed" tools:ignore="MissingTranslation">Failed to save bookmark</string>
     <string name="login_server_type_label" tools:ignore="MissingTranslation">Server Type</string>
+    <string name="app_settings_servers" tools:ignore="MissingTranslation">Servers</string>
+    <string name="app_settings_servers_description" tools:ignore="MissingTranslation">Add, remove, or switch between servers</string>
 </resources>
