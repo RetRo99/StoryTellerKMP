@@ -15,6 +15,7 @@ import com.retro99.books.domain.model.BookType
 import com.retro99.reader.domain.model.ChapterProgressDisplayMode
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import com.retro99.reader.domain.model.PositionDomainModel
+import com.retro99.reader.domain.model.BookmarkDomainModel
 import com.retro99.reader.domain.model.ReaderInitializationData
 import com.retro99.reader.domain.usecase.GetCustomReaderFontsUseCase
 import com.retro99.reader.domain.usecase.GetReaderSettingsUseCase
@@ -22,9 +23,13 @@ import com.retro99.reader.domain.usecase.InitializeReaderUseCase
 import com.retro99.reader.domain.usecase.SaveReaderSettingsUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
 import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
+import com.retro99.reader.domain.usecase.AddBookmarkUseCase
+import com.retro99.reader.domain.usecase.ObserveBookmarksUseCase
+import com.retro99.reader.domain.usecase.DeleteBookmarkUseCase
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
+import com.retro99.reader.ui.model.BookmarkUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.toDomainModel
 import com.retro99.reader.ui.model.toPositionUiModel
@@ -46,6 +51,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
@@ -66,6 +72,9 @@ class ReaderViewModel(
     @Provided private val saveReaderSettingsUseCase: SaveReaderSettingsUseCase,
     @Provided private val saveReadingSessionUseCase: SaveReadingSessionUseCase,
     @Provided private val setCurrentlyReadingUseCase: SetCurrentlyReadingUseCase,
+    @Provided private val addBookmarkUseCase: AddBookmarkUseCase,
+    @Provided private val observeBookmarksUseCase: ObserveBookmarksUseCase,
+    @Provided private val deleteBookmarkUseCase: DeleteBookmarkUseCase,
     @Provided private val publicationService: EpubPublicationService,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
@@ -121,6 +130,9 @@ class ReaderViewModel(
 
     /** Timestamp when the book was opened, used for calculating reading duration */
     private var bookOpenedTimestamp: Long = 0L
+
+    /** Monotonic mark used to generate unique bookmark IDs with nanosecond precision. */
+    private val bookmarkIdMark = TimeSource.Monotonic.markNow()
 
     /** Tracks the previous playing state to detect play/pause transitions */
     private var wasPlaying: Boolean = false
@@ -198,11 +210,20 @@ class ReaderViewModel(
             is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.colorArgb)
             ReaderIntent.Retry -> retry()
             ReaderIntent.DismissNoAudioMessage -> dismissNoAudioMessage()
+            ReaderIntent.DismissBookmarkSaveFailed -> dismissBookmarkSaveFailed()
+            ReaderIntent.ToggleBookmarks -> toggleBookmarks()
+            ReaderIntent.AddBookmark -> addBookmark()
+            is ReaderIntent.DeleteBookmark -> deleteBookmark(intent.id)
+            is ReaderIntent.GoToBookmark -> goToBookmark(intent.bookmark)
         }
     }
 
     private fun dismissNoAudioMessage() {
         updateState { it.copy(showNoAudioMessage = false) }
+    }
+
+    private fun dismissBookmarkSaveFailed() {
+        updateState { it.copy(showBookmarkSaveFailed = false) }
     }
 
     private fun retry() {
@@ -365,6 +386,7 @@ class ReaderViewModel(
             observeReadingSpeedPersistence()
             observeSettingsChanges()
             observeCustomFontChanges()
+            observeBookmarks()
             // Initialize audio after publication is in state
             if (publication.hasMediaOverlays) {
                 initAudio()
@@ -516,6 +538,73 @@ class ReaderViewModel(
 
     private fun dismissChapterNavigationUndo() {
         updateState { it.copy(previousTocPosition = null) }
+    }
+
+    private fun toggleBookmarks() {
+        val willBeVisible = !viewState.value.isBookmarksVisible
+        if (willBeVisible) {
+            analytics.logEvent(ReaderAnalyticsEvent.BookmarksOpened(bookUuid = bookUuid))
+        }
+        updateState { it.copy(isBookmarksVisible = willBeVisible) }
+    }
+
+    private fun addBookmark() {
+        val currentPosition = viewState.value.currentPosition ?: return
+        val nanoSuffix = bookmarkIdMark.elapsedNow().inWholeNanoseconds
+        val bookmark = BookmarkDomainModel(
+            id = "${bookUuid}_${nowMillis()}_$nanoSuffix",
+            bookUuid = bookUuid,
+            locatorHref = currentPosition.href,
+            locatorType = currentPosition.type,
+            locatorTitle = currentPosition.title,
+            progression = currentPosition.progression,
+            totalProgression = currentPosition.totalProgression,
+            chapterIndex = currentPosition.chapterIndex,
+            position = currentPosition.position,
+            createdAt = now().toString(),
+        )
+        viewModelScope.launch {
+            addBookmarkUseCase(bookmark)
+                .onSuccess {
+                    updateState { it.copy(isBookmarksVisible = false) }
+                }
+                .onFailure { error ->
+                    error.log(analytics, "ReaderViewModel: Failed to save bookmark")
+                    updateState { it.copy(showBookmarkSaveFailed = true) }
+                }
+        }
+    }
+
+    private fun deleteBookmark(id: String) {
+        viewModelScope.launch {
+            deleteBookmarkUseCase(id)
+        }
+    }
+
+    private fun goToBookmark(bookmark: BookmarkUiModel) {
+        val position = PositionUiModel(
+            createdAt = bookmark.createdAt,
+            href = bookmark.locatorHref,
+            type = bookmark.locatorType ?: "",
+            title = bookmark.locatorTitle,
+            progression = bookmark.progression,
+            position = bookmark.position,
+            totalProgression = bookmark.totalProgression,
+            chapterIndex = bookmark.chapterIndex,
+            totalChapters = viewState.value.currentPosition?.totalChapters,
+        )
+        bookController.goToPosition(position)
+        updateState { it.copy(isBookmarksVisible = false) }
+    }
+
+    private fun observeBookmarks() {
+        observeBookmarksUseCase(bookUuid)
+            .onEach { bookmarks ->
+                updateState { state ->
+                    state.copy(bookmarks = bookmarks.map { bookmark -> bookmark.toUiModel() })
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun close() {
