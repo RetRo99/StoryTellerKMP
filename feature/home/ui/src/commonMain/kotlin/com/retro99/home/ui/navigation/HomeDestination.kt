@@ -75,6 +75,9 @@ sealed interface HomeDestination : NavKey, BottomSheetDestination, BottomBarDest
     data object AppSettings : HomeDestination
 
     @Serializable
+    data object ServerManagement : HomeDestination
+
+    @Serializable
     data object Statistics : HomeDestination
 }
 

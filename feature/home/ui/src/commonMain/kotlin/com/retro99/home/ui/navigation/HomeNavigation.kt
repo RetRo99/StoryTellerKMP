@@ -24,6 +24,7 @@ import com.retro99.home.ui.appsettings.AppSettingsScreen
 import com.retro99.home.ui.series.SeriesListScreen
 import com.retro99.reader.ui.reader.ReaderScreen
 import com.retro99.settings.ui.SettingsScreen
+import com.retro99.settings.ui.servers.ServerManagementScreen
 import com.retro99.statistics.ui.StatisticsScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -262,6 +263,17 @@ fun HomeNavigation(
                                     HomeNavigationIntent.NavigateTo(HomeDestination.Statistics)
                                 )
                             },
+                            onNavigateToServerManagement = {
+                                intentDispatcher(
+                                    HomeNavigationIntent.NavigateTo(HomeDestination.ServerManagement)
+                                )
+                            },
+                        )
+                    }
+
+                    entry<HomeDestination.ServerManagement> {
+                        ServerManagementScreen(
+                            modifier = Modifier,
                         )
                     }
 
