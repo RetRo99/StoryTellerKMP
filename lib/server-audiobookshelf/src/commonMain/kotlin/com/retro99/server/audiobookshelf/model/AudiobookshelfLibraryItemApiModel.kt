@@ -76,6 +76,12 @@ data class AudiobookshelfMediaApiModel(
 
     @SerialName("ebookFile")
     val ebookFile: AudiobookshelfEbookFileApiModel? = null,
+
+    @SerialName("audioFiles")
+    val audioFiles: List<AudiobookshelfAudioFileApiModel> = emptyList(),
+
+    @SerialName("chapters")
+    val chapters: List<AudiobookshelfChapterApiModel> = emptyList(),
 )
 
 @Serializable
@@ -140,12 +146,102 @@ data class AudiobookshelfSeriesItemApiModel(
 
 @Serializable
 data class AudiobookshelfEbookFileApiModel(
+    @SerialName("ino")
+    val ino: String? = null,
+
     @SerialName("ebookFormat")
     val ebookFormat: String? = null,
+
+    @SerialName("metadata")
+    val metadata: AudiobookshelfFileMetadataApiModel? = null,
 
     @SerialName("path")
     val path: String? = null,
 
     @SerialName("size")
     val size: Long? = null,
+
+    @SerialName("addedAt")
+    val addedAt: Long? = null,
+
+    @SerialName("updatedAt")
+    val updatedAt: Long? = null,
+)
+
+@Serializable
+data class AudiobookshelfAudioFileApiModel(
+    @SerialName("index")
+    val index: Int? = null,
+
+    @SerialName("ino")
+    val ino: String? = null,
+
+    @SerialName("metadata")
+    val metadata: AudiobookshelfFileMetadataApiModel? = null,
+
+    @SerialName("duration")
+    val duration: Double? = null,
+
+    @SerialName("mimeType")
+    val mimeType: String? = null,
+
+    @SerialName("codec")
+    val codec: String? = null,
+
+    @SerialName("bitRate")
+    val bitRate: Int? = null,
+
+    @SerialName("channels")
+    val channels: Int? = null,
+
+    @SerialName("trackNumFromMeta")
+    val trackNumFromMeta: Int? = null,
+
+    @SerialName("trackNumFromFilename")
+    val trackNumFromFilename: Int? = null,
+
+    @SerialName("addedAt")
+    val addedAt: Long? = null,
+
+    @SerialName("updatedAt")
+    val updatedAt: Long? = null,
+)
+
+@Serializable
+data class AudiobookshelfChapterApiModel(
+    @SerialName("id")
+    val id: String? = null,
+
+    @SerialName("start")
+    val start: Double? = null,
+
+    @SerialName("end")
+    val end: Double? = null,
+
+    @SerialName("title")
+    val title: String? = null,
+)
+
+@Serializable
+data class AudiobookshelfFileMetadataApiModel(
+    @SerialName("filename")
+    val filename: String? = null,
+
+    @SerialName("ext")
+    val ext: String? = null,
+
+    @SerialName("path")
+    val path: String? = null,
+
+    @SerialName("relPath")
+    val relPath: String? = null,
+
+    @SerialName("size")
+    val size: Long? = null,
+
+    @SerialName("mtimeMs")
+    val mtimeMs: Long? = null,
+
+    @SerialName("ctimeMs")
+    val ctimeMs: Long? = null,
 )

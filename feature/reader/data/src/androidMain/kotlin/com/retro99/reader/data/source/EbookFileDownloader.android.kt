@@ -25,12 +25,12 @@ actual class EbookFileDownloader(
         bookType: BookType,
     ): AppResult<String> = withContext(Dispatchers.IO) {
         val localFile = File(ebooksDir, getFileName(bookUuid, bookType))
+        val (path, queryParams) = ebookFilePath.parseDownloadPath()
 
-        // Use streaming download to avoid loading large files into memory
         networkClient.downloadFileToPath(
-            path = "/api/v2/books/$bookUuid/files",
+            path = path,
             destinationPath = localFile.absolutePath,
-            queryBuilder = { "format" to bookType.value },
+            queryBuilder = { queryParams.forEach { (k, v) -> k to v } },
         )
     }
 
@@ -41,13 +41,13 @@ actual class EbookFileDownloader(
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {
         val localFile = File(ebooksDir, getFileName(bookUuid, bookType))
+        val (path, queryParams) = ebookFilePath.parseDownloadPath()
 
-        // Use streaming download with progress reporting
         networkClient.downloadFileToPathWithProgress(
-            path = "/api/v2/books/$bookUuid/files",
+            path = path,
             destinationPath = localFile.absolutePath,
             onProgress = onProgress,
-            queryBuilder = { "format" to bookType.value },
+            queryBuilder = { queryParams.forEach { (k, v) -> k to v } },
         )
     }
 
