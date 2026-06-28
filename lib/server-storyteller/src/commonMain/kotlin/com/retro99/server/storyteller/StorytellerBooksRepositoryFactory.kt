@@ -3,8 +3,8 @@ package com.retro99.server.storyteller
 import com.retro99.server.api.ServerBooksRepository
 import com.retro99.server.api.ServerBooksRepositoryFactory
 import com.retro99.server.api.ServerConfig
-import com.retro99.server.api.ServerNetworkClientFactory
 import com.retro99.server.api.ServerType
+import com.retro99.server.implementation.CompositeNetworkClientFactory
 import com.retro99.server.storyteller.source.ServerBooksLocalSource
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
@@ -16,7 +16,7 @@ import org.koin.core.annotation.Single
  */
 @Single(binds = [ServerBooksRepositoryFactory::class])
 class StorytellerBooksRepositoryFactory(
-    @Provided private val networkClientFactory: ServerNetworkClientFactory,
+    @Provided private val networkClientFactory: CompositeNetworkClientFactory,
     @Provided private val localSource: ServerBooksLocalSource,
 ) : ServerBooksRepositoryFactory {
 

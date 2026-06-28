@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
@@ -93,6 +94,7 @@ import resources.translations.statistics_title
 fun AppSettingsScreen(
     onLogout: () -> Unit,
     onNavigateToStatistics: () -> Unit,
+    onNavigateToServerManagement: () -> Unit,
     modifier: Modifier = Modifier,
     onLogin: () -> Unit = onLogout, // Default to logout callback for backward compatibility
     viewModel: AppSettingsViewModel = koinViewModel(),
@@ -106,6 +108,7 @@ fun AppSettingsScreen(
             onLogout = onLogout,
             onLogin = onLogin,
             onNavigateToStatistics = onNavigateToStatistics,
+            onNavigateToServerManagement = onNavigateToServerManagement,
             intentDispatcher = intentDispatcher,
         )
     }
@@ -117,6 +120,7 @@ private fun AppSettingsScreenContent(
     onLogout: () -> Unit,
     onLogin: () -> Unit,
     onNavigateToStatistics: () -> Unit,
+    onNavigateToServerManagement: () -> Unit,
     intentDispatcher: IntentDispatcher<AppSettingsIntent>,
     modifier: Modifier = Modifier,
     buildConfig: BuildConfig = koinInject(),
@@ -285,6 +289,13 @@ private fun AppSettingsScreenContent(
             // Account Section
             SettingsSectionHeader(
                 title = stringResource(StringRes.app_settings_section_account),
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Dns,
+                title = "Servers",
+                description = "Add, remove, or switch between servers",
+                onClick = onNavigateToServerManagement,
             )
 
             if (viewState.hasAuthenticatedRemoteServers) {
