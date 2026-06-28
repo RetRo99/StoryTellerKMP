@@ -10,7 +10,9 @@ fun AudiobookshelfLibraryItemApiModel.toDomain(
     val metadata = media?.metadata
     val ebookFile = media?.ebookFile
     val hasEbook = ebookFile?.ino != null
-    val hasAudiobook = media?.numAudioFiles?.let { it > 0 } ?: false
+    val hasAudiobook = media?.numAudioFiles?.let { it > 0 }
+        ?: media?.audioFiles?.let { it.isNotEmpty() }
+        ?: false
 
     val ebookDownloadPath = ebookFile?.ino?.let { ino ->
         "/api/items/$id/file/$ino"
