@@ -4,6 +4,7 @@ import com.retro99.base.result.AppError
 import com.retro99.books.domain.model.BookType
 import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
+import com.retro99.reader.ui.model.BookmarkUiModel
 import com.retro99.reader.ui.model.PositionConflictUiModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
@@ -38,10 +39,14 @@ data class ReaderViewState(
     val chapterReadingTimeInfo: ChapterReadingTimeInfo? = null,
     // Flag to show snackbar when ReadAloud book has no media overlays
     val showNoAudioMessage: Boolean = false,
+    // Flag to show snackbar when bookmark save fails
+    val showBookmarkSaveFailed: Boolean = false,
     // Sleep timer state for ReadAloud playback. Null means no active timer.
     val sleepTimerRemainingMs: Long? = null,
     // Shows a one-time prompt when the sleep timer is close to ending.
     val showSleepTimerWarningPrompt: Boolean = false,
+    val bookmarks: List<BookmarkUiModel> = emptyList(),
+    val isBookmarksVisible: Boolean = false,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.

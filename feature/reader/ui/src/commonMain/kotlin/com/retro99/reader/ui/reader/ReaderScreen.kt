@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -73,6 +75,7 @@ import com.retro99.reader.domain.model.ProgressIndicatorMode
 import com.retro99.reader.domain.model.NavigationAction
 import com.retro99.reader.ui.model.ChapterInfo
 import com.retro99.reader.ui.model.ChapterReadingTimeInfo
+import com.retro99.reader.ui.model.BookmarkUiModel
 import com.retro99.reader.ui.model.PositionUiModel
 import com.retro99.reader.ui.model.ReaderSettingsUiModel
 import com.retro99.reader.ui.model.TocItemUiModel
@@ -91,6 +94,9 @@ import resources.translations.reader_time_remaining_minutes
 import resources.translations.reader_toc_jumped_to_chapter
 import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
+import resources.translations.reader_bookmark_add
+import resources.translations.reader_bookmark_save_failed
+import resources.translations.reader_bookmarks_title
 import resources.translations.settings_changed
 import resources.translations.settings_icon_content_description
 import resources.translations.settings_undo
@@ -196,6 +202,8 @@ private fun ReaderScreenContent(
                     chapterInfo = viewState.chapterInfo,
                     chapterReadingTimeInfo = viewState.chapterReadingTimeInfo,
                     currentTime = viewState.currentTime,
+                    bookmarks = viewState.bookmarks,
+                    isBookmarksVisible = viewState.isBookmarksVisible,
                     intentDispatcher = intentDispatcher,
                     loader = movableLoader,
                 )
@@ -222,6 +230,12 @@ private fun ReaderScreenContent(
         NoAudioSnackbar(
             showMessage = viewState.showNoAudioMessage,
             onDismiss = { intentDispatcher(ReaderIntent.DismissNoAudioMessage) },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+
+        BookmarkSaveFailedSnackbar(
+            showMessage = viewState.showBookmarkSaveFailed,
+            onDismiss = { intentDispatcher(ReaderIntent.DismissBookmarkSaveFailed) },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
 
@@ -270,6 +284,31 @@ private fun NoAudioSnackbar(
     )
 }
 
+@Composable
+private fun BookmarkSaveFailedSnackbar(
+    showMessage: Boolean,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val message = stringResource(StringRes.reader_bookmark_save_failed)
+
+    LaunchedEffect(showMessage) {
+        if (showMessage) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+            onDismiss()
+        }
+    }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReaderContent(
@@ -287,6 +326,8 @@ private fun ReaderContent(
     chapterInfo: ChapterInfo?,
     chapterReadingTimeInfo: ChapterReadingTimeInfo?,
     currentTime: String,
+    bookmarks: List<BookmarkUiModel>,
+    isBookmarksVisible: Boolean,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     isAudioPlayerReady: Boolean,
     loader: @Composable (() -> Unit),
@@ -471,6 +512,8 @@ private fun ReaderContent(
                     bookTitle = bookTitle,
                     onCloseClick = { intentDispatcher(ReaderIntent.Close) },
                     onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
+                    onBookmarksClick = { intentDispatcher(ReaderIntent.ToggleBookmarks) },
+                    onAddBookmarkClick = { intentDispatcher(ReaderIntent.AddBookmark) },
                     onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
                     onInteraction = onControlsInteraction,
                 )
@@ -485,6 +528,20 @@ private fun ReaderContent(
                         intentDispatcher(ReaderIntent.GoToChapter(href, currentPosition))
                     },
                     onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
+                )
+            }
+
+            // Bookmarks bottom sheet
+            if (isBookmarksVisible) {
+                BookmarksSheet(
+                    bookmarks = bookmarks,
+                    onBookmarkClick = { bookmark ->
+                        intentDispatcher(ReaderIntent.GoToBookmark(bookmark))
+                    },
+                    onBookmarkDelete = { id ->
+                        intentDispatcher(ReaderIntent.DeleteBookmark(id))
+                    },
+                    onDismiss = { intentDispatcher(ReaderIntent.ToggleBookmarks) },
                 )
             }
 
@@ -558,6 +615,8 @@ private fun ReaderToolbar(
     bookTitle: String,
     onCloseClick: () -> Unit,
     onTocClick: () -> Unit,
+    onBookmarksClick: () -> Unit,
+    onAddBookmarkClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onInteraction: () -> Unit,
     modifier: Modifier = Modifier,
@@ -596,7 +655,7 @@ private fun ReaderToolbar(
                 modifier = Modifier.weight(1f),
             )
 
-            // TOC and Settings buttons on the right
+            // TOC, Bookmark, and Settings buttons on the right
             IconButton(
                 onClick = {
                     onInteraction()
@@ -606,6 +665,30 @@ private fun ReaderToolbar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = stringResource(StringRes.reader_toc_title),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            IconButton(
+                onClick = {
+                    onInteraction()
+                    onAddBookmarkClick()
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(StringRes.reader_bookmark_add),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            IconButton(
+                onClick = {
+                    onInteraction()
+                    onBookmarksClick()
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Bookmark,
+                    contentDescription = stringResource(StringRes.reader_bookmarks_title),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
