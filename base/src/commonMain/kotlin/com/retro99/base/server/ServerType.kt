@@ -18,6 +18,10 @@ enum class ServerType(
         identifier = "storyteller",
         displayName = "Storyteller",
     ),
+    Audiobookshelf(
+        identifier = "audiobookshelf",
+        displayName = "Audiobookshelf",
+    ),
     Local(
         identifier = LOCAL_SERVER_ID,
         displayName = "Local",

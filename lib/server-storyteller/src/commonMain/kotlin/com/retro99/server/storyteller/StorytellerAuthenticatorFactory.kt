@@ -27,6 +27,8 @@ class StorytellerAuthenticatorFactory(
         // Fallback for known types
         return when (serverType) {
             ServerType.Storyteller -> storytellerAuthenticator
+            ServerType.Audiobookshelf -> authenticatorMap[serverType]
+                ?: throw IllegalArgumentException("Audiobookshelf authenticator not registered")
             ServerType.Local -> throw IllegalArgumentException("Local server type does not require authentication")
         }
     }

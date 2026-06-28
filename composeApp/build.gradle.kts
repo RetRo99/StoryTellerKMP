@@ -78,6 +78,7 @@ kotlin {
             implementation(projects.lib.server.api)
             implementation(projects.lib.server.implementation)
             implementation(projects.lib.serverStoryteller)
+            implementation(projects.lib.serverAudiobookshelf)
             implementation(projects.lib.serverLocal)
             implementation(projects.lib.user.api)
             implementation(projects.lib.user.implementation)

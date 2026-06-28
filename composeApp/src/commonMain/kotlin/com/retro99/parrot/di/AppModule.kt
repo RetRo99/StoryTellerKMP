@@ -20,6 +20,7 @@ import com.retro99.reader.data.di.ReaderDataModule
 import com.retro99.reader.domain.di.ReaderDomainModule
 import com.retro99.reader.ui.di.ReaderUiModule
 import com.retro99.server.implementation.di.ServerModule
+import com.retro99.server.audiobookshelf.di.AudiobookshelfModule
 import com.retro99.server.local.di.LocalServerModule
 import com.retro99.server.storyteller.di.StorytellerModule
 import com.retro99.settings.data.di.SettingsDataModule
@@ -47,6 +48,7 @@ import org.koin.core.annotation.Module
         BuildConfigModule::class,
         // Server implementations
         StorytellerModule::class,
+        AudiobookshelfModule::class,
         LocalServerModule::class,
         // Feature modules
         AuthDomainModule::class,
