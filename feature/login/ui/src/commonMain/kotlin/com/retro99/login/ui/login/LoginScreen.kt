@@ -19,10 +19,14 @@ import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
@@ -44,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.retro99.base.server.ServerType
 import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.translations.StringRes
@@ -57,6 +62,7 @@ import resources.translations.login_oauth_sign_in_button
 import resources.translations.login_oauth_waiting_button
 import resources.translations.login_oauth_waiting_message
 import resources.translations.login_password_label
+import resources.translations.login_server_type_label
 import resources.translations.login_show_password
 import resources.translations.login_sign_in_button
 import resources.translations.login_title
@@ -85,6 +91,8 @@ fun LoginScreen(
             isSignInEnabled = viewState.isSignInEnabled,
             isOAuthSignInEnabled = viewState.isOAuthSignInEnabled,
             isOAuthInProgress = viewState.isOAuthInProgress,
+            isOAuthVisible = viewState.isOAuthVisible,
+            selectedServerType = viewState.selectedServerType,
             loginError = viewState.loginError,
             intentDispatcher = intentDispatcher,
             onBackClick = onBackClick,
@@ -102,12 +110,15 @@ private fun LoginScreenContent(
     isSignInEnabled: Boolean,
     isOAuthSignInEnabled: Boolean,
     isOAuthInProgress: Boolean,
+    isOAuthVisible: Boolean,
+    selectedServerType: ServerType,
     loginError: String?,
     intentDispatcher: IntentDispatcher<LoginIntent>,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
+    var serverTypeExpanded by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -137,6 +148,40 @@ private fun LoginScreenContent(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            ExposedDropdownMenuBox(
+                expanded = serverTypeExpanded,
+                onExpandedChange = { serverTypeExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = selectedServerType.displayName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(StringRes.login_server_type_label)) },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = serverTypeExpanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                )
+                ExposedDropdownMenu(
+                    expanded = serverTypeExpanded,
+                    onDismissRequest = { serverTypeExpanded = false },
+                ) {
+                    ServerType.entries.filter { it != ServerType.Local }.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.displayName) },
+                            onClick = {
+                                intentDispatcher(LoginIntent.OnServerTypeSelected(type))
+                                serverTypeExpanded = false
+                            },
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 state = urlState,
@@ -217,30 +262,32 @@ private fun LoginScreenContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedButton(
-                onClick = { intentDispatcher(LoginIntent.OnOAuthSignInClicked) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isOAuthSignInEnabled,
-            ) {
-                Text(
-                    stringResource(
-                        if (isOAuthInProgress) {
-                            StringRes.login_oauth_waiting_button
-                        } else {
-                            StringRes.login_oauth_sign_in_button
-                        }
-                    )
-                )
-            }
-
-            if (isOAuthInProgress) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(StringRes.login_oauth_waiting_message),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
+            if (isOAuthVisible) {
+                OutlinedButton(
+                    onClick = { intentDispatcher(LoginIntent.OnOAuthSignInClicked) },
                     modifier = Modifier.fillMaxWidth(),
-                )
+                    enabled = isOAuthSignInEnabled,
+                ) {
+                    Text(
+                        stringResource(
+                            if (isOAuthInProgress) {
+                                StringRes.login_oauth_waiting_button
+                            } else {
+                                StringRes.login_oauth_sign_in_button
+                            }
+                        )
+                    )
+                }
+
+                if (isOAuthInProgress) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(StringRes.login_oauth_waiting_message),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

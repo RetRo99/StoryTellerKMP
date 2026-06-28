@@ -70,7 +70,7 @@ class LoginViewModel(
                 usernameError = usernameError,
                 passwordError = passwordError,
                 isSignInEnabled = allFieldsNotEmpty && noErrors && !currentState.isLoading,
-                isOAuthSignInEnabled = isValidServerUrl(url) && !currentState.isLoading,
+                isOAuthSignInEnabled = currentState.isOAuthVisible && isValidServerUrl(url) && !currentState.isLoading,
             )
         }
     }
@@ -80,13 +80,24 @@ class LoginViewModel(
             LoginIntent.OnSignInClicked -> handleSignInClicked()
             LoginIntent.OnOAuthSignInClicked -> handleOAuthSignInClicked()
             LoginIntent.OnBackClicked -> onBackClick()
+            is LoginIntent.OnServerTypeSelected -> handleServerTypeSelected(intent.serverType)
         }
+    }
+
+    private fun handleServerTypeSelected(serverType: ServerType) {
+        updateState { currentState ->
+            currentState.copy(selectedServerType = serverType)
+        }
+        updateFormState(
+            url = urlState.text.toString(),
+            username = usernameState.text.toString(),
+            password = passwordState.text.toString(),
+        )
     }
 
     private fun handleSignInClicked() {
         val url = urlState.text.toString().trim()
-        // TODO: Allow user to select server type in the future
-        val serverType = ServerType.Storyteller
+        val serverType = viewState.value.selectedServerType
 
         // Log login attempt (hash URL for privacy)
         analytics.logEvent(
@@ -128,7 +139,7 @@ class LoginViewModel(
 
     private fun handleOAuthSignInClicked() {
         val url = urlState.text.toString().trim()
-        val serverType = ServerType.Storyteller
+        val serverType = viewState.value.selectedServerType
 
         analytics.logEvent(
             AuthAnalyticsEvent.LoginAttempted(serverUrlHash = url.hashCode().toString())

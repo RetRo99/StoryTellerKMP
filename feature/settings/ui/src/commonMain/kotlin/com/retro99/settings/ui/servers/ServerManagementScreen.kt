@@ -309,7 +309,7 @@ private fun AddServerDialog(
                         expanded = typeDropdownExpanded,
                         onDismissRequest = { typeDropdownExpanded = false },
                     ) {
-                        listOf(ServerType.Storyteller, ServerType.Local).forEach { type ->
+                        ServerType.entries.filter { it != ServerType.Local }.forEach { type ->
                             DropdownMenuItem(
                                 text = { Text(type.displayName) },
                                 onClick = {
