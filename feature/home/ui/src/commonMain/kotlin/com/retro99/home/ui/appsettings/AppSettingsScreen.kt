@@ -81,6 +81,8 @@ import resources.translations.app_settings_no_logs
 import resources.translations.app_settings_open_last_book
 import resources.translations.app_settings_open_last_book_description
 import resources.translations.app_settings_section_account
+import resources.translations.app_settings_servers
+import resources.translations.app_settings_servers_description
 import resources.translations.app_settings_section_reading
 import resources.translations.app_settings_section_support
 import resources.translations.app_settings_share_logs
@@ -293,8 +295,8 @@ private fun AppSettingsScreenContent(
 
             SettingsItem(
                 icon = Icons.Default.Dns,
-                title = "Servers",
-                description = "Add, remove, or switch between servers",
+                title = stringResource(StringRes.app_settings_servers),
+                description = stringResource(StringRes.app_settings_servers_description),
                 onClick = onNavigateToServerManagement,
             )
 
