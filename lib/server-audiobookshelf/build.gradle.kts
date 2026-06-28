@@ -32,6 +32,7 @@ kotlin {
             implementation(projects.lib.server.api)
             implementation(projects.lib.network.implementation)
             implementation(projects.lib.database.api)
+            implementation(projects.lib.serverStoryteller)
         }
 
         commonTest.dependencies {
