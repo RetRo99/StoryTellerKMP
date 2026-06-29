@@ -9,6 +9,7 @@ import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.server.api.ServerBook
 import com.retro99.server.api.ServerBooksRepository
+import com.retro99.server.api.ServerType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -81,8 +82,8 @@ private fun BookDomainModel.LocalBook.toServerBook(serverId: String): ServerBook
         createdAt = importedAt,
         lastOpenedAt = lastOpenedAt,
         publicationDate = publicationDate,
-        // This is a local book
         isLocal = true,
+        serverType = ServerType.Local,
     )
 }
 

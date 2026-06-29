@@ -66,6 +66,7 @@ data class ServerBook(
     val publicationDate: String? = null,
     // Local book flag
     val isLocal: Boolean = false,
+    val serverType: ServerType? = null,
 )
 
 data class ServerBookSeries(

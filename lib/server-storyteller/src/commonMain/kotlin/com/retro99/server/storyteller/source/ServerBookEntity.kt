@@ -11,6 +11,7 @@ import com.retro99.database.api.books.StatusEntity
 import com.retro99.database.api.books.TagEntity
 import com.retro99.server.api.ServerBook
 import com.retro99.server.api.ServerBookSeries
+import com.retro99.server.api.ServerType
 
 /**
  * Simple BookEntity implementation for caching ServerBook data.
@@ -18,6 +19,7 @@ import com.retro99.server.api.ServerBookSeries
 internal data class ServerBookEntityImpl(
     override val uuid: String,
     override val serverId: String,
+    override val serverType: String?,
     override val id: Long,
     override val title: String,
     override val subtitle: String?,
@@ -71,6 +73,7 @@ internal fun ServerBook.toEntity(): BookEntity {
     return ServerBookEntityImpl(
         uuid = uuid,
         serverId = serverId,
+        serverType = serverType?.identifier,
         id = 0L, // ServerBook doesn't have numeric id
         title = title,
         subtitle = null,
@@ -189,6 +192,6 @@ internal fun BookEntity.toServerBook(baseUrl: String?): ServerBook {
         lastOpenedAt = null, // Not stored in entity
         // Cached books are not local
         isLocal = false,
+        serverType = serverType?.let { ServerType.fromIdentifier(it) },
     )
 }
-

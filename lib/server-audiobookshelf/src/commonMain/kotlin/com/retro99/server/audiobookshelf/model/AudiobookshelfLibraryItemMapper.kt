@@ -2,6 +2,7 @@ package com.retro99.server.audiobookshelf.model
 
 import com.retro99.server.api.ServerBook
 import com.retro99.server.api.ServerBookSeries
+import com.retro99.server.api.ServerType
 
 fun AudiobookshelfLibraryItemApiModel.toDomain(
     serverId: String,
@@ -50,5 +51,6 @@ fun AudiobookshelfLibraryItemApiModel.toDomain(
         lastOpenedAt = null,
         publicationDate = metadata?.publishedYear,
         isLocal = false,
+        serverType = ServerType.Audiobookshelf,
     )
 }

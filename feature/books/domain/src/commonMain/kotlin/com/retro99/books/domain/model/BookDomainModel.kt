@@ -1,5 +1,7 @@
 package com.retro99.books.domain.model
 
+import com.retro99.server.api.ServerType
+
 /**
  * Sealed class representing a book in the domain layer.
  * Can be either a Storyteller book (from remote API) or a local book (imported EPUB).
@@ -7,6 +9,7 @@ package com.retro99.books.domain.model
 sealed class BookDomainModel {
     abstract val uuid: String
     abstract val serverId: String
+    abstract val serverType: ServerType?
     abstract val title: String
     abstract val description: String?
     abstract val coverUrl: String?
@@ -19,6 +22,7 @@ sealed class BookDomainModel {
     data class StorytellerBook(
         override val uuid: String,
         override val serverId: String,
+        override val serverType: ServerType?,
         override val title: String,
         override val description: String?,
         override val coverUrl: String?,
@@ -50,6 +54,7 @@ sealed class BookDomainModel {
     data class LocalBook(
         override val uuid: String,
         override val serverId: String,
+        override val serverType: ServerType?,
         override val title: String,
         override val description: String?,
         override val coverUrl: String?,

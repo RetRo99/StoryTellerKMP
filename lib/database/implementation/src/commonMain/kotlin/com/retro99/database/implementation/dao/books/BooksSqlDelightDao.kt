@@ -41,6 +41,7 @@ internal class BooksSqlDelightDao(
             bookQueries.upsertBook(
                 uuid = book.uuid,
                 server_id = book.serverId,
+                server_type = book.serverType,
                 id = book.id,
                 title = book.title,
                 subtitle = book.subtitle,
@@ -62,6 +63,7 @@ internal class BooksSqlDelightDao(
                 BookSqlDelightEntity(
                     uuid = row.uuid,
                     serverId = row.server_id,
+                    serverType = row.server_type,
                     id = row.id,
                     title = row.title,
                     subtitle = row.subtitle,
@@ -84,6 +86,7 @@ internal class BooksSqlDelightDao(
                 BookSqlDelightEntity(
                     uuid = row.uuid,
                     serverId = row.server_id,
+                    serverType = row.server_type,
                     id = row.id,
                     title = row.title,
                     subtitle = row.subtitle,
@@ -106,6 +109,7 @@ internal class BooksSqlDelightDao(
                 BookSqlDelightEntity(
                     uuid = row.uuid,
                     serverId = row.server_id,
+                    serverType = row.server_type,
                     id = row.id,
                     title = row.title,
                     subtitle = row.subtitle,
@@ -128,6 +132,7 @@ internal class BooksSqlDelightDao(
                 BookSqlDelightEntity(
                     uuid = row.uuid,
                     serverId = row.server_id,
+                    serverType = row.server_type,
                     id = row.id,
                     title = row.title,
                     subtitle = row.subtitle,

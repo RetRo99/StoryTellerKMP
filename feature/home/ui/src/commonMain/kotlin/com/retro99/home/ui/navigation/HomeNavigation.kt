@@ -22,6 +22,8 @@ import com.retro99.books.ui.list.BooksListScreen
 import com.retro99.books.ui.series.detail.SeriesDetailScreen
 import com.retro99.home.ui.appsettings.AppSettingsScreen
 import com.retro99.home.ui.series.SeriesListScreen
+import com.retro99.books.domain.model.BookType
+import com.retro99.reader.ui.audiobook.AudiobookPlayerScreen
 import com.retro99.reader.ui.reader.ReaderScreen
 import com.retro99.settings.ui.SettingsScreen
 import com.retro99.settings.ui.servers.ServerManagementScreen
@@ -235,17 +237,25 @@ fun HomeNavigation(
                     }
 
                     entry<HomeDestination.Reader> { destination ->
-                        ReaderScreen(
-                            serverId = destination.serverId,
-                            bookUuid = destination.bookUuid,
-                            bookType = destination.bookType,
-                            onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
-                            onSettingsClick = {
-                                intentDispatcher(
-                                    HomeNavigationIntent.NavigateTo(HomeDestination.Settings)
-                                )
-                            },
-                        )
+                        if (destination.bookType == BookType.AUDIOBOOK) {
+                            AudiobookPlayerScreen(
+                                serverId = destination.serverId,
+                                bookUuid = destination.bookUuid,
+                                onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
+                            )
+                        } else {
+                            ReaderScreen(
+                                serverId = destination.serverId,
+                                bookUuid = destination.bookUuid,
+                                bookType = destination.bookType,
+                                onClose = { intentDispatcher(HomeNavigationIntent.GoBack) },
+                                onSettingsClick = {
+                                    intentDispatcher(
+                                        HomeNavigationIntent.NavigateTo(HomeDestination.Settings)
+                                    )
+                                },
+                            )
+                        }
                     }
 
                     entry<HomeDestination.Settings> {

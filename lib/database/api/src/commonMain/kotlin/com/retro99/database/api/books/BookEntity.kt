@@ -8,6 +8,7 @@ package com.retro99.database.api.books
 interface BookEntity {
     val uuid: String
     val serverId: String // Track which server this book belongs to
+    val serverType: String? // Server type identifier (e.g., "storyteller", "audiobookshelf", "local"); null for legacy cached rows
     val id: Long
     val title: String
     val subtitle: String?

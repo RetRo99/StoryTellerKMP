@@ -1,0 +1,4 @@
+-- Migration from version 9 to version 10
+-- Adds server_type column to books table to persist the origin server type
+
+ALTER TABLE books ADD COLUMN server_type TEXT;

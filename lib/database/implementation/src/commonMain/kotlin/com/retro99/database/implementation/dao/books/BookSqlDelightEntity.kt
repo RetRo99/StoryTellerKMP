@@ -6,6 +6,7 @@ package com.retro99.database.implementation.dao.books
 data class BookSqlDelightEntity(
     val uuid: String,
     val serverId: String,
+    val serverType: String?,
     val id: Long,
     val title: String,
     val subtitle: String?,

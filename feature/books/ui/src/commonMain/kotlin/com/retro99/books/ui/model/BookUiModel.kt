@@ -1,5 +1,6 @@
 package com.retro99.books.ui.model
 
+import com.retro99.base.server.ServerType
 import com.retro99.books.domain.model.BookType
 import kotlinx.serialization.Serializable
 
@@ -11,6 +12,7 @@ import kotlinx.serialization.Serializable
 sealed class BookUiModel {
     abstract val uuid: String
     abstract val serverId: String
+    abstract val serverType: ServerType?
     abstract val title: String
     abstract val description: String?
     abstract val coverUrl: String?
@@ -51,6 +53,7 @@ sealed class BookUiModel {
     data class StorytellerBook(
         override val uuid: String,
         override val serverId: String,
+        override val serverType: ServerType?,
         override val title: String,
         override val description: String?,
         override val coverUrl: String?,
@@ -83,6 +86,7 @@ sealed class BookUiModel {
     data class LocalBook(
         override val uuid: String,
         override val serverId: String,
+        override val serverType: ServerType?,
         override val title: String,
         override val description: String?,
         override val coverUrl: String?,
