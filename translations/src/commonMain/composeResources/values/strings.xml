@@ -111,8 +111,6 @@
     <string name="books_filter_in_series">In Series</string>
     <string name="books_filter_rated">Rated</string>
     <string name="books_filter_tagged">Tagged</string>
-    <string name="books_filter_local">Local</string>
-    <string name="books_filter_remote">Remote</string>
     <string name="books_filter_cached">Cached</string>
 
     <!-- Book Sorting -->
@@ -345,4 +343,7 @@
     <string name="login_server_type_label" tools:ignore="MissingTranslation">Server Type</string>
     <string name="app_settings_servers" tools:ignore="MissingTranslation">Servers</string>
     <string name="app_settings_servers_description" tools:ignore="MissingTranslation">Add, remove, or switch between servers</string>
+    <string name="books_filter_server" tools:ignore="MissingTranslation">Server</string>
+    <string name="books_filter_all" tools:ignore="MissingTranslation">All</string>
+    <string name="books_filter_quick_filters" tools:ignore="MissingTranslation">Quick filters</string>
 </resources>
