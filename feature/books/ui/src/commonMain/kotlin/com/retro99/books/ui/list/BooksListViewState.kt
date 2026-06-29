@@ -1,6 +1,7 @@
 package com.retro99.books.ui.list
 
 import com.retro99.base.result.AppError
+import com.retro99.base.server.ServerType
 import com.retro99.books.ui.model.BookFilterState
 import com.retro99.books.ui.model.BookListViewMode
 import com.retro99.books.ui.model.BookProgressInfoUiModel
@@ -27,6 +28,7 @@ data class BooksListViewState(
     val filteredBooks: List<BookUiModel>
         get() = books
             .applySearchFilter(searchQuery)
+            .applyServerTypeFilter(filterState.serverTypeFilter)
             .applyQuickFilters(filterState.activeQuickFilters, favoriteBookUuids, bookProgressInfo)
             .applySorting(sortConfig)
 
@@ -39,6 +41,11 @@ data class BooksListViewState(
                     book.series.any { it.name.lowercase().contains(lowerQuery) } ||
                     book.tags.any { it.lowercase().contains(lowerQuery) }
         }
+    }
+
+    private fun List<BookUiModel>.applyServerTypeFilter(serverType: ServerType?): List<BookUiModel> {
+        if (serverType == null) return this
+        return filter { book -> book.serverType == serverType }
     }
 
     private fun List<BookUiModel>.applyQuickFilters(
@@ -56,8 +63,6 @@ data class BooksListViewState(
                     BookQuickFilter.HAS_EBOOK -> book.hasEbook
                     BookQuickFilter.HAS_READALOUD -> book.hasReadaloud
                     BookQuickFilter.IN_SERIES -> book.series.isNotEmpty()
-                    BookQuickFilter.LOCAL_BOOKS -> book is BookUiModel.LocalBook
-                    BookQuickFilter.REMOTE_BOOKS -> book is BookUiModel.StorytellerBook
                 }
             }
         }

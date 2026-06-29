@@ -9,6 +9,7 @@ import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.analytics.api.NavigationAnalyticsEvent
+import com.retro99.base.server.ServerType
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.books.domain.model.BookWithProgressDomainModel
@@ -65,6 +66,7 @@ class BooksListViewModel(
             is BooksListIntent.OnFavoriteClicked -> toggleFavorite(intent.bookUuid)
             is BooksListIntent.OnImportBook -> importBook(intent.file)
             is BooksListIntent.OnQuickFilterToggled -> toggleQuickFilter(intent.filter)
+            is BooksListIntent.OnServerTypeFilterChanged -> setServerTypeFilter(intent.serverType)
             BooksListIntent.OnClearAllFilters -> clearAllFilters()
             is BooksListIntent.OnSortChanged -> updateSort(intent.sortConfig)
             is BooksListIntent.OnViewModeChanged -> updateViewMode(intent.viewMode)
@@ -101,6 +103,13 @@ class BooksListViewModel(
                 currentFilters + filter
             }
             state.copy(filterState = state.filterState.copy(activeQuickFilters = newFilters))
+        }
+        saveFilterSortSettings()
+    }
+
+    private fun setServerTypeFilter(serverType: ServerType?) {
+        updateState { state ->
+            state.copy(filterState = state.filterState.copy(serverTypeFilter = serverType))
         }
         saveFilterSortSettings()
     }
