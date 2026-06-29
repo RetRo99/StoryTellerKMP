@@ -1,6 +1,7 @@
 package com.retro99.books.data.model
 
 import com.retro99.base.url.CoverUrlBuilder
+import com.retro99.base.server.ServerType
 import com.retro99.books.domain.model.BookDomainModel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -84,6 +85,7 @@ fun BookApiModel.toDomain(serverId: String, baseUrl: String?): BookDomainModel.S
     return BookDomainModel.StorytellerBook(
         uuid = uuid,
         serverId = serverId,
+        serverType = ServerType.Storyteller,
         title = title,
         id = id,
         language = language,

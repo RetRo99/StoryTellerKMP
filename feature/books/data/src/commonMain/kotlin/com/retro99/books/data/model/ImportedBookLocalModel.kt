@@ -1,6 +1,7 @@
 package com.retro99.books.data.model
 
 import com.retro99.base.server.LOCAL_SERVER_ID
+import com.retro99.base.server.ServerType
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.books.domain.model.BookType
 import com.retro99.database.api.importedbooks.ImportedBookEntity
@@ -25,6 +26,7 @@ data class ImportedBookLocalModel(
 fun ImportedBookEntity.toDomainModel() = BookDomainModel.LocalBook(
     uuid = uuid,
     serverId = LOCAL_SERVER_ID,
+    serverType = ServerType.Local,
     title = title,
     author = author,
     description = description,

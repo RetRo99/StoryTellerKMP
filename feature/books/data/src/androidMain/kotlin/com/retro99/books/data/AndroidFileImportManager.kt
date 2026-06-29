@@ -11,6 +11,7 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.books.data.source.ImportedBooksLocalSource
 import com.retro99.base.server.LOCAL_SERVER_ID
+import com.retro99.base.server.ServerType
 import com.retro99.books.domain.FileImportManager
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.books.domain.model.BookType
@@ -93,6 +94,7 @@ class AndroidFileImportManager(
                 val importedBook = BookDomainModel.LocalBook(
                     uuid = uuid,
                     serverId = LOCAL_SERVER_ID,
+                    serverType = ServerType.Local,
                     title = metadata.title,
                     author = metadata.author,
                     description = metadata.description,

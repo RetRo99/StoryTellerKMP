@@ -1,8 +1,23 @@
 package com.retro99.books.ui.detail
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +82,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -232,109 +251,135 @@ private fun BookDetailScreenContent(
                 },
                 actions = {
                     IconButton(onClick = { intentDispatcher(BookDetailIntent.OnFavoriteClicked) }) {
-                        Icon(
-                            imageVector = if (isFavorite) {
-                                Icons.Filled.Favorite
-                            } else {
-                                Icons.Outlined.FavoriteBorder
+                        AnimatedContent(
+                            targetState = isFavorite,
+                            transitionSpec = {
+                                (scaleIn(initialScale = 0.4f, animationSpec = tween(150)) + fadeIn(tween(150))) togetherWith
+                                    (scaleOut(targetScale = 0.4f, animationSpec = tween(150)) + fadeOut(tween(150)))
                             },
-                            contentDescription = if (isFavorite) {
-                                stringResource(StringRes.books_detail_remove_favorite)
-                            } else {
-                                stringResource(StringRes.books_detail_add_favorite)
-                            },
-                            tint = if (isFavorite) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                        )
+                            label = "favoriteIcon",
+                        ) { favorite ->
+                            Icon(
+                                imageVector = if (favorite) {
+                                    Icons.Filled.Favorite
+                                } else {
+                                    Icons.Outlined.FavoriteBorder
+                                },
+                                contentDescription = if (favorite) {
+                                    stringResource(StringRes.books_detail_remove_favorite)
+                                } else {
+                                    stringResource(StringRes.books_detail_add_favorite)
+                                },
+                                tint = if (favorite) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            BookHeader(book = book)
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            MediaActionButtons(
-                book = book,
-                ebookDownloadState = ebookDownloadState,
-                audiobookDownloadState = audiobookDownloadState,
-                readaloudDownloadState = readaloudDownloadState,
-                intentDispatcher = intentDispatcher,
-            )
-
-            progressInfo?.displayProgression?.let { progress ->
-                if (progress > 0.0) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    ReadingProgressSection(
-                        progress = progress,
-                        progressPercent = progressInfo.progressPercent,
-                        hasConflict = progressInfo.hasConflict,
-                        localProgression = progressInfo.localProgression,
-                        localProgressPercent = progressInfo.localProgressPercent,
-                        remoteProgression = progressInfo.remoteProgression,
-                        remoteProgressPercent = progressInfo.remoteProgressPercent,
-                        isResolvingConflict = isResolvingConflict,
-                        onUseLocal = { intentDispatcher(BookDetailIntent.OnUseLocalPositionClicked) },
-                        onUseRemote = { intentDispatcher(BookDetailIntent.OnUseRemotePositionClicked) },
-                    )
-                }
+        Box(modifier = Modifier.fillMaxSize()) {
+            book.coverUrl?.let { coverUrl ->
+                CoilImage(
+                    data = coverUrl,
+                    cacheKey = "${book.uuid}_backdrop",
+                    modifier = Modifier.fillMaxSize().blur(60.dp),
+                    contentScale = ContentScale.FillBounds,
+                    contentDescription = null,
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.75f)),
+                )
             }
 
-            book.description?.let { description ->
-                if (description.isNotBlank()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BookHeader(book = book)
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                MediaActionButtons(
+                    book = book,
+                    ebookDownloadState = ebookDownloadState,
+                    audiobookDownloadState = audiobookDownloadState,
+                    readaloudDownloadState = readaloudDownloadState,
+                    intentDispatcher = intentDispatcher,
+                )
+
+                progressInfo?.displayProgression?.let { progress ->
+                    if (progress > 0.0) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        ReadingProgressSection(
+                            progress = progress,
+                            progressPercent = progressInfo.progressPercent,
+                            hasConflict = progressInfo.hasConflict,
+                            localProgression = progressInfo.localProgression,
+                            localProgressPercent = progressInfo.localProgressPercent,
+                            remoteProgression = progressInfo.remoteProgression,
+                            remoteProgressPercent = progressInfo.remoteProgressPercent,
+                            isResolvingConflict = isResolvingConflict,
+                            onUseLocal = { intentDispatcher(BookDetailIntent.OnUseLocalPositionClicked) },
+                            onUseRemote = { intentDispatcher(BookDetailIntent.OnUseRemotePositionClicked) },
+                        )
+                    }
+                }
+
+                book.description?.let { description ->
+                    if (description.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        SectionDivider()
+                        Spacer(modifier = Modifier.height(20.dp))
+                        DescriptionSection(description = description)
+                    }
+                }
+
+                if (book.tags.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(20.dp))
                     SectionDivider()
                     Spacer(modifier = Modifier.height(20.dp))
-                    DescriptionSection(description = description)
+                    TagsSection(
+                        tags = book.tags,
+                        onTagClick = { intentDispatcher(BookDetailIntent.OnTagClicked(it)) },
+                    )
                 }
-            }
 
-            if (book.tags.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(20.dp))
-                SectionDivider()
-                Spacer(modifier = Modifier.height(20.dp))
-                TagsSection(
-                    tags = book.tags,
-                    onTagClick = { intentDispatcher(BookDetailIntent.OnTagClicked(it)) },
-                )
-            }
+                if (book.series.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    SectionDivider()
+                    Spacer(modifier = Modifier.height(20.dp))
+                    SeriesSection(
+                        series = book.series,
+                        onSeriesClick = { intentDispatcher(BookDetailIntent.OnSeriesClicked(it)) },
+                    )
+                }
 
-            if (book.series.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(20.dp))
-                SectionDivider()
-                Spacer(modifier = Modifier.height(20.dp))
-                SeriesSection(
-                    series = book.series,
-                    onSeriesClick = { intentDispatcher(BookDetailIntent.OnSeriesClicked(it)) },
-                )
-            }
+                if (book is BookUiModel.LocalBook) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    SectionDivider()
+                    Spacer(modifier = Modifier.height(20.dp))
+                    DeleteLocalBookButton(
+                        onClick = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookClicked) },
+                    )
+                }
 
-            if (book is BookUiModel.LocalBook) {
-                Spacer(modifier = Modifier.height(20.dp))
-                SectionDivider()
-                Spacer(modifier = Modifier.height(20.dp))
-                DeleteLocalBookButton(
-                    onClick = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookClicked) },
-                )
+                Spacer(modifier = Modifier.height(32.dp))
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -344,6 +389,17 @@ private fun BookHeader(
     book: BookUiModel,
     modifier: Modifier = Modifier,
 ) {
+    val coverEntrance = remember { Animatable(0.9f) }
+    LaunchedEffect(Unit) {
+        coverEntrance.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
+        )
+    }
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -354,11 +410,13 @@ private fun BookHeader(
             modifier = Modifier
                 .width(CoverWidth)
                 .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(4.dp))
+                .scale(coverEntrance.value)
+                .shadow(8.dp, RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(8.dp),
                 ),
             contentScale = ContentScale.Crop,
             contentDescription = book.title,
@@ -373,8 +431,11 @@ private fun BookHeader(
                     fontWeight = FontWeight.Bold,
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 3,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .basicMarquee(),
             )
 
             book.subtitle?.let { subtitle ->
@@ -386,6 +447,9 @@ private fun BookHeader(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .basicMarquee(),
                     )
                 }
             }
@@ -538,13 +602,18 @@ private fun ReadingProgressSection(
                 }
             }
         } else {
+            val animatedProgress by animateFloatAsState(
+                targetValue = progress.toFloat(),
+                animationSpec = tween(durationMillis = 600),
+                label = "readingProgress",
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 LinearProgressIndicator(
-                    progress = { progress.toFloat() },
+                    progress = { animatedProgress },
                     modifier = Modifier
                         .weight(1f)
                         .height(8.dp)
@@ -584,8 +653,13 @@ private fun ProgressRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(50.dp),
         )
+        val animatedProgress by animateFloatAsState(
+            targetValue = progression.toFloat(),
+            animationSpec = tween(durationMillis = 600),
+            label = "progressBar",
+        )
         LinearProgressIndicator(
-            progress = { progression.toFloat() },
+            progress = { animatedProgress },
             modifier = Modifier
                 .weight(1f)
                 .height(8.dp)
