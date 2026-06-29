@@ -46,6 +46,7 @@ actual class BookDownloadManagerImpl(
         bookType: BookType,
         filePath: String,
         bookTitle: String,
+        serverId: String,
     ) {
         // Check if already cached
         if (fileDownloader.isEbookCached(bookUuid, bookType)) {
@@ -66,6 +67,7 @@ actual class BookDownloadManagerImpl(
             bookType = bookType,
             filePath = filePath,
             bookTitle = bookTitle,
+            serverId = serverId,
         )
         context.startForegroundService(intent)
     }

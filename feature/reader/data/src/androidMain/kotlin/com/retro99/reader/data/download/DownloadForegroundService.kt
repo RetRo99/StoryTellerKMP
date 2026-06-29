@@ -55,11 +55,12 @@ class DownloadForegroundService : Service() {
                     intent.getStringExtra(EXTRA_BOOK_TYPE) ?: return START_NOT_STICKY
                 val filePath = intent.getStringExtra(EXTRA_FILE_PATH) ?: return START_NOT_STICKY
                 val bookTitle = intent.getStringExtra(EXTRA_BOOK_TITLE) ?: "Book"
+                val serverId = intent.getStringExtra(EXTRA_SERVER_ID) ?: return START_NOT_STICKY
                 val bookType = BookType.entries.find { it.value == bookTypeValue }
                     ?: return START_NOT_STICKY
 
                 startForegroundWithNotification(bookUuid, bookType, bookTitle)
-                startDownload(bookUuid, bookType, filePath, bookTitle)
+                startDownload(bookUuid, bookType, filePath, bookTitle, serverId)
             }
 
             ACTION_CANCEL_DOWNLOAD -> {
@@ -104,6 +105,7 @@ class DownloadForegroundService : Service() {
         bookType: BookType,
         filePath: String,
         bookTitle: String,
+        serverId: String,
     ) {
         val key = "$bookUuid:${bookType.value}"
 
@@ -123,6 +125,7 @@ class DownloadForegroundService : Service() {
                 ebookFilePath = filePath,
                 bookUuid = bookUuid,
                 bookType = bookType,
+                serverId = serverId,
                 onProgress = { bytesDownloaded, totalBytes ->
                     val progress = if (totalBytes != null && totalBytes > 0) {
                         (bytesDownloaded.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
@@ -255,6 +258,7 @@ class DownloadForegroundService : Service() {
         const val EXTRA_BOOK_TYPE = "book_type"
         const val EXTRA_FILE_PATH = "file_path"
         const val EXTRA_BOOK_TITLE = "book_title"
+        const val EXTRA_SERVER_ID = "server_id"
 
         fun createStartIntent(
             context: Context,
@@ -262,6 +266,7 @@ class DownloadForegroundService : Service() {
             bookType: BookType,
             filePath: String,
             bookTitle: String,
+            serverId: String,
         ): Intent {
             return Intent(context, DownloadForegroundService::class.java).apply {
                 action = ACTION_START_DOWNLOAD
@@ -269,6 +274,7 @@ class DownloadForegroundService : Service() {
                 putExtra(EXTRA_BOOK_TYPE, bookType.value)
                 putExtra(EXTRA_FILE_PATH, filePath)
                 putExtra(EXTRA_BOOK_TITLE, bookTitle)
+                putExtra(EXTRA_SERVER_ID, serverId)
             }
         }
 

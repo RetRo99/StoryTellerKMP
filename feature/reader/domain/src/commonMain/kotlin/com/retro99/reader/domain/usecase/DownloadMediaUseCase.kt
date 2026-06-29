@@ -26,8 +26,9 @@ class DownloadMediaUseCase(
         bookType: BookType,
         filePath: String,
         bookTitle: String,
+        serverId: String,
     ) {
-        downloadManager.startDownload(bookUuid, bookType, filePath, bookTitle)
+        downloadManager.startDownload(bookUuid, bookType, filePath, bookTitle, serverId)
     }
 }
 

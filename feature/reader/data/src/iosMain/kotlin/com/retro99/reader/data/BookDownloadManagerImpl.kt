@@ -73,6 +73,7 @@ actual class BookDownloadManagerImpl(
         bookType: BookType,
         filePath: String,
         bookTitle: String,
+        serverId: String,
     ) {
         val key = DownloadKey(bookUuid, bookType)
 
@@ -99,6 +100,7 @@ actual class BookDownloadManagerImpl(
                 ebookFilePath = filePath,
                 bookUuid = bookUuid,
                 bookType = bookType,
+                serverId = serverId,
                 onProgress = { bytesDownloaded, totalBytes ->
                     val progress = if (totalBytes != null && totalBytes > 0) {
                         (bytesDownloaded.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)

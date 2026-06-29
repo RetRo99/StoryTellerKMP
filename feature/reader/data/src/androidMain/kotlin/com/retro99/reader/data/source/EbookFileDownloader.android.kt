@@ -1,9 +1,12 @@
 package com.retro99.reader.data.source
 
 import android.content.Context
+import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.books.domain.model.BookType
+import com.retro99.server.api.ServerNetworkClientProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Provided
@@ -14,7 +17,7 @@ import java.io.File
 @Single
 actual class EbookFileDownloader(
     @Provided private val context: Context,
-    @Provided private val networkClient: NetworkClient,
+    @Provided private val networkClientFactory: ServerNetworkClientProvider,
 ) {
 
     private val ebooksDir: File
@@ -24,11 +27,14 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        serverId: String,
     ): AppResult<String> = withContext(Dispatchers.IO) {
+        val networkClient = networkClientFactory.createForServerId(serverId)
+            ?: return@withContext Err(AppError.NotFoundError("Server not found: $serverId"))
         if (ebookFilePath.isMultiFileDownload()) {
-            downloadMultipleFiles(ebookFilePath, bookUuid, bookType)
+            downloadMultipleFiles(ebookFilePath, bookUuid, bookType, networkClient)
         } else {
-            downloadSingleFile(ebookFilePath, bookUuid, bookType)
+            downloadSingleFile(ebookFilePath, bookUuid, bookType, networkClient)
         }
     }
 
@@ -36,12 +42,15 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        serverId: String,
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String> = withContext(Dispatchers.IO) {
+        val networkClient = networkClientFactory.createForServerId(serverId)
+            ?: return@withContext Err(AppError.NotFoundError("Server not found: $serverId"))
         if (ebookFilePath.isMultiFileDownload()) {
-            downloadMultipleFilesWithProgress(ebookFilePath, bookUuid, bookType, onProgress)
+            downloadMultipleFilesWithProgress(ebookFilePath, bookUuid, bookType, networkClient, onProgress)
         } else {
-            downloadSingleFileWithProgress(ebookFilePath, bookUuid, bookType, onProgress)
+            downloadSingleFileWithProgress(ebookFilePath, bookUuid, bookType, networkClient, onProgress)
         }
     }
 
@@ -75,6 +84,7 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        networkClient: NetworkClient,
     ): AppResult<String> {
         val localFile = File(ebooksDir, getSingleFileName(bookUuid, bookType))
         val (path, queryParams) = ebookFilePath.parseDownloadPath()
@@ -90,6 +100,7 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        networkClient: NetworkClient,
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String> {
         val localFile = File(ebooksDir, getSingleFileName(bookUuid, bookType))
@@ -107,6 +118,7 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        networkClient: NetworkClient,
     ): AppResult<String> {
         val paths = ebookFilePath.multiFilePaths()
         val targetDir = File(ebooksDir, getDirectoryName(bookUuid, bookType)).apply { mkdirs() }
@@ -129,6 +141,7 @@ actual class EbookFileDownloader(
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        networkClient: NetworkClient,
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String> {
         val paths = ebookFilePath.multiFilePaths()
