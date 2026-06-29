@@ -20,7 +20,6 @@ data class ServerUiModel(
 data class ServerWithStatusUiModel(
     val server: ServerUiModel,
     val authState: ServerAuthState,
-    val isActive: Boolean,
 )
 
 /**

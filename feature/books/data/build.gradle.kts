@@ -30,6 +30,7 @@ kotlin {
             implementation(projects.lib.network.api)
             implementation(projects.lib.database.api)
             implementation(projects.lib.analytics.api)
+            implementation(projects.lib.server.api)
             implementation(projects.feature.books.domain)
             implementation(libs.filekit.core)
         }

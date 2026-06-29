@@ -18,13 +18,6 @@ interface ServerNetworkClientProvider {
     fun create(serverConfig: ServerConfig): ServerNetworkClient
 
     /**
-     * Create a network client for the currently active server.
-     *
-     * @throws IllegalStateException if no active server is configured.
-     */
-    suspend fun createForActiveServer(): ServerNetworkClient
-
-    /**
      * Create a network client for the server identified by [serverId], or
      * `null` if no such server is registered.
      *

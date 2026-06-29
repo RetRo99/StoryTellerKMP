@@ -22,11 +22,6 @@ class ServerTokenProviderImpl(
         return credentials.accessToken
     }
 
-    override suspend fun getActiveServerToken(): String? {
-        val activeServer = serverRegistry.getActiveServer() ?: return null
-        return getToken(activeServer.id)
-    }
-
     override suspend fun refreshToken(serverId: String): String? {
         val server = serverRegistry.getServer(serverId) ?: return null
         val credentials = serverRegistry.getCredentials(serverId) ?: return null
