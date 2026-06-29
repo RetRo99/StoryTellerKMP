@@ -57,7 +57,7 @@ class StorytellerAuthenticator(
             if (response.status.isSuccess()) {
                 val tokenResponse = response.body<StorytellerTokenResponse>()
                 val now = Clock.System.now().toEpochMilliseconds()
-                val expiresAt = tokenResponse.expiresIn?.let { now + (it * 1000) }
+                val expiresAt = tokenResponse.expiresIn?.let { now + it }
 
                 Ok(
                     ServerCredentials(
