@@ -51,7 +51,6 @@ sealed class PreferencesKey(val name: String) {
     data object OpenLastBookOnLaunch : PreferencesKey("OpenLastBookOnLaunch")
     data object RegisteredServers : PreferencesKey("RegisteredServers")
     data object ServerCredentials : PreferencesKey("ServerCredentials")
-    data object ActiveServerId : PreferencesKey("ActiveServerId")
     data object SkippedLogin : PreferencesKey("SkippedLogin")
     data object BookListFilterSort : PreferencesKey("BookListFilterSort")
 

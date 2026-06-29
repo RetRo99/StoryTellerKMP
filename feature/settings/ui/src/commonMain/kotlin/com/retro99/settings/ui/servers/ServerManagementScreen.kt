@@ -1,6 +1,5 @@
 package com.retro99.settings.ui.servers
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -132,9 +130,6 @@ private fun ServerManagementScreenContent(
                     items(viewState.servers, key = { it.server.id }) { serverWithStatus ->
                         ServerListItem(
                             serverWithStatus = serverWithStatus,
-                            onServerClick = {
-                                intentDispatcher(ServerManagementIntent.OnServerClick(serverWithStatus.server.id))
-                            },
                             onLogoutClick = {
                                 intentDispatcher(ServerManagementIntent.OnLogoutClick(serverWithStatus.server.id))
                             },
@@ -167,7 +162,6 @@ private fun ServerManagementScreenContent(
 @Composable
 private fun ServerListItem(
     serverWithStatus: ServerWithStatusUiModel,
-    onServerClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onRemoveClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -177,14 +171,9 @@ private fun ServerListItem(
 
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onServerClick),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (serverWithStatus.isActive) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         ),
     ) {
         Row(
@@ -199,15 +188,6 @@ private fun ServerListItem(
                         text = server.name,
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    if (serverWithStatus.isActive) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Active",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
                 }
                 Text(
                     text = server.baseUrl,

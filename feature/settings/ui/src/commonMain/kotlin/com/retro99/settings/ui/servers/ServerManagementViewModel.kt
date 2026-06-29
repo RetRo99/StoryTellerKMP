@@ -29,7 +29,6 @@ class ServerManagementViewModel(
 
     override fun onIntent(intent: ServerManagementIntent) {
         when (intent) {
-            is ServerManagementIntent.OnServerClick -> onServerClick(intent.serverId)
             is ServerManagementIntent.OnLoginClick -> onLoginClick(intent.serverId)
             is ServerManagementIntent.OnLogoutClick -> onLogoutClick(intent.serverId)
             is ServerManagementIntent.OnRemoveClick -> onRemoveClick(intent.serverId)
@@ -50,13 +49,11 @@ class ServerManagementViewModel(
         combine(
             serverRegistry.observeAllServers(),
             serverRegistry.observeAllAuthStates(),
-            serverRegistry.observeActiveServer(),
-        ) { servers, authStates, activeServer ->
+        ) { servers, authStates ->
             servers.map { server ->
                 ServerWithStatusUiModel(
                     server = server.toUiModel(),
                     authState = authStates[server.id] ?: ServerAuthState.NotAuthenticated(server.id),
-                    isActive = server.id == activeServer?.id,
                 )
             }
         }
@@ -69,12 +66,6 @@ class ServerManagementViewModel(
                 }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun onServerClick(serverId: String) {
-        viewModelScope.launch {
-            serverRegistry.setActiveServer(serverId)
-        }
     }
 
     private fun onLoginClick(serverId: String) {

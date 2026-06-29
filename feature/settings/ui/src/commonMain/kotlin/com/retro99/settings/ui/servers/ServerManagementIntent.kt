@@ -8,7 +8,6 @@ import com.retro99.server.api.ServerType
  */
 sealed interface ServerManagementIntent : BaseIntent {
     // Server list actions
-    data class OnServerClick(val serverId: String) : ServerManagementIntent
     data class OnLoginClick(val serverId: String) : ServerManagementIntent
     data class OnLogoutClick(val serverId: String) : ServerManagementIntent
     data class OnRemoveClick(val serverId: String) : ServerManagementIntent
