@@ -65,6 +65,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -120,54 +121,75 @@ actual fun AudiobookPlayerScreen(
         return
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = state.bookTitle.ifEmpty { "Audiobook" },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { viewModel.close() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Close",
-                        )
-                    }
-                },
-                actions = {
-                    if (!state.isLoading) {
-                        PlaybackSpeedButton(
-                            currentSpeed = state.playbackSpeed,
-                            onSpeedSelected = { speed ->
-                                IntentDispatcher(viewModel::onIntent)(
-                                    AudiobookPlayerIntent.PlaybackSpeedChanged(speed)
-                                )
-                            },
-                        )
-                    }
-                },
+    Box(modifier = Modifier.fillMaxSize()) {
+        state.bookCoverUrl?.let { url ->
+            CoilImage(
+                data = url,
+                cacheKey = url,
+                modifier = Modifier.fillMaxSize().blur(60.dp),
+                contentScale = ContentScale.FillBounds,
+                contentDescription = null,
             )
-        },
-    ) { padding ->
-        if (state.isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            AudiobookPlayerContent(
-                state = state,
-                intentDispatcher = IntentDispatcher(viewModel::onIntent),
-                modifier = Modifier.padding(padding),
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
             )
+        }
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = state.bookTitle.ifEmpty { "Audiobook" },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.close() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Close",
+                            )
+                        }
+                    },
+                    actions = {
+                        if (!state.isLoading) {
+                            PlaybackSpeedButton(
+                                currentSpeed = state.playbackSpeed,
+                                onSpeedSelected = { speed ->
+                                    IntentDispatcher(viewModel::onIntent)(
+                                        AudiobookPlayerIntent.PlaybackSpeedChanged(speed)
+                                    )
+                                },
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                    ),
+                )
+            },
+        ) { padding ->
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                AudiobookPlayerContent(
+                    state = state,
+                    intentDispatcher = IntentDispatcher(viewModel::onIntent),
+                    modifier = Modifier.padding(padding),
+                )
+            }
         }
     }
 }
@@ -204,21 +226,6 @@ private fun AudiobookPlayerContent(
     val coverScale = coverEntrance.value * if (state.isPlaying) pulseScale else 1f
 
     Box(modifier = modifier.fillMaxSize()) {
-        state.bookCoverUrl?.let { url ->
-            CoilImage(
-                data = url,
-                cacheKey = url,
-                modifier = Modifier.fillMaxSize().blur(60.dp),
-                contentScale = ContentScale.FillBounds,
-                contentDescription = null,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
