@@ -43,6 +43,7 @@ interface BookDownloadManager {
         bookType: BookType,
         filePath: String,
         bookTitle: String,
+        serverId: String,
     )
 
     /**

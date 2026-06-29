@@ -21,6 +21,7 @@ expect class EbookFileDownloader {
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        serverId: String,
     ): AppResult<String>
 
     /**
@@ -36,6 +37,7 @@ expect class EbookFileDownloader {
         ebookFilePath: String,
         bookUuid: String,
         bookType: BookType,
+        serverId: String,
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
     ): AppResult<String>
 
