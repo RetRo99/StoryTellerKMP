@@ -3,14 +3,14 @@ package com.retro99.server.audiobookshelf
 import com.retro99.server.api.ServerConfig
 import com.retro99.server.api.ServerSeriesRepository
 import com.retro99.server.api.ServerSeriesRepositoryFactory
+import com.retro99.server.api.ServerNetworkClientProvider
 import com.retro99.server.api.ServerType
-import com.retro99.server.implementation.CompositeNetworkClientFactory
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
 @Single(binds = [ServerSeriesRepositoryFactory::class])
 class AudiobookshelfSeriesRepositoryFactory(
-    @Provided private val networkClientFactory: CompositeNetworkClientFactory,
+    @Provided private val networkClientFactory: ServerNetworkClientProvider,
 ) : ServerSeriesRepositoryFactory {
 
     override val serverType: ServerType = ServerType.Audiobookshelf
