@@ -7,6 +7,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
     is BookDomainModel.StorytellerBook -> BookUiModel.StorytellerBook(
         uuid = uuid,
         serverId = serverId,
+        serverType = serverType,
         title = title,
         subtitle = subtitle,
         coverUrl = coverUrl,
@@ -29,6 +30,7 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
     is BookDomainModel.LocalBook -> BookUiModel.LocalBook(
         uuid = uuid,
         serverId = serverId,
+        serverType = serverType,
         title = title,
         description = description,
         coverUrl = coverUrl,

@@ -22,6 +22,7 @@ fun ServerBook.toBookDomainModel(): BookDomainModel {
         BookDomainModel.LocalBook(
             uuid = uuid,
             serverId = serverId,
+            serverType = serverType,
             title = title,
             description = description,
             coverUrl = coverUrl,
@@ -37,6 +38,7 @@ fun ServerBook.toBookDomainModel(): BookDomainModel {
         BookDomainModel.StorytellerBook(
             uuid = uuid,
             serverId = serverId,
+            serverType = serverType,
             title = title,
             description = description,
             coverUrl = coverUrl,

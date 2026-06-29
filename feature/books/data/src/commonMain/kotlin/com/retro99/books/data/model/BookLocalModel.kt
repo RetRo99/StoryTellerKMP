@@ -1,12 +1,14 @@
 package com.retro99.books.data.model
 
 import com.retro99.base.url.CoverUrlBuilder
+import com.retro99.base.server.ServerType
 import com.retro99.books.domain.model.BookDomainModel
 import com.retro99.database.api.books.BookEntity
 
 data class BookLocalModel(
     override val uuid: String,
     override val serverId: String,
+    override val serverType: String?,
     override val id: Long,
     override val title: String,
     override val subtitle: String?,
@@ -33,6 +35,7 @@ fun BookLocalModel.toDomain(baseUrl: String?): BookDomainModel.StorytellerBook {
     return BookDomainModel.StorytellerBook(
         uuid = uuid,
         serverId = serverId,
+        serverType = serverType?.let { ServerType.fromIdentifier(it) },
         title = title,
         id = id,
         language = language,
@@ -63,6 +66,7 @@ fun BookDomainModel.StorytellerBook.toLocal(): BookLocalModel {
     return BookLocalModel(
         uuid = uuid,
         serverId = serverId,
+        serverType = serverType?.identifier,
         id = id,
         title = title,
         subtitle = subtitle,

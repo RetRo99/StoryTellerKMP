@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.retro99.base.ui.compose.CoilImage
+import com.retro99.base.server.ServerType
 import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.translations.StringRes
@@ -152,6 +153,12 @@ fun BookItemCard(
                             ),
                         )
                     }
+                }
+                book.serverType?.let { serverType ->
+                    ServerTypeBadge(
+                        serverType = serverType,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                    )
                 }
             }
 
@@ -362,6 +369,12 @@ fun BookGridCard(
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
+            book.serverType?.let { serverType ->
+                ServerTypeBadge(
+                    serverType = serverType,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -482,6 +495,56 @@ fun MediaTypeIndicator(
             modifier = Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+fun ServerTypeBadge(
+    serverType: ServerType,
+    modifier: Modifier = Modifier,
+) {
+    val containerColor = when (serverType) {
+        ServerType.Storyteller -> MaterialTheme.colorScheme.primaryContainer
+        ServerType.Audiobookshelf -> MaterialTheme.colorScheme.tertiaryContainer
+        ServerType.Local -> MaterialTheme.colorScheme.secondaryContainer
+    }
+    val contentColor = when (serverType) {
+        ServerType.Storyteller -> MaterialTheme.colorScheme.onPrimaryContainer
+        ServerType.Audiobookshelf -> MaterialTheme.colorScheme.onTertiaryContainer
+        ServerType.Local -> MaterialTheme.colorScheme.onSecondaryContainer
+    }
+    val dotColor = when (serverType) {
+        ServerType.Storyteller -> MaterialTheme.colorScheme.primary
+        ServerType.Audiobookshelf -> MaterialTheme.colorScheme.tertiary
+        ServerType.Local -> MaterialTheme.colorScheme.secondary
+    }
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(6.dp),
+        color = containerColor,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(dotColor),
+            )
+            Text(
+                text = serverType.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 6.sp,
+                    maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                ),
+            )
+        }
     }
 }
 

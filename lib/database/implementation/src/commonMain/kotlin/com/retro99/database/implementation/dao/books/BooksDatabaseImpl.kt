@@ -371,6 +371,7 @@ internal class BooksDatabaseImpl(
         return BookEntityImpl(
             uuid = book.uuid,
             serverId = book.serverId,
+            serverType = book.serverType,
             id = book.id,
             title = book.title,
             subtitle = book.subtitle,
@@ -469,6 +470,7 @@ internal class BooksDatabaseImpl(
         return BookSqlDelightEntity(
             uuid = uuid,
             serverId = serverId,
+            serverType = serverType,
             id = id,
             title = title,
             subtitle = subtitle,
@@ -499,6 +501,7 @@ internal class BooksDatabaseImpl(
 private data class BookEntityImpl(
     override val uuid: String,
     override val serverId: String,
+    override val serverType: String?,
     override val id: Long,
     override val title: String,
     override val subtitle: String?,
