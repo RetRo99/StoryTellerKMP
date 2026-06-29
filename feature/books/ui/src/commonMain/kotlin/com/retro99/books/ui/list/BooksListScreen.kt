@@ -158,6 +158,9 @@ private fun BooksListScreenContent(
             onFilterToggle = { filter ->
                 intentDispatcher(BooksListIntent.OnQuickFilterToggled(filter))
             },
+            onServerTypeFilterChanged = { serverType ->
+                intentDispatcher(BooksListIntent.OnServerTypeFilterChanged(serverType))
+            },
             onClearAllFilters = {
                 intentDispatcher(BooksListIntent.OnClearAllFilters)
             },

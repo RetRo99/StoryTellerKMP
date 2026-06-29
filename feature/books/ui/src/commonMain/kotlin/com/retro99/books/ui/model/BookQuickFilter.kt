@@ -14,7 +14,5 @@ enum class BookQuickFilter {
     HAS_EBOOK,
     HAS_READALOUD,
     IN_SERIES,
-    LOCAL_BOOKS,
-    REMOTE_BOOKS,
 }
 

@@ -1,5 +1,6 @@
 package com.retro99.books.ui.list
 
+import com.retro99.base.server.ServerType
 import com.retro99.base.ui.BaseIntent
 import com.retro99.books.ui.model.BookListViewMode
 import com.retro99.books.ui.model.BookQuickFilter
@@ -15,6 +16,7 @@ sealed interface BooksListIntent : BaseIntent {
     data class OnImportBook(val file: PlatformFile) : BooksListIntent
 
     data class OnQuickFilterToggled(val filter: BookQuickFilter) : BooksListIntent
+    data class OnServerTypeFilterChanged(val serverType: ServerType?) : BooksListIntent
     data object OnClearAllFilters : BooksListIntent
 
     data class OnSortChanged(val sortConfig: BookSortConfig) : BooksListIntent
