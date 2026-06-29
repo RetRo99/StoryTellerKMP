@@ -1,5 +1,13 @@
 package com.retro99.books.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -193,9 +202,19 @@ fun BookItemCard(
                 if (progressInfo != null && progressInfo.hasConflict) {
                     // Show both local and remote progress bars when there's a conflict
                     Spacer(modifier = Modifier.height(8.dp))
+                    val animatedLocalProgress by animateFloatAsState(
+                        targetValue = (progressInfo.localProgression ?: 0.0).toFloat(),
+                        animationSpec = tween(durationMillis = 600),
+                        label = "localProgress",
+                    )
+                    val animatedRemoteProgress by animateFloatAsState(
+                        targetValue = (progressInfo.remoteProgression ?: 0.0).toFloat(),
+                        animationSpec = tween(durationMillis = 600),
+                        label = "remoteProgress",
+                    )
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         // Local progress
-                        progressInfo.localProgression?.let { localProgress ->
+                        if (progressInfo.localProgression != null) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -207,7 +226,7 @@ fun BookItemCard(
                                     modifier = Modifier.width(48.dp),
                                 )
                                 LinearProgressIndicator(
-                                    progress = { localProgress.toFloat() },
+                                    progress = { animatedLocalProgress },
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(6.dp)
@@ -222,7 +241,7 @@ fun BookItemCard(
                             }
                         }
                         // Remote progress
-                        progressInfo.remoteProgression?.let { remoteProgress ->
+                        if (progressInfo.remoteProgression != null) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -234,7 +253,7 @@ fun BookItemCard(
                                     modifier = Modifier.width(48.dp),
                                 )
                                 LinearProgressIndicator(
-                                    progress = { remoteProgress.toFloat() },
+                                    progress = { animatedRemoteProgress },
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(6.dp)
@@ -255,12 +274,17 @@ fun BookItemCard(
                     progressInfo?.displayProgression?.let { progress ->
                         if (progress > 0.0) {
                             Spacer(modifier = Modifier.height(8.dp))
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = progress.toFloat(),
+                                animationSpec = tween(durationMillis = 600),
+                                label = "listProgress",
+                            )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 LinearProgressIndicator(
-                                    progress = { progress.toFloat() },
+                                    progress = { animatedProgress },
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(6.dp)
@@ -289,19 +313,28 @@ fun BookItemCard(
             }
 
             IconButton(onClick = onFavoriteClick) {
-                Icon(
-                    imageVector = if (isFavorite) {
-                        Icons.Filled.Favorite
-                    } else {
-                        Icons.Outlined.FavoriteBorder
+                AnimatedContent(
+                    targetState = isFavorite,
+                    transitionSpec = {
+                        (scaleIn(initialScale = 0.4f, animationSpec = tween(150)) + fadeIn(tween(150))) togetherWith
+                            (scaleOut(targetScale = 0.4f, animationSpec = tween(150)) + fadeOut(tween(150)))
                     },
-                    contentDescription = null,
-                    tint = if (isFavorite) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
+                    label = "favoriteIcon",
+                ) { favorite ->
+                    Icon(
+                        imageVector = if (favorite) {
+                            Icons.Filled.Favorite
+                        } else {
+                            Icons.Outlined.FavoriteBorder
+                        },
+                        contentDescription = null,
+                        tint = if (favorite) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
             }
         }
     }
@@ -332,6 +365,7 @@ fun BookGridCard(
                 cacheKey = book.uuid,
                 modifier = Modifier
                     .matchParentSize()
+                    .shadow(6.dp, RoundedCornerShape(10.dp))
                     .clip(RoundedCornerShape(10.dp)),
                 contentScale = ContentScale.Crop,
                 contentDescription = book.title,
@@ -340,19 +374,28 @@ fun BookGridCard(
                 onClick = onFavoriteClick,
                 modifier = Modifier.align(Alignment.TopEnd),
             ) {
-                Icon(
-                    imageVector = if (isFavorite) {
-                        Icons.Filled.Favorite
-                    } else {
-                        Icons.Outlined.FavoriteBorder
+                AnimatedContent(
+                    targetState = isFavorite,
+                    transitionSpec = {
+                        (scaleIn(initialScale = 0.4f, animationSpec = tween(150)) + fadeIn(tween(150))) togetherWith
+                            (scaleOut(targetScale = 0.4f, animationSpec = tween(150)) + fadeOut(tween(150)))
                     },
-                    contentDescription = null,
-                    tint = if (isFavorite) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
-                )
+                    label = "favoriteIconGrid",
+                ) { favorite ->
+                    Icon(
+                        imageVector = if (favorite) {
+                            Icons.Filled.Favorite
+                        } else {
+                            Icons.Outlined.FavoriteBorder
+                        },
+                        contentDescription = null,
+                        tint = if (favorite) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        },
+                    )
+                }
             }
             if (progressInfo?.hasAnyCached == true) {
                 Icon(
@@ -396,8 +439,13 @@ fun BookGridCard(
         progressInfo?.displayProgression?.let { progress ->
             if (progress > 0.0) {
                 Spacer(modifier = Modifier.height(6.dp))
+                val animatedProgress by animateFloatAsState(
+                    targetValue = progress.toFloat(),
+                    animationSpec = tween(durationMillis = 600),
+                    label = "gridProgress",
+                )
                 LinearProgressIndicator(
-                    progress = { progress.toFloat() },
+                    progress = { animatedProgress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
