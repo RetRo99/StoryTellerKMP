@@ -2,7 +2,7 @@ package com.retro99.books.data.source
 
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.getOrElse
 import com.retro99.base.result.AppResult
 import com.retro99.books.data.model.PersonApiModel
 import com.retro99.server.api.ServerNetworkClientProvider
