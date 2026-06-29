@@ -27,12 +27,6 @@ class CompositeNetworkClientFactory(
         return factory.create(serverConfig)
     }
 
-    override suspend fun createForActiveServer(): ServerNetworkClient {
-        val activeServer = serverRegistry.getActiveServer()
-            ?: error("No active server configured")
-        return create(activeServer)
-    }
-
     override suspend fun createForServerId(serverId: String): ServerNetworkClient? {
         val serverConfig = serverRegistry.getServer(serverId) ?: return null
         return create(serverConfig)

@@ -4,7 +4,6 @@ import com.retro99.base.result.AppResult
 import com.retro99.base.result.CompletableResult
 import com.retro99.base.result.runCatchingAsAppError
 import com.retro99.database.api.statistics.ReadingSessionDatabase
-import com.retro99.server.api.ServerRegistry
 import com.retro99.statistics.data.model.toDomain
 import com.retro99.statistics.data.model.toLocal
 import com.retro99.statistics.domain.model.BookReadingStatsDomainModel
@@ -16,7 +15,6 @@ import org.koin.core.annotation.Single
 @Single(binds = [StatisticsLocalSource::class])
 internal class StatisticsLocalDataSource(
     @Provided private val database: ReadingSessionDatabase,
-    @Provided private val serverRegistry: ServerRegistry,
 ) : StatisticsLocalSource {
 
     override suspend fun insertSession(session: ReadingSessionDomainModel): CompletableResult {
@@ -103,9 +101,8 @@ internal class StatisticsLocalDataSource(
         endTime: Long,
         limit: Int,
     ): AppResult<List<BookReadingStatsDomainModel>> {
-        val baseUrl = serverRegistry.getActiveServer()?.baseUrl
         return runCatchingAsAppError {
-            database.getMostReadBooks(startTime, endTime, limit).map { it.toDomain(baseUrl) }
+            database.getMostReadBooks(startTime, endTime, limit).map { it.toDomain(null) }
         }
     }
 

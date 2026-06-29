@@ -48,7 +48,6 @@ internal class LoginDataRepository(
                     baseUrl = serverUrl,
                 )
                 serverRegistry.saveCredentials(credentials.copy(serverId = serverConfig.id))
-                serverRegistry.setActiveServer(serverConfig.id)
 
                 Ok(Unit)
             }
@@ -87,7 +86,6 @@ internal class LoginDataRepository(
                     baseUrl = serverUrl,
                 )
                 serverRegistry.saveCredentials(credentials.copy(serverId = serverConfig.id))
-                serverRegistry.setActiveServer(serverConfig.id)
 
                 Ok(Unit)
             }

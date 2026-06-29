@@ -11,11 +11,6 @@ interface ServerTokenProvider {
     suspend fun getToken(serverId: String): String?
 
     /**
-     * Get the token for the currently active server.
-     */
-    suspend fun getActiveServerToken(): String?
-
-    /**
      * Refresh the token for a specific server.
      * @return New token or null if refresh failed
      */

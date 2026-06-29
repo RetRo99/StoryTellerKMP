@@ -44,7 +44,6 @@ class ServerRegistryImpl(
     // In-memory cache backed by preferences (scoped to active user)
     private val _servers = MutableStateFlow<Map<String, ServerConfig>>(emptyMap())
     private val _credentials = MutableStateFlow<Map<String, ServerCredentials>>(emptyMap())
-    private val _activeServerId = MutableStateFlow<String?>(null)
 
     // Track current user to detect switches
     private var currentUserId: String? = null
@@ -88,7 +87,6 @@ class ServerRegistryImpl(
             // No active user, clear state
             _servers.value = emptyMap()
             _credentials.value = emptyMap()
-            _activeServerId.value = null
             return
         }
 
@@ -113,11 +111,6 @@ class ServerRegistryImpl(
         } else {
             _credentials.value = emptyMap()
         }
-
-        // Load active server for this user
-        val activeServerKey = PreferencesKey.UserScoped(userId, PreferencesKey.ActiveServerId.name)
-        val activeId = preferences.getStringOrNull(activeServerKey)
-        _activeServerId.value = activeId
     }
 
     // ==================== Server Management ====================
@@ -170,11 +163,6 @@ class ServerRegistryImpl(
     override suspend fun removeServer(serverId: String) = mutex.withLock {
         _servers.update { it - serverId }
         _credentials.update { it - serverId }
-
-        if (_activeServerId.value == serverId) {
-            _activeServerId.value = null
-            persistActiveServer()
-        }
 
         persistServers()
         persistCredentials()
@@ -264,29 +252,6 @@ class ServerRegistryImpl(
         persistCredentials()
     }
 
-    // ==================== Active Server ====================
-
-    override fun observeActiveServer(): Flow<ServerConfig?> {
-        return combine(_activeServerId, _servers) { activeId, servers ->
-            activeId?.let { servers[it] }
-        }
-    }
-
-    override suspend fun getActiveServer(): ServerConfig? {
-        val activeId = _activeServerId.value ?: return null
-        return _servers.value[activeId]
-    }
-
-    override suspend fun setActiveServer(serverId: String) = mutex.withLock {
-        _activeServerId.value = serverId
-        persistActiveServer()
-    }
-
-    override suspend fun clearActiveServer() = mutex.withLock {
-        _activeServerId.value = null
-        persistActiveServer()
-    }
-
     // ==================== Persistence ====================
 
     private fun persistServers() {
@@ -301,17 +266,6 @@ class ServerRegistryImpl(
         val credentialsList = _credentials.value.values.toList()
         val key = PreferencesKey.UserScoped(userId, PreferencesKey.ServerCredentials.name)
         preferences.putObject(key, credentialsList)
-    }
-
-    private fun persistActiveServer() {
-        val userId = currentUserId ?: return
-        val activeId = _activeServerId.value
-        val key = PreferencesKey.UserScoped(userId, PreferencesKey.ActiveServerId.name)
-        if (activeId != null) {
-            preferences.putString(key, activeId)
-        } else {
-            preferences.remove(key)
-        }
     }
 }
 

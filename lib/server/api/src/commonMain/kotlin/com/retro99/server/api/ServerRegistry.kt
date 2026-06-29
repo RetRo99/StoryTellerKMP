@@ -105,28 +105,5 @@ interface ServerRegistry {
      * Clear all credentials (logout from all servers).
      */
     suspend fun clearAllCredentials()
-
-    // ==================== Active Server ====================
-
-    /**
-     * Observe the currently active server (for UI context).
-     * Returns null if no server is active.
-     */
-    fun observeActiveServer(): Flow<ServerConfig?>
-
-    /**
-     * Get the currently active server.
-     */
-    suspend fun getActiveServer(): ServerConfig?
-
-    /**
-     * Set the active server for UI context.
-     */
-    suspend fun setActiveServer(serverId: String)
-
-    /**
-     * Clear the active server selection.
-     */
-    suspend fun clearActiveServer()
 }
 

@@ -42,14 +42,6 @@ class AuthenticatedRepositoryProviderImpl(
         return booksRepositoryFactory.create(server)
     }
 
-    override suspend fun getActiveBooksRepository(): ServerBooksRepository? {
-        val activeServer = serverRegistry.getActiveServer() ?: return null
-        if (!serverRegistry.isAuthenticated(activeServer.id)) {
-            return null
-        }
-        return booksRepositoryFactory.create(activeServer)
-    }
-
     override suspend fun getReaderRepository(serverId: String): ServerReaderRepository? {
         if (!serverRegistry.isAuthenticated(serverId)) {
             return null

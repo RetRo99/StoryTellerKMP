@@ -191,7 +191,6 @@ class UserRegistryImpl(
         val userScopedKeys = listOf(
             PreferencesKey.RegisteredServers,
             PreferencesKey.ServerCredentials,
-            PreferencesKey.ActiveServerId,
             PreferencesKey.ReaderSettings,
             PreferencesKey.ReaderCustomFonts,
             PreferencesKey.CurrentlyReading,
