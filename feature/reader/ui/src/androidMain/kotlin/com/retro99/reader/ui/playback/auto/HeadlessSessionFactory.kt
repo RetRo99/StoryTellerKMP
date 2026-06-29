@@ -93,6 +93,7 @@ class HeadlessSessionFactory(
                 ebookFilePath = book.readaloudFilepath ?: book.ebookFilepath ?: "",
                 bookUuid = bookUuid,
                 bookType = BookType.READALOUD,
+                serverId = serverId,
             )
             localEbookPath = downloadResult.getOrElse { null }
             if (localEbookPath == null) {

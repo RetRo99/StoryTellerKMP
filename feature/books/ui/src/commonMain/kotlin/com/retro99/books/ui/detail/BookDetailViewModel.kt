@@ -386,7 +386,7 @@ class BookDetailViewModel(
             )
         )
         viewModelScope.launch {
-            downloadMediaUseCase(bookUuid, bookType, filePath, book.title)
+            downloadMediaUseCase(bookUuid, bookType, filePath, book.title, serverId)
         }
     }
 
