@@ -44,6 +44,7 @@ sqldelight = "2.0.2"
 multiplatformMarkdown = "0.39.2"
 filekit = "0.8.8"
 colorpicker = "1.1.3"
+reorderable = "3.1.0"
 
 
 [libraries]
@@ -156,6 +157,9 @@ filekit-compose = { module = "io.github.vinceglb:filekit-compose", version.ref =
 
 # Color Picker (Kotlin Multiplatform)
 colorpicker-compose = { module = "com.github.skydoves:colorpicker-compose", version.ref = "colorpicker" }
+
+# Reorderable (drag-and-drop reordering for Compose Multiplatform)
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 
 [bundles]
 ktorClientBundle = [

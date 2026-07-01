@@ -41,12 +41,20 @@ data class ReaderViewState(
     val showNoAudioMessage: Boolean = false,
     // Flag to show snackbar when bookmark save fails
     val showBookmarkSaveFailed: Boolean = false,
+    // Flag to show snackbar when a bookmark is successfully added (with undo action)
+    val showBookmarkAdded: Boolean = false,
+    // ID of the most recently added bookmark (used for undo)
+    val lastAddedBookmarkId: String? = null,
+    // Flag to show snackbar when the position is already bookmarked
+    val showBookmarkAlreadyExists: Boolean = false,
     // Sleep timer state for ReadAloud playback. Null means no active timer.
     val sleepTimerRemainingMs: Long? = null,
     // Shows a one-time prompt when the sleep timer is close to ending.
     val showSleepTimerWarningPrompt: Boolean = false,
     val bookmarks: List<BookmarkUiModel> = emptyList(),
     val isBookmarksVisible: Boolean = false,
+    val renamingBookmark: BookmarkUiModel? = null,
+    val showNoMoreBookmarks: Boolean = false,
     // When true, shows the audiobook-style audio-only UI instead of the EPUB text view
     val isAudioOnlyMode: Boolean = false,
 ) {

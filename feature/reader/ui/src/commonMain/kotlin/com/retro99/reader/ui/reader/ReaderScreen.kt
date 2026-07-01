@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -95,8 +94,11 @@ import resources.translations.reader_time_remaining_minutes
 import resources.translations.reader_toc_jumped_to_chapter
 import resources.translations.reader_toc_title
 import resources.translations.reader_toc_undo
-import resources.translations.reader_bookmark_add
+import resources.translations.reader_bookmark_added
+import resources.translations.reader_bookmark_already_exists
 import resources.translations.reader_bookmark_save_failed
+import resources.translations.reader_bookmark_no_more_bookmarks
+import resources.translations.reader_bookmark_undo
 import resources.translations.reader_bookmarks_title
 import resources.translations.settings_changed
 import resources.translations.settings_icon_content_description
@@ -250,6 +252,26 @@ private fun ReaderScreenContent(
             modifier = Modifier.align(Alignment.BottomCenter),
         )
 
+        BookmarkAddedSnackbar(
+            showMessage = viewState.showBookmarkAdded,
+            bookmarkId = viewState.lastAddedBookmarkId,
+            onUndo = { id -> intentDispatcher(ReaderIntent.UndoBookmark(id)) },
+            onDismiss = { intentDispatcher(ReaderIntent.DismissBookmarkAdded) },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+
+        BookmarkAlreadyExistsSnackbar(
+            showMessage = viewState.showBookmarkAlreadyExists,
+            onDismiss = { intentDispatcher(ReaderIntent.DismissBookmarkAlreadyExists) },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+
+        NoMoreBookmarksSnackbar(
+            showMessage = viewState.showNoMoreBookmarks,
+            onDismiss = { intentDispatcher(ReaderIntent.DismissNoMoreBookmarks) },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+
         if (viewState.showSleepTimerWarningPrompt && viewState.sleepTimerRemainingMs != null) {
             SleepTimerDurationDialog(
                 title = "Sleep timer ending soon",
@@ -303,6 +325,90 @@ private fun BookmarkSaveFailedSnackbar(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val message = stringResource(StringRes.reader_bookmark_save_failed)
+
+    LaunchedEffect(showMessage) {
+        if (showMessage) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+            onDismiss()
+        }
+    }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun BookmarkAddedSnackbar(
+    showMessage: Boolean,
+    bookmarkId: String?,
+    onUndo: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val message = stringResource(StringRes.reader_bookmark_added)
+    val undoLabel = stringResource(StringRes.reader_bookmark_undo)
+
+    LaunchedEffect(showMessage) {
+        if (showMessage) {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short,
+            )
+            when (result) {
+                SnackbarResult.ActionPerformed -> {
+                    bookmarkId?.let { id -> onUndo(id) }
+                }
+                SnackbarResult.Dismissed -> onDismiss()
+            }
+        }
+    }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun BookmarkAlreadyExistsSnackbar(
+    showMessage: Boolean,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val message = stringResource(StringRes.reader_bookmark_already_exists)
+
+    LaunchedEffect(showMessage) {
+        if (showMessage) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+            onDismiss()
+        }
+    }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun NoMoreBookmarksSnackbar(
+    showMessage: Boolean,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val message = stringResource(StringRes.reader_bookmark_no_more_bookmarks)
 
     LaunchedEffect(showMessage) {
         if (showMessage) {
@@ -525,7 +631,6 @@ private fun ReaderContent(
                     onCloseClick = { intentDispatcher(ReaderIntent.Close) },
                     onTocClick = { intentDispatcher(ReaderIntent.ToggleToc) },
                     onBookmarksClick = { intentDispatcher(ReaderIntent.ToggleBookmarks) },
-                    onAddBookmarkClick = { intentDispatcher(ReaderIntent.AddBookmark) },
                     onSettingsClick = { intentDispatcher(ReaderIntent.OnSettingsClicked) },
                     onInteraction = onControlsInteraction,
                 )
@@ -547,11 +652,18 @@ private fun ReaderContent(
             if (isBookmarksVisible) {
                 BookmarksSheet(
                     bookmarks = bookmarks,
+                    onAddBookmarkClick = { intentDispatcher(ReaderIntent.AddBookmark) },
                     onBookmarkClick = { bookmark ->
                         intentDispatcher(ReaderIntent.GoToBookmark(bookmark))
                     },
                     onBookmarkDelete = { id ->
                         intentDispatcher(ReaderIntent.DeleteBookmark(id))
+                    },
+                    onBookmarkRename = { id, newTitle ->
+                        intentDispatcher(ReaderIntent.RenameBookmark(id, newTitle))
+                    },
+                    onReorder = { ids ->
+                        intentDispatcher(ReaderIntent.ReorderBookmarks(ids))
                     },
                     onDismiss = { intentDispatcher(ReaderIntent.ToggleBookmarks) },
                 )
@@ -628,7 +740,6 @@ private fun ReaderToolbar(
     onCloseClick: () -> Unit,
     onTocClick: () -> Unit,
     onBookmarksClick: () -> Unit,
-    onAddBookmarkClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onInteraction: () -> Unit,
     modifier: Modifier = Modifier,
@@ -667,7 +778,7 @@ private fun ReaderToolbar(
                 modifier = Modifier.weight(1f),
             )
 
-            // TOC, Bookmark, and Settings buttons on the right
+            // TOC, Bookmarks, and Settings buttons on the right
             IconButton(
                 onClick = {
                     onInteraction()
@@ -677,18 +788,6 @@ private fun ReaderToolbar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = stringResource(StringRes.reader_toc_title),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            IconButton(
-                onClick = {
-                    onInteraction()
-                    onAddBookmarkClick()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(StringRes.reader_bookmark_add),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }

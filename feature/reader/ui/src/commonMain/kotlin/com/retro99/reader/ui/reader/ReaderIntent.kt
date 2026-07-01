@@ -164,6 +164,22 @@ sealed interface ReaderIntent : BaseIntent {
 
     data object AddBookmark : ReaderIntent
 
+    data object DismissBookmarkAdded : ReaderIntent
+
+    data object DismissBookmarkAlreadyExists : ReaderIntent
+
+    data class UndoBookmark(val id: String) : ReaderIntent
+
+    data class RenameBookmark(val id: String, val newTitle: String) : ReaderIntent
+
+    data class ReorderBookmarks(val bookmarkIds: List<String>) : ReaderIntent
+
+    data object GoToPreviousBookmark : ReaderIntent
+
+    data object GoToNextBookmark : ReaderIntent
+
+    data object DismissNoMoreBookmarks : ReaderIntent
+
     data class DeleteBookmark(val id: String) : ReaderIntent
 
     data class GoToBookmark(val bookmark: BookmarkUiModel) : ReaderIntent
