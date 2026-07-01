@@ -1,5 +1,10 @@
 package com.retro99.login.ui.login
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,18 +13,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -32,6 +47,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RichTooltip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
@@ -46,8 +62,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.retro99.base.server.ServerType
 import com.retro99.base.ui.BaseScreen
@@ -58,14 +78,15 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import resources.translations.general_back
+import resources.translations.login_error_invalid_url
 import resources.translations.login_hide_password
 import resources.translations.login_oauth_sign_in_button
-import resources.translations.login_oauth_waiting_button
 import resources.translations.login_oauth_waiting_message
 import resources.translations.login_password_label
 import resources.translations.login_server_type_label
 import resources.translations.login_show_password
 import resources.translations.login_sign_in_button
+import resources.translations.login_subtitle
 import resources.translations.login_title
 import resources.translations.login_url_info
 import resources.translations.login_url_label
@@ -93,7 +114,9 @@ fun LoginScreen(
             isOAuthSignInEnabled = viewState.isOAuthSignInEnabled,
             isOAuthInProgress = viewState.isOAuthInProgress,
             isOAuthVisible = viewState.isOAuthVisible,
+            isLoading = viewState.isLoading,
             selectedServerType = viewState.selectedServerType,
+            urlError = viewState.urlError,
             loginError = viewState.loginError,
             intentDispatcher = intentDispatcher,
             onBackClick = onBackClick,
@@ -112,7 +135,9 @@ private fun LoginScreenContent(
     isOAuthSignInEnabled: Boolean,
     isOAuthInProgress: Boolean,
     isOAuthVisible: Boolean,
+    isLoading: Boolean,
     selectedServerType: ServerType,
+    urlError: LoginFieldError?,
     loginError: String?,
     intentDispatcher: IntentDispatcher<LoginIntent>,
     onBackClick: () -> Unit,
@@ -120,6 +145,12 @@ private fun LoginScreenContent(
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     var serverTypeExpanded by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val urlErrorText = urlError?.let { error ->
+        when (error) {
+            LoginFieldError.InvalidUrl -> stringResource(StringRes.login_error_invalid_url)
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -133,13 +164,14 @@ private fun LoginScreenContent(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null,
+                contentDescription = stringResource(StringRes.general_back),
             )
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -147,6 +179,16 @@ private fun LoginScreenContent(
             Text(
                 text = stringResource(StringRes.login_title),
                 style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = stringResource(StringRes.login_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -160,6 +202,7 @@ private fun LoginScreenContent(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(StringRes.login_server_type_label)) },
+                    leadingIcon = { Icon(Icons.Filled.Dns, contentDescription = null) },
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = serverTypeExpanded)
                     },
@@ -188,33 +231,41 @@ private fun LoginScreenContent(
             OutlinedTextField(
                 state = urlState,
                 label = { Text(stringResource(StringRes.login_url_label)) },
+                leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                trailingIcon = { UrlInfoTooltip(serverName = selectedServerType.displayName) },
+                isError = urlError != null,
+                supportingText = urlErrorText?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next,
+                    autoCorrectEnabled = false,
                 ),
-                trailingIcon = { UrlInfoTooltip() },
+                onKeyboardAction = { focusManager.moveFocus(FocusDirection.Down) },
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 state = usernameState,
                 label = { Text(stringResource(StringRes.login_username_label)) },
+                leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
+                onKeyboardAction = { focusManager.moveFocus(FocusDirection.Down) },
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedSecureTextField(
                 state = passwordState,
                 label = { Text(stringResource(StringRes.login_password_label)) },
+                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 textObfuscationMode = if (passwordVisible) {
                     TextObfuscationMode.Visible
@@ -227,6 +278,7 @@ private fun LoginScreenContent(
                     keyboardType = KeyboardType.Password,
                 ),
                 onKeyboardAction = {
+                    focusManager.clearFocus()
                     if (isSignInEnabled) {
                         intentDispatcher(LoginIntent.OnSignInClicked)
                     }
@@ -239,63 +291,90 @@ private fun LoginScreenContent(
                 },
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (loginError != null) {
-                Text(
-                    text = loginError,
-                    maxLines = 2,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            } else {
-                Spacer(modifier = Modifier.height(16.dp))
+            AnimatedVisibility(
+                visible = loginError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ErrorOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Text(
+                                text = loginError.orEmpty(),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = { intentDispatcher(LoginIntent.OnSignInClicked) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isSignInEnabled,
             ) {
-                Text(stringResource(StringRes.login_sign_in_button))
+                if (isLoading && !isOAuthInProgress) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Text(stringResource(StringRes.login_sign_in_button))
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             if (isOAuthVisible) {
+                Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedButton(
                     onClick = { intentDispatcher(LoginIntent.OnOAuthSignInClicked) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = isOAuthSignInEnabled,
                 ) {
-                    Text(
-                        stringResource(
-                            if (isOAuthInProgress) {
-                                StringRes.login_oauth_waiting_button
-                            } else {
-                                StringRes.login_oauth_sign_in_button
-                            }
+                    if (isOAuthInProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
                         )
-                    )
+                    } else {
+                        Text(stringResource(StringRes.login_oauth_sign_in_button))
+                    }
                 }
 
-                if (isOAuthInProgress) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                AnimatedVisibility(
+                    visible = isOAuthInProgress,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
                     Text(
                         text = stringResource(StringRes.login_oauth_waiting_message),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(onClick = { intentDispatcher(LoginIntent.OnBackClicked) }) {
-                Text(stringResource(StringRes.general_back))
             }
         }
     }
@@ -324,7 +403,9 @@ private fun PasswordVisibilityToggle(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun UrlInfoTooltip() {
+private fun UrlInfoTooltip(
+    serverName: String,
+) {
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     TooltipBox(
@@ -340,7 +421,7 @@ private fun UrlInfoTooltip() {
                     }
                 },
             ) {
-                Text(stringResource(StringRes.login_url_tooltip_description))
+                Text(stringResource(StringRes.login_url_tooltip_description, serverName))
             }
         },
         state = tooltipState,
