@@ -4,12 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.retro99.analytics.api.Analytics
-import com.retro99.reader.ui.di.ReaderScope
 import org.koin.core.annotation.Provided
-import org.koin.core.annotation.Scope
-import org.koin.core.annotation.Scoped
+import org.koin.core.annotation.Single
 
-private const val TAG = "čič123"
+private const val TAG = "ForegroundServiceController"
 
 /**
  * Controls the foreground service lifecycle for audio playback.
@@ -21,10 +19,9 @@ private const val TAG = "čič123"
  * @param context Android context for starting/stopping the service
  * @param analytics Analytics for logging exceptions
  */
-@Scope(ReaderScope::class)
-@Scoped
+@Single
 class ForegroundServiceController(
-    private val context: Context,
+    @Provided private val context: Context,
     @Provided private val analytics: Analytics,
 ) {
     init {

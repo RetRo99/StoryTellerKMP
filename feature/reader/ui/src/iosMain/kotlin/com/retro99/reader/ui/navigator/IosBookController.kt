@@ -227,6 +227,15 @@ class IosBookController(
         bridge.goToChapter(href)
     }
 
+    override fun goToLocator(locator: LocatorState) {
+        bridge.goToPosition(
+            href = locator.href,
+            type = locator.type,
+            progression = locator.progression,
+            position = locator.position,
+        )
+    }
+
     override fun setSettings(settings: ReaderSettingsUiModel) {
         doubleTapTimeoutMs = settings.doubleTapTimeoutMs
         bridge.setSettings(settings = EpubReaderSettings.from(settings))

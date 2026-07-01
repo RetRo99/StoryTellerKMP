@@ -850,6 +850,9 @@ class MediaOverlayPlayer(
                 ?: mediaPlaybackController.findPositionForProgression(initialProgression)
                 ?: 0L
             preparePlaylist(audioFiles, targetTrackIndex, positionToSeek, allChapterClips)
+            val newStartOffset = audioStartOffsets[targetAudioHref] ?: 0L
+            mediaPlaybackController.setChapterStartOffset(newStartOffset)
+            mediaPlaybackController.forceUpdatePosition()
         } else {
             // Playlist already set up - verify we're on the correct track and position
             val player = exoPlayer ?: return false
