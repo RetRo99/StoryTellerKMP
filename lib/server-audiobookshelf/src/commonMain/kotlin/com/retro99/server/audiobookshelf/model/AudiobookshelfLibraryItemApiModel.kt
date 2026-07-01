@@ -77,6 +77,9 @@ data class AudiobookshelfMediaApiModel(
     @SerialName("ebookFile")
     val ebookFile: AudiobookshelfEbookFileApiModel? = null,
 
+    @SerialName("ebookFormat")
+    val ebookFileFormat: String? = null,
+
     @SerialName("audioFiles")
     val audioFiles: List<AudiobookshelfAudioFileApiModel> = emptyList(),
 
