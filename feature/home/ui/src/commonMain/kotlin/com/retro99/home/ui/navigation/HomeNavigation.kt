@@ -285,6 +285,8 @@ fun HomeNavigation(
 
                     entry<HomeDestination.ServerManagement> {
                         ServerManagementScreen(
+                            onNavigateToLogin = onNavigateToLogin,
+                            onBack = { intentDispatcher(HomeNavigationIntent.GoBack) },
                             modifier = Modifier,
                         )
                     }

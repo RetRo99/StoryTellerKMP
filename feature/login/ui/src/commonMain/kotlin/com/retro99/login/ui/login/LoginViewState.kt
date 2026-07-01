@@ -8,11 +8,13 @@ data class LoginViewState(
     val isSignInEnabled: Boolean = false,
     val isOAuthSignInEnabled: Boolean = false,
     val selectedServerType: ServerType = ServerType.Storyteller,
-    val urlError: String? = null,
-    val usernameError: String? = null,
-    val passwordError: String? = null,
+    val urlError: LoginFieldError? = null,
     val loginError: String? = null,
 ) {
     val isOAuthVisible: Boolean
         get() = selectedServerType == ServerType.Storyteller
+}
+
+enum class LoginFieldError {
+    InvalidUrl,
 }

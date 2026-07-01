@@ -57,18 +57,13 @@ class LoginViewModel(
     ) {
         updateState { currentState ->
             val urlError = validateUrl(url)
-            val usernameError = validateUsername(username)
-            val passwordError = validatePassword(password)
 
             val allFieldsNotEmpty =
                 url.isNotBlank() && username.isNotBlank() && password.isNotBlank()
-            val noErrors =
-                urlError == null && usernameError == null && passwordError == null
+            val noErrors = urlError == null
 
             currentState.copy(
                 urlError = urlError,
-                usernameError = usernameError,
-                passwordError = passwordError,
                 isSignInEnabled = allFieldsNotEmpty && noErrors && !currentState.isLoading,
                 isOAuthSignInEnabled = currentState.isOAuthVisible && isValidServerUrl(url) && !currentState.isLoading,
             )
@@ -99,7 +94,6 @@ class LoginViewModel(
         val url = urlState.text.toString().trim()
         val serverType = viewState.value.selectedServerType
 
-        // Log login attempt (hash URL for privacy)
         analytics.logEvent(
             AuthAnalyticsEvent.LoginAttempted(serverUrlHash = url.hashCode().toString())
         )
@@ -189,21 +183,12 @@ class LoginViewModel(
         )
     }
 
-    // Validation functions - return null if valid, error message string if invalid
-    private fun validateUrl(url: String): String? {
+    private fun validateUrl(url: String): LoginFieldError? {
         val trimmedUrl = url.trim()
         if (trimmedUrl.isBlank() || trimmedUrl == "https://" || trimmedUrl == "http://") {
             return null
         }
-        return if (isValidServerUrl(trimmedUrl)) null else "Enter a valid http(s) URL"
-    }
-
-    private fun validateUsername(username: String): String? {
-        return null
-    }
-
-    private fun validatePassword(password: String): String? {
-        return null
+        return if (isValidServerUrl(trimmedUrl)) null else LoginFieldError.InvalidUrl
     }
 
     private fun isValidServerUrl(url: String): Boolean {
