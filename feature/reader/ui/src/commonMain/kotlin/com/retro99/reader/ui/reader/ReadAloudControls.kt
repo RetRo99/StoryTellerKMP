@@ -1,21 +1,32 @@
 package com.retro99.reader.ui.reader
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -42,23 +53,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.retro99.base.ui.IntentDispatcher
 
-/**
- * Media controls overlay for ReadAloud books.
- *
- * @param isPlaying Whether audio is currently playing
- * @param currentPositionMs Current playback position in milliseconds
- * @param totalDurationMs Total duration in milliseconds
- * @param playbackSpeed Current playback speed multiplier
- * @param intentDispatcher Dispatcher for reader intents
- * @param onInteraction Callback invoked when user interacts with controls (resets auto-hide timer)
- * @param modifier Modifier for the controls container
- */
-/** Threshold in dp for how far user needs to drag to dismiss */
 private const val DISMISS_THRESHOLD_DP = 80
 
 @Composable
@@ -76,65 +76,90 @@ internal fun ReadAloudControls(
     onControlsDialogVisibilityChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    // Wrapper that calls onInteraction before dispatching intent
     val interactingDispatcher = IntentDispatcher<ReaderIntent> { intent ->
         onInteraction()
         intentDispatcher(intent)
     }
 
-    // Track vertical offset for drag gesture
+    var isExpanded by remember { mutableStateOf(false) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     val dismissThresholdPx = with(LocalDensity.current) { DISMISS_THRESHOLD_DP.dp.toPx() }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp)
             .offset { IntOffset(0, offsetY.toInt().coerceAtLeast(0)) }
             .draggable(
                 state = rememberDraggableState { delta ->
-                    // Only allow dragging down (positive delta)
-                    offsetY = (offsetY + delta).coerceAtLeast(0f)
+                    if (!isExpanded) {
+                        offsetY = (offsetY + delta).coerceAtLeast(0f)
+                    } else {
+                        offsetY = (offsetY + delta).coerceAtMost(0f)
+                    }
                 },
                 orientation = Orientation.Vertical,
                 onDragStarted = { onInteraction() },
                 onDragStopped = { velocity ->
-                    // Dismiss if dragged past threshold or flung with enough velocity
-                    if (offsetY > dismissThresholdPx || velocity > 500f) {
-                        onSwipeDown()
-                        // Don't reset offset - let AnimatedVisibility handle exit from current position
+                    if (!isExpanded) {
+                        if (offsetY > dismissThresholdPx || velocity > 500f) {
+                            onSwipeDown()
+                        } else if (offsetY < -dismissThresholdPx / 2 || velocity < -500f) {
+                            isExpanded = true
+                            offsetY = 0f
+                        } else {
+                            offsetY = 0f
+                        }
                     } else {
-                        // Only reset if not dismissing (snap back)
-                        offsetY = 0f
+                        if (-offsetY > dismissThresholdPx || velocity < -500f) {
+                            isExpanded = false
+                            offsetY = 0f
+                        } else {
+                            if (offsetY > dismissThresholdPx / 2 || velocity > 500f) {
+                                isExpanded = false
+                                offsetY = 0f
+                            } else {
+                                offsetY = 0f
+                            }
+                        }
                     }
                 },
             ),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
     ) {
-        // Determine if SeekBar should be visible based on showAudioProgressBar setting
-        // null = show when controls are visible (on tap, default), false = never show
-        val isSeekBarVisible = showAudioProgressBar != false && areControlsVisible
-
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            if (isSeekBarVisible) {
-                SeekBar(
-                    currentPositionMs = currentPositionMs,
-                    totalDurationMs = totalDurationMs,
-                    onInteraction = onInteraction,
-                ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
             PlaybackControlsRow(
                 isPlaying = isPlaying,
                 playbackSpeed = playbackSpeed,
                 currentPositionMs = currentPositionMs,
                 totalDurationMs = totalDurationMs,
                 sleepTimerRemainingMs = sleepTimerRemainingMs,
+                isExpanded = isExpanded,
                 intentDispatcher = interactingDispatcher,
                 onControlsDialogVisibilityChanged = onControlsDialogVisibilityChanged,
+                onToggleExpand = {
+                    isExpanded = !isExpanded
+                    onInteraction()
+                },
             )
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                exit = fadeOut(tween(300)) + shrinkVertically(tween(300)),
+            ) {
+                if (showAudioProgressBar != false && areControlsVisible) {
+                    SeekBar(
+                        currentPositionMs = currentPositionMs,
+                        totalDurationMs = totalDurationMs,
+                        onInteraction = onInteraction,
+                    ) { interactingDispatcher(ReaderIntent.SeekTo(it)) }
+                }
+            }
         }
     }
 }
@@ -146,46 +171,78 @@ private fun PlaybackControlsRow(
     currentPositionMs: Long,
     totalDurationMs: Long?,
     sleepTimerRemainingMs: Long?,
+    isExpanded: Boolean,
     intentDispatcher: IntentDispatcher<ReaderIntent>,
     onControlsDialogVisibilityChanged: (Boolean) -> Unit,
+    onToggleExpand: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        PlaybackSpeedButton(playbackSpeed) { intentDispatcher(ReaderIntent.SetPlaybackSpeed(it)) }
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(tween(300)) + expandHorizontally(tween(300)),
+                exit = fadeOut(tween(300)) + shrinkHorizontally(tween(300)),
+            ) {
+                PlaybackSpeedButton(playbackSpeed) { intentDispatcher(ReaderIntent.SetPlaybackSpeed(it)) }
+            }
+
         IconButton(onClick = { intentDispatcher(ReaderIntent.SkipBackward()) }) {
-            Icon(Icons.Default.Replay10, "Skip backward", Modifier.size(32.dp))
+            Icon(Icons.Default.Replay10, "Skip backward", Modifier.size(28.dp))
         }
         IconButton(
             onClick = { intentDispatcher(ReaderIntent.TogglePlayback) },
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier
+                .size(48.dp)
                 .background(MaterialTheme.colorScheme.primary, CircleShape),
         ) {
             Icon(
-                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                if (isPlaying) "Pause" else "Play",
-                Modifier.size(32.dp),
-                MaterialTheme.colorScheme.onPrimary,
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Play",
+                modifier = Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.onPrimary,
             )
         }
         IconButton(onClick = { intentDispatcher(ReaderIntent.SkipForward()) }) {
-            Icon(Icons.Default.Forward10, "Skip forward", Modifier.size(32.dp))
+            Icon(Icons.Default.Forward10, "Skip forward", Modifier.size(28.dp))
         }
-        SleepTimerButton(
-            currentPositionMs = currentPositionMs,
-            totalDurationMs = totalDurationMs,
-            sleepTimerRemainingMs = sleepTimerRemainingMs,
-            intentDispatcher = intentDispatcher,
-            onTimerMenuVisibilityChanged = onControlsDialogVisibilityChanged,
-        )
 
-        IconButton(onClick = { intentDispatcher(ReaderIntent.ToggleAudioOnlyMode) }) {
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn(tween(300)) + expandHorizontally(tween(300)),
+            exit = fadeOut(tween(300)) + shrinkHorizontally(tween(300)),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SleepTimerButton(
+                    currentPositionMs = currentPositionMs,
+                    totalDurationMs = totalDurationMs,
+                    sleepTimerRemainingMs = sleepTimerRemainingMs,
+                    intentDispatcher = intentDispatcher,
+                    onTimerMenuVisibilityChanged = onControlsDialogVisibilityChanged,
+                )
+                IconButton(onClick = { intentDispatcher(ReaderIntent.ToggleAudioOnlyMode) }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Headphones,
+                        contentDescription = "Audio only mode",
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
+
+        IconButton(onClick = onToggleExpand) {
+            val rotation by animateFloatAsState(
+                targetValue = if (isExpanded) 180f else 0f,
+                animationSpec = tween(300),
+                label = "expandIconRotation",
+            )
             Icon(
-                imageVector = Icons.Outlined.Headphones,
-                contentDescription = "Audio only mode",
-                modifier = Modifier.size(20.dp),
+                imageVector = Icons.Default.ExpandMore,
+                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                modifier = Modifier.rotate(rotation),
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -347,4 +404,3 @@ private enum class SleepTimerPreset(
     ThirtyMinutes("30 minutes", 30 * 60_000L),
     SixtyMinutes("60 minutes", 60 * 60_000L),
 }
-
