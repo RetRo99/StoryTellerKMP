@@ -164,6 +164,9 @@ private fun BooksListScreenContent(
             onClearAllFilters = {
                 intentDispatcher(BooksListIntent.OnClearAllFilters)
             },
+            onClearQuickFilters = {
+                intentDispatcher(BooksListIntent.OnClearQuickFilters)
+            },
             onDismiss = { showFilterSheet = false },
         )
     }

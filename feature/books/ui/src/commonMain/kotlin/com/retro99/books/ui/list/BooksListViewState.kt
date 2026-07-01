@@ -61,6 +61,7 @@ data class BooksListViewState(
                     BookQuickFilter.IN_PROGRESS -> (progressInfo[book.uuid]?.displayProgression ?: 0.0) > 0.0
                     BookQuickFilter.CACHED -> progressInfo[book.uuid]?.hasAnyCached == true
                     BookQuickFilter.HAS_EBOOK -> book.hasEbook
+                    BookQuickFilter.HAS_AUDIOBOOK -> book.hasAudiobook || book.hasReadaloud
                     BookQuickFilter.HAS_READALOUD -> book.hasReadaloud
                     BookQuickFilter.IN_SERIES -> book.series.isNotEmpty()
                 }

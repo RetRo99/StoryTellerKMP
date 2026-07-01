@@ -27,8 +27,10 @@ import com.retro99.translations.StringRes
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import resources.translations.books_filter_all
+import resources.translations.books_filter_audiobook
 import resources.translations.books_filter_cached
 import resources.translations.books_filter_clear_all
+import resources.translations.books_filter_clear_quick_filters
 import resources.translations.books_filter_ebook
 import resources.translations.books_filter_favorites
 import resources.translations.books_filter_in_progress
@@ -45,6 +47,7 @@ fun BookFilterBottomSheet(
     onFilterToggle: (BookQuickFilter) -> Unit,
     onServerTypeFilterChanged: (ServerType?) -> Unit,
     onClearAllFilters: () -> Unit,
+    onClearQuickFilters: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -111,11 +114,22 @@ fun BookFilterBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = stringResource(StringRes.books_filter_quick_filters),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(StringRes.books_filter_quick_filters),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (filterState.activeQuickFilters.isNotEmpty()) {
+                    TextButton(onClick = onClearQuickFilters) {
+                        Text(text = stringResource(StringRes.books_filter_clear_quick_filters))
+                    }
+                }
+            }
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,6 +156,7 @@ private val BookQuickFilter.labelRes: StringResource
         BookQuickFilter.IN_PROGRESS -> StringRes.books_filter_in_progress
         BookQuickFilter.CACHED -> StringRes.books_filter_cached
         BookQuickFilter.HAS_EBOOK -> StringRes.books_filter_ebook
+        BookQuickFilter.HAS_AUDIOBOOK -> StringRes.books_filter_audiobook
         BookQuickFilter.HAS_READALOUD -> StringRes.books_filter_readaloud
         BookQuickFilter.IN_SERIES -> StringRes.books_filter_in_series
     }
