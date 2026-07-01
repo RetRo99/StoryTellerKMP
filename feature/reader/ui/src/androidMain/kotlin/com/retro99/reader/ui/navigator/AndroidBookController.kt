@@ -341,6 +341,11 @@ class AndroidBookController internal constructor() : BookController {
         withNavigator { it.go(link) }
     }
 
+    override fun goToLocator(locator: LocatorState) {
+        val androidLocator = locator.toAndroidLocator() ?: return
+        withNavigator { it.go(androidLocator) }
+    }
+
     override fun setSettings(settings: ReaderSettingsUiModel) {
         val highlightColorChanged = highlightColorArgb != settings.highlightColor
         val underlineColorChanged = underlineColorArgb != settings.underlineColor

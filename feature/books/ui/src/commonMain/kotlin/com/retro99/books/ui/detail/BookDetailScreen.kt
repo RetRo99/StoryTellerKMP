@@ -87,6 +87,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -102,6 +103,8 @@ import com.retro99.base.ui.BaseScreen
 import com.retro99.base.ui.IntentDispatcher
 import com.retro99.base.ui.LoadingScreen
 import com.retro99.base.ui.compose.CoilImage
+import com.retro99.base.ui.compose.backdropColorScheme
+import com.retro99.base.ui.compose.rememberDominantColorState
 import com.retro99.books.ui.model.BookProgressInfoUiModel
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.SeriesUiModel
@@ -200,6 +203,22 @@ private fun BookDetailScreenContent(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val hasBackdrop = book.coverUrl != null
+    val dominantColorState = rememberDominantColorState(
+        url = book.coverUrl,
+        cacheKey = book.uuid,
+        defaultColor = if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
+            MaterialTheme.colorScheme.surface
+        } else {
+            Color(0xFF1A1A1A)
+        },
+    )
+    val dominantColor by dominantColorState
+    val outerScheme = MaterialTheme.colorScheme
+    val contentScheme = remember(dominantColor, hasBackdrop, outerScheme) {
+        if (hasBackdrop) backdropColorScheme(dominantColor) else outerScheme
+    }
+
     LaunchedEffect(conflictResolutionError) {
         conflictResolutionError?.let { error ->
             snackbarHostState.showSnackbar(
@@ -235,150 +254,152 @@ private fun BookDetailScreenContent(
         )
     }
 
-    Scaffold(
-        modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = { intentDispatcher(BookDetailIntent.OnBackClicked) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(StringRes.general_back),
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { intentDispatcher(BookDetailIntent.OnFavoriteClicked) }) {
-                        AnimatedContent(
-                            targetState = isFavorite,
-                            transitionSpec = {
-                                (scaleIn(initialScale = 0.4f, animationSpec = tween(150)) + fadeIn(tween(150))) togetherWith
-                                    (scaleOut(targetScale = 0.4f, animationSpec = tween(150)) + fadeOut(tween(150)))
-                            },
-                            label = "favoriteIcon",
-                        ) { favorite ->
+    MaterialTheme(colorScheme = contentScheme) {
+        Scaffold(
+            modifier = modifier,
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    title = { },
+                    navigationIcon = {
+                        IconButton(onClick = { intentDispatcher(BookDetailIntent.OnBackClicked) }) {
                             Icon(
-                                imageVector = if (favorite) {
-                                    Icons.Filled.Favorite
-                                } else {
-                                    Icons.Outlined.FavoriteBorder
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(StringRes.general_back),
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { intentDispatcher(BookDetailIntent.OnFavoriteClicked) }) {
+                            AnimatedContent(
+                                targetState = isFavorite,
+                                transitionSpec = {
+                                    (scaleIn(initialScale = 0.4f, animationSpec = tween(150)) + fadeIn(tween(150))) togetherWith
+                                        (scaleOut(targetScale = 0.4f, animationSpec = tween(150)) + fadeOut(tween(150)))
                                 },
-                                contentDescription = if (favorite) {
-                                    stringResource(StringRes.books_detail_remove_favorite)
-                                } else {
-                                    stringResource(StringRes.books_detail_add_favorite)
-                                },
-                                tint = if (favorite) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
+                                label = "favoriteIcon",
+                            ) { favorite ->
+                                Icon(
+                                    imageVector = if (favorite) {
+                                        Icons.Filled.Favorite
+                                    } else {
+                                        Icons.Outlined.FavoriteBorder
+                                    },
+                                    contentDescription = if (favorite) {
+                                        stringResource(StringRes.books_detail_remove_favorite)
+                                    } else {
+                                        stringResource(StringRes.books_detail_add_favorite)
+                                    },
+                                    tint = if (favorite) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                    ),
+                )
+            },
+        ) { paddingValues ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                book.coverUrl?.let { coverUrl ->
+                    CoilImage(
+                        data = coverUrl,
+                        cacheKey = book.uuid,
+                        modifier = Modifier.fillMaxSize().blur(60.dp),
+                        contentScale = ContentScale.FillBounds,
+                        contentDescription = null,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp),
+                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    BookHeader(book = book)
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    MediaActionButtons(
+                        book = book,
+                        ebookDownloadState = ebookDownloadState,
+                        audiobookDownloadState = audiobookDownloadState,
+                        readaloudDownloadState = readaloudDownloadState,
+                        intentDispatcher = intentDispatcher,
+                    )
+
+                    progressInfo?.displayProgression?.let { progress ->
+                        if (progress > 0.0) {
+                            Spacer(modifier = Modifier.height(20.dp))
+                            ReadingProgressSection(
+                                progress = progress,
+                                progressPercent = progressInfo.progressPercent,
+                                hasConflict = progressInfo.hasConflict,
+                                localProgression = progressInfo.localProgression,
+                                localProgressPercent = progressInfo.localProgressPercent,
+                                remoteProgression = progressInfo.remoteProgression,
+                                remoteProgressPercent = progressInfo.remoteProgressPercent,
+                                isResolvingConflict = isResolvingConflict,
+                                onUseLocal = { intentDispatcher(BookDetailIntent.OnUseLocalPositionClicked) },
+                                onUseRemote = { intentDispatcher(BookDetailIntent.OnUseRemotePositionClicked) },
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                ),
-            )
-        },
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            book.coverUrl?.let { coverUrl ->
-                CoilImage(
-                    data = coverUrl,
-                    cacheKey = "${book.uuid}_backdrop",
-                    modifier = Modifier.fillMaxSize().blur(60.dp),
-                    contentScale = ContentScale.FillBounds,
-                    contentDescription = null,
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.75f)),
-                )
-            }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp),
-            ) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                BookHeader(book = book)
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                MediaActionButtons(
-                    book = book,
-                    ebookDownloadState = ebookDownloadState,
-                    audiobookDownloadState = audiobookDownloadState,
-                    readaloudDownloadState = readaloudDownloadState,
-                    intentDispatcher = intentDispatcher,
-                )
-
-                progressInfo?.displayProgression?.let { progress ->
-                    if (progress > 0.0) {
-                        Spacer(modifier = Modifier.height(20.dp))
-                        ReadingProgressSection(
-                            progress = progress,
-                            progressPercent = progressInfo.progressPercent,
-                            hasConflict = progressInfo.hasConflict,
-                            localProgression = progressInfo.localProgression,
-                            localProgressPercent = progressInfo.localProgressPercent,
-                            remoteProgression = progressInfo.remoteProgression,
-                            remoteProgressPercent = progressInfo.remoteProgressPercent,
-                            isResolvingConflict = isResolvingConflict,
-                            onUseLocal = { intentDispatcher(BookDetailIntent.OnUseLocalPositionClicked) },
-                            onUseRemote = { intentDispatcher(BookDetailIntent.OnUseRemotePositionClicked) },
-                        )
+                    book.description?.let { description ->
+                        if (description.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(20.dp))
+                            SectionDivider()
+                            Spacer(modifier = Modifier.height(20.dp))
+                            DescriptionSection(description = description)
+                        }
                     }
-                }
 
-                book.description?.let { description ->
-                    if (description.isNotBlank()) {
+                    if (book.tags.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(20.dp))
                         SectionDivider()
                         Spacer(modifier = Modifier.height(20.dp))
-                        DescriptionSection(description = description)
+                        TagsSection(
+                            tags = book.tags,
+                            onTagClick = { intentDispatcher(BookDetailIntent.OnTagClicked(it)) },
+                        )
                     }
-                }
 
-                if (book.tags.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    SectionDivider()
-                    Spacer(modifier = Modifier.height(20.dp))
-                    TagsSection(
-                        tags = book.tags,
-                        onTagClick = { intentDispatcher(BookDetailIntent.OnTagClicked(it)) },
-                    )
-                }
+                    if (book.series.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        SectionDivider()
+                        Spacer(modifier = Modifier.height(20.dp))
+                        SeriesSection(
+                            series = book.series,
+                            onSeriesClick = { intentDispatcher(BookDetailIntent.OnSeriesClicked(it)) },
+                        )
+                    }
 
-                if (book.series.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    SectionDivider()
-                    Spacer(modifier = Modifier.height(20.dp))
-                    SeriesSection(
-                        series = book.series,
-                        onSeriesClick = { intentDispatcher(BookDetailIntent.OnSeriesClicked(it)) },
-                    )
-                }
+                    if (book is BookUiModel.LocalBook) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        SectionDivider()
+                        Spacer(modifier = Modifier.height(20.dp))
+                        DeleteLocalBookButton(
+                            onClick = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookClicked) },
+                        )
+                    }
 
-                if (book is BookUiModel.LocalBook) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    SectionDivider()
-                    Spacer(modifier = Modifier.height(20.dp))
-                    DeleteLocalBookButton(
-                        onClick = { intentDispatcher(BookDetailIntent.OnDeleteLocalBookClicked) },
-                    )
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -406,7 +427,7 @@ private fun BookHeader(
     ) {
         CoilImage(
             data = book.coverUrl,
-            cacheKey = "${book.uuid}_detail",
+            cacheKey = book.uuid,
             modifier = Modifier
                 .width(CoverWidth)
                 .aspectRatio(2f / 3f)

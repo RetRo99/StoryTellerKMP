@@ -167,6 +167,16 @@ private fun ReaderScreenContent(
         focusRequester.requestFocus()
     }
 
+    // Audio-only mode: show audiobook-style UI for ReadAloud books
+    if (viewState.isReadAloud && viewState.isAudioPlayerReady && viewState.isAudioOnlyMode) {
+        ReadAloudAudioOnlyView(
+            viewState = viewState,
+            intentDispatcher = intentDispatcher,
+            onExit = { intentDispatcher(ReaderIntent.ToggleAudioOnlyMode) },
+        )
+        return
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

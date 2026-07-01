@@ -196,6 +196,7 @@ class ReaderViewModel(
             ReaderIntent.GoToNextPage -> goToNextPage()
             ReaderIntent.GoToPreviousPage -> goToPreviousPage()
             ReaderIntent.TogglePlayback -> togglePlayback()
+            ReaderIntent.ToggleAudioOnlyMode -> toggleAudioOnlyMode()
             is ReaderIntent.SeekTo -> seekTo(intent.audioTimestampMs)
             is ReaderIntent.SetPlaybackSpeed -> setPlaybackSpeed(intent.speed)
             is ReaderIntent.StartSleepTimer -> startSleepTimer(intent.durationMs)
@@ -205,6 +206,11 @@ class ReaderViewModel(
             is ReaderIntent.SkipBackward -> skipBackward(intent.milliseconds)
             ReaderIntent.ToggleToc -> toggleToc()
             is ReaderIntent.GoToChapter -> goToChapter(intent.href, intent.currentPosition)
+            ReaderIntent.GoToNextChapter -> goToNextChapter()
+            ReaderIntent.GoToPreviousChapter -> goToPreviousChapter()
+            is ReaderIntent.GoToChapterAndPlay -> goToChapterAndPlay(intent.href, intent.currentPosition)
+            ReaderIntent.GoToNextChapterAndPlay -> goToNextChapterAndPlay()
+            ReaderIntent.GoToPreviousChapterAndPlay -> goToPreviousChapterAndPlay()
             is ReaderIntent.UndoChapterNavigation -> undoChapterNavigation(intent.position)
             ReaderIntent.DismissChapterNavigationUndo -> dismissChapterNavigationUndo()
             is ReaderIntent.SetHighlightColor -> setHighlightColor(intent.colorArgb)
@@ -321,6 +327,20 @@ class ReaderViewModel(
             .distinctUntilChanged()
             .onEach { isPlaying ->
                 updatePlayingState(isPlaying)
+            }
+            .launchIn(viewModelScope)
+
+        audioController.currentAudioLocator
+            .onEach { audioLocator ->
+                val audioHref = audioLocator?.locator?.href ?: return@onEach
+                val currentHref = viewState.value.currentPosition?.href
+                if (audioHref != currentHref) {
+                    updatePublicationState { pubState ->
+                        pubState.copy(
+                            position = pubState.position?.copy(href = audioHref),
+                        )
+                    }
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -531,6 +551,52 @@ class ReaderViewModel(
         }
     }
 
+    private fun goToNextChapter() {
+        val state = viewState.value
+        val chapters = state.tableOfContents
+        val currentHref = state.currentPosition?.href
+        val currentIndex = chapters.indexOfFirst { it.href == currentHref }
+        val nextChapter = chapters.getOrNull(currentIndex + 1) ?: return
+        goToChapter(nextChapter.href, state.currentPosition)
+    }
+
+    private fun goToPreviousChapter() {
+        val state = viewState.value
+        val chapters = state.tableOfContents
+        val currentHref = state.currentPosition?.href
+        val currentIndex = chapters.indexOfFirst { it.href == currentHref }
+        val previousChapter = chapters.getOrNull(currentIndex - 1) ?: return
+        goToChapter(previousChapter.href, state.currentPosition)
+    }
+
+    private fun goToChapterAndPlay(href: String, currentPosition: PositionUiModel?) {
+        goToChapter(href, currentPosition)
+        updatePublicationState { pubState ->
+            pubState.copy(
+                position = pubState.position?.copy(href = href, progression = 0.0),
+            )
+        }
+        audioController.playFromFragment(fragmentId = "", chapterHref = href)
+    }
+
+    private fun goToNextChapterAndPlay() {
+        val state = viewState.value
+        val chapters = state.tableOfContents
+        val currentHref = state.currentPosition?.href
+        val currentIndex = chapters.indexOfFirst { it.href == currentHref }
+        val nextChapter = chapters.getOrNull(currentIndex + 1) ?: return
+        goToChapterAndPlay(nextChapter.href, state.currentPosition)
+    }
+
+    private fun goToPreviousChapterAndPlay() {
+        val state = viewState.value
+        val chapters = state.tableOfContents
+        val currentHref = state.currentPosition?.href
+        val currentIndex = chapters.indexOfFirst { it.href == currentHref }
+        val previousChapter = chapters.getOrNull(currentIndex - 1) ?: return
+        goToChapterAndPlay(previousChapter.href, state.currentPosition)
+    }
+
     private fun undoChapterNavigation(position: PositionUiModel) {
         bookController.goToPosition(position)
         updateState { it.copy(previousTocPosition = null) }
@@ -681,6 +747,16 @@ class ReaderViewModel(
      */
     private fun togglePlayback() {
         audioController.togglePlayback()
+    }
+
+    private fun toggleAudioOnlyMode() {
+        val isTurningOff = viewState.value.isAudioOnlyMode
+        updateState { it.copy(isAudioOnlyMode = !it.isAudioOnlyMode) }
+        if (isTurningOff) {
+            audioController.currentAudioLocator.value?.locator?.let { locator ->
+                bookController.goToLocator(locator)
+            }
+        }
     }
 
     private fun seekTo(audioTimestampMs: Long) {

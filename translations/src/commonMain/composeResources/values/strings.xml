@@ -111,7 +111,7 @@
     <string name="books_filter_in_series">In Series</string>
     <string name="books_filter_rated">Rated</string>
     <string name="books_filter_tagged">Tagged</string>
-    <string name="books_filter_cached">Cached</string>
+    <string name="books_filter_cached">Downloaded</string>
 
     <!-- Book Sorting -->
     <string name="books_sort_label">Sort</string>

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.TimerOff
+import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -179,6 +180,14 @@ private fun PlaybackControlsRow(
             intentDispatcher = intentDispatcher,
             onTimerMenuVisibilityChanged = onControlsDialogVisibilityChanged,
         )
+
+        IconButton(onClick = { intentDispatcher(ReaderIntent.ToggleAudioOnlyMode) }) {
+            Icon(
+                imageVector = Icons.Outlined.Headphones,
+                contentDescription = "Audio only mode",
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 

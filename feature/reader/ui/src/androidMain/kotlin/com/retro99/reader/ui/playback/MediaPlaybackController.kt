@@ -25,7 +25,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.annotation.Single
 import org.readium.r2.shared.util.Url
 
-private const val TAG = "čič123"
+private const val TAG = "MediaPlaybackController"
 
 /**
  * Identifies a book currently playing for reconnection and mini-player display.
@@ -300,10 +300,6 @@ class MediaPlaybackController {
                 ?: pending?.takeIf { it.bookUuid == bookUuid }?.coverUrl
                 ?: current?.coverUrl
 
-            android.util.Log.d("bomba", "setCurrentPlayingBook: bookUuid=$bookUuid, bookTitle=$bookTitle, coverUrl=$coverUrl")
-            android.util.Log.d("bomba", "setCurrentPlayingBook: pending=$pending, current=$current")
-            android.util.Log.d("bomba", "setCurrentPlayingBook: finalTitle=$finalTitle, finalCoverUrl=$finalCoverUrl")
-
             val info = PlayingBookInfo(serverId, bookUuid, bookType, finalTitle, finalCoverUrl)
             _currentPlayingBook = info
             _nowPlayingBook.value = info
@@ -342,20 +338,14 @@ class MediaPlaybackController {
      * Otherwise, updates immediately if the bookUuid matches.
      */
     fun updateNowPlayingBookInfo(bookUuid: String, bookTitle: String, coverUrl: String?) {
-        android.util.Log.d("bomba", "updateNowPlayingBookInfo: bookUuid=$bookUuid, bookTitle=$bookTitle, coverUrl=$coverUrl")
         synchronized(lock) {
             val current = _currentPlayingBook
-            android.util.Log.d("bomba", "updateNowPlayingBookInfo: current=$current")
             if (current != null && current.bookUuid == bookUuid) {
-                // Playback already started - update immediately
                 val updated = current.copy(bookTitle = bookTitle, coverUrl = coverUrl)
                 _currentPlayingBook = updated
                 _nowPlayingBook.value = updated
-                android.util.Log.d("bomba", "updateNowPlayingBookInfo: updated immediately")
             } else {
-                // Playback not started yet - store as pending metadata
                 _pendingNowPlayingInfo = PendingNowPlayingInfo(bookUuid, bookTitle, coverUrl)
-                android.util.Log.d("bomba", "updateNowPlayingBookInfo: stored as pending")
             }
         }
     }
@@ -581,11 +571,18 @@ class MediaPlaybackController {
                 Log.d(TAG, "prepareServiceReady: service already running, returning completed deferred")
                 CompletableDeferred(Unit)
             } else {
-                // Create a new deferred to wait on
-                Log.d(TAG, "prepareServiceReady: creating new deferred")
-                val deferred = CompletableDeferred<Unit>()
-                _serviceReadyDeferred = deferred
-                deferred
+                // Reuse the existing deferred if one is already in-flight (e.g. double-tap)
+                val existing = _serviceReadyDeferred
+                if (existing != null && !existing.isCompleted) {
+                    Log.d(TAG, "prepareServiceReady: reusing existing in-flight deferred")
+                    existing
+                } else {
+                    // Create a new deferred to wait on
+                    Log.d(TAG, "prepareServiceReady: creating new deferred")
+                    val deferred = CompletableDeferred<Unit>()
+                    _serviceReadyDeferred = deferred
+                    deferred
+                }
             }
         }
     }

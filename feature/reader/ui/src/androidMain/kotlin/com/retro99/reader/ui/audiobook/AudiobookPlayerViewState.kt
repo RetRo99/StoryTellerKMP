@@ -3,6 +3,7 @@ package com.retro99.reader.ui.audiobook
 import androidx.media3.common.Player
 
 data class AudiobookPlayerViewState(
+    val bookUuid: String = "",
     val bookTitle: String = "",
     val bookCoverUrl: String? = null,
     val isPlaying: Boolean = false,

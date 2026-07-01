@@ -47,6 +47,8 @@ data class ReaderViewState(
     val showSleepTimerWarningPrompt: Boolean = false,
     val bookmarks: List<BookmarkUiModel> = emptyList(),
     val isBookmarksVisible: Boolean = false,
+    // When true, shows the audiobook-style audio-only UI instead of the EPUB text view
+    val isAudioOnlyMode: Boolean = false,
 ) {
     /**
      * Whether this is a ReadAloud book with media overlay support.

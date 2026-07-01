@@ -74,12 +74,27 @@ sealed interface ReaderIntent : BaseIntent {
      */
     data object DismissChapterNavigationUndo : ReaderIntent
 
+    data object GoToNextChapter : ReaderIntent
+
+    data object GoToPreviousChapter : ReaderIntent
+
+    data class GoToChapterAndPlay(val href: String, val currentPosition: PositionUiModel?) : ReaderIntent
+
+    data object GoToNextChapterAndPlay : ReaderIntent
+
+    data object GoToPreviousChapterAndPlay : ReaderIntent
+
     // Media control intents for ReadAloud books
 
     /**
      * Toggle audio playback (play/pause).
      */
     data object TogglePlayback : ReaderIntent
+
+    /**
+     * Toggle between the EPUB text view and the audiobook-style audio-only UI.
+     */
+    data object ToggleAudioOnlyMode : ReaderIntent
 
     /**
      * Seek to a specific audio position.
