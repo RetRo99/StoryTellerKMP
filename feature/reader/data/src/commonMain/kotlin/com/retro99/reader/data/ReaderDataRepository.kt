@@ -123,6 +123,18 @@ internal class ReaderDataRepository(
         }
     }
 
+    override suspend fun updateBookmarkTitle(id: String, title: String): CompletableResult {
+        return localSource.updateBookmarkTitle(id, title).onFailure { error ->
+            logError(error, "Failed to update bookmark title")
+        }
+    }
+
+    override suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>): CompletableResult {
+        return localSource.updateBookmarkSortOrders(orders).onFailure { error ->
+            logError(error, "Failed to update bookmark sort orders")
+        }
+    }
+
     private fun logError(error: AppError, message: String) {
         val throwable = when (error) {
             is AppError.NetworkError -> error.throwable

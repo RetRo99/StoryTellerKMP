@@ -50,6 +50,7 @@ kotlin {
             implementation(projects.feature.books.ui)
             implementation(projects.feature.statistics.domain)
             implementation(projects.lib.analytics.api)
+            implementation(libs.reorderable)
         }
 
         androidMain.dependencies {
