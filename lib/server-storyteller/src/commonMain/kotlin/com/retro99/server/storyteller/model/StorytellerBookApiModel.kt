@@ -3,6 +3,7 @@ package com.retro99.server.storyteller.model
 import com.retro99.base.url.CoverUrlBuilder
 import com.retro99.server.api.ServerBook
 import com.retro99.server.api.ServerBookSeries
+import com.retro99.server.api.ServerType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -150,6 +151,7 @@ fun StorytellerBookApiModel.toDomain(
         publicationDate = publicationDate,
         // Storyteller books are not local
         isLocal = false,
+        serverType = ServerType.Storyteller,
     )
 }
 
