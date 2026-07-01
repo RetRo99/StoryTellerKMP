@@ -120,6 +120,7 @@ fun StorytellerBookApiModel.toDomain(
     serverId: String,
     baseUrl: String?,
 ): ServerBook {
+    val hasAudiobook = audiobook?.filepath != null && audiobook?.size != null
     return ServerBook(
         uuid = uuid,
         serverId = serverId,
@@ -137,7 +138,7 @@ fun StorytellerBookApiModel.toDomain(
         },
         tags = tags.map { it.name },
         hasEbook = ebook?.filepath != null,
-        hasAudiobook = audiobook?.filepath != null,
+        hasAudiobook = hasAudiobook,
         hasReadaloud = readaloud?.filepath != null,
         ebookFilepath = ebook?.filepath?.let { "/api/v2/books/$uuid/files?format=ebook" },
         audiobookFilepath = audiobook?.filepath?.let { "/api/v2/books/$uuid/files?format=audiobook" },
