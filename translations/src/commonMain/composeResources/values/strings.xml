@@ -16,7 +16,7 @@
 
     <!-- Login Screen -->
     <string name="login_title">Sign In</string>
-    <string name="login_url_label">StoryTeller URL</string>
+    <string name="login_url_label">Server URL</string>
     <string name="login_username_label">Username</string>
     <string name="login_password_label">Password</string>
     <string name="login_sign_in_button">Sign In</string>
@@ -25,9 +25,9 @@
     <string name="login_oauth_waiting_message">Complete sign-in in the browser. Returning here without approving will cancel it.</string>
     <string name="login_hide_password">Hide password</string>
     <string name="login_show_password">Show password</string>
-    <string name="login_url_tooltip_title">StoryTeller URL</string>
+    <string name="login_url_tooltip_title">Server URL</string>
     <string name="login_url_tooltip_dismiss">Got it</string>
-    <string name="login_url_tooltip_description">Enter the full URL for your Storyteller server instance, including the scheme (http:// or https://).\n\nThis may look like a local IP address and port, such as:\nhttp://192.168.1.12:8001\n\nOr a domain name, such as:\nhttps://yourdomain.com</string>
+    <string name="login_url_tooltip_description">Enter the full URL for your %1$s server instance, including the scheme (http:// or https://).\n\nThis may look like a local IP address and port, such as:\nhttp://192.168.1.12:8001\n\nOr a domain name, such as:\nhttps://yourdomain.com</string>
     <string name="login_url_info">URL info</string>
 
     <!-- Welcome Screen -->
@@ -368,4 +368,10 @@
     <string name="reader_toc_reading" tools:ignore="MissingTranslation">Reading</string>
     <string name="reader_toc_chapter_number" tools:ignore="MissingTranslation">%1$d</string>
     <string name="reader_overflow_more" tools:ignore="MissingTranslation">More</string>
+    <string name="login_error_invalid_url" tools:ignore="MissingTranslation">Enter a valid http(s) URL</string>
+    <string name="login_subtitle" tools:ignore="MissingTranslation">Connect to your library</string>
+    <string name="settings_server_management_title" tools:ignore="MissingTranslation">Server Management</string>
+    <string name="settings_server_management_add" tools:ignore="MissingTranslation">Add Server</string>
+    <string name="settings_server_management_empty" tools:ignore="MissingTranslation">No servers configured</string>
+    <string name="settings_server_management_empty_hint" tools:ignore="MissingTranslation">Tap + to add a server</string>
 </resources>
