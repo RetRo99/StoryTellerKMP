@@ -78,6 +78,15 @@ sealed interface ReaderAnalyticsEvent : AnalyticsEvent {
         )
     }
 
+    data class BookmarkAdded(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "bookmark_added"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
     /**
      * Tracks when audio playback is started - helps understand if audio feature is used.
      */

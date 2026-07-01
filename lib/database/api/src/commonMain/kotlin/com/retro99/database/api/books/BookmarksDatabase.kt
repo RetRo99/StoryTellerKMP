@@ -15,5 +15,9 @@ interface BookmarksDatabase : DataClearable {
 
     suspend fun deleteBookmarksForBook(bookUuid: String)
 
+    suspend fun updateBookmarkTitle(id: String, title: String)
+
+    suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>)
+
     override suspend fun clearAllData()
 }

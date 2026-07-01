@@ -111,5 +111,9 @@ interface ReaderSettingsRepository {
     suspend fun addBookmark(bookmark: BookmarkDomainModel): CompletableResult
 
     suspend fun deleteBookmark(id: String): CompletableResult
+
+    suspend fun updateBookmarkTitle(id: String, title: String): CompletableResult
+
+    suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>): CompletableResult
 }
 

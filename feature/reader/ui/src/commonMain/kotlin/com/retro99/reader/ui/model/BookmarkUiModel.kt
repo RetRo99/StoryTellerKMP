@@ -12,6 +12,7 @@ data class BookmarkUiModel(
     val chapterIndex: Int?,
     val position: Int?,
     val createdAt: String,
+    val sortOrder: Int = 0,
 )
 
 fun BookmarkDomainModel.toUiModel(): BookmarkUiModel {
@@ -25,5 +26,6 @@ fun BookmarkDomainModel.toUiModel(): BookmarkUiModel {
         chapterIndex = chapterIndex,
         position = position,
         createdAt = createdAt,
+        sortOrder = sortOrder,
     )
 }

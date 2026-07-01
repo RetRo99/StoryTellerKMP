@@ -11,4 +11,5 @@ data class BookmarkDomainModel(
     val chapterIndex: Int?,
     val position: Int?,
     val createdAt: String,
+    val sortOrder: Int = 0,
 )

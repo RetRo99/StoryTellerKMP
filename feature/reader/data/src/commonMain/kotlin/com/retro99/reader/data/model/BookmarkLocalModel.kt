@@ -14,6 +14,7 @@ data class BookmarkLocalModel(
     override val chapterIndex: Int?,
     override val position: Int?,
     override val createdAt: String,
+    override val sortOrder: Int = 0,
 ) : BookmarkEntity
 
 fun BookmarkLocalModel.toDomain(): BookmarkDomainModel {
@@ -28,6 +29,7 @@ fun BookmarkLocalModel.toDomain(): BookmarkDomainModel {
         chapterIndex = chapterIndex,
         position = position,
         createdAt = createdAt,
+        sortOrder = sortOrder,
     )
 }
 
@@ -43,6 +45,7 @@ fun BookmarkDomainModel.toLocal(): BookmarkLocalModel {
         chapterIndex = chapterIndex,
         position = position,
         createdAt = createdAt,
+        sortOrder = sortOrder,
     )
 }
 
@@ -58,5 +61,6 @@ fun BookmarkEntity.toLocalModel(): BookmarkLocalModel {
         chapterIndex = chapterIndex,
         position = position,
         createdAt = createdAt,
+        sortOrder = sortOrder,
     )
 }

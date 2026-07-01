@@ -26,6 +26,8 @@ import com.retro99.reader.domain.usecase.SetCurrentlyReadingUseCase
 import com.retro99.reader.domain.usecase.AddBookmarkUseCase
 import com.retro99.reader.domain.usecase.ObserveBookmarksUseCase
 import com.retro99.reader.domain.usecase.DeleteBookmarkUseCase
+import com.retro99.reader.domain.usecase.UpdateBookmarkTitleUseCase
+import com.retro99.reader.domain.usecase.ReorderBookmarksUseCase
 import com.retro99.reader.ui.di.InitialAudioPosition
 import com.retro99.reader.ui.di.ReaderScope
 import com.retro99.reader.ui.model.PositionUiModel
@@ -75,6 +77,8 @@ class ReaderViewModel(
     @Provided private val addBookmarkUseCase: AddBookmarkUseCase,
     @Provided private val observeBookmarksUseCase: ObserveBookmarksUseCase,
     @Provided private val deleteBookmarkUseCase: DeleteBookmarkUseCase,
+    @Provided private val updateBookmarkTitleUseCase: UpdateBookmarkTitleUseCase,
+    @Provided private val reorderBookmarksUseCase: ReorderBookmarksUseCase,
     @Provided private val publicationService: EpubPublicationService,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<ReaderViewState, ReaderIntent>(
@@ -219,6 +223,14 @@ class ReaderViewModel(
             ReaderIntent.DismissBookmarkSaveFailed -> dismissBookmarkSaveFailed()
             ReaderIntent.ToggleBookmarks -> toggleBookmarks()
             ReaderIntent.AddBookmark -> addBookmark()
+            ReaderIntent.DismissBookmarkAdded -> dismissBookmarkAdded()
+            ReaderIntent.DismissBookmarkAlreadyExists -> dismissBookmarkAlreadyExists()
+            is ReaderIntent.UndoBookmark -> undoBookmark(intent.id)
+            is ReaderIntent.RenameBookmark -> renameBookmark(intent.id, intent.newTitle)
+            is ReaderIntent.ReorderBookmarks -> reorderBookmarks(intent.bookmarkIds)
+            ReaderIntent.GoToPreviousBookmark -> goToPreviousBookmark()
+            ReaderIntent.GoToNextBookmark -> goToNextBookmark()
+            ReaderIntent.DismissNoMoreBookmarks -> dismissNoMoreBookmarks()
             is ReaderIntent.DeleteBookmark -> deleteBookmark(intent.id)
             is ReaderIntent.GoToBookmark -> goToBookmark(intent.bookmark)
         }
@@ -616,6 +628,19 @@ class ReaderViewModel(
 
     private fun addBookmark() {
         val currentPosition = viewState.value.currentPosition ?: return
+        val existing = viewState.value.bookmarks.find { bookmark ->
+            bookmark.locatorHref == currentPosition.href &&
+                bookmark.position == currentPosition.position
+        }
+        if (existing != null) {
+            updateState {
+                it.copy(
+                    isBookmarksVisible = false,
+                    showBookmarkAlreadyExists = true,
+                )
+            }
+            return
+        }
         val nanoSuffix = bookmarkIdMark.elapsedNow().inWholeNanoseconds
         val bookmark = BookmarkDomainModel(
             id = "${bookUuid}_${nowMillis()}_$nanoSuffix",
@@ -632,7 +657,14 @@ class ReaderViewModel(
         viewModelScope.launch {
             addBookmarkUseCase(bookmark)
                 .onSuccess {
-                    updateState { it.copy(isBookmarksVisible = false) }
+                    analytics.logEvent(ReaderAnalyticsEvent.BookmarkAdded(bookUuid = bookUuid))
+                    updateState {
+                        it.copy(
+                            isBookmarksVisible = false,
+                            showBookmarkAdded = true,
+                            lastAddedBookmarkId = bookmark.id,
+                        )
+                    }
                 }
                 .onFailure { error ->
                     error.log(analytics, "ReaderViewModel: Failed to save bookmark")
@@ -641,10 +673,75 @@ class ReaderViewModel(
         }
     }
 
+    private fun dismissBookmarkAdded() {
+        updateState {
+            it.copy(
+                showBookmarkAdded = false,
+                lastAddedBookmarkId = null,
+            )
+        }
+    }
+
+    private fun dismissBookmarkAlreadyExists() {
+        updateState { it.copy(showBookmarkAlreadyExists = false) }
+    }
+
+    private fun undoBookmark(id: String) {
+        viewModelScope.launch {
+            deleteBookmarkUseCase(id)
+        }
+        updateState {
+            it.copy(
+                showBookmarkAdded = false,
+                lastAddedBookmarkId = null,
+            )
+        }
+    }
+
     private fun deleteBookmark(id: String) {
         viewModelScope.launch {
             deleteBookmarkUseCase(id)
         }
+    }
+
+    private fun renameBookmark(id: String, newTitle: String) {
+        viewModelScope.launch {
+            updateBookmarkTitleUseCase(id, newTitle)
+        }
+        updateState { it.copy(renamingBookmark = null) }
+    }
+
+    private fun reorderBookmarks(bookmarkIds: List<String>) {
+        val orders = bookmarkIds.mapIndexed { index, id -> id to index }
+        viewModelScope.launch {
+            reorderBookmarksUseCase(orders)
+        }
+    }
+
+    private fun goToPreviousBookmark() {
+        val currentHref = viewState.value.currentPosition?.href ?: return
+        val sorted = viewState.value.bookmarks.sortedBy { it.sortOrder }
+        val currentIndex = sorted.indexOfFirst { it.locatorHref == currentHref }
+        if (currentIndex <= 0) {
+            updateState { it.copy(showNoMoreBookmarks = true) }
+            return
+        }
+        goToBookmark(sorted[currentIndex - 1])
+    }
+
+    private fun goToNextBookmark() {
+        val currentHref = viewState.value.currentPosition?.href ?: return
+        val sorted = viewState.value.bookmarks.sortedBy { it.sortOrder }
+        val currentIndex = sorted.indexOfFirst { it.locatorHref == currentHref }
+        if (currentIndex < 0 || currentIndex >= sorted.size - 1) {
+            updateState { it.copy(showNoMoreBookmarks = true) }
+            return
+        }
+        goToBookmark(sorted[currentIndex + 1])
+    }
+
+    private fun dismissNoMoreBookmarks() {
+        updateState { it.copy(showNoMoreBookmarks = false) }
     }
 
     private fun goToBookmark(bookmark: BookmarkUiModel) {
@@ -966,10 +1063,8 @@ class ReaderViewModel(
         /** Minimum reading duration to update "currently reading" book (1 minute) */
         private const val MINIMUM_READING_DURATION_MS = 60_000L
 
-        /** Sleep timer countdown granularity. */
         private const val SLEEP_TIMER_TICK_MS = 1_000L
 
-        /** Remaining time when the user is prompted to extend the sleep timer. */
         private const val SLEEP_TIMER_WARNING_THRESHOLD_MS = 60_000L
     }
 }

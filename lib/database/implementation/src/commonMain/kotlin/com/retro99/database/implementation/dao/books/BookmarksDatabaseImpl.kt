@@ -28,6 +28,14 @@ internal class BookmarksDatabaseImpl(
         sqlDelightDao.deleteBookmarksForBook(bookUuid)
     }
 
+    override suspend fun updateBookmarkTitle(id: String, title: String) {
+        sqlDelightDao.updateBookmarkTitle(id, title)
+    }
+
+    override suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>) {
+        sqlDelightDao.updateBookmarkSortOrders(orders)
+    }
+
     override suspend fun clearAllData() {
         sqlDelightDao.deleteAllBookmarks()
     }

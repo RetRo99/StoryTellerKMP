@@ -29,6 +29,7 @@ internal class BookmarksSqlDelightDao(
                 chapter_index = bookmark.chapterIndex?.toLong(),
                 position = bookmark.position?.toLong(),
                 created_at = bookmark.createdAt,
+                sort_order = bookmark.sortOrder.toLong(),
             )
         }
     }
@@ -66,6 +67,22 @@ internal class BookmarksSqlDelightDao(
         }
     }
 
+    suspend fun updateBookmarkTitle(id: String, title: String) {
+        withContext(Dispatchers.IO) {
+            bookmarkQueries.updateBookmarkTitle(title, id)
+        }
+    }
+
+    suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>) {
+        withContext(Dispatchers.IO) {
+            bookmarkQueries.transaction {
+                orders.forEach { (id, sortOrder) ->
+                    bookmarkQueries.updateBookmarkSortOrders(sortOrder.toLong(), id)
+                }
+            }
+        }
+    }
+
     private fun Bookmarks.toBookmarkEntity(): BookmarkEntity {
         return BookmarkEntityImpl(
             id = id,
@@ -78,6 +95,7 @@ internal class BookmarksSqlDelightDao(
             chapterIndex = chapter_index?.toInt(),
             position = position?.toInt(),
             createdAt = created_at,
+            sortOrder = sort_order.toInt(),
         )
     }
 }
@@ -93,4 +111,5 @@ private data class BookmarkEntityImpl(
     override val chapterIndex: Int?,
     override val position: Int?,
     override val createdAt: String,
+    override val sortOrder: Int,
 ) : BookmarkEntity

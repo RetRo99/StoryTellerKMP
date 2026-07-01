@@ -136,6 +136,18 @@ class ReaderLocalDataSource(
         }
     }
 
+    override suspend fun updateBookmarkTitle(id: String, title: String): CompletableResult {
+        return databaseExecutor.executeDatabaseOperation {
+            bookmarksDatabase.updateBookmarkTitle(id, title)
+        }
+    }
+
+    override suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>): CompletableResult {
+        return databaseExecutor.executeDatabaseOperation {
+            bookmarksDatabase.updateBookmarkSortOrders(orders)
+        }
+    }
+
     private fun loadReaderSettings(): ReaderSettingsLocalModel {
         val rawJson = preferences.getStringOrNull(PreferencesKey.ReaderSettings)
 
