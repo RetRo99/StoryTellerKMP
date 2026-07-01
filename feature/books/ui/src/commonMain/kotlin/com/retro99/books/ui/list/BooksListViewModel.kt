@@ -68,6 +68,7 @@ class BooksListViewModel(
             is BooksListIntent.OnQuickFilterToggled -> toggleQuickFilter(intent.filter)
             is BooksListIntent.OnServerTypeFilterChanged -> setServerTypeFilter(intent.serverType)
             BooksListIntent.OnClearAllFilters -> clearAllFilters()
+            BooksListIntent.OnClearQuickFilters -> clearQuickFilters()
             is BooksListIntent.OnSortChanged -> updateSort(intent.sortConfig)
             is BooksListIntent.OnViewModeChanged -> updateViewMode(intent.viewMode)
         }
@@ -116,6 +117,13 @@ class BooksListViewModel(
 
     private fun clearAllFilters() {
         updateState { it.copy(filterState = BookFilterState()) }
+        saveFilterSortSettings()
+    }
+
+    private fun clearQuickFilters() {
+        updateState { state ->
+            state.copy(filterState = state.filterState.copy(activeQuickFilters = emptySet()))
+        }
         saveFilterSortSettings()
     }
 

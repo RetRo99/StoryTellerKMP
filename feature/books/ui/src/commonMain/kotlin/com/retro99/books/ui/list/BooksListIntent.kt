@@ -18,6 +18,7 @@ sealed interface BooksListIntent : BaseIntent {
     data class OnQuickFilterToggled(val filter: BookQuickFilter) : BooksListIntent
     data class OnServerTypeFilterChanged(val serverType: ServerType?) : BooksListIntent
     data object OnClearAllFilters : BooksListIntent
+    data object OnClearQuickFilters : BooksListIntent
 
     data class OnSortChanged(val sortConfig: BookSortConfig) : BooksListIntent
 
