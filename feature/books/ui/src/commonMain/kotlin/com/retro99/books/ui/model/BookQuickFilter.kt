@@ -12,6 +12,7 @@ enum class BookQuickFilter {
     IN_PROGRESS,
     CACHED,
     HAS_EBOOK,
+    HAS_AUDIOBOOK,
     HAS_READALOUD,
     IN_SERIES,
 }

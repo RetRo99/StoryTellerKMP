@@ -374,4 +374,5 @@
     <string name="settings_server_management_add" tools:ignore="MissingTranslation">Add Server</string>
     <string name="settings_server_management_empty" tools:ignore="MissingTranslation">No servers configured</string>
     <string name="settings_server_management_empty_hint" tools:ignore="MissingTranslation">Tap + to add a server</string>
+    <string name="books_filter_clear_quick_filters" tools:ignore="MissingTranslation">Clear</string>
 </resources>
