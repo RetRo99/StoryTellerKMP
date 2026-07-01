@@ -16,12 +16,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,6 +104,7 @@ import resources.translations.reader_bookmark_save_failed
 import resources.translations.reader_bookmark_no_more_bookmarks
 import resources.translations.reader_bookmark_undo
 import resources.translations.reader_bookmarks_title
+import resources.translations.reader_overflow_more
 import resources.translations.settings_changed
 import resources.translations.settings_icon_content_description
 import resources.translations.settings_undo
@@ -482,17 +487,6 @@ private fun ReaderContent(
             .background(backgroundColor)
             .statusBarsPadding(),
     ) {
-
-        AnimatedProgressBar(
-            settings = settings,
-            areControlsVisible = areControlsVisible,
-            position = ProgressBarPosition.TOP,
-            lastKnownPosition = currentPosition,
-            chapterInfo = chapterInfo,
-            chapterReadingTimeInfo = chapterReadingTimeInfo,
-            currentTime = currentTime,
-        )
-
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -596,7 +590,9 @@ private fun ReaderContent(
                     visible = areControlsVisible,
                     enter = fadeIn() + slideInVertically { it },
                     exit = fadeOut() + slideOutVertically { it },
-                    modifier = Modifier.align(Alignment.BottomCenter),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 48.dp),
                 ) {
                     ReadAloudControls(
                         isPlaying = isPlaying,
@@ -619,7 +615,7 @@ private fun ReaderContent(
                 }
             }
 
-            // Top toolbar with settings and TOC icons
+            // Top toolbar with overflow menu
             this@Column.AnimatedVisibility(
                 visible = areControlsVisible,
                 enter = fadeIn() + slideInVertically { -it },
@@ -751,6 +747,12 @@ private fun ReaderToolbar(
     onInteraction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var overflowExpanded by remember { mutableStateOf(false) }
+    val overflowDescription = stringResource(StringRes.reader_overflow_more)
+    val tocLabel = stringResource(StringRes.reader_toc_title)
+    val bookmarksLabel = stringResource(StringRes.reader_bookmarks_title)
+    val settingsLabel = stringResource(StringRes.settings_icon_content_description)
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -761,7 +763,6 @@ private fun ReaderToolbar(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Back button on the left
             IconButton(
                 onClick = {
                     onInteraction()
@@ -775,7 +776,6 @@ private fun ReaderToolbar(
                 )
             }
 
-            // Book title in the center
             Text(
                 text = bookTitle,
                 style = MaterialTheme.typography.titleMedium,
@@ -785,42 +785,65 @@ private fun ReaderToolbar(
                 modifier = Modifier.weight(1f),
             )
 
-            // TOC, Bookmarks, and Settings buttons on the right
-            IconButton(
-                onClick = {
-                    onInteraction()
-                    onTocClick()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = stringResource(StringRes.reader_toc_title),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            IconButton(
-                onClick = {
-                    onInteraction()
-                    onBookmarksClick()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Bookmark,
-                    contentDescription = stringResource(StringRes.reader_bookmarks_title),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            IconButton(
-                onClick = {
+            Box {
+                IconButton(onClick = {
                     onInteraction()
                     onSettingsClick()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(StringRes.settings_icon_content_description),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = settingsLabel,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+
+            Box {
+                IconButton(onClick = {
+                    onInteraction()
+                    overflowExpanded = true
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = overflowDescription,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                DropdownMenu(
+                    expanded = overflowExpanded,
+                    onDismissRequest = { overflowExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(tocLabel) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.List,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        onClick = {
+                            overflowExpanded = false
+                            onInteraction()
+                            onTocClick()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(bookmarksLabel) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Bookmark,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        onClick = {
+                            overflowExpanded = false
+                            onInteraction()
+                            onBookmarksClick()
+                        },
+                    )
+                }
             }
         }
     }
