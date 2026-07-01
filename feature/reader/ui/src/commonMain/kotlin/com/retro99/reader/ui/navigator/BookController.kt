@@ -82,6 +82,8 @@ interface BookController : AutoCloseable {
      */
     fun goToChapter(href: String)
 
+    fun goToLocator(locator: LocatorState)
+
     /**
      * Applies the given reader settings.
      *

@@ -1,12 +1,10 @@
 package com.retro99.reader.ui.audiobook
 
-import android.content.Context
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.getOrElse
@@ -19,10 +17,15 @@ import com.retro99.reader.domain.model.PositionDomainModel
 import com.retro99.reader.domain.model.ReadingProgressResult
 import com.retro99.reader.domain.usecase.GetReadingProgressWithConflictUseCase
 import com.retro99.reader.domain.usecase.SaveReadingProgressUseCase
+import com.retro99.reader.ui.playback.ForegroundServiceController
+import com.retro99.reader.ui.playback.MediaPlaybackController
+import com.retro99.reader.ui.playback.NotificationPermissionHandler
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 import org.koin.core.annotation.Provided
@@ -33,42 +36,245 @@ class AudiobookPlayerViewModel(
     @InjectedParam private val serverId: String,
     @InjectedParam private val bookUuid: String,
     @InjectedParam private val onClose: () -> Unit,
-    @Provided private val context: Context,
+    @Provided private val mediaPlaybackController: MediaPlaybackController,
+    @Provided private val foregroundServiceController: ForegroundServiceController,
+    @Provided private val notificationPermissionHandler: NotificationPermissionHandler,
     @Provided private val readerSettingsRepository: ReaderSettingsRepository,
     @Provided private val saveReadingProgressUseCase: SaveReadingProgressUseCase,
     @Provided private val getReadingProgressWithConflictUseCase: GetReadingProgressWithConflictUseCase,
     @Provided private val getBookByUuidUseCase: GetBookByUuidUseCase,
 ) : BaseViewModel<AudiobookPlayerViewState, AudiobookPlayerIntent>(
-    AudiobookPlayerViewState()
+    AudiobookPlayerViewState(bookUuid = bookUuid)
 ) {
 
-    private val player: ExoPlayer
+    private var player: ExoPlayer? = null
+    private var playerListener: Player.Listener? = null
     private var positionUpdateJob: Job? = null
     private var hasRestoredPosition = false
+    private var pendingAudioFiles: List<File> = emptyList()
 
     init {
-        val audioAttributes = AudioAttributes.Builder()
-            .setContentType(C.AUDIO_CONTENT_TYPE_SPEECH)
-            .setUsage(C.USAGE_MEDIA)
-            .build()
+        loadBookInfoAndAudioFiles()
+    }
 
-        player = ExoPlayer.Builder(context)
-            .setAudioAttributes(audioAttributes, true)
-            .setSeekBackIncrementMs(SEEK_INCREMENT_MS)
-            .setSeekForwardIncrementMs(SEEK_INCREMENT_MS)
-            .setHandleAudioBecomingNoisy(true)
-            .setWakeMode(C.WAKE_MODE_LOCAL)
-            .build()
+    private fun loadBookInfoAndAudioFiles() {
+        viewModelScope.launch {
+            val bookResult = getBookByUuidUseCase(serverId, bookUuid).first()
+            val book = bookResult.getOrElse { null }
+            updateState {
+                it.copy(
+                    bookTitle = book?.title ?: "",
+                    bookCoverUrl = book?.coverUrl,
+                )
+            }
 
-        player.addListener(object : Player.Listener {
+            loadAudioFiles()
+
+            if (mediaPlaybackController.isBookLoaded(bookUuid)) {
+                reconnectToExistingPlayback()
+            }
+        }
+    }
+
+    private fun reconnectToExistingPlayback() {
+        val servicePlayer = mediaPlaybackController.currentPlayer ?: return
+        player = servicePlayer
+        attachPlayerListener()
+
+        updateState {
+            it.copy(
+                isLoading = false,
+                isPlaying = servicePlayer.isPlaying,
+                totalDurationMs = servicePlayer.duration.coerceAtLeast(0L),
+                currentPositionMs = servicePlayer.currentPosition.coerceAtLeast(0L),
+                currentTrackIndex = servicePlayer.currentMediaItemIndex,
+                trackCount = servicePlayer.mediaItemCount,
+                playbackState = servicePlayer.playbackState,
+                playbackSpeed = servicePlayer.playbackParameters.speed,
+            )
+        }
+
+        hasRestoredPosition = true
+
+        mediaPlaybackController.updateNowPlayingBookInfo(
+            bookUuid = bookUuid,
+            bookTitle = viewState.value.bookTitle,
+            coverUrl = viewState.value.bookCoverUrl,
+        )
+
+        startPositionUpdates()
+    }
+
+    private suspend fun loadAudioFiles() {
+        val result = readerSettingsRepository.prepareEbook(bookUuid, "", BookType.AUDIOBOOK)
+        val cachedPath = result.getOrElse { null }
+        if (cachedPath == null) {
+            updateState { it.copy(error = "Audio files not found", isLoading = false) }
+            return
+        }
+
+        val dir = File(cachedPath)
+        if (!dir.exists() || !dir.isDirectory) {
+            updateState { it.copy(error = "Audio directory not found", isLoading = false) }
+            return
+        }
+
+        val audioFiles = dir.listFiles()
+            ?.filter { it.isFile }
+            ?.sortedBy { it.name }
+            ?: emptyList()
+
+        if (audioFiles.isEmpty()) {
+            updateState { it.copy(error = "No audio files found", isLoading = false) }
+            return
+        }
+
+        pendingAudioFiles = audioFiles
+
+        val trackTitles = audioFiles.map { file ->
+            file.nameWithoutExtension.replace(Regex("^\\d+\\s*"), "")
+                .ifEmpty { file.name }
+        }
+
+        updateState {
+            it.copy(
+                trackTitles = trackTitles,
+                trackCount = audioFiles.size,
+                isLoading = false,
+            )
+        }
+    }
+
+    private suspend fun ensureServiceAndPlayer(): ExoPlayer? {
+        player?.let { return it }
+
+        if (pendingAudioFiles.isEmpty()) {
+            updateState { it.copy(isLoading = true) }
+            return null
+        }
+
+        if (mediaPlaybackController.isBookLoaded(bookUuid)) {
+            val servicePlayer = mediaPlaybackController.currentPlayer
+            if (servicePlayer != null) {
+                player = servicePlayer
+                attachPlayerListener()
+                return servicePlayer
+            }
+        }
+
+        val permissionGranted = notificationPermissionHandler.ensurePermission()
+        if (!permissionGranted) {
+            updateState {
+                it.copy(
+                    error = "Notification permission is required for background playback",
+                    isLoading = false,
+                )
+            }
+            return null
+        }
+
+        saveOtherBookProgressIfNeeded()
+
+        val serviceReadyDeferred = mediaPlaybackController.prepareServiceReady()
+        val serviceStarted = foregroundServiceController.startService()
+        if (!serviceStarted) {
+            updateState { it.copy(error = "Failed to start playback service", isLoading = false) }
+            return null
+        }
+
+        val servicePlayer = mediaPlaybackController.awaitServiceReady(serviceReadyDeferred)
+        if (servicePlayer == null) {
+            foregroundServiceController.stopService()
+            updateState { it.copy(error = "Playback service did not start in time", isLoading = false) }
+            return null
+        }
+
+        player = servicePlayer
+        attachPlayerListener()
+
+        val mediaItems = pendingAudioFiles.map { file ->
+            MediaItem.Builder()
+                .setUri(file.toURI().toString())
+                .setMediaId(file.name)
+                .build()
+        }
+        servicePlayer.setMediaItems(mediaItems)
+
+        mediaPlaybackController.setCurrentPlayingBook(
+            serverId = serverId,
+            bookUuid = bookUuid,
+            bookType = BookType.AUDIOBOOK,
+            bookTitle = viewState.value.bookTitle,
+            coverUrl = viewState.value.bookCoverUrl,
+        )
+
+        mediaPlaybackController.serviceInstance?.updateMetadata(
+            bookTitle = viewState.value.bookTitle,
+            serverId = serverId,
+            bookUuid = bookUuid,
+            bookType = BookType.AUDIOBOOK,
+        )
+
+        servicePlayer.prepare()
+
+        return servicePlayer
+    }
+
+    private suspend fun saveOtherBookProgressIfNeeded() {
+        val currentBook = mediaPlaybackController.currentPlayingBook ?: return
+        if (currentBook.bookUuid == bookUuid) return
+
+        val p = mediaPlaybackController.currentPlayer ?: return
+
+        val position = p.currentPosition.coerceAtLeast(0L)
+        val trackIndex = p.currentMediaItemIndex
+        val totalDuration = p.duration.coerceAtLeast(0L)
+        val totalProgression = if (totalDuration > 0) {
+            position.toDouble() / totalDuration.toDouble()
+        } else {
+            null
+        }
+
+        val progress = PositionDomainModel(
+            bookUuid = currentBook.bookUuid,
+            serverId = currentBook.serverId,
+            timestamp = nowMillis(),
+            createdAt = null,
+            updatedAt = null,
+            locatorHref = null,
+            locatorType = null,
+            locatorTitle = null,
+            locatorTarget = null,
+            audioTimestampMs = position,
+            chapterIndex = trackIndex,
+            progression = totalProgression,
+            totalChapters = p.mediaItemCount,
+            totalDurationMs = if (totalDuration > 0) totalDuration else null,
+            totalProgression = totalProgression,
+            position = null,
+        )
+        withContext(NonCancellable) {
+            try {
+                saveReadingProgressUseCase(progress)
+            } catch (e: Exception) {
+                Logger.e(e) { "Failed to save other book audiobook progress" }
+            }
+        }
+    }
+
+    private fun attachPlayerListener() {
+        val p = player ?: return
+        playerListener?.let { p.removeListener(it) }
+
+        val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 updateState { it.copy(playbackState = playbackState) }
                 if (playbackState == Player.STATE_READY) {
                     updateState {
                         it.copy(
                             isLoading = false,
-                            totalDurationMs = player.duration.coerceAtLeast(0L),
-                            trackCount = player.mediaItemCount,
+                            totalDurationMs = p.duration.coerceAtLeast(0L),
+                            trackCount = p.mediaItemCount,
                         )
                     }
                     if (!hasRestoredPosition) {
@@ -89,89 +295,33 @@ class AudiobookPlayerViewModel(
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                val trackIndex = player.currentMediaItemIndex
+                val trackIndex = p.currentMediaItemIndex
                 updateState { it.copy(currentTrackIndex = trackIndex) }
                 saveProgress()
             }
 
-            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+            override fun onPlayerError(error: PlaybackException) {
                 Logger.e(error) { "Audiobook playback error" }
                 updateState { it.copy(error = error.message ?: "Playback error", isLoading = false) }
             }
-        })
-
-        loadAudioFiles()
-    }
-
-    private fun loadAudioFiles() {
-        viewModelScope.launch {
-            val bookResult = getBookByUuidUseCase(serverId, bookUuid).first()
-            val book = bookResult.getOrElse { null }
-            updateState {
-                it.copy(
-                    bookTitle = book?.title ?: "",
-                    bookCoverUrl = book?.coverUrl,
-                )
-            }
-
-            val result = readerSettingsRepository.prepareEbook(bookUuid, "", BookType.AUDIOBOOK)
-            val cachedPath = result.getOrElse { null }
-            if (cachedPath == null) {
-                updateState { it.copy(error = "Audio files not found", isLoading = false) }
-                return@launch
-            }
-
-            val dir = File(cachedPath)
-            if (!dir.exists() || !dir.isDirectory) {
-                updateState { it.copy(error = "Audio directory not found", isLoading = false) }
-                return@launch
-            }
-
-            val audioFiles = dir.listFiles()
-                ?.filter { it.isFile }
-                ?.sortedBy { it.name }
-                ?: emptyList()
-
-            if (audioFiles.isEmpty()) {
-                updateState { it.copy(error = "No audio files found", isLoading = false) }
-                return@launch
-            }
-
-            val mediaItems = audioFiles.map { file ->
-                MediaItem.Builder()
-                    .setUri(file.toURI().toString())
-                    .setMediaId(file.name)
-                    .build()
-            }
-
-            val trackTitles = audioFiles.map { file ->
-                file.nameWithoutExtension.replace(Regex("^\\d+\\s*"), "")
-                    .ifEmpty { file.name }
-            }
-
-            updateState {
-                it.copy(
-                    trackTitles = trackTitles,
-                    trackCount = mediaItems.size,
-                )
-            }
-
-            player.setMediaItems(mediaItems)
-            player.prepare()
         }
+
+        p.addListener(listener)
+        playerListener = listener
     }
 
     private fun restoreProgress() {
         viewModelScope.launch {
             try {
-                val totalDuration = player.duration
+                val totalDuration = player?.duration ?: return@launch
                 if (totalDuration <= 0) return@launch
 
                 val savedPosition = loadSavedPosition()
                 savedPosition?.audioTimestampMs?.let { timestampMs ->
                     val trackIndex = savedPosition.chapterIndex ?: 0
-                    if (trackIndex in 0 until player.mediaItemCount) {
-                        player.seekTo(trackIndex, timestampMs)
+                    val p = player ?: return@launch
+                    if (trackIndex in 0 until p.mediaItemCount) {
+                        p.seekTo(trackIndex, timestampMs)
                         updateState {
                             it.copy(
                                 currentTrackIndex = trackIndex,
@@ -205,7 +355,8 @@ class AudiobookPlayerViewModel(
         positionUpdateJob?.cancel()
         positionUpdateJob = viewModelScope.launch {
             while (true) {
-                val position = player.currentPosition.coerceAtLeast(0L)
+                val p = player ?: break
+                val position = p.currentPosition.coerceAtLeast(0L)
                 updateState { it.copy(currentPositionMs = position) }
                 delay(POSITION_UPDATE_INTERVAL_MS)
             }
@@ -218,35 +369,37 @@ class AudiobookPlayerViewModel(
     }
 
     private fun saveProgress() {
-        viewModelScope.launch {
-            try {
-                val position = player.currentPosition.coerceAtLeast(0L)
-                val trackIndex = player.currentMediaItemIndex
-                val totalDuration = player.duration.coerceAtLeast(0L)
-                val totalProgression = if (totalDuration > 0) {
-                    position.toDouble() / totalDuration.toDouble()
-                } else {
-                    null
-                }
+        val p = player ?: return
 
-                val progress = PositionDomainModel(
-                    bookUuid = bookUuid,
-                    serverId = serverId,
-                    timestamp = nowMillis(),
-                    createdAt = null,
-                    updatedAt = null,
-                    locatorHref = null,
-                    locatorType = null,
-                    locatorTitle = null,
-                    locatorTarget = null,
-                    audioTimestampMs = position,
-                    chapterIndex = trackIndex,
-                    progression = totalProgression,
-                    totalChapters = player.mediaItemCount,
-                    totalDurationMs = if (totalDuration > 0) totalDuration else null,
-                    totalProgression = totalProgression,
-                    position = null,
-                )
+        val position = p.currentPosition.coerceAtLeast(0L)
+        val trackIndex = p.currentMediaItemIndex
+        val totalDuration = p.duration.coerceAtLeast(0L)
+        val totalProgression = if (totalDuration > 0) {
+            position.toDouble() / totalDuration.toDouble()
+        } else {
+            null
+        }
+
+        val progress = PositionDomainModel(
+            bookUuid = bookUuid,
+            serverId = serverId,
+            timestamp = nowMillis(),
+            createdAt = null,
+            updatedAt = null,
+            locatorHref = null,
+            locatorType = null,
+            locatorTitle = null,
+            locatorTarget = null,
+            audioTimestampMs = position,
+            chapterIndex = trackIndex,
+            progression = totalProgression,
+            totalChapters = p.mediaItemCount,
+            totalDurationMs = if (totalDuration > 0) totalDuration else null,
+            totalProgression = totalProgression,
+            position = null,
+        )
+        viewModelScope.launch(NonCancellable) {
+            try {
                 saveReadingProgressUseCase(progress)
             } catch (e: Exception) {
                 Logger.w(e) { "Failed to save audiobook progress" }
@@ -257,72 +410,94 @@ class AudiobookPlayerViewModel(
     override fun onIntent(intent: AudiobookPlayerIntent) {
         when (intent) {
             AudiobookPlayerIntent.PlayPauseClicked -> {
-                if (player.isPlaying) {
-                    player.pause()
+                val p = player
+                if (p != null) {
+                    if (p.isPlaying) {
+                        p.pause()
+                    } else {
+                        p.play()
+                    }
                 } else {
-                    player.play()
+                    viewModelScope.launch {
+                        val servicePlayer = ensureServiceAndPlayer()
+                        servicePlayer?.play()
+                    }
                 }
             }
 
             AudiobookPlayerIntent.SkipForwardClicked -> {
-                player.seekForward()
+                player?.seekForward()
             }
 
             AudiobookPlayerIntent.SkipBackwardClicked -> {
-                player.seekBack()
+                player?.seekBack()
             }
 
             AudiobookPlayerIntent.NextTrackClicked -> {
-                player.seekToNextMediaItem()
+                player?.seekToNextMediaItem()
             }
 
             AudiobookPlayerIntent.PreviousTrackClicked -> {
-                if (player.currentPosition > TRACK_RESET_THRESHOLD_MS) {
-                    player.seekTo(0)
+                val p = player ?: return
+                if (p.currentPosition > TRACK_RESET_THRESHOLD_MS) {
+                    p.seekTo(0)
                 } else {
-                    player.seekToPreviousMediaItem()
+                    p.seekToPreviousMediaItem()
                 }
             }
 
             is AudiobookPlayerIntent.SeekTo -> {
-                player.seekTo(intent.positionMs)
+                player?.seekTo(intent.positionMs)
                 updateState { it.copy(currentPositionMs = intent.positionMs) }
             }
 
             is AudiobookPlayerIntent.SelectTrack -> {
-                if (intent.trackIndex in 0 until player.mediaItemCount) {
-                    player.seekTo(intent.trackIndex, 0)
-                    player.play()
+                val p = player ?: return
+                if (intent.trackIndex in 0 until p.mediaItemCount) {
+                    p.seekTo(intent.trackIndex, 0)
+                    p.play()
                 }
             }
 
             is AudiobookPlayerIntent.PlaybackSpeedChanged -> {
-                player.playbackParameters = PlaybackParameters(intent.speed)
+                player?.playbackParameters = PlaybackParameters(intent.speed)
                 updateState { it.copy(playbackSpeed = intent.speed) }
             }
         }
     }
 
     fun close() {
-        player.pause()
+        val p = player
+        val isPlaybackActive = p != null && p.isPlaying
         saveProgress()
-        viewModelScope.launch {
-            delay(SAVE_DELAY_MS)
-            player.release()
-            onClose()
+
+        if (!isPlaybackActive) {
+            foregroundServiceController.stopService()
         }
+
+        playerListener?.let { p?.removeListener(it) }
+        playerListener = null
+        player = null
+        stopPositionUpdates()
+
+        onClose()
     }
 
     override fun onCleared() {
         super.onCleared()
         stopPositionUpdates()
-        player.release()
+        playerListener?.let { player?.removeListener(it) }
+        playerListener = null
+
+        val isPlaybackActive = mediaPlaybackController.isPlayingBook(bookUuid)
+        if (!isPlaybackActive) {
+            foregroundServiceController.stopService()
+        }
+        player = null
     }
 
     companion object {
-        private const val SEEK_INCREMENT_MS = 10_000L
         private const val POSITION_UPDATE_INTERVAL_MS = 500L
         private const val TRACK_RESET_THRESHOLD_MS = 3_000L
-        private const val SAVE_DELAY_MS = 300L
     }
 }
