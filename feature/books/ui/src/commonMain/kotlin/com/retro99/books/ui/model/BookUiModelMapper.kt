@@ -26,7 +26,6 @@ fun BookDomainModel.toUiModel(): BookUiModel = when (this) {
         audiobookFilepath = audiobook?.filepath,
         readaloudFilepath = readaloud?.filepath,
     )
-
     is BookDomainModel.LocalBook -> BookUiModel.LocalBook(
         uuid = uuid,
         serverId = serverId,
