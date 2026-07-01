@@ -1,6 +1,7 @@
 package com.retro99.reader.ui.audiobook
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -67,22 +68,36 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
+import kotlin.math.abs
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import com.retro99.base.ui.compose.CoilImage
 import com.retro99.base.ui.compose.backdropColorScheme
 import com.retro99.base.ui.compose.rememberDominantColorState
@@ -198,6 +213,66 @@ private fun AudioPlayerContent(
 ) {
     var showTrackSheet by remember { mutableStateOf(false) }
 
+    val density = LocalDensity.current
+    val collapseRangePx = with(density) { 200.dp.toPx() }
+    val expandThreshold = with(density) { 50.dp.toPx() }
+    var toolbarOffsetPx by remember { mutableFloatStateOf(0f) }
+    var pendingExpandPx by remember { mutableFloatStateOf(0f) }
+    var flingJob by remember { mutableStateOf<Job?>(null) }
+    val collapseFraction = (-toolbarOffsetPx / collapseRangePx).coerceIn(0f, 1f)
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                flingJob?.cancel()
+                flingJob = null
+
+                val delta = available.y
+                if (delta < 0f) {
+                    pendingExpandPx = 0f
+                    val newOffset = toolbarOffsetPx + delta
+                    val clamped = newOffset.coerceIn(-collapseRangePx, 0f)
+                    val consumed = clamped - toolbarOffsetPx
+                    toolbarOffsetPx = clamped
+                    return Offset(0f, consumed)
+                } else if (delta > 0f && toolbarOffsetPx < 0f) {
+                    pendingExpandPx += delta
+                    if (pendingExpandPx >= expandThreshold) {
+                        val newOffset = toolbarOffsetPx + delta
+                        toolbarOffsetPx = newOffset.coerceIn(-collapseRangePx, 0f)
+                    }
+                    return Offset.Zero
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                val target = if (-toolbarOffsetPx > collapseRangePx / 2f) {
+                    -collapseRangePx
+                } else {
+                    0f
+                }
+                if (abs(toolbarOffsetPx - target) > 1f) {
+                    flingJob = coroutineScope.launch {
+                        Animatable(toolbarOffsetPx).animateTo(
+                            targetValue = target,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMedium,
+                            ),
+                        ) {
+                            toolbarOffsetPx = value
+                        }
+                        flingJob = null
+                    }
+                }
+                return Velocity.Zero
+            }
+        }
+    }
+
     val coverEntrance = remember {
         androidx.compose.animation.core.Animatable(0.9f)
     }
@@ -230,13 +305,14 @@ private fun AudioPlayerContent(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(lerp(16.dp, 8.dp, collapseFraction)))
 
+            val coverSize = lerp(220.dp, 80.dp, collapseFraction)
             CoilImage(
                 data = state.bookCoverUrl,
                 cacheKey = state.bookCoverUrl,
                 modifier = Modifier
-                    .size(220.dp)
+                    .size(coverSize)
                     .scale(coverScale)
                     .shadow(8.dp, RoundedCornerShape(16.dp))
                     .clip(RoundedCornerShape(16.dp)),
@@ -244,49 +320,56 @@ private fun AudioPlayerContent(
                 contentDescription = state.bookTitle,
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(lerp(20.dp, 12.dp, collapseFraction)))
 
-            Text(
-                text = state.bookTitle,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            val titleAlpha = (1f - collapseFraction * 1.5f).coerceIn(0f, 1f)
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer { alpha = titleAlpha }
+                    .clipToBounds()
+                    .height(with(density) { lerp(80.dp, 0.dp, collapseFraction).toPx().toDp() }),
+            ) {
+                Text(
+                    text = state.bookTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
-            val trackTitle = state.trackTitles.getOrNull(state.currentTrackIndex)
-            val displayTrackTitle = trackTitle?.ifBlank {
-                "Track ${state.currentTrackIndex + 1}"
-            }
-            if (displayTrackTitle != null) {
-                AnimatedContent(
-                    targetState = displayTrackTitle,
-                    transitionSpec = {
-                        (slideInVertically { fullHeight -> fullHeight } + fadeIn(tween(200))) togetherWith
-                                (slideOutVertically { fullHeight -> -fullHeight } + fadeOut(
-                                    tween(
-                                        200
-                                    )
-                                ))
-                    },
-                    label = "trackTitleSwap",
-                ) { title ->
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val trackTitle = state.trackTitles.getOrNull(state.currentTrackIndex)
+                val displayTrackTitle = trackTitle?.ifBlank {
+                    "Track ${state.currentTrackIndex + 1}"
                 }
-            }
+                if (displayTrackTitle != null) {
+                    AnimatedContent(
+                        targetState = displayTrackTitle,
+                        transitionSpec = {
+                            (slideInVertically { fullHeight -> fullHeight } + fadeIn(tween(200))) togetherWith
+                                    (slideOutVertically { fullHeight -> -fullHeight } + fadeOut(tween(200)))
+                        },
+                        label = "trackTitleSwap",
+                    ) { title ->
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
             AudioPlayerSeekBar(
                 currentPositionMs = state.currentPositionMs,
@@ -380,50 +463,63 @@ private fun AudioPlayerContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            val headerAlpha = (1f - collapseFraction * 1.5f).coerceIn(0f, 1f)
 
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { showTrackSheet = true }
-                    .padding(vertical = 8.dp, horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .graphicsLayer { alpha = headerAlpha }
+                    .clipToBounds()
+                    .height(with(density) { lerp(56.dp, 0.dp, collapseFraction).toPx().toDp() }),
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.QueueMusic,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                val currentTrackTitle = state.trackTitles.getOrNull(state.currentTrackIndex)
-                val trackHeaderText = if (currentTrackTitle.isNullOrBlank()) {
-                    "Track ${state.currentTrackIndex + 1} of ${state.trackCount}"
-                } else {
-                    "Track ${state.currentTrackIndex + 1} of ${state.trackCount} · $currentTrackTitle"
-                }
-                Text(
-                    text = trackHeaderText,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "View all tracks",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showTrackSheet = true }
+                        .padding(vertical = 8.dp, horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val currentTrackTitle = state.trackTitles.getOrNull(state.currentTrackIndex)
+                    val trackHeaderText = if (currentTrackTitle.isNullOrBlank()) {
+                        "Track ${state.currentTrackIndex + 1} of ${state.trackCount}"
+                    } else {
+                        "Track ${state.currentTrackIndex + 1} of ${state.trackCount} · $currentTrackTitle"
+                    }
+                    Text(
+                        text = trackHeaderText,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "View all tracks",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             TrackListSection(
                 state = state,
                 onTrackSelected = callbacks.onSelectTrack,
+                listState = listState,
+                nestedScrollConnection = nestedScrollConnection,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -452,11 +548,13 @@ private fun PlaybackSpeedButton(
             imageVector = Icons.Filled.Speed,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = "${currentSpeed}x",
             style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             speeds.forEach { speed ->
@@ -536,10 +634,11 @@ private fun AudioPlayerSeekBar(
 private fun TrackListSection(
     state: AudioPlayerState,
     onTrackSelected: (Int) -> Unit,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    nestedScrollConnection: NestedScrollConnection,
+    modifier: Modifier = Modifier,
 ) {
     if (state.trackTitles.isEmpty()) return
-
-    val listState = rememberLazyListState()
 
     LaunchedEffect(state.currentTrackIndex) {
         if (state.currentTrackIndex >= 0) {
@@ -549,7 +648,9 @@ private fun TrackListSection(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .nestedScroll(nestedScrollConnection),
         contentPadding = PaddingValues(vertical = 4.dp),
     ) {
         itemsIndexed(
