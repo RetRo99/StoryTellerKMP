@@ -360,4 +360,11 @@
     <string name="books_filter_server" tools:ignore="MissingTranslation">Server</string>
     <string name="books_filter_all" tools:ignore="MissingTranslation">All</string>
     <string name="books_filter_quick_filters" tools:ignore="MissingTranslation">Quick filters</string>
+    <string name="reader_toc_search_hint" tools:ignore="MissingTranslation">Search chapters</string>
+    <string name="reader_toc_next_chapter" tools:ignore="MissingTranslation">Next chapter</string>
+    <string name="reader_toc_previous_chapter" tools:ignore="MissingTranslation">Previous chapter</string>
+    <string name="reader_toc_no_results" tools:ignore="MissingTranslation">No matching chapters found</string>
+    <string name="reader_toc_no_chapters" tools:ignore="MissingTranslation">No table of contents available</string>
+    <string name="reader_toc_reading" tools:ignore="MissingTranslation">Reading</string>
+    <string name="reader_toc_chapter_number" tools:ignore="MissingTranslation">%1$d</string>
 </resources>

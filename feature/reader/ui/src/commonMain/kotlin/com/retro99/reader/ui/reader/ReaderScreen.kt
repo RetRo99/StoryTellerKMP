@@ -641,8 +641,15 @@ private fun ReaderContent(
                 TableOfContentsSheet(
                     tableOfContents = tableOfContents,
                     currentChapterHref = currentPosition?.href,
+                    bookProgression = currentPosition?.totalProgression,
                     onChapterClick = { href ->
                         intentDispatcher(ReaderIntent.GoToChapter(href, currentPosition))
+                    },
+                    onPreviousChapter = {
+                        intentDispatcher(ReaderIntent.GoToPreviousChapter)
+                    },
+                    onNextChapter = {
+                        intentDispatcher(ReaderIntent.GoToNextChapter)
                     },
                     onDismiss = { intentDispatcher(ReaderIntent.ToggleToc) },
                 )
