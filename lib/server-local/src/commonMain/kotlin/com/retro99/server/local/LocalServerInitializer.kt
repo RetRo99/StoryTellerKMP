@@ -12,7 +12,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -35,8 +35,7 @@ class LocalServerInitializer(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun initialize() {
-        // Ensure Local server exists for initial user
-        runBlocking {
+        scope.launch {
             ensureLocalServerRegistered()
         }
 

@@ -31,7 +31,6 @@ import io.ktor.http.isSuccess
 import io.ktor.http.path
 import io.ktor.util.reflect.TypeInfo
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
@@ -129,7 +128,7 @@ class KtorNetworkClient(
         path: String,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
-    ): AppResult<ByteArray> = withContext(Dispatchers.IO) {
+    ): AppResult<ByteArray> = withContext(Dispatchers.Default) {
         val url = buildUrl(path, queryBuilder)
         try {
             val response = httpClient.get(url) {
@@ -154,7 +153,7 @@ class KtorNetworkClient(
         destinationPath: String,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
-    ): AppResult<String> = withContext(Dispatchers.IO) {
+    ): AppResult<String> = withContext(Dispatchers.Default) {
         val url = buildUrl(path, queryBuilder)
         try {
             // Use prepareGet for streaming - this doesn't buffer the entire response in memory
@@ -184,7 +183,7 @@ class KtorNetworkClient(
         onProgress: suspend (bytesDownloaded: Long, totalBytes: Long?) -> Unit,
         queryBuilder: QueryParamsScope.() -> Unit,
         headers: HeadersBuilder.() -> Unit,
-    ): AppResult<String> = withContext(Dispatchers.IO) {
+    ): AppResult<String> = withContext(Dispatchers.Default) {
         val url = buildUrl(path, queryBuilder)
         try {
             // Use prepareGet for streaming - this doesn't buffer the entire response in memory
@@ -243,7 +242,7 @@ class KtorNetworkClient(
         typeInfo: TypeInfo,
         endpoint: String,
         block: suspend () -> HttpResponse,
-    ): AppResult<T> = withContext(Dispatchers.IO) {
+    ): AppResult<T> = withContext(Dispatchers.Default) {
         try {
             val response = block()
             handleResponseWithTypeInfo(response, typeInfo, endpoint)

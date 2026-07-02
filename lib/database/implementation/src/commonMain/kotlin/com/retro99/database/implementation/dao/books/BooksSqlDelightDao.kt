@@ -5,7 +5,6 @@ import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -37,7 +36,7 @@ internal class BooksSqlDelightDao(
     // ==================== BOOK OPERATIONS ====================
 
     suspend fun upsertBook(book: BookSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookQueries.upsertBook(
                 uuid = book.uuid,
                 server_id = book.serverId,
@@ -58,7 +57,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getAllBooks(): List<BookSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookQueries.getAllBooks().executeAsList().map { row ->
                 BookSqlDelightEntity(
                     uuid = row.uuid,
@@ -81,7 +80,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getBookByUuid(uuid: String): BookSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookQueries.getBookByUuid(uuid).executeAsOneOrNull()?.let { row ->
                 BookSqlDelightEntity(
                     uuid = row.uuid,
@@ -104,7 +103,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getBooksByServer(serverId: String): List<BookSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookQueries.getBooksByServer(serverId).executeAsList().map { row ->
                 BookSqlDelightEntity(
                     uuid = row.uuid,
@@ -127,7 +126,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getBookByServerAndUuid(serverId: String, uuid: String): BookSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookQueries.getBookByServerAndUuid(serverId, uuid).executeAsOneOrNull()?.let { row ->
                 BookSqlDelightEntity(
                     uuid = row.uuid,
@@ -150,31 +149,31 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun deleteAllBooks() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookQueries.deleteAllBooks()
         }
     }
 
     suspend fun deleteBook(uuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookQueries.deleteBook(uuid)
         }
     }
 
     suspend fun deleteBooksByServer(serverId: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookQueries.deleteBooksByServer(serverId)
         }
     }
 
     suspend fun getBooksCount(): Long {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookQueries.getBooksCount().executeAsOne()
         }
     }
 
     suspend fun getBooksCountByServer(serverId: String): Long {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookQueries.getBooksCountByServer(serverId).executeAsOne()
         }
     }
@@ -182,7 +181,7 @@ internal class BooksSqlDelightDao(
     // ==================== PERSON OPERATIONS ====================
 
     suspend fun upsertPerson(person: PersonSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             personQueries.upsertPerson(
                 uuid = person.uuid,
                 name = person.name,
@@ -194,7 +193,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getPersonByUuid(uuid: String): PersonSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             personQueries.getPersonByUuid(uuid).executeAsOneOrNull()?.let { row ->
                 PersonSqlDelightEntity(
                     uuid = row.uuid,
@@ -208,7 +207,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getAuthorsByBookUuid(bookUuid: String): List<PersonSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookAuthorQueries.getAuthorsByBookUuid(bookUuid).executeAsList().map { row ->
                 PersonSqlDelightEntity(
                     uuid = row.uuid,
@@ -222,7 +221,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getNarratorsByBookUuid(bookUuid: String): List<PersonSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookNarratorQueries.getNarratorsByBookUuid(bookUuid).executeAsList().map { row ->
                 PersonSqlDelightEntity(
                     uuid = row.uuid,
@@ -236,7 +235,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getCreatorsByBookUuid(bookUuid: String): List<PersonSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookCreatorQueries.getCreatorsByBookUuid(bookUuid).executeAsList().map { row ->
                 PersonSqlDelightEntity(
                     uuid = row.uuid,
@@ -250,37 +249,37 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun insertBookAuthor(bookUuid: String, personUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookAuthorQueries.insertBookAuthor(bookUuid, personUuid)
         }
     }
 
     suspend fun insertBookNarrator(bookUuid: String, personUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookNarratorQueries.insertBookNarrator(bookUuid, personUuid)
         }
     }
 
     suspend fun insertBookCreator(bookUuid: String, personUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookCreatorQueries.insertBookCreator(bookUuid, personUuid)
         }
     }
 
     suspend fun deleteBookAuthors(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookAuthorQueries.deleteBookAuthors(bookUuid)
         }
     }
 
     suspend fun deleteBookNarrators(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookNarratorQueries.deleteBookNarrators(bookUuid)
         }
     }
 
     suspend fun deleteBookCreators(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookCreatorQueries.deleteBookCreators(bookUuid)
         }
     }
@@ -288,7 +287,7 @@ internal class BooksSqlDelightDao(
     // ==================== SERIES OPERATIONS ====================
 
     suspend fun upsertSeries(series: SeriesSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             seriesQueries.upsertSeries(
                 uuid = series.uuid,
                 name = series.name,
@@ -300,7 +299,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getSeriesByBookUuid(bookUuid: String): List<BookSeriesSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookSeriesQueries.getSeriesByBookUuid(bookUuid).executeAsList().map { row ->
                 BookSeriesSqlDelightEntity(
                     bookUuid = bookUuid,
@@ -312,7 +311,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getSeriesEntityByUuid(uuid: String): SeriesSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             seriesQueries.getSeriesByUuid(uuid).executeAsOneOrNull()?.let { row ->
                 SeriesSqlDelightEntity(
                     uuid = row.uuid,
@@ -326,19 +325,19 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun insertBookSeries(bookUuid: String, seriesUuid: String, position: Double?) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookSeriesQueries.insertBookSeries(bookUuid, seriesUuid, position?.toDouble())
         }
     }
 
     suspend fun deleteBookSeries(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookSeriesQueries.deleteBookSeries(bookUuid)
         }
     }
 
     suspend fun getAllSeries(): List<SeriesSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             seriesQueries.getAllSeries().executeAsList().map { row ->
                 SeriesSqlDelightEntity(
                     uuid = row.uuid,
@@ -352,7 +351,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun deleteAllSeries() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             seriesQueries.deleteAllSeries()
         }
     }
@@ -360,7 +359,7 @@ internal class BooksSqlDelightDao(
     // ==================== TAG OPERATIONS ====================
 
     suspend fun upsertTag(tag: TagSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             tagQueries.upsertTag(
                 uuid = tag.uuid,
                 name = tag.name,
@@ -371,7 +370,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getTagsByBookUuid(bookUuid: String): List<TagSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookTagQueries.getTagsByBookUuid(bookUuid).executeAsList().map { row ->
                 TagSqlDelightEntity(
                     uuid = row.uuid,
@@ -384,13 +383,13 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun insertBookTag(bookUuid: String, tagUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookTagQueries.insertBookTag(bookUuid, tagUuid)
         }
     }
 
     suspend fun deleteBookTags(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookTagQueries.deleteBookTags(bookUuid)
         }
     }
@@ -398,7 +397,7 @@ internal class BooksSqlDelightDao(
     // ==================== COLLECTION OPERATIONS ====================
 
     suspend fun upsertCollection(collection: CollectionSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             collectionQueries.upsertCollection(
                 uuid = collection.uuid,
                 name = collection.name,
@@ -409,7 +408,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getCollectionsByBookUuid(bookUuid: String): List<CollectionSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookCollectionQueries.getCollectionsByBookUuid(bookUuid).executeAsList().map { row ->
                 CollectionSqlDelightEntity(
                     uuid = row.uuid,
@@ -422,13 +421,13 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun insertBookCollection(bookUuid: String, collectionUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookCollectionQueries.insertBookCollection(bookUuid, collectionUuid)
         }
     }
 
     suspend fun deleteBookCollections(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookCollectionQueries.deleteBookCollections(bookUuid)
         }
     }
@@ -436,7 +435,7 @@ internal class BooksSqlDelightDao(
     // ==================== STATUS OPERATIONS ====================
 
     suspend fun upsertStatus(status: StatusSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             statusQueries.upsertStatus(
                 uuid = status.uuid,
                 name = status.name,
@@ -447,7 +446,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getStatusByUuid(uuid: String): StatusSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             statusQueries.getStatusByUuid(uuid).executeAsOneOrNull()?.let { row ->
                 StatusSqlDelightEntity(
                     uuid = row.uuid,
@@ -462,7 +461,7 @@ internal class BooksSqlDelightDao(
     // ==================== MEDIA FILE OPERATIONS ====================
 
     suspend fun upsertMediaFile(mediaFile: MediaFileSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             mediaFileQueries.upsertMediaFile(
                 uuid = mediaFile.uuid,
                 book_uuid = mediaFile.bookUuid,
@@ -476,7 +475,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getMediaFilesByBookUuid(bookUuid: String): List<MediaFileSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             mediaFileQueries.getMediaFilesByBookUuid(bookUuid).executeAsList().map { row ->
                 MediaFileSqlDelightEntity(
                     uuid = row.uuid,
@@ -492,7 +491,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun deleteMediaFilesByBookUuid(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             mediaFileQueries.deleteMediaFilesByBookUuid(bookUuid)
         }
     }
@@ -500,7 +499,7 @@ internal class BooksSqlDelightDao(
     // ==================== READALOUD OPERATIONS ====================
 
     suspend fun upsertReadaloud(readaloud: ReadaloudSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             readaloudQueries.upsertReadaloud(
                 uuid = readaloud.uuid,
                 book_uuid = readaloud.bookUuid,
@@ -518,7 +517,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getReadaloudByBookUuid(bookUuid: String): ReadaloudSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             readaloudQueries.getReadaloudByBookUuid(bookUuid).executeAsOneOrNull()?.let { row ->
                 ReadaloudSqlDelightEntity(
                     uuid = row.uuid,
@@ -538,7 +537,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun deleteReadaloudByBookUuid(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             readaloudQueries.deleteReadaloudByBookUuid(bookUuid)
         }
     }
@@ -546,7 +545,7 @@ internal class BooksSqlDelightDao(
     // ==================== POSITION OPERATIONS ====================
 
     suspend fun upsertPosition(position: PositionSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             positionQueries.upsertPosition(
                 book_uuid = position.bookUuid,
                 timestamp = position.timestamp,
@@ -568,7 +567,7 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun getPositionByBookUuid(bookUuid: String): PositionSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             positionQueries.getPositionByBookUuid(bookUuid)
                 .executeAsOneOrNull()?.let { row ->
                     PositionSqlDelightEntity(
@@ -593,13 +592,13 @@ internal class BooksSqlDelightDao(
     }
 
     suspend fun deletePosition(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             positionQueries.deletePosition(bookUuid)
         }
     }
 
     suspend fun getAllPositions(): List<PositionSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             positionQueries.getAllPositions().executeAsList().map { row ->
                 PositionSqlDelightEntity(
                     bookUuid = row.book_uuid,
@@ -629,7 +628,7 @@ internal class BooksSqlDelightDao(
     fun observePositionByBookUuid(bookUuid: String): Flow<PositionSqlDelightEntity?> {
         return positionQueries.getPositionByBookUuid(bookUuid)
             .asFlow()
-            .mapToOneOrNull(Dispatchers.IO)
+            .mapToOneOrNull(Dispatchers.Default)
             .map { row ->
                 row?.let {
                     PositionSqlDelightEntity(
@@ -660,7 +659,7 @@ internal class BooksSqlDelightDao(
     fun observeAllPositions(): Flow<List<PositionSqlDelightEntity>> {
         return positionQueries.getAllPositions()
             .asFlow()
-            .mapToList(Dispatchers.IO)
+            .mapToList(Dispatchers.Default)
             .map { list ->
                 list.map { row ->
                     PositionSqlDelightEntity(
@@ -687,15 +686,15 @@ internal class BooksSqlDelightDao(
     // ==================== TRANSACTION SUPPORT ====================
 
     suspend fun <T> transaction(block: suspend () -> T): T {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             database.transactionWithResult {
-                kotlinx.coroutines.runBlocking { block() }
+                block()
             }
         }
     }
 
     suspend fun deleteAllRelatedData() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             database.transaction {
                 bookAuthorQueries.deleteAllBookAuthors()
                 bookNarratorQueries.deleteAllBookNarrators()

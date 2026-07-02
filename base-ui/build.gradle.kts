@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
@@ -19,6 +21,10 @@ kotlin {
 
     iosArm64()
     iosSimulatorArm64()
+
+    js {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {

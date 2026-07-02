@@ -25,6 +25,7 @@ class HttpClientProvider(
 ) {
     fun provide(): HttpClient {
         return HttpClient(httpFactory) {
+            installCorsProxyIfNeeded()
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Application.Json)
             }

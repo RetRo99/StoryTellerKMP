@@ -1,3 +1,5 @@
+
+
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -33,6 +35,14 @@ kotlin {
         }
     }
 
+    js {
+        browser()
+        binaries.executable()
+        compilerOptions {
+            freeCompilerArgs.add("-Xwasm-use-legacy-allocator")
+        }
+    }
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
@@ -48,6 +58,10 @@ kotlin {
             api(projects.feature.reader.ui)
             api(projects.feature.login.data)
             api(projects.feature.books.data)
+        }
+        jsMain.dependencies {
+            implementation(libs.ktor.client.js)
+            implementation(devNpm("copy-webpack-plugin", "9.1.0"))
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

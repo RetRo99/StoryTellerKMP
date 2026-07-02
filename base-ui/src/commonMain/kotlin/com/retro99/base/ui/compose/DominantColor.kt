@@ -18,7 +18,6 @@ import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -131,7 +130,7 @@ fun rememberDominantColorState(
                 }
             }
             .build()
-        val result = withContext(Dispatchers.IO) {
+        val result = withContext(Dispatchers.Default) {
             runCatching { imageLoader.execute(request) }
         }
         val success = result.getOrNull() as? SuccessResult

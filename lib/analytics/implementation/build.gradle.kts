@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
@@ -18,6 +20,10 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    js {
+        browser()
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.koin.core)
@@ -26,14 +32,18 @@ kotlin {
             implementation(projects.lib.preferences.api)
             implementation(libs.kermit)
             implementation(libs.datetime)
-            api(libs.gitlive.firebase.kotlin.crashlytics)
-            api(libs.gitlive.firebase.kotlin.analytics)
             implementation(projects.base)
         }
         androidMain.dependencies {
+            api(libs.gitlive.firebase.kotlin.crashlytics)
+            api(libs.gitlive.firebase.kotlin.analytics)
             implementation(libs.firebase.crashlytics.android)
             implementation(libs.firebase.analytics.android)
             implementation(libs.firebase.common)
+        }
+        iosMain.dependencies {
+            api(libs.gitlive.firebase.kotlin.crashlytics)
+            api(libs.gitlive.firebase.kotlin.analytics)
         }
     }
 }

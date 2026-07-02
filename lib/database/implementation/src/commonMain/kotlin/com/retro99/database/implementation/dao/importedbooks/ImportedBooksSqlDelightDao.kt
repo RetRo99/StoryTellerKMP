@@ -6,7 +6,6 @@ import com.retro99.database.api.importedbooks.ImportedBookEntity
 import com.retro99.database.implementation.DatabaseManager
 import com.retro99.database.implementation.Imported_books
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -20,7 +19,7 @@ internal class ImportedBooksSqlDelightDao(
     private val queries get() = databaseManager.getDatabase().importedBookQueries
 
     suspend fun upsertImportedBook(book: ImportedBookEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             queries.upsertImportedBook(
                 uuid = book.uuid,
                 title = book.title,
@@ -40,42 +39,42 @@ internal class ImportedBooksSqlDelightDao(
     fun getAllImportedBooks(): Flow<List<ImportedBookEntity>> {
         return queries.getAllImportedBooks()
             .asFlow()
-            .mapToList(Dispatchers.IO)
+            .mapToList(Dispatchers.Default)
             .map { list -> list.map { it.toEntity() } }
     }
 
     suspend fun getImportedBookByUuid(uuid: String): ImportedBookEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             queries.getImportedBookByUuid(uuid).executeAsOneOrNull()?.toEntity()
         }
     }
 
     suspend fun deleteImportedBook(uuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             queries.deleteImportedBook(uuid)
         }
     }
 
     suspend fun deleteAllImportedBooks() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             queries.deleteAllImportedBooks()
         }
     }
 
     suspend fun getImportedBooksCount(): Int {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             queries.getImportedBooksCount().executeAsOne().toInt()
         }
     }
 
     suspend fun updateLastOpenedAt(uuid: String, lastOpenedAt: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             queries.updateLastOpenedAt(lastOpenedAt, uuid)
         }
     }
 
     suspend fun searchImportedBooksByTitle(query: String): List<ImportedBookEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             queries.searchImportedBooksByTitle("%$query%").executeAsList().map { it.toEntity() }
         }
     }

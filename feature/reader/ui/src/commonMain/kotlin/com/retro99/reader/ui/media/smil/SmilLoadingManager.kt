@@ -6,7 +6,6 @@ import com.retro99.reader.ui.di.ReaderScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -81,7 +80,7 @@ class SmilLoadingManager(
     private val clipRepository: SmilClipRepository,
     @Provided private val contentProvider: SmilContentProvider,
 ) {
-    private val ioDispatcher = Dispatchers.IO
+    private val ioDispatcher = Dispatchers.Default
 
     private var managerScope: CoroutineScope? = null
     private var prefetchJob: Job? = null

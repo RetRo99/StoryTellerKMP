@@ -3,7 +3,9 @@ package com.retro99.user.implementation
 import co.touchlab.kermit.Logger
 import com.retro99.base.AppInitializer
 import com.retro99.user.api.UserRegistry
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
 
@@ -31,10 +33,12 @@ class DefaultUserInitializer(
     private val logger = Logger.withTag("DefaultUserInitializer")
 
     override fun initialize() {
-        runBlocking {
+        initScope.launch {
             ensureDefaultUserExists()
         }
     }
+
+    private val initScope = CoroutineScope(Dispatchers.Default)
 
     private suspend fun ensureDefaultUserExists() {
         // Check if any profiles exist

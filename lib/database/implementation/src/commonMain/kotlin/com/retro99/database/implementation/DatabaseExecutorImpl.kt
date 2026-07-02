@@ -7,7 +7,6 @@ import com.retro99.base.result.AppError
 import com.retro99.base.result.AppResult
 import com.retro99.database.api.DatabaseExecutor
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
@@ -19,7 +18,7 @@ class DatabaseExecutorImpl(
 ) : DatabaseExecutor {
 
     override suspend fun <T> executeDatabaseOperation(operation: suspend () -> T): AppResult<T> =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             try {
                 Ok(operation())
             } catch (e: Exception) {

@@ -2,7 +2,6 @@ package com.retro99.database.implementation.dao.books
 
 import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 
 /**
@@ -15,7 +14,7 @@ internal class AuthorsSqlDelightDao(
     private val authorQueries get() = databaseManager.getDatabase().authorQueries
 
     suspend fun upsertAuthor(author: PersonSqlDelightEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             authorQueries.upsertAuthor(
                 uuid = author.uuid,
                 name = author.name,
@@ -27,7 +26,7 @@ internal class AuthorsSqlDelightDao(
     }
 
     suspend fun getAllAuthors(): List<PersonSqlDelightEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             authorQueries.getAllAuthors().executeAsList().map { row ->
                 PersonSqlDelightEntity(
                     uuid = row.uuid,
@@ -41,7 +40,7 @@ internal class AuthorsSqlDelightDao(
     }
 
     suspend fun getAuthorByUuid(uuid: String): PersonSqlDelightEntity? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             authorQueries.getAuthorByUuid(uuid).executeAsOneOrNull()?.let { row ->
                 PersonSqlDelightEntity(
                     uuid = row.uuid,
@@ -55,19 +54,19 @@ internal class AuthorsSqlDelightDao(
     }
 
     suspend fun deleteAllAuthors() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             authorQueries.deleteAllAuthors()
         }
     }
 
     suspend fun deleteAuthor(uuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             authorQueries.deleteAuthor(uuid)
         }
     }
 
     suspend fun getAuthorsCount(): Long {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             authorQueries.getAuthorsCount().executeAsOne()
         }
     }

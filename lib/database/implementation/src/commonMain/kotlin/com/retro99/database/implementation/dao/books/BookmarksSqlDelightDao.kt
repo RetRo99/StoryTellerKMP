@@ -6,7 +6,6 @@ import com.retro99.database.api.books.BookmarkEntity
 import com.retro99.database.implementation.Bookmarks
 import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -17,7 +16,7 @@ internal class BookmarksSqlDelightDao(
     private val bookmarkQueries get() = databaseManager.getDatabase().bookmarkQueries
 
     suspend fun insertBookmark(bookmark: BookmarkEntity) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookmarkQueries.insertBookmark(
                 id = bookmark.id,
                 book_uuid = bookmark.bookUuid,
@@ -37,12 +36,12 @@ internal class BookmarksSqlDelightDao(
     fun observeBookmarks(bookUuid: String): Flow<List<BookmarkEntity>> {
         return bookmarkQueries.getBookmarksByBookUuid(bookUuid)
             .asFlow()
-            .mapToList(Dispatchers.IO)
+            .mapToList(Dispatchers.Default)
             .map { rows -> rows.map { it.toBookmarkEntity() } }
     }
 
     suspend fun getBookmarks(bookUuid: String): List<BookmarkEntity> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             bookmarkQueries.getBookmarksByBookUuid(bookUuid)
                 .executeAsList()
                 .map { it.toBookmarkEntity() }
@@ -50,31 +49,31 @@ internal class BookmarksSqlDelightDao(
     }
 
     suspend fun deleteBookmark(id: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookmarkQueries.deleteBookmark(id)
         }
     }
 
     suspend fun deleteBookmarksForBook(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookmarkQueries.deleteBookmarksByBookUuid(bookUuid)
         }
     }
 
     suspend fun deleteAllBookmarks() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookmarkQueries.deleteAllBookmarks()
         }
     }
 
     suspend fun updateBookmarkTitle(id: String, title: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookmarkQueries.updateBookmarkTitle(title, id)
         }
     }
 
     suspend fun updateBookmarkSortOrders(orders: List<Pair<String, Int>>) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             bookmarkQueries.transaction {
                 orders.forEach { (id, sortOrder) ->
                     bookmarkQueries.updateBookmarkSortOrders(sortOrder.toLong(), id)

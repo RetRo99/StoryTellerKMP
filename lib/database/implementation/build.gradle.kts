@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
@@ -19,6 +21,10 @@ kotlin {
 
     iosArm64()
     iosSimulatorArm64()
+
+    js {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -42,6 +48,13 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.sqldelight.native.driver)
         }
+
+        jsMain.dependencies {
+            implementation(libs.sqldelight.web.worker.driver)
+            implementation(devNpm("copy-webpack-plugin", "9.1.0"))
+            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.3.2"))
+            implementation(npm("sql.js", "1.8.0"))
+        }
     }
 }
 
@@ -50,6 +63,7 @@ sqldelight {
         create("AppDatabase") {
             packageName.set("com.retro99.database.implementation")
             version = 13
+            generateAsync.set(true)
         }
     }
 }

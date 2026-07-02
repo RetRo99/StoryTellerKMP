@@ -41,6 +41,7 @@ class ServerHttpClientFactory(
         tokenRefresher: (suspend () -> String?)? = null,
     ): HttpClient {
         return HttpClient(httpFactory) {
+            installCorsProxyIfNeeded()
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Application.Json)
             }

@@ -6,7 +6,6 @@ import app.cash.sqldelight.coroutines.mapToOne
 import com.retro99.base.nowMillis
 import com.retro99.database.implementation.DatabaseManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -20,20 +19,20 @@ internal class FavoritesSqlDelightDao(
     private val favoriteQueries get() = databaseManager.getDatabase().favoriteQueries
 
     suspend fun insertFavorite(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
 
             favoriteQueries.insertFavorite(bookUuid, nowMillis().toString())
         }
     }
 
     suspend fun deleteFavorite(bookUuid: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             favoriteQueries.deleteFavorite(bookUuid)
         }
     }
 
     suspend fun isFavorite(bookUuid: String): Boolean {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             favoriteQueries.isFavorite(bookUuid).executeAsOne() > 0
         }
     }
@@ -41,12 +40,12 @@ internal class FavoritesSqlDelightDao(
     fun observeFavorite(bookUuid: String): Flow<Boolean> {
         return favoriteQueries.isFavorite(bookUuid)
             .asFlow()
-            .mapToOne(Dispatchers.IO)
+            .mapToOne(Dispatchers.Default)
             .map { count -> count > 0 }
     }
 
     suspend fun getAllFavorites(): List<String> {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             favoriteQueries.getAllFavorites().executeAsList()
         }
     }
@@ -54,11 +53,11 @@ internal class FavoritesSqlDelightDao(
     fun observeAllFavorites(): Flow<List<String>> {
         return favoriteQueries.getAllFavorites()
             .asFlow()
-            .mapToList(Dispatchers.IO)
+            .mapToList(Dispatchers.Default)
     }
 
     suspend fun deleteAllFavorites() {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             favoriteQueries.deleteAllFavorites()
         }
     }
