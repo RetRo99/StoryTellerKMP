@@ -21,6 +21,14 @@ interface NetworkClient {
         headers: HeadersBuilder.() -> Unit = {}
     ): AppResult<T>
 
+    suspend fun <T> patchWithTypeInfo(
+        path: String,
+        typeInfo: TypeInfo,
+        body: Any? = null,
+        queryBuilder: QueryParamsScope.() -> Unit = {},
+        headers: HeadersBuilder.() -> Unit = {}
+    ): AppResult<T>
+
     suspend fun <T> deleteWithTypeInfo(
         path: String,
         typeInfo: TypeInfo,
@@ -95,6 +103,13 @@ suspend inline fun <reified T> NetworkClient.post(
     noinline queryBuilder: QueryParamsScope.() -> Unit = {},
     noinline headers: HeadersBuilder.() -> Unit = {}
 ): AppResult<T> = postWithTypeInfo(path, typeInfo<T>(), body, queryBuilder, headers)
+
+suspend inline fun <reified T> NetworkClient.patch(
+    path: String,
+    body: Any? = null,
+    noinline queryBuilder: QueryParamsScope.() -> Unit = {},
+    noinline headers: HeadersBuilder.() -> Unit = {}
+): AppResult<T> = patchWithTypeInfo(path, typeInfo<T>(), body, queryBuilder, headers)
 
 suspend inline fun <reified T> NetworkClient.delete(
     path: String,

@@ -14,6 +14,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.setBody
@@ -79,6 +80,23 @@ class KtorNetworkClient(
         val url = buildUrl(path, queryBuilder)
         return performRequestWithTypeInfo(typeInfo, path) {
             httpClient.post(url) {
+                headers(headers)
+                body?.let { setBody(it) }
+                contentType(ContentType.Application.Json)
+            }
+        }
+    }
+
+    override suspend fun <T> patchWithTypeInfo(
+        path: String,
+        typeInfo: TypeInfo,
+        body: Any?,
+        queryBuilder: QueryParamsScope.() -> Unit,
+        headers: HeadersBuilder.() -> Unit
+    ): AppResult<T> {
+        val url = buildUrl(path, queryBuilder)
+        return performRequestWithTypeInfo(typeInfo, path) {
+            httpClient.patch(url) {
                 headers(headers)
                 body?.let { setBody(it) }
                 contentType(ContentType.Application.Json)
