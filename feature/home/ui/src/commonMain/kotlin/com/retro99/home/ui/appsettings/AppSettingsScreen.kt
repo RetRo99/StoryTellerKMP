@@ -23,8 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Login
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteSweep
@@ -73,8 +71,6 @@ import resources.translations.app_settings_clear_logs
 import resources.translations.app_settings_clear_logs_description
 import resources.translations.app_settings_enable_logging
 import resources.translations.app_settings_enable_logging_description
-import resources.translations.app_settings_logout
-import resources.translations.app_settings_logout_description
 import resources.translations.app_settings_logs_cleared
 import resources.translations.app_settings_log_crashes_only
 import resources.translations.app_settings_log_crashes_only_description
@@ -95,11 +91,9 @@ import resources.translations.statistics_title
 
 @Composable
 fun AppSettingsScreen(
-    onLogout: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToServerManagement: () -> Unit,
     modifier: Modifier = Modifier,
-    onLogin: () -> Unit = onLogout, // Default to logout callback for backward compatibility
     viewModel: AppSettingsViewModel = koinViewModel(),
 ) {
     BaseScreen(
@@ -108,8 +102,6 @@ fun AppSettingsScreen(
     ) { viewState, intentDispatcher ->
         AppSettingsScreenContent(
             viewState = viewState,
-            onLogout = onLogout,
-            onLogin = onLogin,
             onNavigateToStatistics = onNavigateToStatistics,
             onNavigateToServerManagement = onNavigateToServerManagement,
             intentDispatcher = intentDispatcher,
@@ -120,8 +112,6 @@ fun AppSettingsScreen(
 @Composable
 private fun AppSettingsScreenContent(
     viewState: AppSettingsViewState,
-    onLogout: () -> Unit,
-    onLogin: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToServerManagement: () -> Unit,
     intentDispatcher: IntentDispatcher<AppSettingsIntent>,
@@ -302,23 +292,6 @@ private fun AppSettingsScreenContent(
                 description = stringResource(StringRes.app_settings_servers_description),
                 onClick = onNavigateToServerManagement,
             )
-
-            if (viewState.hasAuthenticatedRemoteServers) {
-                SettingsItem(
-                    icon = Icons.AutoMirrored.Filled.Logout,
-                    title = stringResource(StringRes.app_settings_logout),
-                    description = stringResource(StringRes.app_settings_logout_description),
-                    onClick = onLogout,
-                    isDestructive = true,
-                )
-            } else {
-                SettingsItem(
-                    icon = Icons.AutoMirrored.Filled.Login,
-                    title = "Login to Server",
-                    description = "Connect to a remote server to sync your books",
-                    onClick = onLogin,
-                )
-            }
 
             HorizontalDivider()
 

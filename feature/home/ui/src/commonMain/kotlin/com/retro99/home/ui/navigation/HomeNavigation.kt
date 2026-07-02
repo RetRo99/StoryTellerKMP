@@ -34,7 +34,6 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeNavigation(
-    onLogout: () -> Unit,
     onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeNavigationViewModel = koinViewModel(),
@@ -268,8 +267,6 @@ fun HomeNavigation(
 
                     entry<HomeDestination.AppSettings> {
                         AppSettingsScreen(
-                            onLogout = onLogout,
-                            onLogin = onNavigateToLogin,
                             onNavigateToStatistics = {
                                 intentDispatcher(
                                     HomeNavigationIntent.NavigateTo(HomeDestination.Statistics)
