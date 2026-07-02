@@ -15,6 +15,10 @@ kotlin {
         namespace = "com.retro99.base.ui"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
+
+        androidResources {
+            enable = true
+        }
     }
 
     iosArm64()

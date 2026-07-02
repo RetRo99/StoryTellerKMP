@@ -31,12 +31,18 @@
     <string name="login_url_info">URL info</string>
 
     <!-- Welcome Screen -->
-    <string name="welcome_title">Welcome to Parrot</string>
-    <string name="welcome_subtitle">Your personal story companion</string>
-    <string name="welcome_sign_in_button">Sign In</string>
-    <string name="welcome_skip_login">Continue without account</string>
+    <string name="welcome_title">Parrot</string>
+    <string name="welcome_subtitle">Read and listen to your favorite books, anytime, anywhere</string>
+    <string name="welcome_sign_in_button">Get Started</string>
+    <string name="welcome_skip_login">Browse without account</string>
     <string name="welcome_build_debug">DEBUG</string>
     <string name="welcome_build_release">RELEASE</string>
+    <string name="welcome_feature_reading_title">Ebook Reader</string>
+    <string name="welcome_feature_reading_description">Immersive reading with customizable themes and fonts</string>
+    <string name="welcome_feature_audio_title">ReadAloud</string>
+    <string name="welcome_feature_audio_description">Listen to your books with synchronized audio narration</string>
+    <string name="welcome_feature_servers_title">Multiple Servers</string>
+    <string name="welcome_feature_servers_description">Connect to Audiobookshelf, Storyteller, or local files</string>
 
     <!-- Home Screen -->
     <string name="home_welcome_title">🎉 Welcome Home!</string>
