@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-02
+
+### Added
+- Added Audiobookshelf server support with login, library browsing, downloads, and progress sync.
+- Added a dedicated audiobook player with immersive controls.
+- Added reader bookmarks with reordering, renaming, relative timestamps, and duplicate prevention.
+- Added an audiobook quick filter and a clear quick filters action.
+
+### Changed
+- Redesigned the book detail, welcome, login, and server management screens.
+- Redesigned the table of contents sheet with expandable hierarchy, search, and chapter navigation.
+- Decluttered the reader screen with an overflow menu and collapsible read-aloud controls.
+- Consolidated book list filtering into a compact toolbar and dedicated server type filter.
+- Improved iOS playback, Now Playing integration, EPUB metadata extraction, and reader re-entry behavior.
+
+### Fixed
+- Fixed Audiobookshelf ebook and audiobook detection edge cases.
+- Fixed Audiobookshelf chapter parsing and progress update compatibility.
+- Fixed authenticated Storyteller cover loading.
+- Fixed Storyteller token expiry conversion and mixed boolean/integer featured field parsing.
+- Fixed status bar backdrop and reader content inset issues across screens.
+
 ## [0.4.5] - 2026-06-18
 
 ### Fixed
@@ -32,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Storyteller browser/OIDC login by completing authentication from the callback app token instead of requiring an additional user lookup.
 
 ### Changed
-- Added sanitized analytics breadcrumbs for OAuth login failures, including browser flow, app-token exchange, callback token decoding, and unexpected exceptions.
+- Added sanitized diagnostics for OAuth login failures, including browser flow, app-token exchange, callback token decoding, and unexpected exceptions.
 
 ## [0.4.0] - 2026-03-11
 

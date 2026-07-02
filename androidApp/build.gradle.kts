@@ -23,8 +23,8 @@ android {
         applicationId = "com.retro99.parrot"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 21
-        versionName = "0.4.5"
+        versionCode = 22
+        versionName = "0.5.0"
     }
     packaging {
         resources {
