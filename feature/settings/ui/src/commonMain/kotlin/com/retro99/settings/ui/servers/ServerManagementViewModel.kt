@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.server.api.ServerAuthState
 import com.retro99.server.api.ServerRegistry
+import com.retro99.server.api.ServerType
 import com.retro99.settings.ui.servers.model.ServerWithStatusUiModel
 import com.retro99.settings.ui.servers.model.toUiModel
 import kotlinx.coroutines.flow.combine
@@ -38,12 +39,14 @@ class ServerManagementViewModel(
             serverRegistry.observeAllServers(),
             serverRegistry.observeAllAuthStates(),
         ) { servers, authStates ->
-            servers.map { server ->
-                ServerWithStatusUiModel(
-                    server = server.toUiModel(),
-                    authState = authStates[server.id] ?: ServerAuthState.NotAuthenticated(server.id),
-                )
-            }
+            servers
+                .filter { server -> server.type != ServerType.Local }
+                .map { server ->
+                    ServerWithStatusUiModel(
+                        server = server.toUiModel(),
+                        authState = authStates[server.id] ?: ServerAuthState.NotAuthenticated(server.id),
+                    )
+                }
         }
             .onEach { serversWithStatus ->
                 updateState {

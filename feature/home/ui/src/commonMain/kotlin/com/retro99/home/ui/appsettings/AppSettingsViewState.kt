@@ -8,7 +8,6 @@ data class AppSettingsViewState(
     val openLastBookOnLaunch: Boolean = false,
     val showLogsClearedMessage: Boolean = false,
     val showNoLogsMessage: Boolean = false,
-    val hasAuthenticatedRemoteServers: Boolean = false,
     val userProfiles: List<UserProfile> = emptyList(),
     val activeProfile: UserProfile? = null,
     val showAddProfileDialog: Boolean = false,

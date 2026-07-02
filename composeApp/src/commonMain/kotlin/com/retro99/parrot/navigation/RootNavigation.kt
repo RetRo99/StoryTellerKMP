@@ -55,9 +55,6 @@ fun RootNavigation(
 
                 entry<RootDestination.Home> {
                     HomeNavigation(
-                        onLogout = {
-                            intentDispatcher(RootNavigationIntent.OnLogout)
-                        },
                         onNavigateToLogin = {
                             intentDispatcher(RootNavigationIntent.OnLoginClicked)
                         },
