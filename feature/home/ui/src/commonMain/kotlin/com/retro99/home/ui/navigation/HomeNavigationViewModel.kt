@@ -133,7 +133,10 @@ class HomeNavigationViewModel(
 
         val currentlyReading = getCurrentlyReadingUseCase() ?: return
 
-        // Emit navigation event to open the reader
+        analytics.logEvent(
+            NavigationAnalyticsEvent.ContinueReadingLaunched(bookUuid = currentlyReading.bookUuid),
+        )
+
         emitNavigationEvent(
             HomeNavigationEvent.NavigateToReaderReplacing(
                 serverId = currentlyReading.serverId,
@@ -216,14 +219,19 @@ class HomeNavigationViewModel(
     private fun handleDeepLinkDestination(destination: DeepLinkDestination) {
         when (destination) {
             is DeepLinkDestination.Reader -> {
-                // Emit navigation event to open the reader
+                analytics.logEvent(
+                    NavigationAnalyticsEvent.DeepLinkOpened(
+                        bookUuid = destination.bookUuid,
+                        bookType = destination.bookType.name,
+                    ),
+                )
                 emitNavigationEvent(
                     HomeNavigationEvent.NavigateToReaderReplacing(
                         serverId = destination.serverId,
                         bookUuid = destination.bookUuid,
                         bookType = destination.bookType,
                         tab = HomeTab.Books,
-                    )
+                    ),
                 )
             }
         }

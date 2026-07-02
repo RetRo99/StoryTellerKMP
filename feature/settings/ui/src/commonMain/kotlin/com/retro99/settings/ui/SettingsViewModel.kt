@@ -2,6 +2,7 @@ package com.retro99.settings.ui
 
 import androidx.lifecycle.viewModelScope
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.BookAnalyticsEvent
 import com.retro99.analytics.api.ReaderAnalyticsEvent
 import com.retro99.base.result.AppError
 import com.retro99.base.ui.BaseViewModel
@@ -318,6 +319,7 @@ class SettingsViewModel(
             importCustomReaderFontUseCase(file)
                 .onSuccess { font ->
                     val uiFont = font.toUiModel()
+                    analytics.logEvent(BookAnalyticsEvent.CustomFontImported(fontName = uiFont.cssValue))
                     updateReaderSetting("font_family", uiFont.cssValue) {
                         it.copy(fontFamily = uiFont)
                     }

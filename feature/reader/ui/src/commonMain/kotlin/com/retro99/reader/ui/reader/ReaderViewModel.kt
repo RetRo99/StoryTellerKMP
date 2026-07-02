@@ -564,6 +564,7 @@ class ReaderViewModel(
     }
 
     private fun goToNextChapter() {
+        analytics.logEvent(ReaderAnalyticsEvent.ChapterNavigated(bookUuid = bookUuid, direction = "next"))
         val state = viewState.value
         val chapters = state.tableOfContents
         val currentHref = state.currentPosition?.href
@@ -573,6 +574,7 @@ class ReaderViewModel(
     }
 
     private fun goToPreviousChapter() {
+        analytics.logEvent(ReaderAnalyticsEvent.ChapterNavigated(bookUuid = bookUuid, direction = "previous"))
         val state = viewState.value
         val chapters = state.tableOfContents
         val currentHref = state.currentPosition?.href
@@ -699,12 +701,14 @@ class ReaderViewModel(
     }
 
     private fun deleteBookmark(id: String) {
+        analytics.logEvent(ReaderAnalyticsEvent.BookmarkDeleted(bookUuid = bookUuid))
         viewModelScope.launch {
             deleteBookmarkUseCase(id)
         }
     }
 
     private fun renameBookmark(id: String, newTitle: String) {
+        analytics.logEvent(ReaderAnalyticsEvent.BookmarkRenamed(bookUuid = bookUuid))
         viewModelScope.launch {
             updateBookmarkTitleUseCase(id, newTitle)
         }
@@ -848,6 +852,12 @@ class ReaderViewModel(
 
     private fun toggleAudioOnlyMode() {
         val isTurningOff = viewState.value.isAudioOnlyMode
+        analytics.logEvent(
+            ReaderAnalyticsEvent.AudioOnlyModeToggled(
+                bookUuid = bookUuid,
+                isEnabled = !isTurningOff,
+            ),
+        )
         updateState { it.copy(isAudioOnlyMode = !it.isAudioOnlyMode) }
         if (isTurningOff) {
             audioController.currentAudioLocator.value?.locator?.let { locator ->
@@ -876,6 +886,12 @@ class ReaderViewModel(
     }
 
     private fun startSleepTimer(durationMs: Long) {
+        analytics.logEvent(
+            ReaderAnalyticsEvent.SleepTimerStarted(
+                bookUuid = bookUuid,
+                durationMs = durationMs,
+            ),
+        )
         sleepTimerJob?.cancel()
         updateState {
             it.copy(
@@ -923,6 +939,7 @@ class ReaderViewModel(
     }
 
     private fun cancelSleepTimer() {
+        analytics.logEvent(ReaderAnalyticsEvent.SleepTimerCancelled(bookUuid = bookUuid))
         sleepTimerJob?.cancel()
         sleepTimerJob = null
         updateState {
@@ -938,6 +955,12 @@ class ReaderViewModel(
     }
 
     private fun setHighlightColor(colorArgb: Int) {
+        analytics.logEvent(
+            ReaderAnalyticsEvent.HighlightColorChanged(
+                bookUuid = bookUuid,
+                colorArgb = colorArgb,
+            ),
+        )
         val currentSettings = viewState.value.currentSettings ?: return
         val updatedSettings = currentSettings.copy(highlightColor = colorArgb)
         updatePublicationState { it.copy(settings = updatedSettings) }
@@ -953,6 +976,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipForward(milliseconds: Long) {
+        analytics.logEvent(ReaderAnalyticsEvent.SkipForward(bookUuid = bookUuid))
         audioController.skipForward()
     }
 
@@ -963,6 +987,7 @@ class ReaderViewModel(
      */
     @Suppress("UNUSED_PARAMETER")
     private fun skipBackward(milliseconds: Long) {
+        analytics.logEvent(ReaderAnalyticsEvent.SkipBackward(bookUuid = bookUuid))
         audioController.skipBackward()
     }
 
@@ -986,9 +1011,10 @@ class ReaderViewModel(
      * Called when the audio controller reports playback state changes.
      */
     private fun updatePlayingState(isPlaying: Boolean) {
-        // Track when playback starts (feature usage)
         if (isPlaying && !wasPlaying) {
             analytics.logEvent(ReaderAnalyticsEvent.PlaybackStarted(bookUuid = bookUuid))
+        } else if (!isPlaying && wasPlaying) {
+            analytics.logEvent(ReaderAnalyticsEvent.PlaybackPaused(bookUuid = bookUuid))
         }
         wasPlaying = isPlaying
 

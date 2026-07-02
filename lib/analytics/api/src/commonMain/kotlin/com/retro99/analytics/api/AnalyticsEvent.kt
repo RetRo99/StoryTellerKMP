@@ -155,5 +155,103 @@ sealed interface ReaderAnalyticsEvent : AnalyticsEvent {
             "book_uuid" to bookUuid,
         )
     }
+
+    data class BookmarkDeleted(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "bookmark_deleted"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
+    data class BookmarkRenamed(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "bookmark_renamed"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
+    data class SleepTimerStarted(
+        val bookUuid: String,
+        val durationMs: Long,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "sleep_timer_started"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "duration_ms" to durationMs,
+        )
+    }
+
+    data class SleepTimerCancelled(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "sleep_timer_cancelled"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
+    data class AudioOnlyModeToggled(
+        val bookUuid: String,
+        val isEnabled: Boolean,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "audio_only_mode_toggled"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "is_enabled" to isEnabled,
+        )
+    }
+
+    data class PlaybackPaused(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "playback_paused"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
+    data class SkipForward(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "skip_forward"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
+    data class SkipBackward(
+        val bookUuid: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "skip_backward"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+
+    data class ChapterNavigated(
+        val bookUuid: String,
+        val direction: String,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "chapter_navigated"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "direction" to direction,
+        )
+    }
+
+    data class HighlightColorChanged(
+        val bookUuid: String,
+        val colorArgb: Int,
+    ) : ReaderAnalyticsEvent {
+        override val name: String = "highlight_color_changed"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "color_argb" to colorArgb,
+        )
+    }
 }
 

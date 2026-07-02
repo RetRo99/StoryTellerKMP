@@ -1,6 +1,8 @@
 package com.retro99.home.ui.appsettings
 
 import androidx.lifecycle.viewModelScope
+import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.AppSettingsAnalyticsEvent
 import com.retro99.analytics.api.FileLogger
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.base.ui.sharing.FileSharer
@@ -19,6 +21,7 @@ class AppSettingsViewModel(
     @Provided private val fileSharer: FileSharer,
     @Provided private val preferences: Preferences,
     @Provided private val userRegistry: UserRegistry,
+    @Provided private val analytics: Analytics,
 ) : BaseViewModel<AppSettingsViewState, AppSettingsIntent>(
     AppSettingsViewState(
         isLoggingEnabled = preferences.getBoolean(
@@ -79,6 +82,7 @@ class AppSettingsViewModel(
     }
 
     private fun selectProfile(profileId: String) {
+        analytics.logEvent(AppSettingsAnalyticsEvent.ProfileSwitched(profileId = profileId))
         viewModelScope.launch {
             userRegistry.setActiveProfile(profileId)
         }
@@ -96,6 +100,7 @@ class AppSettingsViewModel(
         viewModelScope.launch {
             val profile = userRegistry.createProfile(name = name)
             userRegistry.setActiveProfile(profile.id)
+            analytics.logEvent(AppSettingsAnalyticsEvent.ProfileCreated(profileName = name))
             updateState { it.copy(showAddProfileDialog = false) }
         }
     }
@@ -121,6 +126,7 @@ class AppSettingsViewModel(
         val profile = viewState.value.selectedProfileForMenu ?: return
         viewModelScope.launch {
             userRegistry.updateProfile(profile.copy(name = newName))
+            analytics.logEvent(AppSettingsAnalyticsEvent.ProfileRenamed)
             updateState { it.copy(showRenameProfileDialog = false, selectedProfileForMenu = null) }
         }
     }
@@ -137,22 +143,26 @@ class AppSettingsViewModel(
         val profileId = viewState.value.selectedProfileForMenu?.id ?: return
         viewModelScope.launch {
             userRegistry.deleteProfile(profileId)
+            analytics.logEvent(AppSettingsAnalyticsEvent.ProfileDeleted)
             updateState { it.copy(showDeleteProfileDialog = false, selectedProfileForMenu = null) }
         }
     }
 
     private fun setLoggingEnabled(enabled: Boolean) {
         preferences.putBoolean(PreferencesKey.FileLoggingEnabled, enabled)
+        analytics.logEvent(AppSettingsAnalyticsEvent.FileLoggingToggled(isEnabled = enabled))
         updateState { it.copy(isLoggingEnabled = enabled) }
     }
 
     private fun setLogCrashesOnly(enabled: Boolean) {
         preferences.putBoolean(PreferencesKey.FileLoggingCrashesOnly, enabled)
+        analytics.logEvent(AppSettingsAnalyticsEvent.CrashOnlyLoggingToggled(isEnabled = enabled))
         updateState { it.copy(logCrashesOnly = enabled) }
     }
 
     private fun setOpenLastBookOnLaunch(enabled: Boolean) {
         preferences.putBoolean(PreferencesKey.OpenLastBookOnLaunch, enabled)
+        analytics.logEvent(AppSettingsAnalyticsEvent.OpenLastBookOnLaunchToggled(isEnabled = enabled))
         updateState { it.copy(openLastBookOnLaunch = enabled) }
     }
 
@@ -162,6 +172,7 @@ class AppSettingsViewModel(
             updateState { it.copy(showNoLogsMessage = true) }
             return
         }
+        analytics.logEvent(AppSettingsAnalyticsEvent.LogsShared)
         val logFilePath = fileLogger.getLogFilePath()
         fileSharer.shareFile(
             filePath = logFilePath,
@@ -172,6 +183,7 @@ class AppSettingsViewModel(
 
     private fun clearLogs() {
         fileLogger.clearLogs()
+        analytics.logEvent(AppSettingsAnalyticsEvent.LogsCleared)
         updateState { it.copy(showLogsClearedMessage = true) }
     }
 

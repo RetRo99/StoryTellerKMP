@@ -113,6 +113,27 @@ sealed interface BookAnalyticsEvent : AnalyticsEvent {
             "book_uuid" to bookUuid,
         )
     }
+
+    data class BookImportFailed(
+        val errorType: String,
+    ) : BookAnalyticsEvent {
+        override val name: String = "book_import_failed"
+        override val parameters: Map<String, Any> = mapOf(
+            "error_type" to errorType,
+        )
+    }
+
+    /**
+     * Tracks when user imports a custom font file.
+     */
+    data class CustomFontImported(
+        val fontName: String,
+    ) : BookAnalyticsEvent {
+        override val name: String = "custom_font_imported"
+        override val parameters: Map<String, Any> = mapOf(
+            "font_name" to fontName,
+        )
+    }
 }
 
 /**
@@ -191,6 +212,198 @@ sealed interface NavigationAnalyticsEvent : AnalyticsEvent {
         override val parameters: Map<String, Any> = mapOf(
             "source" to source,
         )
+    }
+
+    data class DeepLinkOpened(
+        val bookUuid: String,
+        val bookType: String,
+    ) : NavigationAnalyticsEvent {
+        override val name: String = "deep_link_opened"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+            "book_type" to bookType,
+        )
+    }
+
+    data class ContinueReadingLaunched(
+        val bookUuid: String,
+    ) : NavigationAnalyticsEvent {
+        override val name: String = "continue_reading_launched"
+        override val parameters: Map<String, Any> = mapOf(
+            "book_uuid" to bookUuid,
+        )
+    }
+}
+
+/**
+ * Server management related analytics events.
+ */
+sealed interface ServerManagementAnalyticsEvent : AnalyticsEvent {
+
+    data class ServerAdded(
+        val serverType: String,
+    ) : ServerManagementAnalyticsEvent {
+        override val name: String = "server_added"
+        override val parameters: Map<String, Any> = mapOf(
+            "server_type" to serverType,
+        )
+    }
+
+    data class ServerRemoved(
+        val serverType: String,
+    ) : ServerManagementAnalyticsEvent {
+        override val name: String = "server_removed"
+        override val parameters: Map<String, Any> = mapOf(
+            "server_type" to serverType,
+        )
+    }
+
+    data class ServerLoggedOut(
+        val serverType: String,
+    ) : ServerManagementAnalyticsEvent {
+        override val name: String = "server_logged_out"
+        override val parameters: Map<String, Any> = mapOf(
+            "server_type" to serverType,
+        )
+    }
+}
+
+/**
+ * App settings related analytics events.
+ */
+sealed interface AppSettingsAnalyticsEvent : AnalyticsEvent {
+
+    data class ProfileCreated(
+        val profileName: String,
+    ) : AppSettingsAnalyticsEvent {
+        override val name: String = "profile_created"
+        override val parameters: Map<String, Any> = mapOf(
+            "profile_name" to profileName,
+        )
+    }
+
+    data object ProfileDeleted : AppSettingsAnalyticsEvent {
+        override val name: String = "profile_deleted"
+    }
+
+    data class ProfileSwitched(
+        val profileId: String,
+    ) : AppSettingsAnalyticsEvent {
+        override val name: String = "profile_switched"
+        override val parameters: Map<String, Any> = mapOf(
+            "profile_id" to profileId,
+        )
+    }
+
+    data object ProfileRenamed : AppSettingsAnalyticsEvent {
+        override val name: String = "profile_renamed"
+    }
+
+    data class FileLoggingToggled(
+        val isEnabled: Boolean,
+    ) : AppSettingsAnalyticsEvent {
+        override val name: String = "file_logging_toggled"
+        override val parameters: Map<String, Any> = mapOf(
+            "is_enabled" to isEnabled,
+        )
+    }
+
+    data class CrashOnlyLoggingToggled(
+        val isEnabled: Boolean,
+    ) : AppSettingsAnalyticsEvent {
+        override val name: String = "crash_only_logging_toggled"
+        override val parameters: Map<String, Any> = mapOf(
+            "is_enabled" to isEnabled,
+        )
+    }
+
+    data class OpenLastBookOnLaunchToggled(
+        val isEnabled: Boolean,
+    ) : AppSettingsAnalyticsEvent {
+        override val name: String = "open_last_book_on_launch_toggled"
+        override val parameters: Map<String, Any> = mapOf(
+            "is_enabled" to isEnabled,
+        )
+    }
+
+    data object LogsShared : AppSettingsAnalyticsEvent {
+        override val name: String = "logs_shared"
+    }
+
+    data object LogsCleared : AppSettingsAnalyticsEvent {
+        override val name: String = "logs_cleared"
+    }
+}
+
+/**
+ * Statistics screen related analytics events.
+ */
+sealed interface StatisticsAnalyticsEvent : AnalyticsEvent {
+
+    data object StatisticsViewed : StatisticsAnalyticsEvent {
+        override val name: String = "statistics_viewed"
+    }
+
+    data class StatisticsPeriodChanged(
+        val period: String,
+    ) : StatisticsAnalyticsEvent {
+        override val name: String = "statistics_period_changed"
+        override val parameters: Map<String, Any> = mapOf(
+            "period" to period,
+        )
+    }
+
+    data class StatisticsDetailShown(
+        val detailType: String,
+    ) : StatisticsAnalyticsEvent {
+        override val name: String = "statistics_detail_shown"
+        override val parameters: Map<String, Any> = mapOf(
+            "detail_type" to detailType,
+        )
+    }
+}
+
+/**
+ * Books list related analytics events for tracking filter and sort usage.
+ */
+sealed interface BooksListAnalyticsEvent : AnalyticsEvent {
+
+    data class QuickFilterToggled(
+        val filter: String,
+        val isEnabled: Boolean,
+    ) : BooksListAnalyticsEvent {
+        override val name: String = "quick_filter_toggled"
+        override val parameters: Map<String, Any> = mapOf(
+            "filter" to filter,
+            "is_enabled" to isEnabled,
+        )
+    }
+
+    data class SortChanged(
+        val sortConfig: String,
+    ) : BooksListAnalyticsEvent {
+        override val name: String = "sort_changed"
+        override val parameters: Map<String, Any> = mapOf(
+            "sort_config" to sortConfig,
+        )
+    }
+
+    data class ViewModeChanged(
+        val viewMode: String,
+    ) : BooksListAnalyticsEvent {
+        override val name: String = "view_mode_changed"
+        override val parameters: Map<String, Any> = mapOf(
+            "view_mode" to viewMode,
+        )
+    }
+
+    data class ServerTypeFilterChanged(
+        val serverType: String?,
+    ) : BooksListAnalyticsEvent {
+        override val name: String = "server_type_filter_changed"
+        override val parameters: Map<String, Any> = buildMap {
+            serverType?.let { put("server_type", it) }
+        }
     }
 }
 

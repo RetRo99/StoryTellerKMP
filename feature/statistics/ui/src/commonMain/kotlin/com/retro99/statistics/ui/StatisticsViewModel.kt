@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
+import com.retro99.analytics.api.StatisticsAnalyticsEvent
 import com.retro99.base.result.log
 import com.retro99.base.ui.BaseViewModel
 import com.retro99.statistics.domain.model.StatisticsPeriod
@@ -33,6 +34,7 @@ class StatisticsViewModel(
 ) : BaseViewModel<StatisticsViewState, StatisticsIntent>(StatisticsViewState()) {
 
     init {
+        analytics.logEvent(StatisticsAnalyticsEvent.StatisticsViewed)
         loadStatistics()
     }
 
@@ -40,11 +42,26 @@ class StatisticsViewModel(
         when (intent) {
             StatisticsIntent.OnRefresh -> loadStatistics()
             StatisticsIntent.OnBackClicked -> onBack()
-            is StatisticsIntent.OnPeriodClicked -> loadBooksForPeriod(intent.period)
-            StatisticsIntent.OnCurrentStreakClicked -> showCurrentStreak()
-            StatisticsIntent.OnLongestStreakClicked -> showLongestStreak()
-            StatisticsIntent.OnBooksReadClicked -> showBooksRead()
-            StatisticsIntent.OnTotalSessionsClicked -> showRecentSessions()
+            is StatisticsIntent.OnPeriodClicked -> {
+                analytics.logEvent(StatisticsAnalyticsEvent.StatisticsPeriodChanged(period = intent.period.name))
+                loadBooksForPeriod(intent.period)
+            }
+            StatisticsIntent.OnCurrentStreakClicked -> {
+                analytics.logEvent(StatisticsAnalyticsEvent.StatisticsDetailShown(detailType = "current_streak"))
+                showCurrentStreak()
+            }
+            StatisticsIntent.OnLongestStreakClicked -> {
+                analytics.logEvent(StatisticsAnalyticsEvent.StatisticsDetailShown(detailType = "longest_streak"))
+                showLongestStreak()
+            }
+            StatisticsIntent.OnBooksReadClicked -> {
+                analytics.logEvent(StatisticsAnalyticsEvent.StatisticsDetailShown(detailType = "books_read"))
+                showBooksRead()
+            }
+            StatisticsIntent.OnTotalSessionsClicked -> {
+                analytics.logEvent(StatisticsAnalyticsEvent.StatisticsDetailShown(detailType = "recent_sessions"))
+                showRecentSessions()
+            }
             StatisticsIntent.OnDismissDetail -> dismissDetail()
         }
     }
