@@ -8,6 +8,7 @@ import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import com.retro99.analytics.api.Analytics
 import com.retro99.analytics.api.BookAnalyticsEvent
+import com.retro99.analytics.api.BooksListAnalyticsEvent
 import com.retro99.analytics.api.NavigationAnalyticsEvent
 import com.retro99.base.server.ServerType
 import com.retro99.base.result.log
@@ -96,6 +97,13 @@ class BooksListViewModel(
     }
 
     private fun toggleQuickFilter(filter: BookQuickFilter) {
+        val isEnabling = filter !in viewState.value.filterState.activeQuickFilters
+        analytics.logEvent(
+            BooksListAnalyticsEvent.QuickFilterToggled(
+                filter = filter.name,
+                isEnabled = isEnabling,
+            ),
+        )
         updateState { state ->
             val currentFilters = state.filterState.activeQuickFilters
             val newFilters = if (filter in currentFilters) {
@@ -109,6 +117,9 @@ class BooksListViewModel(
     }
 
     private fun setServerTypeFilter(serverType: ServerType?) {
+        analytics.logEvent(
+            BooksListAnalyticsEvent.ServerTypeFilterChanged(serverType = serverType?.name),
+        )
         updateState { state ->
             state.copy(filterState = state.filterState.copy(serverTypeFilter = serverType))
         }
@@ -128,11 +139,13 @@ class BooksListViewModel(
     }
 
     private fun updateSort(sortConfig: BookSortConfig) {
+        analytics.logEvent(BooksListAnalyticsEvent.SortChanged(sortConfig = sortConfig::class.simpleName ?: "unknown"))
         updateState { it.copy(sortConfig = sortConfig) }
         saveFilterSortSettings()
     }
 
     private fun updateViewMode(viewMode: BookListViewMode) {
+        analytics.logEvent(BooksListAnalyticsEvent.ViewModeChanged(viewMode = viewMode::class.simpleName ?: "unknown"))
         updateState { it.copy(viewMode = viewMode) }
         saveFilterSortSettings()
     }
@@ -248,6 +261,11 @@ class BooksListViewModel(
                     analytics.logEvent(BookAnalyticsEvent.BookImported(bookUuid = book.uuid))
                 }
                 .onFailure { error ->
+                    analytics.logEvent(
+                        BookAnalyticsEvent.BookImportFailed(
+                            errorType = error::class.simpleName ?: "unknown",
+                        ),
+                    )
                     error.log(analytics, "BooksViewModel: Failed to import book")
                 }
             updateState { it.copy(isImporting = false) }
