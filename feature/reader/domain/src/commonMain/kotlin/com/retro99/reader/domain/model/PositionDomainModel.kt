@@ -23,5 +23,6 @@ data class PositionDomainModel(
     val totalDurationMs: Long?,
     val totalProgression: Double?,
     val position: Int?,
+    val cssSelector: String? = null,
 )
 

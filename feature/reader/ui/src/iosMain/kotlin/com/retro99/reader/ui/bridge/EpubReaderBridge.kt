@@ -296,6 +296,7 @@ data class PositionLocator(
     val progression: Double?,
     val position: Int?,
     val totalProgression: Double?,
+    val cssSelector: String? = null,
 )
 
 /**

@@ -270,6 +270,8 @@ class AndroidBookController internal constructor() : BookController {
             // Fetch chapter info with page position and word count
             val chapterInfo = fetchChapterInfo(cachedWordCount)
 
+            val cssSelector = fetchFirstVisibleCssSelector(navigator)
+
             LocatorState(
                 href = href,
                 type = locator.mediaType.toString(),
@@ -279,12 +281,18 @@ class AndroidBookController internal constructor() : BookController {
                 totalProgression = locator.locations.totalProgression,
                 fragments = locator.locations.fragments,
                 chapterInfo = chapterInfo,
+                cssSelector = cssSelector,
             )
         } ?: flowOf()
     }.onStart {
         delay(500)
     }.onEach {
         cancelPendingPageTurn()
+    }
+
+    private suspend fun fetchFirstVisibleCssSelector(navigator: EpubNavigatorFragment): String? {
+        val enrichedLocator = navigator.firstVisibleElementLocator() ?: return null
+        return enrichedLocator.locations.otherLocations["cssSelector"] as? String
     }
 
     /**
@@ -655,6 +663,9 @@ fun PositionUiModel.toAndroidLocator(): Locator? {
     val url = Url(href) ?: return null
     val mediaType = MediaType(type) ?: return null
 
+    val otherLocations = mutableMapOf<String, Any>()
+    cssSelector?.let { otherLocations["cssSelector"] = it }
+
     return Locator(
         href = url,
         mediaType = mediaType,
@@ -663,6 +674,7 @@ fun PositionUiModel.toAndroidLocator(): Locator? {
             progression = progression,
             position = position,
             totalProgression = totalProgression,
+            otherLocations = otherLocations,
         ),
     )
 }

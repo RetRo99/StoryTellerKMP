@@ -42,6 +42,7 @@ data class LocatorState(
     val totalProgression: Double?,
     val fragments: List<String>?,
     val chapterInfo: ChapterInfo? = null,
+    val cssSelector: String? = null,
 )
 
 /**

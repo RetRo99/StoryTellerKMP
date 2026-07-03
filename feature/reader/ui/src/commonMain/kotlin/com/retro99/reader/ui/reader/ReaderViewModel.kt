@@ -524,6 +524,7 @@ class ReaderViewModel(
             totalDurationMs = currentState.totalDurationMs,
             totalProgression = position.totalProgression,
             position = position.position,
+            cssSelector = position.cssSelector,
         )
 
         viewModelScope.launch {

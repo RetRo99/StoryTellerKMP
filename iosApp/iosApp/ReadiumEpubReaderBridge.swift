@@ -811,6 +811,34 @@ extension ReadiumEpubReaderBridge: EPUBNavigatorDelegate {
             }
         )
         callback(positionLocator)
+
+        Task { [weak self] in
+            guard let self = self,
+                  let epubNavigator = navigator as? EPUBNavigatorViewController else {
+                return
+            }
+
+            let enrichedLocator = await epubNavigator.firstVisibleElementLocator()
+
+            if let cssSelector = enrichedLocator?.locations.otherLocations["cssSelector"] as? String {
+                let enrichedPositionLocator = PositionLocator(
+                    href: locator.href.string,
+                    type: locator.mediaType.string,
+                    title: locator.title,
+                    progression: locator.locations.progression.map {
+                        KotlinDouble(value: $0)
+                    },
+                    position: locator.locations.position.map {
+                        KotlinInt(value: Int32($0))
+                    },
+                    totalProgression: locator.locations.totalProgression.map {
+                        KotlinDouble(value: $0)
+                    },
+                    cssSelector: cssSelector
+                )
+                callback(enrichedPositionLocator)
+            }
+        }
     }
 }
 

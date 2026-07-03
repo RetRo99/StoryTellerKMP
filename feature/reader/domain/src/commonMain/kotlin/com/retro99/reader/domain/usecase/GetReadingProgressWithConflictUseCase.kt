@@ -135,5 +135,6 @@ private fun ServerPosition.toDomain(): PositionDomainModel {
         totalDurationMs = totalDurationMs,
         totalProgression = totalProgression,
         position = position,
+        cssSelector = cssSelector,
     )
 }
