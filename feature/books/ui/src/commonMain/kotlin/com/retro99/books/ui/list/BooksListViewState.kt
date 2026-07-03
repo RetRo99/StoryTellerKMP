@@ -32,6 +32,9 @@ data class BooksListViewState(
             .applyQuickFilters(filterState.activeQuickFilters, favoriteBookUuids, bookProgressInfo)
             .applySorting(sortConfig)
 
+    val showServerBadge: Boolean
+        get() = books.mapNotNull { it.serverType }.distinct().size > 1
+
     private fun List<BookUiModel>.applySearchFilter(query: String): List<BookUiModel> {
         if (query.isBlank()) return this
         val lowerQuery = query.lowercase()

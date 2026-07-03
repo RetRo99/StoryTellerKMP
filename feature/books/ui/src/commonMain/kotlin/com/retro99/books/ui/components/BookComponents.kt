@@ -98,6 +98,7 @@ fun BookItemCard(
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
     progressInfo: BookProgressInfoUiModel? = null,
+    showServerBadge: Boolean = true,
     headerContent: @Composable (() -> Unit)? = null,
     subtitleContent: @Composable (() -> Unit)? = null,
 ) {
@@ -163,11 +164,13 @@ fun BookItemCard(
                         )
                     }
                 }
-                book.serverType?.let { serverType ->
-                    ServerTypeBadge(
-                        serverType = serverType,
-                        modifier = Modifier.align(Alignment.TopCenter),
-                    )
+                if (showServerBadge) {
+                    book.serverType?.let { serverType ->
+                        ServerTypeBadge(
+                            serverType = serverType,
+                            modifier = Modifier.align(Alignment.TopCenter),
+                        )
+                    }
                 }
             }
 
@@ -348,6 +351,7 @@ fun BookGridCard(
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
     progressInfo: BookProgressInfoUiModel? = null,
+    showServerBadge: Boolean = true,
 ) {
     Column(
         modifier = modifier
@@ -412,11 +416,13 @@ fun BookGridCard(
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
-            book.serverType?.let { serverType ->
-                ServerTypeBadge(
-                    serverType = serverType,
-                    modifier = Modifier.align(Alignment.TopCenter),
-                )
+            if (showServerBadge) {
+                book.serverType?.let { serverType ->
+                    ServerTypeBadge(
+                        serverType = serverType,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                    )
+                }
             }
         }
 

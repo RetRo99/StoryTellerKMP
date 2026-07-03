@@ -263,6 +263,7 @@ private fun BooksListScreenContent(
                                     intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
                                 },
                                 progressInfo = viewState.bookProgressInfo[book.uuid],
+                                showServerBadge = viewState.showServerBadge,
                                 subtitleContent = {
                                     if (book.series.isNotEmpty()) {
                                         Spacer(modifier = Modifier.height(4.dp))
@@ -523,6 +524,7 @@ private fun BooksGrid(
                     intentDispatcher(BooksListIntent.OnFavoriteClicked(book.uuid))
                 },
                 progressInfo = viewState.bookProgressInfo[book.uuid],
+                showServerBadge = viewState.showServerBadge,
             )
         }
     }
