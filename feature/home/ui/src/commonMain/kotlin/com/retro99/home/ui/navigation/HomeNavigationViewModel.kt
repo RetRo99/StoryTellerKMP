@@ -11,6 +11,7 @@ import com.retro99.home.ui.deeplink.DeepLinkHandler
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.ObserveUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.reader.domain.usecase.ClearCurrentlyReadingUseCase
 import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
@@ -53,6 +54,7 @@ class HomeNavigationViewModel(
     @Provided private val preferences: Preferences,
     @Provided private val userRegistry: UserRegistry,
     @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
+    @Provided private val observeUserPreferenceUseCase: ObserveUserPreferenceUseCase,
     @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
     @Provided private val nowPlayingProvider: NowPlayingProvider,
 ) : BaseViewModel<HomeUiState, HomeNavigationIntent>(
@@ -91,7 +93,7 @@ class HomeNavigationViewModel(
         observeDeepLinks(deepLinkHandler)
         observeUserProfileChanges()
         observeCurrentlyReading()
-        loadBubblePosition()
+        observeBubblePosition()
         observeShowContinueReading()
         checkOpenLastBookOnLaunch()
         observeNowPlaying()
@@ -109,7 +111,6 @@ class HomeNavigationViewModel(
             .onEach {
                 // Emit event to reset navigation
                 _userProfileChanged.emit(Unit)
-                loadBubblePosition()
             }
             .launchIn(viewModelScope)
     }
@@ -149,22 +150,17 @@ class HomeNavigationViewModel(
         )
     }
 
-    /**
-     * Loads the bubble position from user-scoped preferences.
-     */
-    private fun loadBubblePosition() {
-        val bubblePosition = getUserPreferenceUseCase<BubblePositionModel>(PreferencesKey.BubblePosition)
-            ?: BubblePositionModel.DEFAULT
-        updateState { it.copy(bubblePosition = bubblePosition) }
+    private fun observeBubblePosition() {
+        observeUserPreferenceUseCase<BubblePositionModel>(PreferencesKey.BubblePosition)
+            .onEach { position ->
+                updateState { it.copy(bubblePosition = position ?: BubblePositionModel.DEFAULT) }
+            }
+            .launchIn(viewModelScope)
     }
 
-    /**
-     * Saves the bubble position to user-scoped preferences.
-     */
     private fun saveBubblePosition(side: BubbleSide, yFraction: Float) {
         val position = BubblePositionModel.fromBubbleSide(side, yFraction)
         saveUserPreferenceUseCase(PreferencesKey.BubblePosition, position)
-        updateState { it.copy(bubblePosition = position) }
     }
 
     private fun observeShowContinueReading() {

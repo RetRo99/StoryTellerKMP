@@ -27,29 +27,33 @@ class AppSettingsViewModel(
     @Provided private val userRegistry: UserRegistry,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<AppSettingsViewState, AppSettingsIntent>(
-    AppSettingsViewState(
-        isLoggingEnabled = preferences.getBoolean(
-            PreferencesKey.FileLoggingEnabled,
-            defaultValue = false,
-        ),
-        logCrashesOnly = preferences.getBoolean(
-            PreferencesKey.FileLoggingCrashesOnly,
-            defaultValue = false,
-        ),
-        openLastBookOnLaunch = preferences.getBoolean(
-            PreferencesKey.OpenLastBookOnLaunch,
-            defaultValue = false,
-        ),
-        showContinueReading = preferences.getBoolean(
-            PreferencesKey.ShowContinueReading,
-            defaultValue = true,
-        ),
-        hasCurrentlyReadingBook = getCurrentlyReadingUseCase() != null,
-    ),
+    AppSettingsViewState(),
 ) {
 
     init {
         observeUserProfiles()
+        observeBooleanPref(PreferencesKey.FileLoggingEnabled, defaultValue = false) { enabled ->
+            updateState { it.copy(isLoggingEnabled = enabled) }
+        }
+        observeBooleanPref(PreferencesKey.FileLoggingCrashesOnly, defaultValue = false) { enabled ->
+            updateState { it.copy(logCrashesOnly = enabled) }
+        }
+        observeBooleanPref(PreferencesKey.OpenLastBookOnLaunch, defaultValue = false) { enabled ->
+            updateState { it.copy(openLastBookOnLaunch = enabled) }
+        }
+        observeBooleanPref(PreferencesKey.ShowContinueReading, defaultValue = true) { enabled ->
+            updateState { it.copy(showContinueReading = enabled) }
+        }
+    }
+
+    private fun observeBooleanPref(
+        key: PreferencesKey,
+        defaultValue: Boolean,
+        onUpdate: (Boolean) -> Unit,
+    ) {
+        preferences.observeBoolean(key, defaultValue)
+            .onEach { onUpdate(it) }
+            .launchIn(viewModelScope)
     }
 
     private fun observeUserProfiles() {

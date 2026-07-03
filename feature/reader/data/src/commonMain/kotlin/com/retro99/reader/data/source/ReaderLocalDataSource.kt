@@ -8,7 +8,7 @@ import com.retro99.database.api.books.BookmarksDatabase
 import com.retro99.database.api.books.PositionDatabase
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
-import com.retro99.preferences.api.getObject
+import com.retro99.preferences.api.observeObject
 import com.retro99.preferences.api.putObject
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.ObserveUserPreferenceUseCase
@@ -25,8 +25,6 @@ import com.retro99.reader.data.model.toLocal
 import com.retro99.reader.data.model.toLocalModel
 import com.retro99.reader.domain.model.CurrentlyReadingDomainModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 import org.koin.core.annotation.Single
@@ -50,9 +48,6 @@ class ReaderLocalDataSource(
     @Provided private val removeUserPreferenceUseCase: RemoveUserPreferenceUseCase,
 ) : ReaderLocalSource {
 
-    private val _readerSettings = MutableStateFlow(loadReaderSettings())
-    private val _customFonts = MutableStateFlow(loadCustomFonts())
-
     override suspend fun getReadingProgress(
         bookUuid: String,
     ): AppResult<PositionLocalModel?> {
@@ -70,24 +65,24 @@ class ReaderLocalDataSource(
     }
 
     override fun getReaderSettings(): Flow<ReaderSettingsLocalModel> {
-        return _readerSettings.asStateFlow()
+        return preferences.observeObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
+            .map { settings -> settings ?: ReaderSettingsLocalModel() }
     }
 
     override suspend fun saveReaderSettings(
         settings: ReaderSettingsLocalModel,
     ): CompletableResult {
         preferences.putObject(PreferencesKey.ReaderSettings, settings)
-        _readerSettings.value = settings
         return Ok(Unit)
     }
 
     override fun getCustomFonts(): Flow<List<CustomReaderFontLocalModel>> {
-        return _customFonts.asStateFlow()
+        return preferences.observeObject<List<CustomReaderFontLocalModel>>(PreferencesKey.ReaderCustomFonts)
+            .map { fonts -> fonts ?: emptyList() }
     }
 
     override suspend fun saveCustomFonts(fonts: List<CustomReaderFontLocalModel>): CompletableResult {
         preferences.putObject(PreferencesKey.ReaderCustomFonts, fonts)
-        _customFonts.value = fonts
         return Ok(Unit)
     }
 
@@ -155,18 +150,5 @@ class ReaderLocalDataSource(
         }
     }
 
-    private fun loadReaderSettings(): ReaderSettingsLocalModel {
-        val rawJson = preferences.getStringOrNull(PreferencesKey.ReaderSettings)
-
-        val settings = preferences.getObject<ReaderSettingsLocalModel>(PreferencesKey.ReaderSettings)
-            ?: ReaderSettingsLocalModel()
-
-        return settings
-    }
-
-    private fun loadCustomFonts(): List<CustomReaderFontLocalModel> {
-        return preferences.getObject<List<CustomReaderFontLocalModel>>(PreferencesKey.ReaderCustomFonts)
-            ?: emptyList()
-    }
 }
 

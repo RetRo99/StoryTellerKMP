@@ -25,7 +25,7 @@ import com.retro99.books.ui.model.BookSortConfig
 import com.retro99.books.ui.model.BookUiModel
 import com.retro99.books.ui.model.toUiModel
 import com.retro99.preferences.api.PreferencesKey
-import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.ObserveUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.reader.domain.usecase.ObserveAllBooksWithProgressUseCase
 import kotlinx.coroutines.flow.launchIn
@@ -44,7 +44,7 @@ class BooksListViewModel(
     @Provided private val importEpubUseCase: ImportEpubUseCase,
     @Provided private val observeAllBooksWithProgressUseCase: ObserveAllBooksWithProgressUseCase,
     @Provided private val analytics: Analytics,
-    @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
+    @Provided private val observeUserPreferenceUseCase: ObserveUserPreferenceUseCase,
     @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
 ) : BaseViewModel<BooksListViewState, BooksListIntent>(BooksListViewState()) {
 
@@ -53,7 +53,7 @@ class BooksListViewModel(
     val searchFieldState = TextFieldState()
 
     init {
-        loadFilterSortSettings()
+        observeFilterSortSettings()
         observeBooks()
         observeFavorites()
         observeSearchQuery()
@@ -150,17 +150,20 @@ class BooksListViewModel(
         saveFilterSortSettings()
     }
 
-    private fun loadFilterSortSettings() {
-        val settings = getUserPreferenceUseCase<BookListSettings>(PreferencesKey.BookListFilterSort)
-        if (settings != null) {
-            updateState {
-                it.copy(
-                    filterState = settings.filterState,
-                    sortConfig = settings.sortConfig,
-                    viewMode = settings.viewMode,
-                )
+    private fun observeFilterSortSettings() {
+        observeUserPreferenceUseCase<BookListSettings>(PreferencesKey.BookListFilterSort)
+            .onEach { settings ->
+                if (settings != null) {
+                    updateState {
+                        it.copy(
+                            filterState = settings.filterState,
+                            sortConfig = settings.sortConfig,
+                            viewMode = settings.viewMode,
+                        )
+                    }
+                }
             }
-        }
+            .launchIn(viewModelScope)
     }
 
     private fun saveFilterSortSettings() {
