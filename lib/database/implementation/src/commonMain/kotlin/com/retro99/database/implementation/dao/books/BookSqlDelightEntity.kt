@@ -16,6 +16,7 @@ data class BookSqlDelightEntity(
     val rating: Float?,
     val suffix: String?,
     val statusUuid: String?,
+    val coverUrl: String?,
     val createdAt: String?,
     val updatedAt: String?,
 )

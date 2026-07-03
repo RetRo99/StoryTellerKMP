@@ -389,6 +389,7 @@ internal class BooksDatabaseImpl(
             tags = tags,
             collections = collections,
             status = status,
+            coverUrl = book.coverUrl,
             ebook = mediaFiles.find { it.type == "ebook" },
             audiobook = mediaFiles.find { it.type == "audiobook" },
             readaloud = readaloud,
@@ -480,6 +481,7 @@ internal class BooksDatabaseImpl(
             rating = rating,
             suffix = suffix,
             statusUuid = status?.uuid,
+            coverUrl = coverUrl,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
@@ -519,6 +521,7 @@ private data class BookEntityImpl(
     override val tags: List<TagEntity>,
     override val collections: List<CollectionEntity>,
     override val status: StatusEntity?,
+    override val coverUrl: String?,
     override val ebook: MediaFileEntity?,
     override val audiobook: MediaFileEntity?,
     override val readaloud: ReadaloudEntity?,

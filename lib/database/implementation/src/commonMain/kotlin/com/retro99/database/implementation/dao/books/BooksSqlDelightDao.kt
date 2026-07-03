@@ -51,6 +51,7 @@ internal class BooksSqlDelightDao(
                 rating = book.rating?.toDouble(),
                 suffix = book.suffix,
                 status_uuid = book.statusUuid,
+                cover_url = book.coverUrl,
                 created_at = book.createdAt,
                 updated_at = book.updatedAt,
             )
@@ -73,6 +74,7 @@ internal class BooksSqlDelightDao(
                     rating = row.rating?.toFloat(),
                     suffix = row.suffix,
                     statusUuid = row.status_uuid,
+                    coverUrl = row.cover_url,
                     createdAt = row.created_at,
                     updatedAt = row.updated_at,
                 )
@@ -96,6 +98,7 @@ internal class BooksSqlDelightDao(
                     rating = row.rating?.toFloat(),
                     suffix = row.suffix,
                     statusUuid = row.status_uuid,
+                    coverUrl = row.cover_url,
                     createdAt = row.created_at,
                     updatedAt = row.updated_at,
                 )
@@ -119,6 +122,7 @@ internal class BooksSqlDelightDao(
                     rating = row.rating?.toFloat(),
                     suffix = row.suffix,
                     statusUuid = row.status_uuid,
+                    coverUrl = row.cover_url,
                     createdAt = row.created_at,
                     updatedAt = row.updated_at,
                 )
@@ -142,6 +146,7 @@ internal class BooksSqlDelightDao(
                     rating = row.rating?.toFloat(),
                     suffix = row.suffix,
                     statusUuid = row.status_uuid,
+                    coverUrl = row.cover_url,
                     createdAt = row.created_at,
                     updatedAt = row.updated_at,
                 )

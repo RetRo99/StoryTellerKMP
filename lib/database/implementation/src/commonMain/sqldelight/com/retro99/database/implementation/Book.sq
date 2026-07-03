@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS books (
     rating REAL,
     suffix TEXT,
     status_uuid TEXT,
+    cover_url TEXT,
     created_at TEXT,
     updated_at TEXT
 );
@@ -26,8 +27,8 @@ CREATE INDEX IF NOT EXISTS idx_books_server_id ON books(server_id);
 
 -- Queries for books
 upsertBook:
-INSERT OR REPLACE INTO books(uuid, server_id, server_type, id, title, subtitle, language, publication_date, description, rating, suffix, status_uuid, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO books(uuid, server_id, server_type, id, title, subtitle, language, publication_date, description, rating, suffix, status_uuid, cover_url, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllBooks:
 SELECT * FROM books ORDER BY title ASC;

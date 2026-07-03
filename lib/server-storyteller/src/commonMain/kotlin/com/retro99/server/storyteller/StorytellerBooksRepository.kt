@@ -45,7 +45,6 @@ class StorytellerBooksRepository(
                 logger.d { "Fetching from cache for server: $serverId" }
                 localSource.getBooks(serverId).mapCatching { books ->
                     logger.d { "Cache returned ${books?.size ?: 0} books" }
-                    // Re-apply cover URLs since they're not stored in cache
                     books?.map { it.withCoverUrl(baseUrl) }
                 }
             },
@@ -106,7 +105,7 @@ class StorytellerBooksRepository(
     }
 
     /**
-     * Re-apply cover URL to a cached book since URLs are not stored in cache.
+     * Fallback for cached books that were saved before cover_url was persisted.
      */
     private fun ServerBook.withCoverUrl(baseUrl: String?): ServerBook {
         return if (coverUrl == null && baseUrl != null) {

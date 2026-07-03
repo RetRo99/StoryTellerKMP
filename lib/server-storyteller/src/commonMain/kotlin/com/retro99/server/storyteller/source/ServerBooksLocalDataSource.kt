@@ -24,8 +24,6 @@ internal class ServerBooksLocalDataSource(
             if (books.isEmpty()) {
                 null
             } else {
-                // We need the baseUrl to build cover URLs, but we don't have it here
-                // The caller should handle URL building or we store it
                 books.map { it.toServerBook(baseUrl = null) }
             }
         }
