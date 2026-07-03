@@ -85,6 +85,8 @@ interface ReaderSettingsRepository {
      */
     fun getCurrentlyReading(): CurrentlyReadingDomainModel?
 
+    fun observeCurrentlyReading(): Flow<CurrentlyReadingDomainModel?>
+
     /**
      * Sets the currently reading book.
      * Should only be called when a reading session meets the minimum duration requirement.

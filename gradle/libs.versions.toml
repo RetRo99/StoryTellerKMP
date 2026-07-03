@@ -113,6 +113,7 @@ kotzilla-sdk-compose = { group = "io.kotzilla", name = "kotzilla-sdk-compose", v
 
 # Multiplatform Settings
 multiplatformSettings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
+multiplatformSettingsCoroutines = { module = "com.russhwolf:multiplatform-settings-coroutines", version.ref = "multiplatformSettings" }
 
 # Markdown
 markdown = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdown" }

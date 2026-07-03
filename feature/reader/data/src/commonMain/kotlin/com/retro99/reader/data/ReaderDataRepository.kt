@@ -91,6 +91,10 @@ internal class ReaderDataRepository(
         return localSource.getCurrentlyReading()
     }
 
+    override fun observeCurrentlyReading(): Flow<CurrentlyReadingDomainModel?> {
+        return localSource.observeCurrentlyReading()
+    }
+
     override fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel) {
         localSource.setCurrentlyReading(currentlyReading)
     }

@@ -14,8 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import com.retro99.books.ui.detail.BookDetailScreen
@@ -94,15 +92,6 @@ fun HomeNavigation(
     // Show mini-player when audio is playing and not in reader
     val showMiniPlayer = !isInReader && nowPlayingInfo != null
 
-    // Track when leaving reader to refresh currently reading state
-    val wasInReader = remember { mutableStateOf(false) }
-    LaunchedEffect(isInReader) {
-        if (wasInReader.value && !isInReader) {
-            intentDispatcher(HomeNavigationIntent.RefreshCurrentlyReading)
-        }
-        wasInReader.value = isInReader
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -157,20 +146,25 @@ fun HomeNavigation(
                                 )
                             },
                             headerContent = {
-                                currentlyReading?.let { book ->
-                                    ContinueReadingShelf(
-                                        currentlyReading = book,
-                                        onClick = {
-                                            intentDispatcher(
-                                                HomeNavigationIntent.RequestOpenReader(
-                                                    serverId = book.serverId,
-                                                    bookUuid = book.bookUuid,
-                                                    bookType = book.bookType,
-                                                    bookTitle = book.bookTitle,
+                                if (uiState.showContinueReading) {
+                                    currentlyReading?.let { book ->
+                                        ContinueReadingShelf(
+                                            currentlyReading = book,
+                                            onClick = {
+                                                intentDispatcher(
+                                                    HomeNavigationIntent.RequestOpenReader(
+                                                        serverId = book.serverId,
+                                                        bookUuid = book.bookUuid,
+                                                        bookType = book.bookType,
+                                                        bookTitle = book.bookTitle,
+                                                    )
                                                 )
-                                            )
-                                        },
-                                    )
+                                            },
+                                            onClear = {
+                                                intentDispatcher(HomeNavigationIntent.ClearCurrentlyReading)
+                                            },
+                                        )
+                                    }
                                 }
                             },
                         )
@@ -300,7 +294,7 @@ fun HomeNavigation(
         // Draggable floating bubble for Continue Reading
         // Only show when position is loaded (not null) to avoid flicker
         val bubblePosition = uiState.bubblePosition
-        if (!isInReader && currentDestination !is HomeDestination.BooksList && currentlyReading != null && bubblePosition != null) {
+        if (!isInReader && currentDestination !is HomeDestination.BooksList && currentlyReading != null && bubblePosition != null && uiState.showContinueReading) {
             DraggableFloatingBubble(
                 modifier = Modifier.fillMaxSize(),
                 initialSide = bubblePosition.toBubbleSide(),

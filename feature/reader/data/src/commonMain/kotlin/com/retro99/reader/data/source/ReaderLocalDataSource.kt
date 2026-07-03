@@ -11,6 +11,7 @@ import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.api.getObject
 import com.retro99.preferences.api.putObject
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
+import com.retro99.preferences.implementation.usecase.ObserveUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.RemoveUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
 import com.retro99.books.domain.model.BookType
@@ -44,6 +45,7 @@ class ReaderLocalDataSource(
     @Provided private val bookmarksDatabase: BookmarksDatabase,
     @Provided private val databaseExecutor: DatabaseExecutor,
     @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
+    @Provided private val observeUserPreferenceUseCase: ObserveUserPreferenceUseCase,
     @Provided private val saveUserPreferenceUseCase: SaveUserPreferenceUseCase,
     @Provided private val removeUserPreferenceUseCase: RemoveUserPreferenceUseCase,
 ) : ReaderLocalSource {
@@ -103,6 +105,11 @@ class ReaderLocalDataSource(
 
     override fun getCurrentlyReading(): CurrentlyReadingDomainModel? {
         return getUserPreferenceUseCase<CurrentlyReadingLocalModel>(PreferencesKey.CurrentlyReading)?.toDomain()
+    }
+
+    override fun observeCurrentlyReading(): Flow<CurrentlyReadingDomainModel?> {
+        return observeUserPreferenceUseCase<CurrentlyReadingLocalModel>(PreferencesKey.CurrentlyReading)
+            .map { localModel -> localModel?.toDomain() }
     }
 
     override fun setCurrentlyReading(currentlyReading: CurrentlyReadingDomainModel) {

@@ -24,6 +24,8 @@ kotlin {
             implementation(libs.koin.core)
             api(libs.koin.annotations)
             api(libs.multiplatformSettings)
+            implementation(libs.multiplatformSettingsCoroutines)
+            implementation(libs.coroutines)
             implementation(libs.serialization)
             implementation(projects.base)
             implementation(projects.lib.preferences.api)

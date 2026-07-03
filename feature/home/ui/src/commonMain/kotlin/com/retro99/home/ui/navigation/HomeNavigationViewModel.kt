@@ -12,7 +12,9 @@ import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
 import com.retro99.preferences.implementation.usecase.GetUserPreferenceUseCase
 import com.retro99.preferences.implementation.usecase.SaveUserPreferenceUseCase
+import com.retro99.reader.domain.usecase.ClearCurrentlyReadingUseCase
 import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
+import com.retro99.reader.domain.usecase.ObserveCurrentlyReadingUseCase
 import com.retro99.reader.ui.playback.NowPlayingProvider
 import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -46,6 +48,8 @@ class HomeNavigationViewModel(
     deepLinkHandler: DeepLinkHandler,
     @Provided val analytics: Analytics,
     @Provided private val getCurrentlyReadingUseCase: GetCurrentlyReadingUseCase,
+    @Provided private val observeCurrentlyReadingUseCase: ObserveCurrentlyReadingUseCase,
+    @Provided private val clearCurrentlyReadingUseCase: ClearCurrentlyReadingUseCase,
     @Provided private val preferences: Preferences,
     @Provided private val userRegistry: UserRegistry,
     @Provided private val getUserPreferenceUseCase: GetUserPreferenceUseCase,
@@ -86,8 +90,9 @@ class HomeNavigationViewModel(
     init {
         observeDeepLinks(deepLinkHandler)
         observeUserProfileChanges()
-        loadCurrentlyReading()
+        observeCurrentlyReading()
         loadBubblePosition()
+        observeShowContinueReading()
         checkOpenLastBookOnLaunch()
         observeNowPlaying()
     }
@@ -104,20 +109,17 @@ class HomeNavigationViewModel(
             .onEach {
                 // Emit event to reset navigation
                 _userProfileChanged.emit(Unit)
-                // Refresh user-scoped data for the new user
-                loadCurrentlyReading()
                 loadBubblePosition()
             }
             .launchIn(viewModelScope)
     }
 
-    /**
-     * Loads the currently reading book from preferences.
-     * This is called on init and when returning from the reader.
-     */
-    private fun loadCurrentlyReading() {
-        val currentlyReading = getCurrentlyReadingUseCase()?.toUiModel()
-        updateState { it.copy(currentlyReading = currentlyReading) }
+    private fun observeCurrentlyReading() {
+        observeCurrentlyReadingUseCase()
+            .onEach { currentlyReading ->
+                updateState { it.copy(currentlyReading = currentlyReading?.toUiModel()) }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
@@ -163,6 +165,14 @@ class HomeNavigationViewModel(
         val position = BubblePositionModel.fromBubbleSide(side, yFraction)
         saveUserPreferenceUseCase(PreferencesKey.BubblePosition, position)
         updateState { it.copy(bubblePosition = position) }
+    }
+
+    private fun observeShowContinueReading() {
+        preferences.observeBoolean(PreferencesKey.ShowContinueReading, defaultValue = true)
+            .onEach { showContinueReading ->
+                updateState { it.copy(showContinueReading = showContinueReading) }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
@@ -241,7 +251,9 @@ class HomeNavigationViewModel(
         when (intent) {
             // UI state intents
             is HomeNavigationIntent.UpdateBubblePosition -> saveBubblePosition(intent.side, intent.yFraction)
-            HomeNavigationIntent.RefreshCurrentlyReading -> loadCurrentlyReading()
+            HomeNavigationIntent.ClearCurrentlyReading -> {
+                clearCurrentlyReadingUseCase()
+            }
 
             // Navigation intents - emit corresponding events
             is HomeNavigationIntent.NavigateTo -> {

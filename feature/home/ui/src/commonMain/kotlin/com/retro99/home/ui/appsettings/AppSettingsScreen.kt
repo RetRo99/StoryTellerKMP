@@ -69,6 +69,9 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import resources.translations.app_settings_clear_logs
 import resources.translations.app_settings_clear_logs_description
+import resources.translations.app_settings_clear_current_book
+import resources.translations.app_settings_clear_current_book_description
+import resources.translations.app_settings_current_book_cleared
 import resources.translations.app_settings_enable_logging
 import resources.translations.app_settings_enable_logging_description
 import resources.translations.app_settings_logs_cleared
@@ -84,6 +87,8 @@ import resources.translations.app_settings_section_reading
 import resources.translations.app_settings_section_support
 import resources.translations.app_settings_share_logs
 import resources.translations.app_settings_share_logs_description
+import resources.translations.app_settings_show_continue_reading
+import resources.translations.app_settings_show_continue_reading_description
 import resources.translations.app_settings_title
 import resources.translations.app_settings_version
 import resources.translations.statistics_description
@@ -121,6 +126,7 @@ private fun AppSettingsScreenContent(
     val snackbarHostState = remember { SnackbarHostState() }
     val logsClearedMessage = stringResource(StringRes.app_settings_logs_cleared)
     val noLogsMessage = stringResource(StringRes.app_settings_no_logs)
+    val currentBookClearedMessage = stringResource(StringRes.app_settings_current_book_cleared)
 
     LaunchedEffect(viewState.showLogsClearedMessage) {
         if (viewState.showLogsClearedMessage) {
@@ -133,6 +139,13 @@ private fun AppSettingsScreenContent(
         if (viewState.showNoLogsMessage) {
             snackbarHostState.showSnackbar(noLogsMessage)
             intentDispatcher(AppSettingsIntent.OnNoLogsMessageShown)
+        }
+    }
+
+    LaunchedEffect(viewState.showCurrentBookClearedMessage) {
+        if (viewState.showCurrentBookClearedMessage) {
+            snackbarHostState.showSnackbar(currentBookClearedMessage)
+            intentDispatcher(AppSettingsIntent.OnCurrentBookClearedMessageShown)
         }
     }
 
@@ -225,6 +238,26 @@ private fun AppSettingsScreenContent(
                     intentDispatcher(AppSettingsIntent.OnOpenLastBookToggled(enabled))
                 },
             )
+
+            SettingsToggleItem(
+                icon = Icons.Default.MenuBook,
+                title = stringResource(StringRes.app_settings_show_continue_reading),
+                description = stringResource(StringRes.app_settings_show_continue_reading_description),
+                isChecked = viewState.showContinueReading,
+                onCheckedChange = { enabled ->
+                    intentDispatcher(AppSettingsIntent.OnShowContinueReadingToggled(enabled))
+                },
+            )
+
+            if (viewState.hasCurrentlyReadingBook) {
+                SettingsItem(
+                    icon = Icons.Default.DeleteSweep,
+                    title = stringResource(StringRes.app_settings_clear_current_book),
+                    description = stringResource(StringRes.app_settings_clear_current_book_description),
+                    isDestructive = true,
+                    onClick = { intentDispatcher(AppSettingsIntent.OnClearCurrentBookClicked) },
+                )
+            }
 
             SettingsItem(
                 icon = Icons.Default.BarChart,

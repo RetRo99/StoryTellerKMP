@@ -8,6 +8,8 @@ import com.retro99.base.ui.BaseViewModel
 import com.retro99.base.ui.sharing.FileSharer
 import com.retro99.preferences.api.Preferences
 import com.retro99.preferences.api.PreferencesKey
+import com.retro99.reader.domain.usecase.ClearCurrentlyReadingUseCase
+import com.retro99.reader.domain.usecase.GetCurrentlyReadingUseCase
 import com.retro99.user.api.UserRegistry
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -20,6 +22,8 @@ class AppSettingsViewModel(
     @Provided private val fileLogger: FileLogger,
     @Provided private val fileSharer: FileSharer,
     @Provided private val preferences: Preferences,
+    @Provided private val clearCurrentlyReadingUseCase: ClearCurrentlyReadingUseCase,
+    @Provided private val getCurrentlyReadingUseCase: GetCurrentlyReadingUseCase,
     @Provided private val userRegistry: UserRegistry,
     @Provided private val analytics: Analytics,
 ) : BaseViewModel<AppSettingsViewState, AppSettingsIntent>(
@@ -36,6 +40,11 @@ class AppSettingsViewModel(
             PreferencesKey.OpenLastBookOnLaunch,
             defaultValue = false,
         ),
+        showContinueReading = preferences.getBoolean(
+            PreferencesKey.ShowContinueReading,
+            defaultValue = true,
+        ),
+        hasCurrentlyReadingBook = getCurrentlyReadingUseCase() != null,
     ),
 ) {
 
@@ -62,10 +71,13 @@ class AppSettingsViewModel(
             is AppSettingsIntent.OnLoggingToggled -> setLoggingEnabled(intent.enabled)
             is AppSettingsIntent.OnLogCrashesOnlyToggled -> setLogCrashesOnly(intent.enabled)
             is AppSettingsIntent.OnOpenLastBookToggled -> setOpenLastBookOnLaunch(intent.enabled)
+            is AppSettingsIntent.OnShowContinueReadingToggled -> setShowContinueReading(intent.enabled)
             AppSettingsIntent.OnShareLogsClicked -> shareLogs()
             AppSettingsIntent.OnClearLogsClicked -> clearLogs()
             AppSettingsIntent.OnLogsClearedMessageShown -> onLogsClearedMessageShown()
             AppSettingsIntent.OnNoLogsMessageShown -> onNoLogsMessageShown()
+            AppSettingsIntent.OnClearCurrentBookClicked -> clearCurrentBook()
+            AppSettingsIntent.OnCurrentBookClearedMessageShown -> onCurrentBookClearedMessageShown()
             is AppSettingsIntent.OnProfileSelected -> selectProfile(intent.profileId)
             AppSettingsIntent.OnAddProfileClicked -> showAddProfileDialog()
             is AppSettingsIntent.OnAddProfileConfirmed -> addProfile(intent.name)
@@ -166,6 +178,11 @@ class AppSettingsViewModel(
         updateState { it.copy(openLastBookOnLaunch = enabled) }
     }
 
+    private fun setShowContinueReading(enabled: Boolean) {
+        preferences.putBoolean(PreferencesKey.ShowContinueReading, enabled)
+        updateState { it.copy(showContinueReading = enabled) }
+    }
+
     private fun shareLogs() {
         val logContents = fileLogger.getLogContents()
         if (logContents.isEmpty()) {
@@ -193,6 +210,21 @@ class AppSettingsViewModel(
 
     private fun onNoLogsMessageShown() {
         updateState { it.copy(showNoLogsMessage = false) }
+    }
+
+    private fun clearCurrentBook() {
+        clearCurrentlyReadingUseCase()
+        analytics.logEvent(AppSettingsAnalyticsEvent.CurrentBookCleared)
+        updateState {
+            it.copy(
+                showCurrentBookClearedMessage = true,
+                hasCurrentlyReadingBook = false,
+            )
+        }
+    }
+
+    private fun onCurrentBookClearedMessageShown() {
+        updateState { it.copy(showCurrentBookClearedMessage = false) }
     }
 }
 

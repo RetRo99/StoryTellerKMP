@@ -85,6 +85,7 @@ interface ReaderLocalSource {
      * @return The currently reading book info or null if none
      */
     fun getCurrentlyReading(): CurrentlyReadingDomainModel?
+    fun observeCurrentlyReading(): Flow<CurrentlyReadingDomainModel?>
 
     /**
      * Sets the currently reading book.

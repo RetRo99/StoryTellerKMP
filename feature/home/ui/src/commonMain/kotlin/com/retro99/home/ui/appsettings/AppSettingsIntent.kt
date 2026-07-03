@@ -6,10 +6,13 @@ sealed interface AppSettingsIntent : BaseIntent {
     data class OnLoggingToggled(val enabled: Boolean) : AppSettingsIntent
     data class OnLogCrashesOnlyToggled(val enabled: Boolean) : AppSettingsIntent
     data class OnOpenLastBookToggled(val enabled: Boolean) : AppSettingsIntent
+    data class OnShowContinueReadingToggled(val enabled: Boolean) : AppSettingsIntent
     data object OnShareLogsClicked : AppSettingsIntent
     data object OnClearLogsClicked : AppSettingsIntent
     data object OnLogsClearedMessageShown : AppSettingsIntent
     data object OnNoLogsMessageShown : AppSettingsIntent
+    data object OnClearCurrentBookClicked : AppSettingsIntent
+    data object OnCurrentBookClearedMessageShown : AppSettingsIntent
     data class OnProfileSelected(val profileId: String) : AppSettingsIntent
     data object OnAddProfileClicked : AppSettingsIntent
     data class OnAddProfileConfirmed(val name: String) : AppSettingsIntent

@@ -17,6 +17,7 @@ import com.retro99.reader.ui.playback.NowPlayingInfo
  */
 data class HomeUiState(
     val currentlyReading: CurrentlyReadingUiModel? = null,
+    val showContinueReading: Boolean = true,
     val bubblePosition: BubblePositionModel? = null,
     val nowPlayingInfo: NowPlayingInfo? = null,
     val isAudioPlaying: Boolean = false,

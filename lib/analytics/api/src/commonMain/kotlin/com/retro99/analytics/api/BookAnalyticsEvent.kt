@@ -333,6 +333,10 @@ sealed interface AppSettingsAnalyticsEvent : AnalyticsEvent {
     data object LogsCleared : AppSettingsAnalyticsEvent {
         override val name: String = "logs_cleared"
     }
+
+    data object CurrentBookCleared : AppSettingsAnalyticsEvent {
+        override val name: String = "current_book_cleared"
+    }
 }
 
 /**
